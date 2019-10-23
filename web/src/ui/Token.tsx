@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import Draggable from "react-draggable";
 import { Card, CardMedia, makeStyles } from "@material-ui/core";
-import { GRID_SIZE_PX } from "./config";
+import { GRID_SIZE_PX } from "../config";
 
 const PADDING = GRID_SIZE_PX / 5;
 const CARD_SIZE = GRID_SIZE_PX - PADDING * 2;

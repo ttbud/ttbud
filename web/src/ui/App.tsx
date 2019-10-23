@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import Token from "./Token";
-import dwarf from "./dwarf.svg";
-import bear from "./bear.svg";
+import dwarf from "../icon/dwarf.svg";
+import bear from "../icon/bear.svg";
 import { List } from "immutable";
 import { makeStyles } from "@material-ui/core";
-import { GRID_SIZE_PX } from "./config";
+import { GRID_SIZE_PX } from "../config";
 import TokenSheet, { TokenType } from "./TokenSheet";
 
 let BACKGROUND_COLOR = "#F5F5DC";
