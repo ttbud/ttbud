@@ -13,7 +13,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-interface TokenType {
+export interface TokenType {
   id: string;
   icon: string;
 }

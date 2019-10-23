@@ -5,7 +5,7 @@ import bear from "./bear.svg";
 import { List } from "immutable";
 import { makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "./config";
-import TokenSheet from "./TokenSheet";
+import TokenSheet, { TokenType } from "./TokenSheet";
 
 let BACKGROUND_COLOR = "#F5F5DC";
 let GRID_COLOR = "#947C65";
@@ -56,38 +56,37 @@ const App = () => {
     )
   );
 
+  const onTokenPlaced = (type: TokenType, x: number, y: number) => {
+    setTokens(
+      tokens.push({
+        x: snapToGrid(x),
+        y: snapToGrid(y),
+        icon: type.icon
+      })
+    );
+  };
+
+  const tokenIcons = tokens.map((token, i) => (
+    <Token
+      pos={{ x: token.x, y: token.y }}
+      icon={token.icon}
+      key={i}
+      onDropped={(x, y) => {
+        setTokens(
+          tokens.set(i, {
+            x: snapToGrid(x),
+            y: snapToGrid(y),
+            icon: token.icon
+          })
+        );
+      }}
+    />
+  ));
+
   return (
     <div>
-      <div className={classes.map}>
-        {tokens.map((token, i) => (
-          <Token
-            pos={{ x: token.x, y: token.y }}
-            icon={token.icon}
-            key={i}
-            onDropped={(x, y) => {
-              setTokens(
-                tokens.set(i, {
-                  x: snapToGrid(x),
-                  y: snapToGrid(y),
-                  icon: token.icon
-                })
-              );
-            }}
-          />
-        ))}
-      </div>
-      <TokenSheet
-        tokenTypes={TOKEN_TYPES}
-        onTokenPlaced={(type, x, y) => {
-          setTokens(
-            tokens.push({
-              x: snapToGrid(x),
-              y: snapToGrid(y),
-              icon: type.icon
-            })
-          );
-        }}
-      />
+      <div className={classes.map}>{tokenIcons}</div>
+      <TokenSheet tokenTypes={TOKEN_TYPES} onTokenPlaced={onTokenPlaced} />
     </div>
   );
 };
