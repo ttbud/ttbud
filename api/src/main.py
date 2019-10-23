@@ -2,21 +2,31 @@ import flask
 from flask_cors import CORS
 
 
+def validate_token(token):
+
+    return True
+
+
 if __name__ == '__main__':
 
     app = flask.Flask(__name__)
     CORS(app)
-    tokens = []
+    tokens = {}
 
-    @app.route('/api/create', methods=['POST'])
+    @app.route('/api/token', methods=['POST'])
     def create_token():
-        tokens.append(flask.request.get_json())
-        print(flask.request.get_json())
-        return 'No Content\n'
+        new_token = flask.request.get_json(silent=True)
+        if new_token:
+            if tokens.get(new_token['id'], None):
+                return flask.Response(status=409)
+            if validate_token(new_token):
+                tokens[new_token['id']] = new_token
+                return flask.Response(status=201)
+        # Should this be 404?
+        return flask.Response(status=404)
 
-    @app.route('/api/get', methods=['GET'])
+    @app.route('/api/token', methods=['GET'])
     def get_state():
-        print(tokens)
         return flask.jsonify(tokens)
 
     app.run(host='0.0.0.0')
