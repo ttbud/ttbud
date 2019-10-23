@@ -15,6 +15,7 @@ if __name__ == '__main__':
 
     @app.route('/api/token', methods=['POST'])
     def create_token():
+
         new_token = flask.request.get_json(silent=True)
         if new_token:
             if tokens.get(new_token['id'], None):
@@ -22,11 +23,11 @@ if __name__ == '__main__':
             if validate_token(new_token):
                 tokens[new_token['id']] = new_token
                 return flask.Response(status=201)
-        # Should this be 404?
-        return flask.Response(status=404)
+        return flask.Response(status=400)
 
     @app.route('/api/token', methods=['GET'])
     def get_state():
-        return flask.jsonify(tokens)
+
+        return flask.jsonify(tokens.values())
 
     app.run(host='0.0.0.0')
