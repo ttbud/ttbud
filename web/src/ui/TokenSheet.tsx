@@ -8,8 +8,7 @@ const useStyles = makeStyles(theme => ({
   },
   tokenSheet: {
     backgroundColor: "#cccccc",
-    position: "absolute",
-    bottom: 0,
+    margin: theme.spacing(.1)
   }
 }));
 
