@@ -1,6 +1,5 @@
 import queue
 import threading
-import json
 import uuid
 import socket
 
