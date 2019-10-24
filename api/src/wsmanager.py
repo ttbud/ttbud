@@ -89,10 +89,10 @@ class WebsocketManager:
     @staticmethod
     def validate_token(token):
 
-        return token.get('id', None) and \
-               token.get('x', None) and \
-               token.get('y', None) and \
-               token.get('icon', None)
+        return token.get('id', False) and \
+               token.get('x', False) and \
+               token.get('y', False) and \
+               token.get('icon', False)
 
     def create_or_update_token(self, new_token):
 
