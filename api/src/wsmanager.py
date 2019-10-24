@@ -7,13 +7,14 @@ import websockets
 
 class WebsocketManager:
 
-    def __init__(self, host, send_q, receive_q):
+    def __init__(self, send_q, receive_q, host, port):
 
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
         self._connections = set()
         self._q = queue.Queue()
         self.host = host
+        self.port = port
         self.send_q = send_q
         self.receive_q = receive_q
 
@@ -23,7 +24,7 @@ class WebsocketManager:
             ws_server = websockets.serve(
                 self.consumer_handler,
                 self.host,
-                8765,
+                self.port,
             )
 
             asyncio.ensure_future(self.producer_handler())
@@ -60,7 +61,7 @@ class WebsocketManager:
         self.receive_q.put(json_message)
 
 
-def main(send_q, receive_q):
+def main(send_q, receive_q, host_ip, host_port):
 
-    ws = WebsocketManager(socket.gethostbyname(socket.gethostname()), send_q, receive_q)
+    ws = WebsocketManager(send_q, receive_q, host_ip, host_port)
     ws.start_server()
