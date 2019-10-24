@@ -2,6 +2,7 @@ import queue
 import threading
 import json
 import uuid
+import socket
 
 import flask
 from flask_cors import CORS
@@ -16,7 +17,6 @@ def validate_token(token):
 
 def create_token(new_token):
 
-    #new_token = flask.request.get_json(silent=True)
     if new_token and new_token.get('id', None):
         if tokens.get(new_token['id'], None):
             return #flask.Response(status=409)
@@ -46,10 +46,13 @@ if __name__ == '__main__':
 
     app = flask.Flask(__name__)
     CORS(app)
+    host = socket.gethostbyname(socket.gethostname())
+    websocket_port = 8765
     tokens = {}
     send_q = queue.Queue()
     receive_q = queue.Queue()
-    ws = threading.Thread(target=main, args=(send_q, receive_q))
+
+    ws = threading.Thread(target=main, args=(send_q, receive_q, host_ip, websocket_port))
     ws.daemon = True
     ws.start()
     ql = threading.Thread(target=q_listener, args=(send_q, receive_q))
@@ -60,6 +63,6 @@ if __name__ == '__main__':
     def create_websocket_session():
 
         new_id = uuid.uuid4()
-        return flask.make_response({'path': new_id})
+        return flask.make_response({'path': f'{host}:{websocket_port}/{new_id}'})
 
     app.run(host='0.0.0.0')
