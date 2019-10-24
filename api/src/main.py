@@ -61,6 +61,6 @@ if __name__ == '__main__':
     def create_websocket_session():
 
         new_id = uuid.uuid4()
-        return flask.make_response({'path': f'{host}:{websocket_port}/{new_id}'})
+        return flask.make_response({'path': f'ws://{host}:{websocket_port}/{new_id}'})
 
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=5000)
