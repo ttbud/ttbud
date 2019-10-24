@@ -86,13 +86,20 @@ class WebsocketManager:
             print(f'Received an invalid action or token: {action}: {data}')
         self.send_q.put(self.get_state())
 
-    @staticmethod
-    def validate_token(token):
+    def validate_token(self, token):
 
         return token.get('id', False) and \
                token.get('x', False) and \
                token.get('y', False) and \
-               token.get('icon', False)
+               token.get('icon', False) and \
+               self.validate_position(token['x'], token['y'])
+
+    def validate_position(self, x, y):
+
+        for token in self.tokens.values():
+            if token['x'] == x or token['y'] == y:
+                return False
+        return True
 
     def create_or_update_token(self, new_token):
 
