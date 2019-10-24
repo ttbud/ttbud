@@ -15,11 +15,9 @@ def validate_token(token):
     return True
 
 
-def create_token(new_token):
+def create_or_update_token(new_token):
 
     if new_token and new_token.get('id', None):
-        if tokens.get(new_token['id'], None):
-            return #flask.Response(status=409)
         if validate_token(new_token):
             tokens[new_token['id']] = new_token
             print(new_token)
@@ -36,7 +34,7 @@ def q_listener(sq, rq):
 
     while True:
         try:
-            create_token(json.loads(rq.get()))
+            create_or_update_token(json.loads(rq.get()))
             sq.put(get_state())
         except Exception as e:
             print(e)
