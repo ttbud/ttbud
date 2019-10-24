@@ -1,5 +1,4 @@
 import asyncio
-import json
 import queue
 import socket
 
@@ -58,12 +57,7 @@ class WebsocketManager:
 
     async def consume(self, json_message):
 
-        #message = json.loads(json_message)
         self.receive_q.put(json_message)
-
-    def add_message_to_q(self, data):
-
-        self._q.put(json.dumps(data))
 
 
 def main(send_q, receive_q):

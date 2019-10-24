@@ -1,6 +1,7 @@
 import queue
 import threading
 import json
+import uuid
 
 import flask
 from flask_cors import CORS
@@ -58,6 +59,7 @@ if __name__ == '__main__':
     @app.route('/api/socket', methods=['GET'])
     def create_websocket_session():
 
-        pass
+        new_id = uuid.uuid4()
+        return flask.make_response({'path': new_id})
 
     app.run(host='0.0.0.0')
