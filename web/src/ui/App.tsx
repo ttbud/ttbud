@@ -9,12 +9,12 @@ import { GRID_SIZE_PX } from "../config";
 import TokenSheet, { TokenType } from "./TokenSheet";
 import { Token as TokenState } from "../network/TokenStateClient";
 import uuid from "uuid";
-import { WallType } from "./WallSheet";
 
 let BACKGROUND_COLOR = "#F5F5DC";
 let GRID_COLOR = "#947C65";
 
-const snapToGrid = (x: number) => Math.round(x / GRID_SIZE_PX) * GRID_SIZE_PX;
+const dragSnapToGrid = (x: number) => Math.round(x / GRID_SIZE_PX) * GRID_SIZE_PX;
+const clickSnapToGrid = (x: number) => Math.floor(x / GRID_SIZE_PX) * GRID_SIZE_PX;
 
 const useStyles = makeStyles({
   map: {
@@ -57,9 +57,13 @@ const TOKEN_TYPES = [
   { id: "643c7cf8-befb-4a72-b707-9c0399d2a365", icon: dwarf }
 ];
 
+const WALL_TYPES = [{ id: "01fe62c8-a26a-4526-8884-2bb3785f6a7e", icon: wall }];
+
 const App = () => {
   const classes = useStyles();
   const [socket, setSocket] = useState();
+
+  const [tokens, setTokens] = useState(List.of<TokenState>());
 
   useEffect(() => {
     const registerWebsocket = async () => {
@@ -90,14 +94,11 @@ const App = () => {
     registerWebsocket();
   }, []);
 
-  const [tokens, setTokens] = useState(List.of<TokenState>());
-  const [activeWallType, setWallType] = useState();
-
   const onTokenPlaced = (type: TokenType, x: number, y: number) => {
     let token = {
       id: uuid(),
-      x: snapToGrid(x),
-      y: snapToGrid(y),
+      x: dragSnapToGrid(x),
+      y: dragSnapToGrid(y),
       icon: type.icon
     };
     if (socket && socket.readyState === socket.OPEN) {
@@ -111,10 +112,6 @@ const App = () => {
     setTokens(tokens.push(token));
   };
 
-  const onWallTypeSelected = (type?: WallType) => {
-    setWallType(type);
-  };
-
   const tokenIcons = tokens.map((token, i) => (
     <Token
       pos={{ x: token.x, y: token.y }}
@@ -123,8 +120,8 @@ const App = () => {
       onDropped={(x, y) => {
         const newToken = {
           id: token.id,
-          x: snapToGrid(x),
-          y: snapToGrid(y),
+          x: dragSnapToGrid(x),
+          y: dragSnapToGrid(y),
           icon: token.icon
         };
         if (socket && socket.readyState === socket.OPEN) {
@@ -141,26 +138,37 @@ const App = () => {
   ));
 
   const onMapClick = (e: MouseEvent) => {
-    if (activeWallType) {
-      tokens.push({
+      const token = {
         id: uuid(),
-        x: snapToGrid(e.clientX),
-        y: snapToGrid(e.clientY),
+        x: clickSnapToGrid(e.clientX),
+        y: clickSnapToGrid(e.clientY),
         icon: wall
-      });
-    }
+      };
+      if (socket && socket.readyState === socket.OPEN) {
+        socket.send(
+          JSON.stringify({
+            action: "create",
+            data: token
+          })
+        );
+      }
+      setTokens(
+        tokens.push(token)
+      );
   };
 
   const onMapRightClick = (e: MouseEvent) => {
     e.preventDefault();
-    const x = Math.floor(e.clientX / GRID_SIZE_PX) * GRID_SIZE_PX;
-    const y = Math.floor(e.clientY / GRID_SIZE_PX) * GRID_SIZE_PX;
+    const x = clickSnapToGrid(e.clientX);
+    const y = clickSnapToGrid(e.clientY);
     for (const [i, token] of tokens.entries()) {
       if (token.x === x && token.y === y) {
-        socket.send(JSON.stringify({
-          action: "delete",
-          data: { id: token.id }
-        }));
+        socket.send(
+          JSON.stringify({
+            action: "delete",
+            data: { id: token.id }
+          })
+        );
 
         setTokens(tokens.delete(i));
       }
