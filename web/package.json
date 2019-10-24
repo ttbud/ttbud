@@ -1,5 +1,5 @@
 {
-  "name": "dandord",
+  "name": "ttbud",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -15,13 +15,15 @@
     "react-dom": "^16.10.2",
     "react-draggable": "^4.0.3",
     "react-scripts": "3.2.0",
-    "typescript": "3.6.4"
+    "typescript": "3.6.4",
+    "uuid": "^3.3.3"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "now-dev": "react-scripts start"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -39,6 +41,7 @@
     ]
   },
   "devDependencies": {
+    "@types/uuid": "^3.4.5",
     "prettier": "1.18.2"
   }
 }
