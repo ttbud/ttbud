@@ -7,7 +7,7 @@ import socket
 import flask
 from flask_cors import CORS
 
-from api.src.wsmanager import WebsocketManager, main
+from api.src.wsmanager import WebsocketManager, start_websocket
 
 
 def validate_token(token):
@@ -50,12 +50,9 @@ if __name__ == '__main__':
     send_q = queue.Queue()
     receive_q = queue.Queue()
 
-    ws = threading.Thread(target=main, args=(send_q, receive_q, host_ip, websocket_port))
+    ws = threading.Thread(target=start_websocket, args=(send_q, receive_q, host, websocket_port))
     ws.daemon = True
     ws.start()
-    ql = threading.Thread(target=q_listener, args=(send_q, receive_q))
-    ql.daemon = True
-    ql.start()
 
     @app.route('/api/socket', methods=['GET'])
     def create_websocket_session():
