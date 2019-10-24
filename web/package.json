@@ -15,7 +15,8 @@
     "react-dom": "^16.10.2",
     "react-draggable": "^4.0.3",
     "react-scripts": "3.2.0",
-    "typescript": "3.6.4"
+    "typescript": "3.6.4",
+    "uuid": "^3.3.3"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -40,6 +41,7 @@
     ]
   },
   "devDependencies": {
+    "@types/uuid": "^3.4.5",
     "prettier": "1.18.2"
   }
 }
