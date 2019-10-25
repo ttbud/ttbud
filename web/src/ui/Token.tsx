@@ -36,7 +36,7 @@ const Token = (props: Props) => {
   const classes = useStyles();
   const [isDragging, setDragging] = useState();
   const ref = useRef<HTMLElement>();
-  const style = isDragging ? {zIndex: 1000} : {};
+  const style = isDragging ? { zIndex: 1000 } : {};
 
   return (
     <Draggable
@@ -51,7 +51,12 @@ const Token = (props: Props) => {
         props.onDropped(rect.left, rect.top);
       }}
     >
-      <Card style={style} className={classes.card} raised={isDragging} ref={ref}>
+      <Card
+        style={style}
+        className={classes.card}
+        raised={isDragging}
+        ref={ref}
+      >
         <CardMedia className={classes.media} image={props.icon} />
       </Card>
     </Draggable>
