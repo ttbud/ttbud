@@ -1,6 +1,5 @@
 import * as t from "io-ts";
 import { decode } from "../util/decode-util";
-import { useAsyncEffect } from "../util/use-util";
 
 const TokenStateDecoder = t.type({
   id: t.string,
@@ -12,25 +11,6 @@ const TokenStateDecoder = t.type({
 const StateDecoder = t.array(TokenStateDecoder);
 
 export type TokenState = t.TypeOf<typeof TokenStateDecoder>;
-
-export const useTokenState = (
-  roomId: string | null,
-  onUpdate: (state: TokenState[]) => {}
-) => {
-  useAsyncEffect({
-    effect: async () => {
-      const resp = await fetch("http://192.168.0.105:5000/api/socket");
-      const json = await resp.json();
-      const socketUrl = json.path;
-      const socket = new WebSocket(socketUrl);
-      return new TokenStateClient(socket, onUpdate);
-    },
-    deps: [roomId],
-    cleanup: (client: TokenStateClient) => {
-      client.close();
-    }
-  });
-};
 
 export class TokenStateClient {
   public constructor(
@@ -103,5 +83,3 @@ export class TokenStateClient {
     console.log("disconnected");
   }
 }
-
-export default useTokenState;

@@ -1,4 +1,4 @@
-import React, { MouseEvent, useState } from "react";
+import React, { MouseEvent, useEffect, useState } from "react";
 import Token from "./Token";
 import dwarf from "../icon/dwarf.svg";
 import bear from "../icon/bear.svg";
@@ -9,7 +9,6 @@ import { GRID_SIZE_PX } from "../config";
 import TokenSheet, { TokenType } from "./TokenSheet";
 import { TokenState, TokenStateClient } from "../network/TokenStateClient";
 import uuid from "uuid";
-import { useAsyncEffect } from "../util/use-util";
 
 let BACKGROUND_COLOR = "#F5F5DC";
 let GRID_COLOR = "#947C65";
@@ -66,31 +65,38 @@ const App = () => {
   const [tokens, setTokens] = useState(List.of<TokenState>());
   const [client, setClient] = useState<TokenStateClient>();
 
-  useAsyncEffect({
-    effect: async () => {
-      let resp;
-      try {
-        resp = await fetch("http://192.168.0.105:5000/api/socket");
-      } catch (e) {
-        return undefined;
-      }
+  const getNewRoomUrl = async () => {
+    let resp;
+    let wsUrl;
+    try {
+      resp = await fetch("http://192.168.0.105:5000/api/socket");
       const json = await resp.json();
-      const socketUrl = json.path;
-      const socket = new WebSocket(socketUrl);
+      wsUrl = json.path;
+    } catch (e) {
+      return null;
+    }
+    const httpUrl = `http://${window.location.host}/${btoa(wsUrl)}`;
+    window.history.replaceState({}, "Your special room", httpUrl);
+    return wsUrl;
+  };
+
+  useEffect(() => {
+    const connect = async () => {
+      const path = window.location.pathname.split("/")[1];
+      const roomUrl = path ? atob(path) : await getNewRoomUrl();
+      if (!roomUrl) {
+        return;
+      }
+      let socket = new WebSocket(roomUrl);
       const client = new TokenStateClient(socket, state => {
         setTokens(List.of(...state));
       });
       setClient(client);
+    };
 
-      return client;
-    },
-    deps: [],
-    cleanup: (client: TokenStateClient|undefined) => {
-      if (client) {
-        client.close();
-      }
-    }
-  });
+    // noinspection JSIgnoredPromiseFromCall
+    connect();
+  }, []);
 
   const onTokenPlaced = (type: TokenType, x: number, y: number) => {
     let token = {
