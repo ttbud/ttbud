@@ -57,8 +57,6 @@ const TOKEN_TYPES = [
   { id: "643c7cf8-befb-4a72-b707-9c0399d2a365", icon: dwarf }
 ];
 
-const WALL_TYPES = [{ id: "01fe62c8-a26a-4526-8884-2bb3785f6a7e", icon: wall }];
-
 const App = () => {
   const classes = useStyles();
   const [socket, setSocket] = useState();
