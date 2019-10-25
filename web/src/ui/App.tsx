@@ -68,7 +68,12 @@ const App = () => {
 
   useAsyncEffect({
     effect: async () => {
-      const resp = await fetch("http://192.168.0.105:5000/api/socket");
+      let resp;
+      try {
+        resp = await fetch("http://192.168.0.105:5000/api/socket");
+      } catch (e) {
+        return undefined;
+      }
       const json = await resp.json();
       const socketUrl = json.path;
       const socket = new WebSocket(socketUrl);
@@ -80,8 +85,10 @@ const App = () => {
       return client;
     },
     deps: [],
-    cleanup: (client: TokenStateClient) => {
-      client.close();
+    cleanup: (client: TokenStateClient|undefined) => {
+      if (client) {
+        client.close();
+      }
     }
   });
 
