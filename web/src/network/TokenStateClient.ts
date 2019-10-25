@@ -18,7 +18,7 @@ export class TokenStateClient {
     private readonly onStateUpdate: (state: TokenState[]) => void
   ) {
     socket.addEventListener("open", TokenStateClient.onConnect);
-    socket.addEventListener("message", this.onMessage);
+    socket.addEventListener("message", this.onMessage.bind(this));
     socket.addEventListener("close", TokenStateClient.onClose);
   }
 
