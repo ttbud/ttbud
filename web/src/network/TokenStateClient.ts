@@ -39,7 +39,7 @@ export class TokenStateClient {
     }
     this.socket.send(
       JSON.stringify({
-        action: "create",
+        action: "delete",
         data: { id: tokenId }
       })
     );
