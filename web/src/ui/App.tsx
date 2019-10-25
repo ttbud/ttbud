@@ -1,4 +1,4 @@
-import React, { MouseEvent, useEffect, useState } from "react";
+import React, { MouseEvent, useState } from "react";
 import Token from "./Token";
 import dwarf from "../icon/dwarf.svg";
 import bear from "../icon/bear.svg";
@@ -7,14 +7,17 @@ import { List } from "immutable";
 import { makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "../config";
 import TokenSheet, { TokenType } from "./TokenSheet";
-import { Token as TokenState } from "../network/TokenStateClient";
+import { TokenState, TokenStateClient } from "../network/TokenStateClient";
 import uuid from "uuid";
+import { useAsyncEffect } from "../util/use-util";
 
 let BACKGROUND_COLOR = "#F5F5DC";
 let GRID_COLOR = "#947C65";
 
-const dragSnapToGrid = (x: number) => Math.round(x / GRID_SIZE_PX) * GRID_SIZE_PX;
-const clickSnapToGrid = (x: number) => Math.floor(x / GRID_SIZE_PX) * GRID_SIZE_PX;
+const dragSnapToGrid = (x: number) =>
+  Math.round(x / GRID_SIZE_PX) * GRID_SIZE_PX;
+const clickSnapToGrid = (x: number) =>
+  Math.floor(x / GRID_SIZE_PX) * GRID_SIZE_PX;
 
 const useStyles = makeStyles({
   map: {
@@ -59,38 +62,28 @@ const TOKEN_TYPES = [
 
 const App = () => {
   const classes = useStyles();
-  const [socket, setSocket] = useState();
 
   const [tokens, setTokens] = useState(List.of<TokenState>());
+  const [client, setClient] = useState<TokenStateClient>();
 
-  useEffect(() => {
-    const registerWebsocket = async () => {
+  useAsyncEffect({
+    effect: async () => {
       const resp = await fetch("http://192.168.0.105:5000/api/socket");
       const json = await resp.json();
       const socketUrl = json.path;
       const socket = new WebSocket(socketUrl);
-
-      socket.addEventListener("open", (event: Event) => {
-        console.log("Connected");
+      const client = new TokenStateClient(socket, state => {
+        setTokens(List.of(...state));
       });
+      setClient(client);
 
-      socket.addEventListener("message", (event: MessageEvent) => {
-        const newTokens = JSON.parse(event.data);
-        console.log(newTokens);
-        setTokens(List.of(...newTokens));
-      });
-
-      socket.addEventListener("error", (event: Event) => {
-        console.log("Failed to connect");
-        console.log(event);
-      });
-
-      setSocket(socket);
-    };
-
-    // noinspection JSIgnoredPromiseFromCall
-    registerWebsocket();
-  }, []);
+      return client;
+    },
+    deps: [],
+    cleanup: (client: TokenStateClient) => {
+      client.close();
+    }
+  });
 
   const onTokenPlaced = (type: TokenType, x: number, y: number) => {
     let token = {
@@ -99,13 +92,8 @@ const App = () => {
       y: dragSnapToGrid(y),
       icon: type.icon
     };
-    if (socket && socket.readyState === socket.OPEN) {
-      socket.send(
-        JSON.stringify({
-          action: "create",
-          data: token
-        })
-      );
+    if (client) {
+      client.sendCreate(token);
     }
     setTokens(tokens.push(token));
   };
@@ -122,13 +110,8 @@ const App = () => {
           y: dragSnapToGrid(y),
           icon: token.icon
         };
-        if (socket && socket.readyState === socket.OPEN) {
-          socket.send(
-            JSON.stringify({
-              action: "update",
-              data: newToken
-            })
-          );
+        if (client) {
+          client.sendUpdate(newToken);
         }
         setTokens(tokens.set(i, newToken));
       }}
@@ -136,23 +119,16 @@ const App = () => {
   ));
 
   const onMapClick = (e: MouseEvent) => {
-      const token = {
-        id: uuid(),
-        x: clickSnapToGrid(e.clientX),
-        y: clickSnapToGrid(e.clientY),
-        icon: wall
-      };
-      if (socket && socket.readyState === socket.OPEN) {
-        socket.send(
-          JSON.stringify({
-            action: "create",
-            data: token
-          })
-        );
-      }
-      setTokens(
-        tokens.push(token)
-      );
+    const token = {
+      id: uuid(),
+      x: clickSnapToGrid(e.clientX),
+      y: clickSnapToGrid(e.clientY),
+      icon: wall
+    };
+    if (client) {
+      client.sendCreate(token);
+    }
+    setTokens(tokens.push(token));
   };
 
   const onMapRightClick = (e: MouseEvent) => {
@@ -161,12 +137,9 @@ const App = () => {
     const y = clickSnapToGrid(e.clientY);
     for (const [i, token] of tokens.entries()) {
       if (token.x === x && token.y === y) {
-        socket.send(
-          JSON.stringify({
-            action: "delete",
-            data: { id: token.id }
-          })
-        );
+        if (client) {
+          client.sendDelete(token.id);
+        }
 
         setTokens(tokens.delete(i));
       }
