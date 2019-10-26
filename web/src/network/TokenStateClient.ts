@@ -2,7 +2,7 @@ import * as t from "io-ts";
 import { decode } from "../util/decode-util";
 import wall from "../icon/wall.svg";
 import bear from "../icon/bear.svg";
-import dwarf from "../icon/wall.svg";
+import dwarf from "../icon/dwarf.svg";
 
 const ICONS_BY_TYPE = new Map([
   ["wall", wall],
