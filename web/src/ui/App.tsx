@@ -55,8 +55,8 @@ const useStyles = makeStyles({
 });
 
 const TOKEN_TYPES = [
-  { id: "a511ebd2-827b-490d-b20a-c206e4edd25e", icon: bear },
-  { id: "643c7cf8-befb-4a72-b707-9c0399d2a365", icon: dwarf }
+  { id: "a511ebd2-827b-490d-b20a-c206e4edd25e", icon: bear, type: 'bear'},
+  { id: "643c7cf8-befb-4a72-b707-9c0399d2a365", icon: dwarf, type: 'dwarf' }
 ];
 
 const App = () => {
@@ -69,7 +69,7 @@ const App = () => {
     let resp;
     let wsUrl;
     try {
-      resp = await fetch("http://192.168.0.105:5000/api/socket");
+      resp = await fetch("http://192.168.0.102:5000/api/socket");
       const json = await resp.json();
       wsUrl = json.path;
     } catch (e) {
@@ -103,6 +103,7 @@ const App = () => {
       id: uuid(),
       x: dragSnapToGrid(x),
       y: dragSnapToGrid(y),
+      type: type.type,
       icon: type.icon
     };
     if (client) {
@@ -121,6 +122,7 @@ const App = () => {
           id: token.id,
           x: dragSnapToGrid(x),
           y: dragSnapToGrid(y),
+          type: token.type,
           icon: token.icon
         };
         if (client) {
@@ -136,6 +138,7 @@ const App = () => {
       id: uuid(),
       x: clickSnapToGrid(e.clientX),
       y: clickSnapToGrid(e.clientY),
+      type: 'wall',
       icon: wall
     };
     if (client) {
