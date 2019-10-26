@@ -1,16 +1,33 @@
 import * as t from "io-ts";
 import { decode } from "../util/decode-util";
+import wall from "../icon/wall.svg";
+import bear from "../icon/bear.svg";
+import dwarf from "../icon/wall.svg";
+
+const ICONS_BY_TYPE = new Map([
+  ["wall", wall],
+  ["bear", bear],
+  ["dwarf", dwarf]
+]);
 
 const TokenStateDecoder = t.type({
   id: t.string,
   x: t.number,
   y: t.number,
-  icon: t.string
+  type: t.string
 });
 
 const StateDecoder = t.array(TokenStateDecoder);
 
-export type TokenState = t.TypeOf<typeof TokenStateDecoder>;
+type NetworkTokenState = t.TypeOf<typeof TokenStateDecoder>;
+
+export interface TokenState {
+  id: string;
+  x: number;
+  y: number;
+  type: string;
+  icon: string;
+}
 
 export class TokenStateClient {
   public constructor(
@@ -76,7 +93,15 @@ export class TokenStateClient {
 
   private onMessage(event: MessageEvent) {
     const json = JSON.parse(event.data);
-    this.onStateUpdate(decode(StateDecoder, json));
+    this.onStateUpdate(
+      decode(StateDecoder, json).map(tokenState => ({
+        id: tokenState.id,
+        x: tokenState.x,
+        y: tokenState.y,
+        type: tokenState.type,
+        icon: ICONS_BY_TYPE.get(tokenState.type) || "ahhh"
+      }))
+    );
   }
 
   private static onClose() {

@@ -14,6 +14,7 @@ const useStyles = makeStyles(theme => ({
 
 export interface TokenType {
   id: string;
+  type: string;
   icon: string;
 }
 
