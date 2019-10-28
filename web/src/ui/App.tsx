@@ -1,8 +1,14 @@
 import React, { MouseEvent, useEffect, useState } from "react";
 import Token from "./Token";
-import dwarf from "../icon/dwarf.svg";
-import bear from "../icon/bear.svg";
-import wall from "../icon/wall.svg";
+import beard from "../icon/beard.svg";
+import bowman from "../icon/bowman.svg";
+import kangaroo from "../icon/kangaroo.svg";
+import suspicious from "../icon/suspicious.svg";
+import swordman from "../icon/swordman.svg";
+import stoneWall from "../icon/stone-wall.svg";
+import wolfHead from "../icon/wolf-head.svg";
+import elfHelmet from "../icon/elf-helmet.svg";
+import entMouth from "../icon/ent-mouth.svg";
 import { List } from "immutable";
 import { makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "../config";
@@ -55,8 +61,14 @@ const useStyles = makeStyles({
 });
 
 const TOKEN_TYPES = [
-  { id: "a511ebd2-827b-490d-b20a-c206e4edd25e", icon: bear, type: "bear" },
-  { id: "643c7cf8-befb-4a72-b707-9c0399d2a365", icon: dwarf, type: "dwarf" }
+  { id: "a511ebd2-827b-490d-b20a-c206e4edd25e", icon: beard, type: "beard" },
+  { id: "cde2b122-0023-472c-a083-9c8bcb5830aa", icon: bowman, type: "bowman"},
+  { id: "0a2bd4c8-bf65-48bc-ac4a-2d0585c8226e", icon: elfHelmet, type: "elfHelmet"},
+  { id: "c8345331-d3d9-436b-abf9-054deac8fcc1", icon: entMouth, type: "entMouth"},
+  { id: "7d8445b4-5d80-43a7-aba5-863aa1617ca1", icon: kangaroo, type: "kangaroo"},
+  { id: "46dd9a28-f5d9-4256-a679-d08295ed2995", icon: suspicious, type: "suspicious"},
+  { id: "47341013-dd7f-44e2-8ee1-53ca59e2df60", icon: swordman, type: "swordman"},
+  { id: "94db5586-2d18-4250-a874-58264fcb4b79", icon: wolfHead, type: "wolfHead"},
 ];
 
 type MouseType = "drawing_walls" | "deleting" | "none";
@@ -160,8 +172,8 @@ const App = () => {
       id: uuid(),
       x: clickSnapToGrid(x),
       y: clickSnapToGrid(y),
-      type: "wall",
-      icon: wall
+      type: "stoneWall",
+      icon: stoneWall
     };
     if (client) {
       client.queueCreate(token);

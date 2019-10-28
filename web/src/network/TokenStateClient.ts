@@ -1,13 +1,25 @@
 import * as t from "io-ts";
 import { decode } from "../util/decode-util";
-import wall from "../icon/wall.svg";
-import bear from "../icon/bear.svg";
-import dwarf from "../icon/dwarf.svg";
+import beard from "../icon/beard.svg";
+import bowman from "../icon/bowman.svg";
+import kangaroo from "../icon/kangaroo.svg";
+import suspicious from "../icon/suspicious.svg";
+import swordman from "../icon/swordman.svg";
+import stoneWall from "../icon/stone-wall.svg";
+import wolfHead from "../icon/stone-wall.svg";
+import elfHelmet from "../icon/elf-helmet.svg";
+import entMouth from "../icon/ent-mouth.svg";
 
 const ICONS_BY_TYPE = new Map([
-  ["wall", wall],
-  ["bear", bear],
-  ["dwarf", dwarf]
+  ["beard", beard],
+  ["bowman", bowman],
+  ["kangaroo", kangaroo],
+  ["suspicious", suspicious],
+  ["swordman", swordman],
+  ["stoneWall", stoneWall],
+  ["wolfHead", wolfHead],
+  ["elfHelmet", elfHelmet],
+  ["entMouth", entMouth]
 ]);
 
 const TokenStateDecoder = t.type({
