@@ -12,14 +12,12 @@ const ICONS_BY_TYPE = new Map([
 
 const TokenStateDecoder = t.type({
   id: t.string,
-  x: t.number,
-  y: t.number,
+  start_x: t.number,
+  start_y: t.number,
   type: t.string
 });
 
 const StateDecoder = t.array(TokenStateDecoder);
-
-type NetworkTokenState = t.TypeOf<typeof TokenStateDecoder>;
 
 export interface TokenState {
   id: string;
@@ -70,7 +68,17 @@ export class TokenStateClient {
     this.socket.send(
       JSON.stringify({
         action: "create",
-        data: token
+        data: {
+          id: token.id,
+          type: token.type,
+          icon: token.icon,
+          start_x: token.x,
+          start_y: token.y,
+          start_z: 0,
+          end_x: token.x + 50,
+          end_y: token.y + 50,
+          end_z: 50
+        }
       })
     );
   }
@@ -82,7 +90,17 @@ export class TokenStateClient {
     this.socket.send(
       JSON.stringify({
         action: "update",
-        data: token
+        data: {
+          id: token.id,
+          type: token.type,
+          icon: token.icon,
+          start_x: token.x,
+          start_y: token.y,
+          start_z: 0,
+          end_x: token.x + 50,
+          end_y: token.y + 50,
+          end_z: 50
+        }
       })
     );
   }
@@ -96,8 +114,8 @@ export class TokenStateClient {
     this.onStateUpdate(
       decode(StateDecoder, json).map(tokenState => ({
         id: tokenState.id,
-        x: tokenState.x,
-        y: tokenState.y,
+        x: tokenState.start_x,
+        y: tokenState.start_y,
         type: tokenState.type,
         icon: ICONS_BY_TYPE.get(tokenState.type) || "ahhh"
       }))
