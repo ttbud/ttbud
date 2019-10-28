@@ -60,7 +60,7 @@ const Token: React.FC<Props> = (props: Props) => {
         raised={isDragging}
         ref={ref}
       >
-        <CardMedia className={classes.media} image={props.icon} />
+        <CardMedia className={classes.media} image={props.icon}  component={'div'}/>
       </Card>
     </Draggable>
   );
