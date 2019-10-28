@@ -108,7 +108,7 @@ const App = () => {
       icon: type.icon
     };
     if (client) {
-      client.sendCreate(token);
+      client.queueCreate(token);
     }
     setTokens(tokens.push(token));
   };
@@ -127,7 +127,7 @@ const App = () => {
           icon: token.icon
         };
         if (client) {
-          client.sendUpdate(newToken);
+          client.queueUpdate(newToken);
         }
         setTokens(tokens.set(i, newToken));
       }}
@@ -161,7 +161,7 @@ const App = () => {
       icon: wall
     };
     if (client) {
-      client.sendCreate(token);
+      client.queueCreate(token);
     }
     setTokens(tokens.push(token));
   };
@@ -190,7 +190,7 @@ const App = () => {
     for (const [i, token] of tokens.entries()) {
       if (token.x === x && token.y === y) {
         if (client) {
-          client.sendDelete(token.id);
+          client.queueDelete(token.id);
         }
 
         setTokens(tokens.delete(i));

@@ -75,21 +75,22 @@ class WebsocketManager:
     async def consume(self, json_message, room_id):
 
         try:
-            message = json.loads(json_message)
+            messages = json.loads(json_message)
         except json.JSONDecodeError as e:
             print(e)
             return
-        action = message.get('action', None)
-        data = message.get('data', None)
-        if action == 'delete':
-            if self.rooms[room_id].get(data['id'], None):
-                del self.rooms[room_id][data['id']]
-        elif self.validate_token(data) and \
-                self.validate_position(data, room_id) and \
-                (action == 'create' or action == 'update'):
-            self.create_or_update_token(data, room_id)
-        else:
-            print(f'Received an invalid action or token: {action}: {data}')
+        for message in messages:
+            action = message.get('action', None)
+            data = message.get('data', None)
+            if action == 'delete':
+                if self.rooms[room_id].get(data['id'], None):
+                    del self.rooms[room_id][data['id']]
+            elif self.validate_token(data) and \
+                    self.validate_position(data, room_id) and \
+                    (action == 'create' or action == 'update'):
+                self.create_or_update_token(data, room_id)
+            else:
+                print(f'Received an invalid action or token: {action}: {data}')
         self._send_q.put((self.get_state(room_id), room_id))
 
     def validate_token(self, token):

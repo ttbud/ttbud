@@ -28,6 +28,9 @@ export interface TokenState {
 }
 
 export class TokenStateClient {
+  private updateCallback: null | number = null;
+  private updates: any[] = [];
+
   public constructor(
     private readonly socket: WebSocket,
     private readonly onStateUpdate: (state: TokenState[]) => void
@@ -48,61 +51,73 @@ export class TokenStateClient {
     return this.socket.readyState === WebSocket.OPEN;
   }
 
-  public sendDelete(tokenId: string) {
+  public queueDelete(tokenId: string) {
     if (!this.isConnected()) {
       return;
     }
-    this.socket.send(
-      JSON.stringify({
-        action: "delete",
-        data: { id: tokenId }
-      })
-    );
+    this.updates.push({
+      action: "delete",
+      data: { id: tokenId }
+    });
+    this.scheduleSendEvent();
   }
 
-  public sendCreate(token: TokenState) {
+  public queueCreate(token: TokenState) {
     if (!this.isConnected()) {
       return;
     }
-
-    this.socket.send(
-      JSON.stringify({
-        action: "create",
-        data: {
-          id: token.id,
-          type: token.type,
-          icon: token.icon,
-          start_x: token.x,
-          start_y: token.y,
-          start_z: 0,
-          end_x: token.x + 50,
-          end_y: token.y + 50,
-          end_z: 50
-        }
-      })
-    );
+    this.updates.push({
+      action: "create",
+      data: {
+        id: token.id,
+        type: token.type,
+        icon: token.icon,
+        start_x: token.x,
+        start_y: token.y,
+        start_z: 0,
+        end_x: token.x + 50,
+        end_y: token.y + 50,
+        end_z: 50
+      }
+    });
+    this.scheduleSendEvent();
   }
 
-  public sendUpdate(token: TokenState) {
+  public queueUpdate(token: TokenState) {
     if (!this.isConnected()) {
       return;
     }
-    this.socket.send(
-      JSON.stringify({
-        action: "update",
-        data: {
-          id: token.id,
-          type: token.type,
-          icon: token.icon,
-          start_x: token.x,
-          start_y: token.y,
-          start_z: 0,
-          end_x: token.x + 50,
-          end_y: token.y + 50,
-          end_z: 50
-        }
-      })
-    );
+    this.updates.push({
+      action: "update",
+      data: {
+        id: token.id,
+        type: token.type,
+        icon: token.icon,
+        start_x: token.x,
+        start_y: token.y,
+        start_z: 0,
+        end_x: token.x + 50,
+        end_y: token.y + 50,
+        end_z: 50
+      }
+    });
+    this.scheduleSendEvent();
+  }
+
+  private scheduleSendEvent() {
+    if (this.updateCallback != null) {
+      window.clearTimeout(this.updateCallback);
+    }
+    this.updateCallback = window.setTimeout(this.sendEvents.bind(this), 200);
+  }
+
+  private sendEvents() {
+    if (!this.isConnected()) {
+      return;
+    }
+    console.log("UPDATES", this.updates);
+    this.socket.send(JSON.stringify(this.updates));
+    this.updates = [];
   }
 
   private static onConnect() {
