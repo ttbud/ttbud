@@ -59,10 +59,12 @@ const TOKEN_TYPES = [
   { id: "643c7cf8-befb-4a72-b707-9c0399d2a365", icon: dwarf, type: "dwarf" }
 ];
 
+type MouseType = "drawing_walls" | "deleting" | "none";
+
 const App = () => {
   const classes = useStyles();
 
-  const [isDrawingWalls, setDrawingWalls] = useState(false);
+  const [mouseType, setMouseType] = useState<MouseType>("none");
   const [tokens, setTokens] = useState(List.of<TokenState>());
   const [client, setClient] = useState<TokenStateClient>();
 
@@ -136,20 +138,21 @@ const App = () => {
 
   const onMapMouseDown = (e: MouseEvent) => {
     if (e.button === 0) {
-      setDrawingWalls(true);
+      setMouseType("drawing_walls");
       placeWallAt(e.clientX, e.clientY);
-    } else if (e.button === 1) {
-
+    } else if (e.button === 2) {
+      setMouseType("deleting");
+      deleteAt(e.clientX, e.clientY);
     }
   };
 
-  const onMapMouseUp = () => setDrawingWalls(false);
+  const onMapMouseUp = () => setMouseType("none");
 
   const placeWallAt = (x: number, y: number) => {
     const gridX = clickSnapToGrid(x);
     const gridY = clickSnapToGrid(y);
 
-    if (tokenIsHere(gridX, gridY)) {
+    if (getTokenAt(gridX, gridY)) {
       return;
     }
 
@@ -166,35 +169,38 @@ const App = () => {
     setTokens(tokens.push(token));
   };
 
-  const tokenIsHere = (x: number, y: number) => {
-    for (const token of tokens) {
-      if (token.x === x && token.y === y) {
-        return true;
-      }
-    }
-
-    return false;
-  };
-
-  const onMapMouseMoving = (e: MouseEvent) => {
-    if (!isDrawingWalls) {
-      return;
-    }
-    placeWallAt(e.clientX, e.clientY);
-  };
-
-  const onMapRightClick = (e: MouseEvent) => {
-    e.preventDefault();
-    const x = clickSnapToGrid(e.clientX);
-    const y = clickSnapToGrid(e.clientY);
+  const deleteAt = (x: number, y: number) => {
+    const gridX = clickSnapToGrid(x);
+    const gridY = clickSnapToGrid(y);
     for (const [i, token] of tokens.entries()) {
-      if (token.x === x && token.y === y) {
+      if (token.x === gridX && token.y === gridY) {
         if (client) {
           client.queueDelete(token.id);
         }
 
         setTokens(tokens.delete(i));
+        break
       }
+    }
+  };
+
+  const getTokenAt = (x: number, y: number): TokenState|null => {
+    const gridX = clickSnapToGrid(x);
+    const gridY = clickSnapToGrid(y);
+    for (const token of tokens) {
+      if (token.x === gridX && token.y === gridY) {
+        return token;
+      }
+    }
+
+    return null;
+  };
+
+  const onMapMouseMoving = (e: MouseEvent) => {
+    if (mouseType === "drawing_walls") {
+      placeWallAt(e.clientX, e.clientY);
+    } else if (mouseType === "deleting") {
+      deleteAt(e.clientX, e.clientY);
     }
   };
 
@@ -205,7 +211,7 @@ const App = () => {
         onMouseUp={onMapMouseUp}
         onMouseDown={onMapMouseDown}
         onMouseMove={onMapMouseMoving}
-        onContextMenu={onMapRightClick}
+        onContextMenu={e => e.preventDefault() }
       >
         {tokenIcons}
       </div>
