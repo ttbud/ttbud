@@ -55,13 +55,14 @@ const useStyles = makeStyles({
 });
 
 const TOKEN_TYPES = [
-  { id: "a511ebd2-827b-490d-b20a-c206e4edd25e", icon: bear, type: 'bear'},
-  { id: "643c7cf8-befb-4a72-b707-9c0399d2a365", icon: dwarf, type: 'dwarf' }
+  { id: "a511ebd2-827b-490d-b20a-c206e4edd25e", icon: bear, type: "bear" },
+  { id: "643c7cf8-befb-4a72-b707-9c0399d2a365", icon: dwarf, type: "dwarf" }
 ];
 
 const App = () => {
   const classes = useStyles();
 
+  const [isDrawingWalls, setDrawingWalls] = useState(false);
   const [tokens, setTokens] = useState(List.of<TokenState>());
   const [client, setClient] = useState<TokenStateClient>();
 
@@ -133,18 +134,53 @@ const App = () => {
     />
   ));
 
-  const onMapClick = (e: MouseEvent) => {
+  const onMapMouseDown = (e: MouseEvent) => {
+    if (e.button === 0) {
+      setDrawingWalls(true);
+      placeWallAt(e.clientX, e.clientY);
+    } else if (e.button === 1) {
+
+    }
+  };
+
+  const onMapMouseUp = () => setDrawingWalls(false);
+
+  const placeWallAt = (x: number, y: number) => {
+    const gridX = clickSnapToGrid(x);
+    const gridY = clickSnapToGrid(y);
+
+    if (tokenIsHere(gridX, gridY)) {
+      return;
+    }
+
     const token = {
       id: uuid(),
-      x: clickSnapToGrid(e.clientX),
-      y: clickSnapToGrid(e.clientY),
-      type: 'wall',
+      x: clickSnapToGrid(x),
+      y: clickSnapToGrid(y),
+      type: "wall",
       icon: wall
     };
     if (client) {
       client.sendCreate(token);
     }
     setTokens(tokens.push(token));
+  };
+
+  const tokenIsHere = (x: number, y: number) => {
+    for (const token of tokens) {
+      if (token.x === x && token.y === y) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  const onMapMouseMoving = (e: MouseEvent) => {
+    if (!isDrawingWalls) {
+      return;
+    }
+    placeWallAt(e.clientX, e.clientY);
   };
 
   const onMapRightClick = (e: MouseEvent) => {
@@ -166,8 +202,10 @@ const App = () => {
     <div>
       <div
         className={classes.map}
-        onClick={onMapClick}
-        onContextMenuCapture={onMapRightClick}
+        onMouseUp={onMapMouseUp}
+        onMouseDown={onMapMouseDown}
+        onMouseMove={onMapMouseMoving}
+        onContextMenu={onMapRightClick}
       >
         {tokenIcons}
       </div>
