@@ -95,15 +95,27 @@ class WebsocketManager:
     def validate_token(self, token):
 
         return 'id' in token.keys() and \
-               'x' in token.keys() and \
-               'y' in token.keys() and \
+               'start_x' in token.keys() and \
+               'end_x' in token.keys() and \
+               'start_y' in token.keys() and \
+               'end_y' in token.keys() and \
                'icon' in token.keys()
 
     def validate_position(self, new_token, room_id):
 
         for token in self.rooms[room_id].values():
-            if token['x'] == new_token['x'] and token['y'] == new_token['y']:
+            if self.corner_intersects_token(token, new_token['start_x'], new_token['start_y']) or \
+                    self.corner_intersects_token(token, new_token['start_x'], new_token['end_y']) or \
+                    self.corner_intersects_token(token, new_token['end_x'], new_token['start_y']) or \
+                    self.corner_intersects_token(token, new_token['end_x'], new_token['end_y']):
                 return False
+        return
+
+    def corner_intersects_token(self, token, x, y):
+
+        if token['end_x'] >= x >= token['start_x'] and \
+                token['end_y'] >= y >= token('start_y'):
+            return False
         return True
 
     def create_or_update_token(self, new_token, room_id):
