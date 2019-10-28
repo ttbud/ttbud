@@ -99,22 +99,67 @@ class WebsocketManager:
                'end_x' in token.keys() and \
                'start_y' in token.keys() and \
                'end_y' in token.keys() and \
+               'start_z' in token.keys() and \
+               'end_z' in token.keys() and \
                'icon' in token.keys()
 
     def validate_position(self, new_token, room_id):
 
         for token in self.rooms[room_id].values():
-            if self.corner_intersects_token(token, new_token['start_x'], new_token['start_y']) or \
-                    self.corner_intersects_token(token, new_token['start_x'], new_token['end_y']) or \
-                    self.corner_intersects_token(token, new_token['end_x'], new_token['start_y']) or \
-                    self.corner_intersects_token(token, new_token['end_x'], new_token['end_y']):
+            if self.check_collision(token, new_token) or self.check_collision(new_token, token):
                 return False
-        return
+        return True
 
-    def corner_intersects_token(self, token, x, y):
+    def check_collision(self, token1, token2):
+
+        if self.corner_intersects_token(token1,
+                                        token2['start_x'],
+                                        token2['start_y'],
+                                        token2['start_z'],
+                                        ) or \
+                self.corner_intersects_token(token1,
+                                             token2['start_x'],
+                                             token2['end_y'],
+                                             token2['start_z'],
+                                             ) or \
+                self.corner_intersects_token(token1,
+                                             token2['end_x'],
+                                             token2['start_y'],
+                                             token2['start_z'],
+                                             ) or \
+                self.corner_intersects_token(token1,
+                                             token2['end_x'],
+                                             token2['end_y'],
+                                             token2['start_z'],
+                                             ) or \
+                self.corner_intersects_token(token1,
+                                             token2['start_x'],
+                                             token2['start_y'],
+                                             token2['end_z'],
+                                             ) or \
+                self.corner_intersects_token(token1,
+                                             token2['start_x'],
+                                             token2['end_y'],
+                                             token2['end_z'],
+                                             ) or \
+                self.corner_intersects_token(token1,
+                                             token2['end_x'],
+                                             token2['start_y'],
+                                             token2['end_z'],
+                                             ) or \
+                self.corner_intersects_token(token1,
+                                             token2['end_x'],
+                                             token2['end_y'],
+                                             token2['end_z'],
+                                             ):
+            return False
+        return True
+
+    def corner_intersects_token(self, token, x, y, z):
 
         if token['end_x'] >= x >= token['start_x'] and \
-                token['end_y'] >= y >= token('start_y'):
+                token['end_y'] >= y >= token['start_y'] and \
+                token['end_z'] >= z >= token['start_z']:
             return False
         return True
 
