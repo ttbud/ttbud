@@ -44,8 +44,10 @@ const Token: React.FC<Props> = (props: Props) => {
       offsetParent={document.body}
       position={props.pos}
       onMouseDown={e => {
-        setDragging(true);
-        e.stopPropagation();
+        if (e.button === 0) {
+          setDragging(true);
+          e.stopPropagation();
+        }
       }}
       onStop={(event, data) => {
         setDragging(false);
