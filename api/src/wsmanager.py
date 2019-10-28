@@ -17,7 +17,7 @@ class WebsocketManager:
         self.port = port
         self.rooms = {}
         self.uuid_q = uuid_q
-        self._valid_paths = set()
+        self._valid_room_ids = set()
 
     def start_server(self):
 
@@ -35,44 +35,44 @@ class WebsocketManager:
         else:
             self._loop.run_forever()
 
-    async def consumer_handler(self, websocket, path):
+    async def consumer_handler(self, websocket, room_id):
 
-        p = path.lstrip('/')
-        print(p)
+        room_id = room_id.lstrip('/')
+        print(room_id)
         while True:
             try:
-                self._valid_paths.add(str(self.uuid_q.get_nowait()))
+                self._valid_room_ids.add(str(self.uuid_q.get_nowait()))
             except queue.Empty:
                 break
-        if p in self._valid_paths:
-            if self._connections.get(p, None):
-                self._connections[p].add(websocket)
+        if room_id in self._valid_room_ids:
+            if self._connections.get(room_id, None):
+                self._connections[room_id].add(websocket)
             else:
-                self._connections[p] = set()
-                self._connections[p].add(websocket)
-            if self.rooms.get(p, None):
-                self._send_q.put((self.get_state(p), p))
+                self._connections[room_id] = set()
+                self._connections[room_id].add(websocket)
+            if self.rooms.get(room_id, None):
+                self._send_q.put((self.get_state(room_id), room_id))
             else:
-                self.rooms[p] = {}
+                self.rooms[room_id] = {}
             try:
                 async for message in websocket:
-                    await self.consume(message, p)
+                    await self.consume(message, room_id)
             finally:
-                self._connections[p].remove(websocket)
+                self._connections[room_id].remove(websocket)
 
     async def producer_handler(self):
 
         while True:
             try:
-                message, path = self._send_q.get_nowait()
+                message, room_id = self._send_q.get_nowait()
             except queue.Empty:
                 await asyncio.sleep(0.0001)          # Induced delay to free up event loop
                 continue
-            if message is not None and self._connections[path]:
+            if message is not None and self._connections[room_id]:
                 print(message)
-                await asyncio.wait([client.send(message) for client in self._connections[path]])
+                await asyncio.wait([client.send(message) for client in self._connections[room_id]])
 
-    async def consume(self, json_message, path):
+    async def consume(self, json_message, room_id):
 
         try:
             message = json.loads(json_message)
@@ -82,15 +82,15 @@ class WebsocketManager:
         action = message.get('action', None)
         data = message.get('data', None)
         if action == 'delete':
-            if self.rooms[path].get(data['id'], None):
-                del self.rooms[path][data['id']]
+            if self.rooms[room_id].get(data['id'], None):
+                del self.rooms[room_id][data['id']]
         elif self.validate_token(data) and \
-                self.validate_position(data, path) and \
+                self.validate_position(data, room_id) and \
                 (action == 'create' or action == 'update'):
-            self.create_or_update_token(data, path)
+            self.create_or_update_token(data, room_id)
         else:
             print(f'Received an invalid action or token: {action}: {data}')
-        self._send_q.put((self.get_state(path), path))
+        self._send_q.put((self.get_state(room_id), room_id))
 
     def validate_token(self, token):
 
@@ -99,22 +99,22 @@ class WebsocketManager:
                'y' in token.keys() and \
                'icon' in token.keys()
 
-    def validate_position(self, new_token, path):
+    def validate_position(self, new_token, room_id):
 
-        for token in self.rooms[path].values():
+        for token in self.rooms[room_id].values():
             if token['x'] == new_token['x'] and token['y'] == new_token['y']:
                 return False
         return True
 
-    def create_or_update_token(self, new_token, path):
+    def create_or_update_token(self, new_token, room_id):
 
         if new_token and new_token.get('id', None):
-            self.rooms[path][new_token['id']] = new_token
+            self.rooms[room_id][new_token['id']] = new_token
             print(new_token)
 
-    def get_state(self, path):
+    def get_state(self, room_id):
 
-        return json.dumps(list(self.rooms[path].values()))
+        return json.dumps(list(self.rooms[room_id].values()))
 
 
 def start_websocket(uuid_q, host_ip, host_port):
