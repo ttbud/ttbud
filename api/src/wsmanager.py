@@ -130,9 +130,9 @@ class WebsocketManager:
     def create_or_update_token(self, new_token, room_id):
 
         print(new_token)
-        if self.rooms[room_id].get(new_token['id']):
+        if self.rooms[room_id].game_state.get(new_token['id']):
             # Remove previous position data for existing token
-            positions = self.rooms[room_id].id_to_positions[new_token['id']].pop()
+            positions = self.rooms[room_id].id_to_positions[new_token['id']]
             for pos in positions:
                 del self.rooms[room_id].positions_to_ids[pos]
 
