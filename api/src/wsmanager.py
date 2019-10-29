@@ -91,7 +91,7 @@ class WebsocketManager:
                 if self.rooms[room_id].get(data['id'], None):
                     del self.rooms[room_id][data['id']]
             elif self.validate_token(data) and \
-                    self.validate_position(data, room_id) and \
+                    self.validate_position(data) and \
                     (action == 'create' or action == 'update'):
                 self.create_or_update_token(data, room_id)
             else:
@@ -112,64 +112,12 @@ class WebsocketManager:
                token['start_y'] < token['end_y'] and \
                token['start_z'] < token['end_z']
 
-    def validate_position(self, new_token, room_id):
+    def validate_position(self, new_token):
 
-        for token in self.rooms[room_id].values():
-            if self.check_collision(token, new_token) or self.check_collision(new_token, token):
+        blocks = self.get_unit_blocks(new_token)
+        for block in blocks:
+            if self._positions_to_ids.get(block, False):
                 return False
-        return True
-
-    def check_collision(self, token1, token2):
-
-        if self.corner_intersects_token(token1,
-                                        token2['start_x'],
-                                        token2['start_y'],
-                                        token2['start_z'],
-                                        ) or \
-                self.corner_intersects_token(token1,
-                                             token2['start_x'],
-                                             token2['end_y'],
-                                             token2['start_z'],
-                                             ) or \
-                self.corner_intersects_token(token1,
-                                             token2['end_x'],
-                                             token2['start_y'],
-                                             token2['start_z'],
-                                             ) or \
-                self.corner_intersects_token(token1,
-                                             token2['end_x'],
-                                             token2['end_y'],
-                                             token2['start_z'],
-                                             ) or \
-                self.corner_intersects_token(token1,
-                                             token2['start_x'],
-                                             token2['start_y'],
-                                             token2['end_z'],
-                                             ) or \
-                self.corner_intersects_token(token1,
-                                             token2['start_x'],
-                                             token2['end_y'],
-                                             token2['end_z'],
-                                             ) or \
-                self.corner_intersects_token(token1,
-                                             token2['end_x'],
-                                             token2['start_y'],
-                                             token2['end_z'],
-                                             ) or \
-                self.corner_intersects_token(token1,
-                                             token2['end_x'],
-                                             token2['end_y'],
-                                             token2['end_z'],
-                                             ):
-            return False
-        return True
-
-    def corner_intersects_token(self, token, x, y, z):
-
-        if token['end_x'] >= x >= token['start_x'] and \
-                token['end_y'] >= y >= token['start_y'] and \
-                token['end_z'] >= z >= token['start_z']:
-            return False
         return True
 
     def create_or_update_token(self, new_token, room_id):
