@@ -23,14 +23,13 @@ class RoomData:
 
 class WebsocketManager:
 
-    def __init__(self, uuid_q, host, port):
+    def __init__(self, uuid_q, port):
 
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
         self.rooms = {}
         self.uuid_q = uuid_q
         self._send_q = queue.Queue()
-        self.host = host
         self.port = port
         self._valid_room_ids = set()
 
@@ -39,7 +38,7 @@ class WebsocketManager:
         try:
             ws_server = websockets.serve(
                 self.consumer_handler,
-                self.host,
+                '0.0.0.0',
                 self.port,
             )
 
@@ -51,7 +50,6 @@ class WebsocketManager:
             self._loop.run_forever()
 
     async def consumer_handler(self, websocket, room_id):
-
         room_id = room_id.lstrip('/')
         print(room_id)
         while True:
@@ -171,7 +169,6 @@ class WebsocketManager:
         return json.dumps(list(self.rooms[room_id].game_state.values()))
 
 
-def start_websocket(uuid_q, host_ip, host_port):
-
-    ws = WebsocketManager(uuid_q, host_ip, host_port)
+def start_websocket(uuid_q, host_port):
+    ws = WebsocketManager(uuid_q, host_port)
     ws.start_server()

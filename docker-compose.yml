@@ -1,0 +1,31 @@
+version: '3'
+services:
+  api:
+    build: api
+    environment:
+      DOMAIN:
+      API_HTTP_PORT:
+      API_WEBSOCKET_PORT:
+    volumes:
+      - ./api:/app
+  web:
+    user: ${WEB_USER-root}
+    build: web
+    volumes:
+      - ./web:/app
+  ingress:
+    image: abiosoft/caddy
+    environment:
+      DOMAIN:
+      CERT_CONFIG:
+      API_HTTP_PORT:
+      API_WEBSOCKET_PORT:
+      ACME_AGREE: 'true'
+    volumes:
+      - ./web/build:/var/www/ttbud/web
+      - ./infra/ingress/Caddyfile:/etc/Caddyfile
+      - ${CADDY_CERT_PATH}:/root/.caddy
+    ports:
+      - 80:80
+      - 443:443
+      - 1234:1234
