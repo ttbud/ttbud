@@ -95,8 +95,8 @@ class WebsocketManager:
             action = message.get('action', None)
             data = message.get('data', None)
             if action == 'delete':
-                if self.rooms[room_id].game_state.get(data['id'], None):
-                    del self.rooms[room_id].game_state[data['id']]
+                if self.rooms[room_id].game_state.get(data['id'], False):
+                    self.delete_token(data, room_id)
             elif self.validate_token(data) and \
                     self.validate_position(data, room_id) and \
                     (action == 'create' or action == 'update'):
@@ -132,9 +132,7 @@ class WebsocketManager:
         print(new_token)
         if self.rooms[room_id].game_state.get(new_token['id']):
             # Remove previous position data for existing token
-            positions = self.rooms[room_id].id_to_positions[new_token['id']]
-            for pos in positions:
-                del self.rooms[room_id].positions_to_ids[pos]
+            self.remove_positions(new_token, room_id)
 
         # Update state for new or existing token
         blocks = self.get_unit_blocks(new_token)
@@ -142,6 +140,21 @@ class WebsocketManager:
         for block in blocks:
             self.rooms[room_id].positions_to_ids[block] = new_token['id']
         self.rooms[room_id].game_state[new_token['id']] = new_token
+
+    def delete_token(self, token, room_id):
+
+        if self.rooms[room_id].game_state.get(token['id'], False):
+            # Remove token data from position dictionaries
+            self.remove_positions(token, room_id)
+            del self.rooms[room_id].id_to_positions[token['id']]
+            # Remove the token from the state
+            del self.rooms[room_id].game_state[token['id']]
+
+    def remove_positions(self, token, room_id):
+
+        positions = self.rooms[room_id].id_to_positions[token['id']]
+        for pos in positions:
+            del self.rooms[room_id].positions_to_ids[pos]
 
     @staticmethod
     def get_unit_blocks(token):
