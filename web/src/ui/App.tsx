@@ -84,20 +84,20 @@ const App = () => {
     let resp;
     let wsUrl;
     try {
-      resp = await fetch("http://ttbud.sjoh.net:5000/api/socket");
+      resp = await fetch("/api/socket");
       const json = await resp.json();
       wsUrl = json.path;
     } catch (e) {
       return null;
     }
-    const httpUrl = `http://${window.location.host}/${btoa(wsUrl)}`;
+    const httpUrl = `/room/${btoa(wsUrl)}`;
     window.history.replaceState({}, "Your special room", httpUrl);
     return wsUrl;
   };
 
   useEffect(() => {
     const connect = async () => {
-      const path = window.location.pathname.split("/")[1];
+      const path = window.location.pathname.split("/room/")[1];
       const roomUrl = path ? atob(path) : await getNewRoomUrl();
       if (!roomUrl) {
         return;
