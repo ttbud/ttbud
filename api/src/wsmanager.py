@@ -8,16 +8,26 @@ import websockets
 UNIT_SIZE = 50
 
 
+class RoomData:
+
+    def __init__(self, room_id, initial_connection=None):
+
+        self.room_id = room_id
+        self.game_state = {}
+        self.id_to_positions = {}
+        self.positions_to_ids = {}
+        self.clients = set()
+        if initial_connection:
+            self.clients.add(initial_connection)
+
+
 class WebsocketManager:
 
     def __init__(self, uuid_q, host, port):
 
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
-        self._connections = {}
         self.rooms = {}
-        self._id_to_positions = {}
-        self._positions_to_ids = {}
         self.uuid_q = uuid_q
         self._send_q = queue.Queue()
         self.host = host
@@ -50,20 +60,17 @@ class WebsocketManager:
             except queue.Empty:
                 break
         if room_id in self._valid_room_ids:
-            if self._connections.get(room_id, None):
-                self._connections[room_id].add(websocket)
-            else:
-                self._connections[room_id] = set()
-                self._connections[room_id].add(websocket)
-            if self.rooms.get(room_id, None):
+            if self.rooms.get(room_id, False):
+                self.rooms[room_id].clients.add(websocket)
                 self._send_q.put((self.get_state(room_id), room_id))
             else:
-                self.rooms[room_id] = {}
+                self.rooms[room_id] = RoomData(room_id, initial_connection=websocket)
+
             try:
                 async for message in websocket:
                     await self.consume(message, room_id)
             finally:
-                self._connections[room_id].remove(websocket)
+                self.rooms[room_id].clients.remove(websocket)
 
     async def producer_handler(self):
 
@@ -73,9 +80,9 @@ class WebsocketManager:
             except queue.Empty:
                 await asyncio.sleep(0.0001)          # Induced delay to free up event loop
                 continue
-            if message is not None and self._connections[room_id]:
+            if message is not None and self.rooms[room_id].clients:
                 print(message)
-                await asyncio.wait([client.send(message) for client in self._connections[room_id]])
+                await asyncio.wait([client.send(message) for client in self.rooms[room_id].clients])
 
     async def consume(self, json_message, room_id):
 
@@ -88,10 +95,10 @@ class WebsocketManager:
             action = message.get('action', None)
             data = message.get('data', None)
             if action == 'delete':
-                if self.rooms[room_id].get(data['id'], None):
-                    del self.rooms[room_id][data['id']]
+                if self.rooms[room_id].game_state.get(data['id'], None):
+                    del self.rooms[room_id].game_state[data['id']]
             elif self.validate_token(data) and \
-                    self.validate_position(data) and \
+                    self.validate_position(data, room_id) and \
                     (action == 'create' or action == 'update'):
                 self.create_or_update_token(data, room_id)
             else:
@@ -112,11 +119,11 @@ class WebsocketManager:
                token['start_y'] < token['end_y'] and \
                token['start_z'] < token['end_z']
 
-    def validate_position(self, new_token):
+    def validate_position(self, new_token, room_id):
 
         blocks = self.get_unit_blocks(new_token)
         for block in blocks:
-            if self._positions_to_ids.get(block, False):
+            if self.rooms[room_id].positions_to_ids.get(block, False):
                 return False
         return True
 
@@ -125,16 +132,16 @@ class WebsocketManager:
         print(new_token)
         if self.rooms[room_id].get(new_token['id']):
             # Remove previous position data for existing token
-            positions = self._id_to_positions[new_token['id']].pop()
+            positions = self.rooms[room_id].id_to_positions[new_token['id']].pop()
             for pos in positions:
-                del self._positions_to_ids[pos]
+                del self.rooms[room_id].positions_to_ids[pos]
 
         # Update state for new or existing token
         blocks = self.get_unit_blocks(new_token)
-        self._id_to_positions[new_token['id']] = blocks
+        self.rooms[room_id].id_to_positions[new_token['id']] = blocks
         for block in blocks:
-            self._positions_to_ids[block] = new_token['id']
-        self.rooms[room_id][new_token['id']] = new_token
+            self.rooms[room_id].positions_to_ids[block] = new_token['id']
+        self.rooms[room_id].game_state[new_token['id']] = new_token
 
     @staticmethod
     def get_unit_blocks(token):
@@ -148,7 +155,7 @@ class WebsocketManager:
 
     def get_state(self, room_id):
 
-        return json.dumps(list(self.rooms[room_id].values()))
+        return json.dumps(list(self.rooms[room_id].game_state.values()))
 
 
 def start_websocket(uuid_q, host_ip, host_port):
