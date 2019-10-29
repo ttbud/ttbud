@@ -5,6 +5,9 @@ import json
 import websockets
 
 
+UNIT_SIZE = 50
+
+
 class WebsocketManager:
 
     def __init__(self, uuid_q, host, port):
@@ -12,11 +15,13 @@ class WebsocketManager:
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
         self._connections = {}
+        self.rooms = {}
+        self._id_to_positions = {}
+        self._positions_to_ids = {}
+        self.uuid_q = uuid_q
         self._send_q = queue.Queue()
         self.host = host
         self.port = port
-        self.rooms = {}
-        self.uuid_q = uuid_q
         self._valid_room_ids = set()
 
     def start_server(self):
@@ -102,7 +107,10 @@ class WebsocketManager:
                'end_y' in token.keys() and \
                'start_z' in token.keys() and \
                'end_z' in token.keys() and \
-               'icon' in token.keys()
+               'icon' in token.keys() and \
+               token['start_x'] < token['end_x'] and \
+               token['start_y'] < token['end_y'] and \
+               token['start_z'] < token['end_z']
 
     def validate_position(self, new_token, room_id):
 
@@ -166,9 +174,29 @@ class WebsocketManager:
 
     def create_or_update_token(self, new_token, room_id):
 
-        if new_token and new_token.get('id', None):
-            self.rooms[room_id][new_token['id']] = new_token
-            print(new_token)
+        print(new_token)
+        if self.rooms[room_id].get(new_token['id']):
+            # Remove previous position data for existing token
+            positions = self._id_to_positions[new_token['id']].pop()
+            for pos in positions:
+                del self._positions_to_ids[pos]
+
+        # Update state for new or existing token
+        blocks = self.get_unit_blocks(new_token)
+        self._id_to_positions[new_token['id']] = blocks
+        for block in blocks:
+            self._positions_to_ids[block] = new_token['id']
+        self.rooms[room_id][new_token['id']] = new_token
+
+    @staticmethod
+    def get_unit_blocks(token):
+
+        unit_blocks = []
+        for x in range(token['start_x'], token['end_x'], UNIT_SIZE):
+            for y in range(token['start_y'], token['end_y'], UNIT_SIZE):
+                for z in range(token['start_z'], token['end_z'], UNIT_SIZE):
+                    unit_blocks.append((x, y, z))
+        return unit_blocks
 
     def get_state(self, room_id):
 
