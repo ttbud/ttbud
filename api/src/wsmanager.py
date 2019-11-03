@@ -103,7 +103,8 @@ class WebsocketManager:
                 print(f'Received an invalid action or token: {action}: {data}')
         self._send_q.put((self.get_state(room_id), room_id))
 
-    def validate_token(self, token):
+    @staticmethod
+    def validate_token(token):
 
         return 'id' in token.keys() and \
                'start_x' in token.keys() and \
