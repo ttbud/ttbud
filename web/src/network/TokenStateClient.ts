@@ -1,12 +1,13 @@
 import * as t from "io-ts";
 import { decode } from "../util/decode-util";
+import { GRID_SIZE_PX } from "../config";
 import beard from "../icon/beard.svg";
 import bowman from "../icon/bowman.svg";
 import kangaroo from "../icon/kangaroo.svg";
 import suspicious from "../icon/suspicious.svg";
 import swordman from "../icon/swordman.svg";
 import stoneWall from "../icon/stone-wall.svg";
-import wolfHead from "../icon/stone-wall.svg";
+import wolfHead from "../icon/wolf-head.svg";
 import elfHelmet from "../icon/elf-helmet.svg";
 import entMouth from "../icon/ent-mouth.svg";
 
@@ -87,8 +88,8 @@ export class TokenStateClient {
         start_x: token.x,
         start_y: token.y,
         start_z: 0,
-        end_x: token.x + 50,
-        end_y: token.y + 50,
+        end_x: token.x + GRID_SIZE_PX,
+        end_y: token.y + GRID_SIZE_PX,
         end_z: 50
       }
     });
@@ -108,8 +109,8 @@ export class TokenStateClient {
         start_x: token.x,
         start_y: token.y,
         start_z: 0,
-        end_x: token.x + 50,
-        end_y: token.y + 50,
+        end_x: token.x + GRID_SIZE_PX,
+        end_y: token.y + GRID_SIZE_PX,
         end_z: 50
       }
     });
