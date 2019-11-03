@@ -1,2 +1,10 @@
+# Intellij
 .idea
+*.iml
+
+# Python
+__pycache__
 venv/
+
+# Config
+.env
