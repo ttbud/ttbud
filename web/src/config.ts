@@ -1,1 +1,1 @@
-export const GRID_SIZE_PX = 50;
+export const GRID_SIZE_PX = 40;
