@@ -84,7 +84,7 @@ const App = () => {
     let resp;
     let wsUrl;
     try {
-      resp = await fetch("http://192.168.0.102:5000/api/socket");
+      resp = await fetch("http://ttbud.sjoh.net:5000/api/socket");
       const json = await resp.json();
       wsUrl = json.path;
     } catch (e) {
