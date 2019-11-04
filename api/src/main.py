@@ -6,17 +6,7 @@ import uuid
 import flask
 from flask_cors import CORS
 
-try:
-    # Most common case - running this from a terminal
-    from wsmanager import start_websocket
-except ImportError:
-    try:
-        # Running from an IDE will use this
-        from wsmanager import start_websocket
-    except ImportError:
-        # Weird edge case - if this fails, we crash, because something is wrong, and we don't know what
-        from src.wsmanager import start_websocket
-
+from wsmanager import start_websocket
 
 if __name__ == '__main__':
     websocket_port = int(os.environ['API_WEBSOCKET_PORT'])
