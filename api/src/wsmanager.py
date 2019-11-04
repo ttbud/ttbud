@@ -113,7 +113,7 @@ class WebsocketManager:
                'end_y' in token.keys() and \
                'start_z' in token.keys() and \
                'end_z' in token.keys() and \
-               'icon' in token.keys() and \
+               'icon_id' in token.keys() and \
                token['start_x'] < token['end_x'] and \
                token['start_y'] < token['end_y'] and \
                token['start_z'] < token['end_z']

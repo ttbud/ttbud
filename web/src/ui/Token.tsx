@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import Draggable from "react-draggable";
 import { Card, CardMedia, makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "../config";
+import { Icon } from "./icons";
 
 const PADDING = GRID_SIZE_PX / 5;
 const CARD_SIZE = GRID_SIZE_PX - PADDING * 2;
@@ -24,11 +25,12 @@ const useStyles = makeStyles({
 interface Pos {
   x: number;
   y: number;
+  z: number;
 }
 
 interface Props {
-  icon: string;
-  pos?: Pos;
+  icon: Icon;
+  pos: Pos;
   onDropped: (x: number, y: number) => void;
 }
 
@@ -36,7 +38,7 @@ const Token: React.FC<Props> = (props: Props) => {
   const classes = useStyles();
   const [isDragging, setDragging] = useState();
   const ref = useRef<HTMLElement>();
-  const style = isDragging ? { zIndex: 1000 } : {};
+  const style = isDragging ? { zIndex: 1000 } : { zIndex: props.pos.z };
 
   return (
     <Draggable
@@ -60,7 +62,11 @@ const Token: React.FC<Props> = (props: Props) => {
         raised={isDragging}
         ref={ref}
       >
-        <CardMedia className={classes.media} image={props.icon}  component={'div'}/>
+        <CardMedia
+          className={classes.media}
+          image={props.icon.img}
+          component={"div"}
+        />
       </Card>
     </Draggable>
   );
