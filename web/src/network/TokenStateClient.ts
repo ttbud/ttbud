@@ -1,33 +1,13 @@
 import * as t from "io-ts";
 import { decode } from "../util/decode-util";
 import { GRID_SIZE_PX } from "../config";
-import beard from "../icon/beard.svg";
-import bowman from "../icon/bowman.svg";
-import kangaroo from "../icon/kangaroo.svg";
-import suspicious from "../icon/suspicious.svg";
-import swordman from "../icon/swordman.svg";
-import stoneWall from "../icon/stone-wall.svg";
-import wolfHead from "../icon/wolf-head.svg";
-import elfHelmet from "../icon/elf-helmet.svg";
-import entMouth from "../icon/ent-mouth.svg";
-
-const ICONS_BY_TYPE = new Map([
-  ["beard", beard],
-  ["bowman", bowman],
-  ["kangaroo", kangaroo],
-  ["suspicious", suspicious],
-  ["swordman", swordman],
-  ["stoneWall", stoneWall],
-  ["wolfHead", wolfHead],
-  ["elfHelmet", elfHelmet],
-  ["entMouth", entMouth]
-]);
 
 const TokenStateDecoder = t.type({
   id: t.string,
   start_x: t.number,
   start_y: t.number,
-  type: t.string
+  start_z: t.number,
+  icon_id: t.string
 });
 
 const StateDecoder = t.array(TokenStateDecoder);
@@ -36,8 +16,8 @@ export interface TokenState {
   id: string;
   x: number;
   y: number;
-  type: string;
-  icon: string;
+  z: number;
+  iconId: string;
 }
 
 export class TokenStateClient {
@@ -83,8 +63,7 @@ export class TokenStateClient {
       action: "create",
       data: {
         id: token.id,
-        type: token.type,
-        icon: token.icon,
+        icon_id: token.iconId,
         start_x: token.x,
         start_y: token.y,
         start_z: 0,
@@ -104,8 +83,7 @@ export class TokenStateClient {
       action: "update",
       data: {
         id: token.id,
-        type: token.type,
-        icon: token.icon,
+        icon_id: token.iconId,
         start_x: token.x,
         start_y: token.y,
         start_z: 0,
@@ -144,8 +122,8 @@ export class TokenStateClient {
         id: tokenState.id,
         x: tokenState.start_x,
         y: tokenState.start_y,
-        type: tokenState.type,
-        icon: ICONS_BY_TYPE.get(tokenState.type) || "ahhh"
+        z: tokenState.start_z,
+        iconId: tokenState.icon_id
       }))
     );
   }

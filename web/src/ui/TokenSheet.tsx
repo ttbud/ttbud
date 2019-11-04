@@ -1,6 +1,8 @@
 import React from "react";
 import Token from "./Token";
 import { makeStyles, Paper } from "@material-ui/core";
+import { Icon } from "./icons";
+import { List } from "immutable";
 
 const useStyles = makeStyles(theme => ({
   tokenSource: {
@@ -12,15 +14,9 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-export interface TokenType {
-  id: string;
-  type: string;
-  icon: string;
-}
-
 interface Props {
-  tokenTypes: TokenType[];
-  onTokenPlaced: (type: TokenType, x: number, y: number) => void;
+  tokenTypes: List<Icon>;
+  onTokenPlaced: (icon: Icon, x: number, y: number) => void;
 }
 
 const TokenSheet = (props: Props) => {
@@ -29,14 +25,14 @@ const TokenSheet = (props: Props) => {
   return (
     <Paper className={classes.tokenSheet}>
       {props.tokenTypes.map(type => (
-        <div className={classes.tokenSource} key={type.icon}>
+        <div className={classes.tokenSource} key={type.img}>
           <Token
-            icon={type.icon}
+            icon={type}
             // Don't want these to actually move except when they're being
             // dragged, when the token is "Placed" a new one is created on the
             // map by the parent, so just jump this token right back to where
             // it was so you can place another one
-            pos={{ x: 0, y: 0 }}
+            pos={{ x: 0, y: 0, z: 0 }}
             onDropped={(x, y) => props.onTokenPlaced(type, x, y)}
           />
         </div>

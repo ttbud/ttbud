@@ -1,0 +1,6 @@
+overrides:
+  # The icons file is mostly a big list of icons, which is much easier to read if the icon properties all fit on one
+  # line
+  - files: src/ui/icons.ts
+    options:
+      printWidth: 100
