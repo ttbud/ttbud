@@ -62,28 +62,27 @@ class GameStateServer:
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.remove(client)
 
-    def process_updates(self, messages, room_id):
+    def process_updates(self, message, room_id):
 
         if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
             print('Unable to process update from new connection')
             return
-        for message in messages:
-            action = message.get('action', None)
-            data = message.get('data', None)
-            if not action or not data:
-                print('Invalid update received')
-                return
-            token = self.convert_token(data)
-            if not token:
-                return
-            if action == 'create' or action == 'update' and \
-                    self.validate_token(token) and self.validate_position(token, room_id):
-                self.create_or_update_token(token, room_id)
-            elif action == 'delete' and data.get('id', False):
-                if self._rooms[room_id].game_state.get(data['id'], False):
-                    self.delete_token(token, room_id)
-            else:
-                print(f'Received invalid action: {action}')
+        action = message.get('action', None)
+        data = message.get('data', None)
+        if not action or not data:
+            print('Invalid update received')
+            return
+        token = self.convert_token(data)
+        if not token:
+            return
+        if action == 'create' or action == 'update' and \
+                self.validate_token(token) and self.validate_position(token, room_id):
+            self.create_or_update_token(token, room_id)
+        elif action == 'delete':
+            if self._rooms[room_id].game_state.get(token.id, False):
+                self.delete_token(token, room_id)
+        else:
+            print(f'Received invalid action: {action}')
         return self.get_state(room_id)
 
     @staticmethod
@@ -130,7 +129,7 @@ class GameStateServer:
         self.remove_positions(token, room_id)
         del self._rooms[room_id].id_to_positions[token.id]
         # Remove the token from the state
-        del self._rooms[room_id.game_state[token.id]]
+        del self._rooms[room_id].game_state[token.id]
 
     def remove_positions(self, token, room_id):
 

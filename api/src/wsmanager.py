@@ -14,7 +14,6 @@ class WebsocketManager:
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
         self.uuid_q = uuid_q
-        self._send_q = queue.Queue()
         self.port = port
         self._valid_room_ids = set()
         self.gss = GameStateServer()
@@ -28,14 +27,13 @@ class WebsocketManager:
                 self.port,
             )
 
-            asyncio.ensure_future(self.producer_handler())
             self._loop.run_until_complete(ws_server)
         except OSError as e:
             print(e)
         else:
             self._loop.run_forever()
 
-    async def consumer_handler(self, websocket, room_id):
+    async def consumer_handler(self, client, room_id):
         room_id = room_id.lstrip('/')
         print(room_id)
         while True:
@@ -44,35 +42,41 @@ class WebsocketManager:
             except queue.Empty:
                 break
         if room_id in self._valid_room_ids:
-            response = self.gss.new_connection_request(websocket, room_id)
-            self._send_q.put((response, room_id))
+            response = self.gss.new_connection_request(client, room_id)
+            await self.send_message_to_client(response, client)
             try:
-                async for message in websocket:
-                    await self.consume(message, room_id)
+                async for message in client:
+                    await self.consume(message, room_id, client)
             finally:
-                self.gss.connection_dropped(websocket, room_id)
+                self.gss.connection_dropped(client, room_id)
 
-    async def producer_handler(self):
+    async def send_message_to_client(self, message, client):
 
-        while True:
-            try:
-                message, room_id = self._send_q.get_nowait()
-            except queue.Empty:
-                await asyncio.sleep(0.0001)          # Induced delay to free up event loop
-                continue
-            if message is not None:
-                print(message)
-                await asyncio.wait([client.send(json.dumps(message)) for client in self.gss.get_clients(room_id)])
+        if message and client:
+            await client.send(json.dumps(message))
 
-    async def consume(self, json_message, room_id):
+    async def send_message_to_room(self, message, room_id):
+
+        if message:
+            await asyncio.wait([client.send(json.dumps(message)) for client in self.gss.get_clients(room_id)])
+
+    async def consume(self, json_message, room_id, client):
 
         try:
             messages = json.loads(json_message)
         except json.JSONDecodeError as e:
             print(e)
             return
-        response = self.gss.process_updates(messages, room_id)
-        self._send_q.put((response, room_id))
+        response = None
+        for message in messages:
+            try:
+                response = self.gss.process_updates(message, room_id)
+            except Exception as e:
+                print(e)
+                await self.send_message_to_client({'Error': 'Bad stuff'}, client)
+                return
+        if response:
+            await self.send_message_to_room(response, room_id)
 
 
 def start_websocket(uuid_q, host_port):
