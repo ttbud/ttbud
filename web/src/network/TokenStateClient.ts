@@ -50,14 +50,16 @@ export class TokenStateClient {
     }
     this.updates.push({
       action: "delete",
-      data: { id: tokenId },
-      icon_id: "",
-      start_x: 0,
-      start_y: 0,
-      start_z: 0,
-      end_x: GRID_SIZE_PX,
-      end_y: GRID_SIZE_PX,
-      end_z: GRID_SIZE_PX
+      data: {
+        id: tokenId,
+        icon_id: "",
+        start_x: 0,
+        start_y: 0,
+        start_z: 0,
+        end_x: GRID_SIZE_PX,
+        end_y: GRID_SIZE_PX,
+        end_z: GRID_SIZE_PX
+      }
     });
     this.scheduleSendEvent();
   }
