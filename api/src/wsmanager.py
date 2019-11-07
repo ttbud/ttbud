@@ -67,15 +67,14 @@ class WebsocketManager:
         except json.JSONDecodeError as e:
             print(e)
             return
-        response = None
+        response = self.gss.get_state(room_id)
         for message in messages:
             try:
                 response = self.gss.process_update(message, room_id)
             except MessageError as err:
                 print(err)
                 await self.send_message_to_client({'Error': err.message}, client)
-        if response:
-            await self.send_message_to_room(response, room_id)
+        await self.send_message_to_room(response, room_id)
 
 
 def start_websocket(uuid_q, host_port):
