@@ -116,7 +116,7 @@ const Board = (props: Props) => {
       id: uuid(),
       x: clickSnapToGrid(x),
       y: clickSnapToGrid(y),
-      z: 0,
+      z: icon.type === IconType.floor ? 0 : 1,
       iconId: icon.id
     });
   };
