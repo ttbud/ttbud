@@ -55,16 +55,7 @@ export class TokenStateClient {
   public queueCreate(token: TokenState) {
     this.updates.push({
       action: "create",
-      data: {
-        id: token.id,
-        icon_id: token.iconId,
-        start_x: token.x,
-        start_y: token.y,
-        start_z: 0,
-        end_x: token.x + GRID_SIZE_PX,
-        end_y: token.y + GRID_SIZE_PX,
-        end_z: GRID_SIZE_PX
-      }
+      data: TokenStateClient.toNetworkState(token)
     });
     this.scheduleSendEvent();
   }
@@ -72,16 +63,7 @@ export class TokenStateClient {
   public queueUpdate(token: TokenState) {
     this.updates.push({
       action: "update",
-      data: {
-        id: token.id,
-        icon_id: token.iconId,
-        start_x: token.x,
-        start_y: token.y,
-        start_z: 0,
-        end_x: token.x + GRID_SIZE_PX,
-        end_y: token.y + GRID_SIZE_PX,
-        end_z: GRID_SIZE_PX
-      }
+      data: TokenStateClient.toNetworkState(token)
     });
     this.scheduleSendEvent();
   }
@@ -111,12 +93,28 @@ export class TokenStateClient {
     this.onStateUpdate(
       decode(StateDecoder, json).map(tokenState => ({
         id: tokenState.id,
-        x: tokenState.start_x,
-        y: tokenState.start_y,
-        z: tokenState.start_z,
+        x: tokenState.start_x * GRID_SIZE_PX,
+        y: tokenState.start_y * GRID_SIZE_PX,
+        z: tokenState.start_z * GRID_SIZE_PX,
         iconId: tokenState.icon_id
       }))
     );
+  }
+
+  private static toNetworkState(token: TokenState) {
+    const normalized_x = token.x / GRID_SIZE_PX;
+    const normalized_y = token.y / GRID_SIZE_PX;
+
+    return {
+      id: token.id,
+      icon_id: token.iconId,
+      start_x: normalized_x,
+      start_y: normalized_y,
+      start_z: token.z,
+      end_x: normalized_x + 1,
+      end_y: normalized_y + 1,
+      end_z: token.z + 1
+    };
   }
 
   private static onClose() {
