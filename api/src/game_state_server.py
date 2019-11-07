@@ -69,7 +69,7 @@ class GameStateServer:
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.remove(client)
 
-    def process_updates(self, message, room_id):
+    def process_update(self, message, room_id):
 
         if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
             raise MessageError('Your room does not exist, somehow')
