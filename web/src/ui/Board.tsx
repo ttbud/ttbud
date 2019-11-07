@@ -66,6 +66,14 @@ const Board = (props: Props) => {
   const [mouseType, setMouseType] = useState<MouseType>(MouseType.none);
 
   const onMouseMove = (e: MouseEvent) => {
+    // If you hold down a mouse button while moving the cursor off the board
+    // the board will never get the mouse up event. So check here if the
+    // button really is still held down
+    if (e.buttons === 0) {
+      setMouseType(MouseType.none);
+      return;
+    }
+
     if (mouseType === MouseType.drawing_walls) {
       placeFloorAt(props.activeFloor, e.clientX, e.clientY);
     } else if (mouseType === MouseType.deleting) {
