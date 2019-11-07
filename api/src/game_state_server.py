@@ -82,7 +82,7 @@ class GameStateServer:
             if not token or not self.is_valid_token(token):
                 raise MessageError('Received a bad token')
             if not self.is_valid_position(token, room_id):
-                raise MessageError("You're a bad boy")
+                raise MessageError('That position is occupied, bucko')
             self.create_or_update_token(token, room_id)
         elif action == 'delete':
             if type(data) != str:
