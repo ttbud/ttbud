@@ -45,9 +45,6 @@ export class TokenStateClient {
   }
 
   public queueDelete(tokenId: string) {
-    if (!this.isConnected()) {
-      return;
-    }
     this.updates.push({
       action: "delete",
       data: tokenId,
@@ -56,9 +53,6 @@ export class TokenStateClient {
   }
 
   public queueCreate(token: TokenState) {
-    if (!this.isConnected()) {
-      return;
-    }
     this.updates.push({
       action: "create",
       data: {
@@ -76,9 +70,6 @@ export class TokenStateClient {
   }
 
   public queueUpdate(token: TokenState) {
-    if (!this.isConnected()) {
-      return;
-    }
     this.updates.push({
       action: "update",
       data: {
