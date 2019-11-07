@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 
-UNIT_SIZE = 50
-
 
 @dataclass
 class Token:
@@ -152,9 +150,9 @@ class GameStateServer:
     def get_unit_blocks(token):
 
         unit_blocks = []
-        for x in range(token.start_x, token.end_x, UNIT_SIZE):
-            for y in range(token.start_y, token.end_y, UNIT_SIZE):
-                for z in range(token.start_z, token.end_z, UNIT_SIZE):
+        for x in range(token.start_x, token.end_x):
+            for y in range(token.start_y, token.end_y):
+                for z in range(token.start_z, token.end_z):
                     unit_blocks.append((x, y, z))
         return unit_blocks
 
