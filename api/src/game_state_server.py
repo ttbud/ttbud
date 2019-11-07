@@ -77,15 +77,18 @@ class GameStateServer:
         data = message.get('data', None)
         if not action or not data:
             raise MessageError('Did not receive a full message')
-        token = self.dict_to_token(data)
-        if not token:
-            raise MessageError('Received a bad token')
-        if (action == 'create' or action == 'update' and
-                self.is_valid_token(token) and self.is_valid_position(token, room_id)):
+        if action == 'create' or action == 'update':
+            token = self.dict_to_token(data)
+            if not token or not self.is_valid_token(token):
+                raise MessageError('Received a bad token')
+            if not self.is_valid_position(token, room_id):
+                raise MessageError("You're a bad boy")
             self.create_or_update_token(token, room_id)
         elif action == 'delete':
-            if self._rooms[room_id].game_state.get(token.id, False):
-                self.delete_token(token, room_id)
+            if type(data) != str:
+                raise MessageError('Data for delete actions must be a token ID')
+            if self._rooms[room_id].game_state.get(data, False):
+                self.delete_token(data, room_id)
         else:
             raise MessageError(f'Invalid action: {action}')
         return self.get_state(room_id)
@@ -119,7 +122,7 @@ class GameStateServer:
 
         print(f'New token: {token}')
         if self._rooms[room_id].game_state.get(token.id):
-            self.remove_positions(token, room_id)
+            self.remove_positions(token.id, room_id)
 
         # Update state for new or existing token
         blocks = self.get_unit_blocks(token)
@@ -128,19 +131,22 @@ class GameStateServer:
             self._rooms[room_id].positions_to_ids[block] = token.id
         self._rooms[room_id].game_state[token.id] = token.to_dict()
 
-    def delete_token(self, token, room_id):
+    def delete_token(self, token_id, room_id):
 
         # Remove token data from position dictionaries
-        self.remove_positions(token, room_id)
-        del self._rooms[room_id].id_to_positions[token.id]
+        self.remove_positions(token_id, room_id)
+        if self._rooms[room_id].id_to_positions.get(token_id, False):
+            del self._rooms[room_id].id_to_positions[token_id]
         # Remove the token from the state
-        del self._rooms[room_id].game_state[token.id]
+        if self._rooms[room_id].game_state.get(token_id, False):
+            del self._rooms[room_id].game_state[token_id]
 
-    def remove_positions(self, token, room_id):
+    def remove_positions(self, token_id, room_id):
 
-        positions = self._rooms[room_id].id_to_positions[token.id]
+        positions = self._rooms[room_id].id_to_positions[token_id]
         for pos in positions:
-            del self._rooms[room_id].positions_to_ids[pos]
+            if self._rooms[room_id].positions_to_ids.get(pos, False):
+                del self._rooms[room_id].positions_to_ids[pos]
 
     @staticmethod
     def get_unit_blocks(token):
