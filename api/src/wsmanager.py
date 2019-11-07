@@ -4,7 +4,7 @@ import json
 
 import websockets
 
-from game_state_server import GameStateServer
+from game_state_server import GameStateServer, MessageError
 
 
 class WebsocketManager:
@@ -71,10 +71,9 @@ class WebsocketManager:
         for message in messages:
             try:
                 response = self.gss.process_updates(message, room_id)
-            except Exception as e:
-                print(e)
-                await self.send_message_to_client({'Error': 'Bad stuff'}, client)
-                return
+            except MessageError as err:
+                print(err)
+                await self.send_message_to_client({'Error': err.message}, client)
         if response:
             await self.send_message_to_room(response, room_id)
 
