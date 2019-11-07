@@ -16,11 +16,11 @@ test_token = {
 def test_validate_token():
 
     valid_token = Token(**test_token)
-    assert GameStateServer.validate_token(valid_token) is True
+    assert GameStateServer.is_valid_token(valid_token) is True
 
     invalid_token = Token(**test_token)
     invalid_token.start_x = 2 * UNIT_SIZE
-    assert GameStateServer.validate_token(invalid_token) is False
+    assert GameStateServer.is_valid_token(invalid_token) is False
 
 
 def test_get_unit_blocks():
