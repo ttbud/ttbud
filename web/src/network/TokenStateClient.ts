@@ -95,7 +95,7 @@ export class TokenStateClient {
         id: tokenState.id,
         x: tokenState.start_x * GRID_SIZE_PX,
         y: tokenState.start_y * GRID_SIZE_PX,
-        z: tokenState.start_z * GRID_SIZE_PX,
+        z: tokenState.start_z,
         iconId: tokenState.icon_id
       }))
     );
