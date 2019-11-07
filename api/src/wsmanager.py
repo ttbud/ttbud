@@ -73,7 +73,7 @@ class WebsocketManager:
                 response = self.gss.process_update(message, room_id)
             except MessageError as err:
                 print(err)
-                await self.send_message_to_client({'Error': err.message}, client)
+                await self.send_message_to_client({'error': err.message}, client)
         if response:
             await self.send_message_to_room(response, room_id)
 
