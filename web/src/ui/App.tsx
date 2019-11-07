@@ -102,12 +102,18 @@ const App = () => {
 
   const createToken = (token: TokenState) => {
     setTokens(tokens.push(token));
+    if (client) {
+      client.queueCreate(token);
+    }
   };
 
   const updateToken = (newToken: TokenState) => {
     setTokens(
       tokens.set(tokens.findIndex(token => token.id === newToken.id), newToken)
     );
+    if (client) {
+      client.queueUpdate(newToken);
+    }
   };
 
   return (
