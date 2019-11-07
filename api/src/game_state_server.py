@@ -62,7 +62,7 @@ class GameStateServer:
             return self.get_state(room_id)
         else:
             self._rooms[room_id] = RoomData(room_id, initial_connection=client)
-            return
+            return self.get_state(room_id)
 
     def connection_dropped(self, client, room_id):
 
@@ -77,11 +77,11 @@ class GameStateServer:
         data = message.get('data', None)
         if not action or not data:
             raise MessageError('Did not receive a full message')
-        token = self.convert_token(data)
+        token = self.dict_to_token(data)
         if not token:
             raise MessageError('Received a bad token')
         if (action == 'create' or action == 'update' and
-                self.validate_token(token) and self.validate_position(token, room_id)):
+                self.is_valid_token(token) and self.is_valid_position(token, room_id)):
             self.create_or_update_token(token, room_id)
         elif action == 'delete':
             if self._rooms[room_id].game_state.get(token.id, False):
@@ -91,7 +91,7 @@ class GameStateServer:
         return self.get_state(room_id)
 
     @staticmethod
-    def convert_token(data):
+    def dict_to_token(data):
 
         try:
             token = Token(**data)
@@ -101,13 +101,13 @@ class GameStateServer:
         return token
 
     @staticmethod
-    def validate_token(token):
+    def is_valid_token(token):
 
         return (token.start_x < token.end_x and
                 token.start_y < token.end_y and
                 token.start_z < token.end_z)
 
-    def validate_position(self, token, room_id):
+    def is_valid_position(self, token, room_id):
 
         blocks = self.get_unit_blocks(token)
         for block in blocks:
