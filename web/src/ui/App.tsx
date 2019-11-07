@@ -1,12 +1,15 @@
 import React, { MouseEvent, useEffect, useState } from "react";
-import Token from "./Token";
+import CardToken from "./token/CardToken";
 import { List } from "immutable";
 import { makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "../config";
-import TokenSheet from "./TokenSheet";
+import CardTokenSheet from "./CardTokenSheet";
 import { TokenState, TokenStateClient } from "../network/TokenStateClient";
 import uuid from "uuid";
-import {Icon, ICONS, ICONS_BY_ID, IconType, WALL_ICON} from "./icons";
+import { Icon, ICONS, ICONS_BY_ID, IconType, WALL_ICON } from "./icons";
+import FloorToken from "./token/FloorToken";
+import UnreachableCaseError from "../util/UnreachableCaseError";
+import FloorTokenSheet from "./FloorTokenSheet";
 
 let BACKGROUND_COLOR = "#F5F5DC";
 let GRID_COLOR = "#947C65";
@@ -16,7 +19,7 @@ const dragSnapToGrid = (x: number) =>
 const clickSnapToGrid = (x: number) =>
   Math.floor(x / GRID_SIZE_PX) * GRID_SIZE_PX;
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(theme => ({
   map: {
     backgroundColor: BACKGROUND_COLOR,
     backgroundImage: `repeating-linear-gradient(
@@ -36,6 +39,7 @@ const useStyles = makeStyles({
     backgroundSize: `${GRID_SIZE_PX}px ${GRID_SIZE_PX}px`,
     height: "100%",
     width: "100%",
+    zIndex: 0,
     position: "absolute",
     // All the tokens inside the map have to be position absolute so that the
     // drag offset calculations work properly
@@ -43,22 +47,42 @@ const useStyles = makeStyles({
       position: "absolute"
     }
   },
-  sheets: {
+  tokenSheet: {
     display: "flex",
     flexDirection: "column",
     maxWidth: GRID_SIZE_PX * 2,
     position: "absolute",
-    bottom: 0
+    bottom: theme.spacing(1),
+    left: theme.spacing(1)
+  },
+  floorSheet: {
+    display: "flex",
+    flexDirection: "row",
+    maxWidth: GRID_SIZE_PX * 2,
+    position: "absolute",
+    bottom: theme.spacing(1),
+    left: 0,
+    right: 0,
+    margin: "auto"
   }
-});
+}));
 
-type MouseType = "drawing_walls" | "deleting" | "none";
+enum MouseType {
+  drawing_walls,
+  deleting,
+  none
+}
+
 const TOKEN_SHEET_ICONS = ICONS.filter(icon => icon.type === IconType.token);
+const FLOOR_SHEET_ICONS = ICONS.filter(
+  icon => icon.type === IconType.floor || icon.type === IconType.wall
+);
 
 const App = () => {
   const classes = useStyles();
 
-  const [mouseType, setMouseType] = useState<MouseType>("none");
+  const [mouseType, setMouseType] = useState<MouseType>(MouseType.none);
+  const [activeFloor, setActiveFloor] = useState(WALL_ICON);
   const [tokens, setTokens] = useState(List.of<TokenState>());
   const [client, setClient] = useState<TokenStateClient>();
 
@@ -100,7 +124,7 @@ const App = () => {
       id: uuid(),
       x: dragSnapToGrid(x),
       y: dragSnapToGrid(y),
-      z: 0,
+      z: icon.type === IconType.floor ? 0 : 1,
       iconId: icon.id
     };
     if (client) {
@@ -109,40 +133,54 @@ const App = () => {
     setTokens(tokens.push(token));
   };
 
-  const tokenIcons = tokens.map((token, i) => (
-    <Token
-      pos={{ x: token.x, y: token.y, z: token.z }}
-      icon={ICONS_BY_ID.get(token.iconId, WALL_ICON)}
-      key={token.id}
-      onDropped={(x, y) => {
-        const newToken = {
-          id: token.id,
-          x: dragSnapToGrid(x),
-          y: dragSnapToGrid(y),
-          z: 0,
-          iconId: token.iconId
-        };
-        if (client) {
-          client.queueUpdate(newToken);
-        }
-        setTokens(tokens.set(i, newToken));
-      }}
-    />
-  ));
+  const tokenIcons = tokens.map((token, i) => {
+    const icon = ICONS_BY_ID.get(token.iconId, WALL_ICON);
+    const pos = { x: token.x, y: token.y, z: token.z };
+    const onDropped = (x: number, y: number) => {
+      const newToken = {
+        id: token.id,
+        x: dragSnapToGrid(x),
+        y: dragSnapToGrid(y),
+        z: token.z,
+        iconId: token.iconId
+      };
+      if (client) {
+        client.queueUpdate(newToken);
+      }
+      setTokens(tokens.set(i, newToken));
+    };
+
+    switch (icon.type) {
+      case IconType.floor:
+      case IconType.wall:
+        return <FloorToken key={token.id} icon={icon} pos={pos} />;
+      case IconType.token:
+        return (
+          <CardToken
+            key={token.id}
+            icon={icon}
+            pos={pos}
+            onDropped={onDropped}
+          />
+        );
+      default:
+        throw new UnreachableCaseError(icon.type);
+    }
+  });
 
   const onMapMouseDown = (e: MouseEvent) => {
     if (e.button === 0) {
-      setMouseType("drawing_walls");
-      placeWallAt(e.clientX, e.clientY);
+      setMouseType(MouseType.drawing_walls);
+      placeFloorAt(activeFloor, e.clientX, e.clientY);
     } else if (e.button === 2) {
-      setMouseType("deleting");
+      setMouseType(MouseType.deleting);
       deleteAt(e.clientX, e.clientY);
     }
   };
 
-  const onMapMouseUp = () => setMouseType("none");
+  const onMapMouseUp = () => setMouseType(MouseType.none);
 
-  const placeWallAt = (x: number, y: number) => {
+  const placeFloorAt = (icon: Icon, x: number, y: number) => {
     const gridX = clickSnapToGrid(x);
     const gridY = clickSnapToGrid(y);
 
@@ -155,7 +193,7 @@ const App = () => {
       x: clickSnapToGrid(x),
       y: clickSnapToGrid(y),
       z: 0,
-      iconId: WALL_ICON.id
+      iconId: icon.id
     };
     if (client) {
       client.queueCreate(token);
@@ -166,15 +204,15 @@ const App = () => {
   const deleteAt = (x: number, y: number) => {
     const gridX = clickSnapToGrid(x);
     const gridY = clickSnapToGrid(y);
-    for (const [i, token] of tokens.entries()) {
-      if (token.x === gridX && token.y === gridY) {
-        if (client) {
-          client.queueDelete(token.id);
-        }
+    const token = tokens
+      .filter(token => token.x === gridX && token.y === gridY)
+      .maxBy(token => token.z);
 
-        setTokens(tokens.delete(i));
-        break;
-      }
+    if (client && token) {
+      client.queueDelete(token.id);
+    }
+    if (token) {
+      setTokens(tokens.delete(tokens.indexOf(token)));
     }
   };
 
@@ -191,9 +229,9 @@ const App = () => {
   };
 
   const onMapMouseMoving = (e: MouseEvent) => {
-    if (mouseType === "drawing_walls") {
-      placeWallAt(e.clientX, e.clientY);
-    } else if (mouseType === "deleting") {
+    if (mouseType === MouseType.drawing_walls) {
+      placeFloorAt(activeFloor, e.clientX, e.clientY);
+    } else if (mouseType === MouseType.deleting) {
       deleteAt(e.clientX, e.clientY);
     }
   };
@@ -209,10 +247,17 @@ const App = () => {
       >
         {tokenIcons}
       </div>
-      <div className={classes.sheets}>
-        <TokenSheet
+      <div className={classes.tokenSheet}>
+        <CardTokenSheet
           tokenTypes={TOKEN_SHEET_ICONS}
           onTokenPlaced={onTokenPlaced}
+        />
+      </div>
+      <div className={classes.floorSheet}>
+        <FloorTokenSheet
+          activeFloor={activeFloor}
+          icons={FLOOR_SHEET_ICONS}
+          onFloorSelected={setActiveFloor}
         />
       </div>
     </div>

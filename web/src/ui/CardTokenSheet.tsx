@@ -1,5 +1,5 @@
 import React from "react";
-import Token from "./Token";
+import CardToken from "./token/CardToken";
 import { makeStyles, Paper } from "@material-ui/core";
 import { Icon } from "./icons";
 import { List } from "immutable";
@@ -19,14 +19,14 @@ interface Props {
   onTokenPlaced: (icon: Icon, x: number, y: number) => void;
 }
 
-const TokenSheet = (props: Props) => {
+const CardTokenSheet = (props: Props) => {
   const classes = useStyles();
 
   return (
     <Paper className={classes.tokenSheet}>
       {props.tokenTypes.map(type => (
         <div className={classes.tokenSource} key={type.img}>
-          <Token
+          <CardToken
             icon={type}
             // Don't want these to actually move except when they're being
             // dragged, when the token is "Placed" a new one is created on the
@@ -41,4 +41,4 @@ const TokenSheet = (props: Props) => {
   );
 };
 
-export default TokenSheet;
+export default CardTokenSheet;

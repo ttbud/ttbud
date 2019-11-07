@@ -8,6 +8,7 @@ import swordsman from "../icon/swordman.svg";
 import wolfHead from "../icon/wolf-head.svg";
 import wall from "../icon/stone-wall.svg";
 import stairs from "../icon/stairs.svg";
+import door from "../icon/door.svg";
 
 import { List, Map } from "immutable";
 
@@ -89,6 +90,12 @@ export const ICONS: List<Icon> = List.of(
     img: stairs,
     type: IconType.floor,
     desc: "stairs"
+  },
+  {
+    id: "278a102e-643d-4a10-b945-22d1a2b42b3c",
+    img: door,
+    type: IconType.floor,
+    desc: "door"
   },
   WALL_ICON
 );

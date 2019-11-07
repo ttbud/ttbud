@@ -1,17 +1,15 @@
 import React, { useRef, useState } from "react";
 import Draggable from "react-draggable";
 import { Card, CardMedia, makeStyles } from "@material-ui/core";
-import { GRID_SIZE_PX } from "../config";
-import { Icon } from "./icons";
+import { CARD_PADDING, CARD_SIZE } from "../../config";
+import { Icon } from "../icons";
 
-const PADDING = GRID_SIZE_PX / 5;
-const CARD_SIZE = GRID_SIZE_PX - PADDING * 2;
 const useStyles = makeStyles({
   card: {
     cursor: "pointer",
     width: CARD_SIZE,
     height: CARD_SIZE,
-    padding: PADDING
+    padding: CARD_PADDING
   },
   media: {
     width: CARD_SIZE,
@@ -34,7 +32,7 @@ interface Props {
   onDropped: (x: number, y: number) => void;
 }
 
-const Token: React.FC<Props> = (props: Props) => {
+const CardToken: React.FC<Props> = (props: Props) => {
   const classes = useStyles();
   const [isDragging, setDragging] = useState();
   const ref = useRef<HTMLElement>();
@@ -72,4 +70,4 @@ const Token: React.FC<Props> = (props: Props) => {
   );
 };
 
-export default Token;
+export default CardToken;
