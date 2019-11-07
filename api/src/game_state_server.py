@@ -42,6 +42,13 @@ class RoomData:
             self.clients.add(initial_connection)
 
 
+class MessageError(Exception):
+
+    def __init__(self, message):
+
+        self.message = message
+
+
 class GameStateServer:
 
     def __init__(self):
@@ -65,24 +72,22 @@ class GameStateServer:
     def process_updates(self, message, room_id):
 
         if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
-            print('Unable to process update from new connection')
-            return
+            raise MessageError('Your room does not exist, somehow')
         action = message.get('action', None)
         data = message.get('data', None)
         if not action or not data:
-            print('Invalid update received')
-            return
+            raise MessageError('Did not receive a full message')
         token = self.convert_token(data)
         if not token:
-            return
-        if action == 'create' or action == 'update' and \
-                self.validate_token(token) and self.validate_position(token, room_id):
+            raise MessageError('Received a bad token')
+        if (action == 'create' or action == 'update' and
+                self.validate_token(token) and self.validate_position(token, room_id)):
             self.create_or_update_token(token, room_id)
         elif action == 'delete':
             if self._rooms[room_id].game_state.get(token.id, False):
                 self.delete_token(token, room_id)
         else:
-            print(f'Received invalid action: {action}')
+            raise MessageError(f'Invalid action: {action}')
         return self.get_state(room_id)
 
     @staticmethod
