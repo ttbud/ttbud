@@ -25,7 +25,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "now-dev": "react-scripts start"
+    "checkstyle": "prettier src public package.json tsconfig.json --check",
+    "fixstyle": "prettier src public package.json tsconfig.json --write"
   },
   "eslintConfig": {
     "extends": "react-app"
