@@ -64,6 +64,8 @@ class GameStateServer:
         data = message.get('data', None)
         if not action or not data:
             raise MessageError('Did not receive a full message')
+
+        reply = {'type': None, 'data': None}
         if action == 'create' or action == 'update':
             token = self.dict_to_token(data)
             if not token or not self.is_valid_token(token):
@@ -71,14 +73,21 @@ class GameStateServer:
             if not self.is_valid_position(token, room_id):
                 raise MessageError('That position is occupied, bucko')
             self.create_or_update_token(token, room_id)
+            reply['type'] = 'state'
+            reply['data'] = self.get_state(room_id)
         elif action == 'delete':
             if type(data) != str:
                 raise MessageError('Data for delete actions must be a token ID')
             if self._rooms[room_id].game_state.get(data, False):
                 self.delete_token(data, room_id)
+                reply['type'] = 'state'
+                reply['data'] = self.get_state(room_id)
+        elif action == 'ping':
+            reply['type'] = 'ping'
+            reply['data'] = data
         else:
             raise MessageError(f'Invalid action: {action}')
-        return self.get_state(room_id)
+        return reply
 
     @staticmethod
     def dict_to_token(data):

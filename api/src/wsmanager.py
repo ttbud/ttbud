@@ -62,7 +62,12 @@ class WebsocketManager:
         except json.JSONDecodeError as e:
             print(e)
             return
-        response = self.gss.get_state(room_id)
+
+        response = {
+            "type": "state",
+            "data": self.gss.get_state(room_id),
+        }
+
         for message in messages:
             try:
                 response = self.gss.process_update(message, room_id)
