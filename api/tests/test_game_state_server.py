@@ -1,4 +1,4 @@
-from game_state_server import GameStateServer, Token
+from src.game_state_server import GameStateServer, Token
 
 
 test_token = {
