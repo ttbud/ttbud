@@ -8,7 +8,6 @@ from game_state_server import GameStateServer, MessageError
 
 
 class WebsocketManager:
-
     def __init__(self, uuid_q, port):
 
         self._loop = asyncio.new_event_loop()
@@ -19,13 +18,8 @@ class WebsocketManager:
         self.gss = GameStateServer()
 
     def start_server(self):
-
         try:
-            ws_server = websockets.serve(
-                self.consumer_handler,
-                '0.0.0.0',
-                self.port,
-            )
+            ws_server = websockets.serve(self.consumer_handler, '0.0.0.0', self.port,)
 
             self._loop.run_until_complete(ws_server)
         except OSError as e:
@@ -51,17 +45,19 @@ class WebsocketManager:
                 self.gss.connection_dropped(client, room_id)
 
     async def send_message_to_client(self, message, client):
-
         if message and client:
             await client.send(json.dumps(message))
 
     async def send_message_to_room(self, message, room_id):
-
         if message:
-            await asyncio.wait([client.send(json.dumps(message)) for client in self.gss.get_clients(room_id)])
+            await asyncio.wait(
+                [
+                    client.send(json.dumps(message))
+                    for client in self.gss.get_clients(room_id)
+                ]
+            )
 
     async def consume(self, json_message, room_id, client):
-
         try:
             messages = json.loads(json_message)
         except json.JSONDecodeError as e:

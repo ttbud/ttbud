@@ -22,12 +22,13 @@ if __name__ == '__main__':
     ws.daemon = True
     ws.start()
 
-
     @app.route('/api/socket', methods=['GET'])
     def create_websocket_session():
         new_id = uuid.uuid4()
         print(f'New UUID: {new_id}')
         uuid_q.put(new_id)
-        return flask.make_response({'path': f'wss://{domain}:{websocket_port}/{new_id}'})
+        return flask.make_response(
+            {'path': f'wss://{domain}:{websocket_port}/{new_id}'}
+        )
 
     app.run(host='0.0.0.0', port=http_port)
