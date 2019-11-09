@@ -3,10 +3,11 @@ import { makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "../config";
 import { Icon, ICONS_BY_ID, IconType, WALL_ICON } from "./icons";
 import uuid from "uuid";
-import { TokenState } from "../network/TokenStateClient";
+import { Ping, TokenState } from "../network/TokenStateClient";
 import { List } from "immutable";
 import FloorToken from "./token/FloorToken";
 import CardToken from "./token/CardToken";
+import PingToken from "./token/PingToken";
 import UnreachableCaseError from "../util/UnreachableCaseError";
 
 let BACKGROUND_COLOR = "#F5F5DC";
@@ -55,7 +56,9 @@ const clickSnapToGrid = (x: number) =>
 
 interface Props {
   tokens: List<TokenState>;
+  pings: List<Ping>;
   activeFloor: Icon;
+  onPingCreated: (x: number, y: number) => void;
   onTokenCreated: (token: TokenState) => void;
   onTokenDeleted: (tokenId: string) => void;
   onTokenMoved: (token: TokenState) => void;
@@ -82,7 +85,12 @@ const Board = (props: Props) => {
   };
 
   const onMouseDown = (e: MouseEvent) => {
-    if (e.button === 0) {
+    if (e.button === 0 && e.shiftKey) {
+      props.onPingCreated(
+        clickSnapToGrid(e.clientX),
+        clickSnapToGrid(e.clientY)
+      );
+    } else if (e.button === 0) {
       setMouseType(MouseType.drawing_walls);
       placeFloorAt(props.activeFloor, e.clientX, e.clientY);
     } else if (e.button === 2) {
@@ -156,6 +164,10 @@ const Board = (props: Props) => {
     }
   });
 
+  const pingIcons = props.pings.map(ping => (
+    <PingToken key={ping.id} x={ping.x} y={ping.y} />
+  ));
+
   return (
     <div
       className={classes.board}
@@ -165,6 +177,7 @@ const Board = (props: Props) => {
       onContextMenu={e => e.preventDefault()}
     >
       {tokenIcons}
+      {pingIcons}
     </div>
   );
 };
