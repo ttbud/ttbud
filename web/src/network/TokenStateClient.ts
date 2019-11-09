@@ -1,16 +1,31 @@
 import * as t from "io-ts";
 import { decode } from "../util/decode-util";
 import { GRID_SIZE_PX } from "../config";
+import uuid from "uuid";
 
-const TokenStateDecoder = t.type({
-  id: t.string,
-  start_x: t.number,
-  start_y: t.number,
-  start_z: t.number,
-  icon_id: t.string
+const PingMessage = t.type({
+  type: t.literal("ping"),
+  data: t.type({
+    id: t.string,
+    x: t.number,
+    y: t.number
+  })
 });
 
-const StateDecoder = t.array(TokenStateDecoder);
+const BoardStateMessage = t.type({
+  type: t.literal("state"),
+  data: t.array(
+    t.type({
+      id: t.string,
+      start_x: t.number,
+      start_y: t.number,
+      start_z: t.number,
+      icon_id: t.string
+    })
+  )
+});
+
+const MessageDecoder = t.union([PingMessage, BoardStateMessage]);
 
 export interface TokenState {
   id: string;
@@ -20,17 +35,45 @@ export interface TokenState {
   iconId: string;
 }
 
+export interface Ping {
+  id: string;
+  x: number;
+  y: number;
+}
+
+type StateListener = (state: TokenState[]) => void;
+type PingListener = (ping: Ping) => void;
+
 export class TokenStateClient {
   private updateCallback: null | number = null;
   private updates: any[] = [];
+  private stateListeners = new Map<string, StateListener>();
+  private pingListeners = new Map<string, PingListener>();
 
-  public constructor(
-    private readonly socket: WebSocket,
-    private readonly onStateUpdate: (state: TokenState[]) => void
-  ) {
+  public constructor(private readonly socket: WebSocket) {
     socket.addEventListener("open", TokenStateClient.onConnect);
     socket.addEventListener("message", this.onMessage.bind(this));
     socket.addEventListener("close", TokenStateClient.onClose);
+  }
+
+  public addStateListener(listener: StateListener): string {
+    const listenerId = uuid();
+    this.stateListeners.set(listenerId, listener);
+    return listenerId;
+  }
+
+  public removeStateListener(listenerId: string) {
+    this.stateListeners.delete(listenerId);
+  }
+
+  public addPingListener(listener: PingListener): string {
+    const listenerId = uuid();
+    this.pingListeners.set(listenerId, listener);
+    return listenerId;
+  }
+
+  public removePingListener(listenerId: string) {
+    this.pingListeners.delete(listenerId);
   }
 
   public close() {
@@ -47,7 +90,7 @@ export class TokenStateClient {
   public queueDelete(tokenId: string) {
     this.updates.push({
       action: "delete",
-      data: tokenId,
+      data: tokenId
     });
     this.scheduleSendEvent();
   }
@@ -66,6 +109,19 @@ export class TokenStateClient {
       data: TokenStateClient.toNetworkState(token)
     });
     this.scheduleSendEvent();
+  }
+
+  public ping(ping: Ping) {
+    this.socket.send(
+      JSON.stringify([{
+        action: "ping",
+        data: {
+          x: ping.x / GRID_SIZE_PX,
+          y: ping.y / GRID_SIZE_PX,
+          id: ping.id
+        }
+      }])
+    );
   }
 
   private scheduleSendEvent() {
@@ -90,15 +146,29 @@ export class TokenStateClient {
 
   private onMessage(event: MessageEvent) {
     const json = JSON.parse(event.data);
-    this.onStateUpdate(
-      decode(StateDecoder, json).map(tokenState => ({
-        id: tokenState.id,
-        x: tokenState.start_x * GRID_SIZE_PX,
-        y: tokenState.start_y * GRID_SIZE_PX,
-        z: tokenState.start_z,
-        iconId: tokenState.icon_id
-      }))
-    );
+    console.log(json);
+    const message = decode(MessageDecoder, json);
+    if (message.type === "ping") {
+      for (const listener of this.pingListeners.values()) {
+        listener({
+          id: message.data.id,
+          x: message.data.x * GRID_SIZE_PX,
+          y: message.data.y * GRID_SIZE_PX
+        });
+      }
+    } else {
+      for (const listener of this.stateListeners.values()) {
+        listener(
+          message.data.map(tokenState => ({
+            id: tokenState.id,
+            x: tokenState.start_x * GRID_SIZE_PX,
+            y: tokenState.start_y * GRID_SIZE_PX,
+            z: tokenState.start_z,
+            iconId: tokenState.icon_id
+          }))
+        );
+      }
+    }
   }
 
   private static toNetworkState(token: TokenState) {

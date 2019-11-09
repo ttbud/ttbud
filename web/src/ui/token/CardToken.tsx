@@ -43,7 +43,7 @@ const CardToken: React.FC<Props> = (props: Props) => {
       offsetParent={document.body}
       position={props.pos}
       onMouseDown={e => {
-        if (e.button === 0) {
+        if (e.button === 0 && !e.shiftKey) {
           setDragging(true);
           e.stopPropagation();
         }
