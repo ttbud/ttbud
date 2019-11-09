@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 @dataclass
 class Token:
-
     id: str
     icon_id: str
     start_x: int
@@ -14,7 +13,6 @@ class Token:
     end_z: int
 
     def to_dict(self):
-
         return {
             'id': self.id,
             'icon_id': self.icon_id,
@@ -28,9 +26,7 @@ class Token:
 
 
 class RoomData:
-
     def __init__(self, room_id, initial_connection=None):
-
         self.room_id = room_id
         self.game_state = {}
         self.id_to_positions = {}
@@ -41,20 +37,15 @@ class RoomData:
 
 
 class MessageError(Exception):
-
     def __init__(self, message):
-
         self.message = message
 
 
 class GameStateServer:
-
     def __init__(self):
-
         self._rooms = {}
 
     def new_connection_request(self, client, room_id):
-
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.add(client)
             return self.get_state(room_id)
@@ -63,12 +54,10 @@ class GameStateServer:
             return self.get_state(room_id)
 
     def connection_dropped(self, client, room_id):
-
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.remove(client)
 
     def process_update(self, message, room_id):
-
         if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
             raise MessageError('Your room does not exist, somehow')
         action = message.get('action', None)
@@ -78,7 +67,7 @@ class GameStateServer:
         if action == 'create' or action == 'update':
             token = self.dict_to_token(data)
             if not token or not self.is_valid_token(token):
-                raise MessageError('Received a bad token')
+                raise MessageError(f'Received a bad token {data}')
             if not self.is_valid_position(token, room_id):
                 raise MessageError('That position is occupied, bucko')
             self.create_or_update_token(token, room_id)
@@ -93,23 +82,21 @@ class GameStateServer:
 
     @staticmethod
     def dict_to_token(data):
-
         try:
             token = Token(**data)
         except TypeError:
-            print(f'Invalid token received: {data}')
             return None
         return token
 
     @staticmethod
     def is_valid_token(token):
-
-        return (token.start_x < token.end_x and
-                token.start_y < token.end_y and
-                token.start_z < token.end_z)
+        return (
+            token.start_x < token.end_x
+            and token.start_y < token.end_y
+            and token.start_z < token.end_z
+        )
 
     def is_valid_position(self, token, room_id):
-
         blocks = self.get_unit_blocks(token)
         for block in blocks:
             if self._rooms[room_id].positions_to_ids.get(block, False):
@@ -117,7 +104,6 @@ class GameStateServer:
         return True
 
     def create_or_update_token(self, token, room_id):
-
         print(f'New token: {token}')
         if self._rooms[room_id].game_state.get(token.id):
             self.remove_positions(token.id, room_id)
@@ -130,7 +116,6 @@ class GameStateServer:
         self._rooms[room_id].game_state[token.id] = token.to_dict()
 
     def delete_token(self, token_id, room_id):
-
         # Remove token data from position dictionaries
         self.remove_positions(token_id, room_id)
         if self._rooms[room_id].id_to_positions.get(token_id, False):
@@ -140,7 +125,6 @@ class GameStateServer:
             del self._rooms[room_id].game_state[token_id]
 
     def remove_positions(self, token_id, room_id):
-
         positions = self._rooms[room_id].id_to_positions[token_id]
         for pos in positions:
             if self._rooms[room_id].positions_to_ids.get(pos, False):
@@ -148,7 +132,6 @@ class GameStateServer:
 
     @staticmethod
     def get_unit_blocks(token):
-
         unit_blocks = []
         for x in range(token.start_x, token.end_x):
             for y in range(token.start_y, token.end_y):
@@ -157,9 +140,7 @@ class GameStateServer:
         return unit_blocks
 
     def get_state(self, room_id):
-
         return list(self._rooms[room_id].game_state.values())
 
     def get_clients(self, room_id):
-
         return self._rooms[room_id].clients
