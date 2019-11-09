@@ -9,7 +9,6 @@ from game_state_server import GameStateServer, MessageError
 
 class WebsocketManager:
     def __init__(self, uuid_q, port):
-
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
         self.uuid_q = uuid_q
@@ -19,7 +18,7 @@ class WebsocketManager:
 
     def start_server(self):
         try:
-            ws_server = websockets.serve(self.consumer_handler, '0.0.0.0', self.port,)
+            ws_server = websockets.serve(self.consumer_handler, '0.0.0.0', self.port)
 
             self._loop.run_until_complete(ws_server)
         except OSError as e:
