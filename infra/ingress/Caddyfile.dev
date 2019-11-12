@@ -1,0 +1,27 @@
+https://{$DOMAIN} {
+    tls {$CERT_CONFIG}
+    log stdout
+
+    rewrite /room/.* to /
+
+    proxy /api api:{$API_HTTP_PORT} {
+        transparent
+    }
+
+    proxy /sockjs-node web:{$WEB_HTTP_PORT} {
+        transparent
+        websocket
+    }
+
+    proxy / web:{$WEB_HTTP_PORT} {
+        transparent
+    }
+}
+
+wss://{$DOMAIN}:{$API_WEBSOCKET_PORT} {
+    tls {$CERT_CONFIG}
+    log stdout
+    proxy / api:{$API_WEBSOCKET_PORT} {
+        websocket
+    }
+}

@@ -1,0 +1,26 @@
+version: '3'
+services:
+  api:
+    working_dir: /app/src/
+    command: python -u -m watchgod main.main
+    # watchgod will drop all stdout without a tty
+    tty: true
+    volumes:
+      - ./api:/app
+  web:
+    image: tbbud-web-dev
+    build: web
+    command: yarn run start
+    user: ${WEB_USER:-1000}
+    environment:
+      PORT: ${WEB_HTTP_PORT}
+    volumes:
+      - ./web:/app
+  ingress:
+    image: abiosoft/caddy
+    environment:
+      WEB_HTTP_PORT:
+    volumes:
+      - ./web/build:/var/www/ttbud/web
+      - ./infra/ingress/Caddyfile.dev:/etc/Caddyfile
+      - ${CADDY_CERT_PATH}:/root/.caddy

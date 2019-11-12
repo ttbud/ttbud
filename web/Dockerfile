@@ -2,8 +2,8 @@ FROM node:12
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm install
+COPY package.json yarn.lock ./
+RUN yarn install
 
 COPY . .
-CMD npm run build
+CMD yarn start

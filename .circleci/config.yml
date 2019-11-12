@@ -37,22 +37,22 @@ jobs:
       - checkout:
           path: ~/repo
       - restore_cache:
-          key: web-deps-v1-{{ checksum "package-lock.json" }}
+          key: web-deps-v1-{{ checksum "yarn.lock" }}
       - run:
           name: Install Deps
-          command: npm install
+          command: yarn install
       - save_cache:
-          key: web-deps-v1-{{ checksum "package-lock.json" }}
+          key: web-deps-v1-{{ checksum "yarn.lock" }}
           paths:
             - node_modules
       - run:
           name: Check Style
-          command: npm run checkstyle
+          command: yarn run checkstyle
       - run:
           name: Run Tests
           environment:
             - JEST_JUNIT_OUTPUT_DIR: test-results
-          command: npm run test -- --reporters=default --reporters=jest-junit
+          command: yarn run test -- --reporters=default --reporters=jest-junit
       - store_test_results:
           path: test-results
 workflows:

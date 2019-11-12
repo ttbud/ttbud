@@ -1,6 +1,7 @@
 FROM python:3.7
 
 WORKDIR /app
+RUN pip install watchgod
 ADD requirements.txt .
 RUN pip install -r requirements.txt
 
