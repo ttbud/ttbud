@@ -8,14 +8,14 @@ from flask_cors import CORS
 
 from wsmanager import start_websocket
 
-if __name__ == '__main__':
+
+def main():
     websocket_port = int(os.environ['API_WEBSOCKET_PORT'])
     http_port = int(os.environ['API_HTTP_PORT'])
     domain = os.environ['DOMAIN']
 
     app = flask.Flask(__name__)
     CORS(app)
-    tokens = {}
     uuid_q = queue.Queue()
 
     ws = threading.Thread(target=start_websocket, args=(uuid_q, websocket_port))
@@ -32,3 +32,7 @@ if __name__ == '__main__':
         )
 
     app.run(host='0.0.0.0', port=http_port)
+
+
+if __name__ == '__main__':
+    main()
