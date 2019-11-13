@@ -10,7 +10,8 @@ const useStyles = makeStyles(theme => ({
   },
   tokenSheet: {
     backgroundColor: "#cccccc",
-    margin: theme.spacing(0.1)
+    margin: theme.spacing(0.1),
+    padding: theme.spacing(0.1)
   }
 }));
 

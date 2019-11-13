@@ -18,22 +18,17 @@ const dragSnapToGrid = (x: number) =>
 
 const useStyles = makeStyles(theme => ({
   tokenSheet: {
-    display: "flex",
-    flexDirection: "column",
     maxWidth: GRID_SIZE_PX * 2,
     position: "absolute",
     bottom: theme.spacing(1),
     left: theme.spacing(1)
   },
   floorSheet: {
-    display: "flex",
-    flexDirection: "row",
-    maxWidth: GRID_SIZE_PX * 2,
+    display: "inline-flex",
     position: "absolute",
     bottom: theme.spacing(1),
-    left: 0,
-    right: 0,
-    margin: "auto"
+    left: '50%',
+    transform: "translateX(-50%)"
   }
 }));
 
