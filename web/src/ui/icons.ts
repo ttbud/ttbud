@@ -3,12 +3,17 @@ import bowman from "../icon/bowman.svg";
 import elfHelmet from "../icon/elf-helmet.svg";
 import entMouth from "../icon/ent-mouth.svg";
 import kangaroo from "../icon/kangaroo.svg";
-import suspicious from "../icon/suspicious.svg";
 import swordsman from "../icon/swordman.svg";
 import wolfHead from "../icon/wolf-head.svg";
+import kenkuHead from "../icon/kenku-head.svg"
+import archer from "../icon/archer.svg"
+import ladle from "../icon/ladle.svg"
 import wall from "../icon/stone-wall.svg";
 import stairs from "../icon/stairs.svg";
 import door from "../icon/door.svg";
+import beech from "../icon/beech.svg"
+import stonePile from "../icon/stone-pile.svg"
+import waterDrop from "../icon/water-drop.svg"
 
 import { List, Map } from "immutable";
 
@@ -69,9 +74,21 @@ export const ICONS: List<Icon> = List.of(
   },
   {
     id: "46dd9a28-f5d9-4256-a679-d08295ed2995",
-    img: suspicious,
+    img: kenkuHead,
     type: IconType.token,
-    desc: "suspicious"
+    desc: "kenku head"
+  },
+  {
+    id: "46dd9a28-f5d9-4256-a679-d08295ed2997",
+    img: ladle,
+    type: IconType.token,
+    desc: "ladle"
+  },
+  {
+    id: "46dd9a28-f5d9-4256-a679-d08295ed2996",
+    img: archer,
+    type: IconType.token,
+    desc: "archer"
   },
   {
     id: "47341013-dd7f-44e2-8ee1-53ca59e2df60",
@@ -96,6 +113,24 @@ export const ICONS: List<Icon> = List.of(
     img: door,
     type: IconType.floor,
     desc: "door"
+  },
+  {
+    id: "278a102e-643d-4a10-b945-22d1a2b42b3e",
+    img: stonePile,
+    type: IconType.floor,
+    desc: "stone pile"
+  },
+  {
+    id: "278a102e-643d-4a10-b945-22d1a2b42b3f",
+    img: beech,
+    type: IconType.floor,
+    desc: "beech"
+  },
+  {
+    id: "278a102e-643d-4a10-b945-22d1a2b42b3g",
+    img: waterDrop,
+    type: IconType.floor,
+    desc: "water drop"
   },
   WALL_ICON
 );
