@@ -1,6 +1,7 @@
 import asyncio
 import queue
 import json
+from typing import Union
 
 import websockets
 
@@ -16,7 +17,7 @@ class WebsocketManager:
         self._valid_room_ids = set()
         self.gss = GameStateServer()
 
-    def start_server(self):
+    def start_server(self) -> None:
         try:
             ws_server = websockets.serve(self.consumer_handler, '0.0.0.0', self.port)
 
@@ -26,7 +27,9 @@ class WebsocketManager:
         else:
             self._loop.run_forever()
 
-    async def consumer_handler(self, client, room_id):
+    async def consumer_handler(
+        self, client: websockets.WebSocketServerProtocol, room_id: str
+    ) -> None:
         room_id = room_id.lstrip('/')
         print(room_id)
         while True:
@@ -43,11 +46,14 @@ class WebsocketManager:
             finally:
                 self.gss.connection_dropped(client, room_id)
 
-    async def send_message_to_client(self, message, client):
+    @staticmethod
+    async def send_message_to_client(
+        message: dict, client: websockets.WebSocketServerProtocol
+    ) -> None:
         if message and client:
             await client.send(json.dumps(message))
 
-    async def send_message_to_room(self, message, room_id):
+    async def send_message_to_room(self, message: dict, room_id: str) -> None:
         if message:
             await asyncio.wait(
                 [
@@ -56,7 +62,12 @@ class WebsocketManager:
                 ]
             )
 
-    async def consume(self, json_message, room_id, client):
+    async def consume(
+        self,
+        json_message: Union[str, bytes],
+        room_id: str,
+        client: websockets.WebSocketServerProtocol,
+    ) -> None:
         try:
             messages = json.loads(json_message)
         except json.JSONDecodeError as e:

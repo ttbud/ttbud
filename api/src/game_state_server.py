@@ -1,3 +1,5 @@
+from websockets import WebSocketServerProtocol
+
 from dataclasses import dataclass
 
 
@@ -12,7 +14,7 @@ class Token:
     end_y: int
     end_z: int
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         return {
             'id': self.id,
             'icon_id': self.icon_id,
@@ -26,7 +28,7 @@ class Token:
 
 
 class RoomData:
-    def __init__(self, room_id, initial_connection=None):
+    def __init__(self, room_id: str, initial_connection=None):
         self.room_id = room_id
         self.game_state = {}
         self.id_to_positions = {}
@@ -45,18 +47,20 @@ class GameStateServer:
     def __init__(self):
         self._rooms = {}
 
-    def new_connection_request(self, client, room_id):
+    def new_connection_request(
+        self, client: WebSocketServerProtocol, room_id: str
+    ) -> dict:
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.add(client)
         else:
             self._rooms[room_id] = RoomData(room_id, initial_connection=client)
         return {'type': 'state', 'data': self.get_state(room_id)}
 
-    def connection_dropped(self, client, room_id):
+    def connection_dropped(self, client: WebSocketServerProtocol, room_id: str) -> None:
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.remove(client)
 
-    def process_update(self, message, room_id):
+    def process_update(self, message: dict, room_id: str) -> dict:
         if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
             raise MessageError('Your room does not exist, somehow')
         action = message.get('action', None)
@@ -89,7 +93,7 @@ class GameStateServer:
         return reply
 
     @staticmethod
-    def dict_to_token(data):
+    def dict_to_token(data: dict):
         try:
             token = Token(**data)
         except TypeError:
@@ -97,21 +101,21 @@ class GameStateServer:
         return token
 
     @staticmethod
-    def is_valid_token(token):
+    def is_valid_token(token: Token) -> bool:
         return (
             token.start_x < token.end_x
             and token.start_y < token.end_y
             and token.start_z < token.end_z
         )
 
-    def is_valid_position(self, token, room_id):
+    def is_valid_position(self, token: Token, room_id: str) -> bool:
         blocks = self.get_unit_blocks(token)
         for block in blocks:
             if self._rooms[room_id].positions_to_ids.get(block, False):
                 return False
         return True
 
-    def create_or_update_token(self, token, room_id):
+    def create_or_update_token(self, token: Token, room_id: str) -> None:
         print(f'New token: {token}')
         if self._rooms[room_id].game_state.get(token.id):
             self.remove_positions(token.id, room_id)
@@ -123,7 +127,7 @@ class GameStateServer:
             self._rooms[room_id].positions_to_ids[block] = token.id
         self._rooms[room_id].game_state[token.id] = token.to_dict()
 
-    def delete_token(self, token_id, room_id):
+    def delete_token(self, token_id: str, room_id: str) -> None:
         # Remove token data from position dictionaries
         self.remove_positions(token_id, room_id)
         if self._rooms[room_id].id_to_positions.get(token_id, False):
@@ -132,14 +136,14 @@ class GameStateServer:
         if self._rooms[room_id].game_state.get(token_id, False):
             del self._rooms[room_id].game_state[token_id]
 
-    def remove_positions(self, token_id, room_id):
+    def remove_positions(self, token_id: str, room_id: str) -> None:
         positions = self._rooms[room_id].id_to_positions[token_id]
         for pos in positions:
             if self._rooms[room_id].positions_to_ids.get(pos, False):
                 del self._rooms[room_id].positions_to_ids[pos]
 
     @staticmethod
-    def get_unit_blocks(token):
+    def get_unit_blocks(token: Token) -> list:
         unit_blocks = []
         for x in range(token.start_x, token.end_x):
             for y in range(token.start_y, token.end_y):
@@ -147,8 +151,8 @@ class GameStateServer:
                     unit_blocks.append((x, y, z))
         return unit_blocks
 
-    def get_state(self, room_id):
+    def get_state(self, room_id: str) -> list:
         return list(self._rooms[room_id].game_state.values())
 
-    def get_clients(self, room_id):
+    def get_clients(self, room_id: str) -> set:
         return self._rooms[room_id].clients
