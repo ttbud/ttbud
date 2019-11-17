@@ -26,7 +26,11 @@ const FloorTokenSheet = (props: Props) => {
       <ToggleButtonGroup
         exclusive
         value={props.activeFloor}
-        onChange={(e, newFloor) => props.onFloorSelected(newFloor)}
+        onChange={(e, newFloor) => {
+          if (newFloor !== null) {
+            props.onFloorSelected(newFloor);
+          }
+        }}
       >
         {props.icons.map(floorIcon => (
           <ToggleButton value={floorIcon} key={floorIcon.id}>
