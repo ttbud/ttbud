@@ -10,7 +10,7 @@ Your virtual table friend
 # Configure your environment
 cp .env.example .env
 # Use the development setup (for hot-reload, etc..)
-export COMPOSE_FILE=docker-compose.dev.yml:docker-compose.yml
+export COMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml
 # Build all the images
 docker-compose build
 # Install web dependencies
