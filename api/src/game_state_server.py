@@ -48,10 +48,9 @@ class GameStateServer:
     def new_connection_request(self, client, room_id):
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.add(client)
-            return self.get_state(room_id)
         else:
             self._rooms[room_id] = RoomData(room_id, initial_connection=client)
-            return {'type': 'state', 'data': self.get_state(room_id)}
+        return {'type': 'state', 'data': self.get_state(room_id)}
 
     def connection_dropped(self, client, room_id):
         if self._rooms.get(room_id, False):
