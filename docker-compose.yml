@@ -12,7 +12,7 @@ services:
     build: web
     command: yarn run build
     volumes:
-      - static-assets:/var/www/ttbud/web
+      - static-assets:/app/build
   ingress:
     image: abiosoft/caddy
     environment:
@@ -23,6 +23,7 @@ services:
       ACME_AGREE: 'true'
     volumes:
       - static-assets:/var/www/ttbud/web
+      - ./infra/ingress/Caddyfile:/etc/Caddyfile
       - certs:/root/.caddy
     ports:
       - 80:80
