@@ -8,16 +8,16 @@ class RoomStore:
         if not os.path.exists(self.path):
             os.mkdir(self.path)
 
-    def get_all_room_ids(self):
+    def get_all_room_ids(self) -> list:
         return os.listdir(self.path)
 
-    def write_room_data(self, room, data):
+    def write_room_data(self, room: str, data: dict):
         with open(f'{self.path}/{room}', 'w') as f:
             f.write(json.dumps(data))
 
-    def read_room_data(self, room):
+    def read_room_data(self, room: str) -> dict:
         with open(f'{self.path}/{room}', 'r') as f:
             return json.loads(f.read())
 
-    def room_data_exists(self, room):
+    def room_data_exists(self, room: str) -> bool:
         return os.path.exists(f'{self.path}/{room}')
