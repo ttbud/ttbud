@@ -23,6 +23,7 @@ services:
       ACME_AGREE: 'true'
     volumes:
       - static-assets:/var/www/ttbud/web
+      - ./infra/ingress/Caddyfile:/etc/Caddyfile
       - certs:/root/.caddy
     ports:
       - 80:80

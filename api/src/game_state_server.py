@@ -1,6 +1,7 @@
 from websockets import WebSocketServerProtocol
-
 from dataclasses import dataclass
+
+from room_store import RoomStore
 
 
 @dataclass
@@ -46,6 +47,10 @@ class MessageError(Exception):
 class GameStateServer:
     def __init__(self):
         self._rooms = {}
+        self.rs = RoomStore()
+
+    def valid_previous_rooms(self) -> list:
+        return self.rs.get_all_room_ids()
 
     def new_connection_request(
         self, client: WebSocketServerProtocol, room_id: str
@@ -54,11 +59,16 @@ class GameStateServer:
             self._rooms[room_id].clients.add(client)
         else:
             self._rooms[room_id] = RoomData(room_id, initial_connection=client)
+            if self.rs.room_data_exists(room_id):
+                self._rooms[room_id].game_state = self.rs.read_room_data(room_id)
         return {'type': 'state', 'data': self.get_state(room_id)}
 
     def connection_dropped(self, client: WebSocketServerProtocol, room_id: str) -> None:
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.remove(client)
+            if not self._rooms[room_id].clients:
+                print('Writing room data')
+                self.rs.write_room_data(room_id, self._rooms[room_id].game_state)
 
     def process_update(self, message: dict, room_id: str) -> dict:
         if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
