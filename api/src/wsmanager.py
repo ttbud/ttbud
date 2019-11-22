@@ -14,8 +14,8 @@ class WebsocketManager:
         asyncio.set_event_loop(self._loop)
         self.uuid_q = uuid_q
         self.port = port
-        self._valid_room_ids = set()
         self.gss = GameStateServer()
+        self._valid_room_ids = set(self.gss.valid_previous_rooms())
 
     def start_server(self) -> None:
         try:
