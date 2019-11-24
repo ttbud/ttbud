@@ -2,7 +2,6 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  GridList,
   makeStyles,
   TextField
 } from "@material-ui/core";
@@ -10,20 +9,20 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Icon } from "./icons";
 import { List } from "immutable";
 import CardToken from "./token/CardToken";
-import { GRID_SIZE_PX } from "../config";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(theme => ({
   tokenList: {
-    width: GRID_SIZE_PX * 5,
-    height: GRID_SIZE_PX * 5
+    display: "flex",
+    flexWrap: "wrap"
   },
-  search: {
-    width: GRID_SIZE_PX * 5
+  token: {
+    margin: theme.spacing(1)
   },
+  search: {},
   icon: {
     color: "white"
   }
-});
+}));
 
 interface Props {
   open: boolean;
@@ -68,13 +67,11 @@ const SearchDialog: React.FC<Props> = props => {
     );
   } else {
     return (
-      <Dialog
-        open={props.open}
-        onClose={props.onLostFocus}
-      >
+      <Dialog open={props.open} onClose={props.onLostFocus} maxWidth={"xs"}>
         <DialogTitle>
           <TextField
-            autoFocus={true}
+            fullWidth
+            autoFocus
             className={classes.search}
             variant="filled"
             margin="normal"
@@ -85,24 +82,26 @@ const SearchDialog: React.FC<Props> = props => {
           />
         </DialogTitle>
         <DialogContent>
-          <GridList cols={5} cellHeight="auto" className={classes.tokenList}>
+          <div className={classes.tokenList}>
             {icons.map(icon => (
-              <CardToken
-                key={icon.id}
-                icon={icon}
-                pos={{ x: 0, y: 0, z: 0 }}
-                onDragStart={e => {
-                  const target = e.target as HTMLElement;
-                  const rect = target.getBoundingClientRect();
-                  setDraggingState({
-                    icon: icon,
-                    startPos: { x: rect.left, y: rect.top },
-                    startMousePos: { x: e.clientX, y: e.clientY }
-                  });
-                }}
-              />
+              <div className={classes.token}>
+                <CardToken
+                  key={icon.id}
+                  icon={icon}
+                  pos={{ x: 0, y: 0, z: 0 }}
+                  onDragStart={e => {
+                    const target = e.target as HTMLElement;
+                    const rect = target.getBoundingClientRect();
+                    setDraggingState({
+                      icon: icon,
+                      startPos: { x: rect.left, y: rect.top },
+                      startMousePos: { x: e.clientX, y: e.clientY }
+                    });
+                  }}
+                />
+              </div>
             ))}
-          </GridList>
+          </div>
         </DialogContent>
       </Dialog>
     );
