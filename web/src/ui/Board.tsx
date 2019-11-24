@@ -50,7 +50,7 @@ enum MouseType {
 }
 
 const dragSnapToGrid = (x: number) =>
-  Math.round(x / GRID_SIZE_PX) * GRID_SIZE_PX;
+  Math.floor(x / GRID_SIZE_PX) * GRID_SIZE_PX;
 const clickSnapToGrid = (x: number) =>
   Math.floor(x / GRID_SIZE_PX) * GRID_SIZE_PX;
 

@@ -1,8 +1,8 @@
-import React, { useRef, useState } from "react";
-import Draggable from "react-draggable";
+import React, { useState } from "react";
 import { Card, CardMedia, makeStyles } from "@material-ui/core";
 import { CARD_PADDING, CARD_SIZE } from "../../config";
 import { Icon } from "../icons";
+import Draggable from "../Draggable";
 
 const useStyles = makeStyles({
   card: {
@@ -29,37 +29,39 @@ interface Pos {
 interface Props {
   icon: Icon;
   pos: Pos;
-  onDropped: (x: number, y: number) => void;
+  startWithDragAt?: Pos;
+  offsetParent?: HTMLElement;
+  onDropped?: (x: number, y: number) => void;
+  onDragStart?: (e: MouseEvent) => void;
 }
 
-const CardToken: React.FC<Props> = (props: Props) => {
+const CardToken: React.FC<Props> = props => {
   const classes = useStyles();
   const [isDragging, setDragging] = useState();
-  const ref = useRef<HTMLElement>();
   const style = isDragging ? { zIndex: 1000 } : { zIndex: props.pos.z };
+
+  const onDragStart = (e: MouseEvent) => {
+    setDragging(true);
+    if (props.onDragStart) {
+      props.onDragStart(e);
+    }
+  };
+
+  const onStop = ({ x, y }: { x: number; y: number }) => {
+    setDragging(false);
+    if (props.onDropped) {
+      props.onDropped(x, y);
+    }
+  };
 
   return (
     <Draggable
-      offsetParent={document.body}
-      position={props.pos}
-      onMouseDown={e => {
-        if (e.button === 0 && !e.shiftKey) {
-          setDragging(true);
-          e.stopPropagation();
-        }
-      }}
-      onStop={(event, data) => {
-        setDragging(false);
-        const rect = data.node.getBoundingClientRect();
-        props.onDropped(rect.left, rect.top);
-      }}
+      pos={props.pos}
+      onDragStart={onDragStart}
+      onDragStop={onStop}
+      startWithDragAt={props.startWithDragAt}
     >
-      <Card
-        style={style}
-        className={classes.card}
-        raised={isDragging}
-        ref={ref}
-      >
+      <Card style={style} className={classes.card} raised={isDragging}>
         <CardMedia
           className={classes.media}
           image={props.icon.img}

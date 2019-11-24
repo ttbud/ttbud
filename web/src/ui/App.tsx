@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { List } from "immutable";
 import { makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "../config";
@@ -12,13 +12,13 @@ import uuid from "uuid";
 import { Icon, ICONS, IconType, WALL_ICON } from "./icons";
 import FloorTokenSheet from "./FloorTokenSheet";
 import Board from "./Board";
+import SearchDialog from "./SearchDialog";
 
 const dragSnapToGrid = (x: number) =>
-  Math.round(x / GRID_SIZE_PX) * GRID_SIZE_PX;
+  Math.floor(x / GRID_SIZE_PX) * GRID_SIZE_PX;
 
 const useStyles = makeStyles(theme => ({
   tokenSheet: {
-    maxWidth: GRID_SIZE_PX * 2,
     position: "absolute",
     bottom: theme.spacing(1),
     left: theme.spacing(1)
@@ -27,7 +27,7 @@ const useStyles = makeStyles(theme => ({
     display: "inline-flex",
     position: "absolute",
     bottom: theme.spacing(1),
-    left: '50%',
+    left: "50%",
     transform: "translateX(-50%)"
   }
 }));
@@ -49,6 +49,7 @@ const App = () => {
   const [tokens, setTokens] = useState(List.of<TokenState>());
   const [pings, setPings] = useState(List.of<UiPing>());
   const [client, setClient] = useState<TokenStateClient>();
+  const [isSearching, setSearching] = useState(false);
 
   const getNewRoomUrl = async () => {
     let resp;
@@ -124,19 +125,42 @@ const App = () => {
     return () => window.clearTimeout(timer);
   }, [pings]);
 
-  const onTokenPlaced = (icon: Icon, x: number, y: number) => {
-    let token = {
-      id: uuid(),
-      x: dragSnapToGrid(x),
-      y: dragSnapToGrid(y),
-      z: icon.type === IconType.floor ? 0 : 1,
-      iconId: icon.id
+  useEffect(() => {
+    const onKeyPressed = (e: KeyboardEvent) => {
+      if (e.getModifierState("Control") && e.key === "f") {
+        setSearching(true);
+        e.preventDefault();
+      } else if (e.key === "Escape") {
+        setSearching(false);
+      }
     };
-    if (client) {
-      client.queueCreate(token);
-    }
-    setTokens(tokens.push(token));
-  };
+
+    document.addEventListener("keydown", onKeyPressed);
+    return () => document.removeEventListener("keydown", onKeyPressed);
+  }, [setSearching]);
+
+  const onDialogLostFocus = useCallback(() => setSearching(false), [
+    setSearching
+  ]);
+
+  const onTokenPlaced = useCallback(
+    (icon: Icon, x: number, y: number) => {
+      setSearching(false);
+      const token = {
+        id: uuid(),
+        x: dragSnapToGrid(x),
+        y: dragSnapToGrid(y),
+        z: icon.type === IconType.floor ? 0 : 1,
+        iconId: icon.id,
+        isDragging: false
+      };
+      if (client) {
+        client.queueCreate(token);
+      }
+      setTokens(tokens.push(token));
+    },
+    [client, tokens, setTokens, setSearching]
+  );
 
   const deleteToken = (tokenId: string) => {
     setTokens(tokens.delete(tokens.findIndex(token => token.id === tokenId)));
@@ -177,6 +201,12 @@ const App = () => {
 
   return (
     <div>
+      <SearchDialog
+        onTokenPlaced={onTokenPlaced}
+        open={isSearching}
+        onLostFocus={onDialogLostFocus}
+        icons={ICONS}
+      />
       <Board
         tokens={tokens}
         pings={pings}
