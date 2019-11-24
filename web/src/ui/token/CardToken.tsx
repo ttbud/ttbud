@@ -37,7 +37,7 @@ interface Props {
 
 const CardToken: React.FC<Props> = props => {
   const classes = useStyles();
-  const [isDragging, setDragging] = useState();
+  const [isDragging, setDragging] = useState(!!props.startWithDragAt);
   const style = isDragging ? { zIndex: 1000 } : { zIndex: props.pos.z };
 
   const onDragStart = (e: MouseEvent) => {
