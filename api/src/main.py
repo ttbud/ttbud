@@ -13,12 +13,15 @@ def main():
     websocket_port = int(os.environ['API_WEBSOCKET_PORT'])
     http_port = int(os.environ['API_HTTP_PORT'])
     domain = os.environ['DOMAIN']
+    room_store_dir = os.environ['ROOM_STORE_DIR']
 
     app = flask.Flask(__name__)
     CORS(app)
     uuid_q = queue.Queue()
 
-    ws = threading.Thread(target=start_websocket, args=(uuid_q, websocket_port))
+    ws = threading.Thread(
+        target=start_websocket, args=(uuid_q, websocket_port, room_store_dir)
+    )
     ws.daemon = True
     ws.start()
 

@@ -9,12 +9,12 @@ from game_state_server import GameStateServer, MessageError
 
 
 class WebsocketManager:
-    def __init__(self, uuid_q, port):
+    def __init__(self, uuid_q, port, room_store_dir):
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
         self.uuid_q = uuid_q
         self.port = port
-        self.gss = GameStateServer()
+        self.gss = GameStateServer(room_store_dir)
         self._valid_room_ids = set(self.gss.valid_previous_rooms())
 
     def start_server(self) -> None:
@@ -88,6 +88,6 @@ class WebsocketManager:
         await self.send_message_to_room(response, room_id)
 
 
-def start_websocket(uuid_q, host_port):
-    ws = WebsocketManager(uuid_q, host_port)
+def start_websocket(uuid_q, host_port, room_store_dir):
+    ws = WebsocketManager(uuid_q, host_port, room_store_dir)
     ws.start_server()
