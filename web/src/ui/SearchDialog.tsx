@@ -40,7 +40,7 @@ interface DragState {
 
 const SearchDialog: React.FC<Props> = props => {
   const classes = useStyles();
-  const [search, setSearch] = useState<string>("");
+  const [search, setSearch] = useState("");
   const [dragState, setDraggingState] = useState<DragState | null>(null);
   const onChange = useCallback(e => setSearch(e.target.value), [setSearch]);
 
