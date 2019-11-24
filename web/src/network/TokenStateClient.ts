@@ -113,14 +113,16 @@ export class TokenStateClient {
 
   public ping(ping: Ping) {
     this.socket.send(
-      JSON.stringify([{
-        action: "ping",
-        data: {
-          x: ping.x / GRID_SIZE_PX,
-          y: ping.y / GRID_SIZE_PX,
-          id: ping.id
+      JSON.stringify([
+        {
+          action: "ping",
+          data: {
+            x: ping.x / GRID_SIZE_PX,
+            y: ping.y / GRID_SIZE_PX,
+            id: ping.id
+          }
         }
-      }])
+      ])
     );
   }
 
@@ -146,28 +148,31 @@ export class TokenStateClient {
 
   private onMessage(event: MessageEvent) {
     const json = JSON.parse(event.data);
-    console.log(json);
-    const message = decode(MessageDecoder, json);
-    if (message.type === "ping") {
-      for (const listener of this.pingListeners.values()) {
-        listener({
-          id: message.data.id,
-          x: message.data.x * GRID_SIZE_PX,
-          y: message.data.y * GRID_SIZE_PX
-        });
+    try {
+      const message = decode(MessageDecoder, json);
+      if (message.type === "ping") {
+        for (const listener of this.pingListeners.values()) {
+          listener({
+            id: message.data.id,
+            x: message.data.x * GRID_SIZE_PX,
+            y: message.data.y * GRID_SIZE_PX
+          });
+        }
+      } else {
+        for (const listener of this.stateListeners.values()) {
+          listener(
+            message.data.map(tokenState => ({
+              id: tokenState.id,
+              x: tokenState.start_x * GRID_SIZE_PX,
+              y: tokenState.start_y * GRID_SIZE_PX,
+              z: tokenState.start_z,
+              iconId: tokenState.icon_id
+            }))
+          );
+        }
       }
-    } else {
-      for (const listener of this.stateListeners.values()) {
-        listener(
-          message.data.map(tokenState => ({
-            id: tokenState.id,
-            x: tokenState.start_x * GRID_SIZE_PX,
-            y: tokenState.start_y * GRID_SIZE_PX,
-            z: tokenState.start_z,
-            iconId: tokenState.icon_id
-          }))
-        );
-      }
+    } catch (e) {
+      console.log(e);
     }
   }
 

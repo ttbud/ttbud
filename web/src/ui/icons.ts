@@ -1,19 +1,25 @@
+import archer from "../icon/archer.svg"
+import bandit from "../icon/bandit.svg"
 import beard from "../icon/beard.svg";
+import beech from "../icon/beech.svg"
 import bowman from "../icon/bowman.svg";
+import castle from "../icon/castle.svg";
+import chest from "../icon/chest.svg";
+import deadHead from "../icon/dead-head.svg";
+import door from "../icon/door.svg";
 import elfHelmet from "../icon/elf-helmet.svg";
 import entMouth from "../icon/ent-mouth.svg";
+import familyHouse from "../icon/family-house.svg";
+import gate from "../icon/gate.svg";
 import kangaroo from "../icon/kangaroo.svg";
-import swordsman from "../icon/swordman.svg";
-import wolfHead from "../icon/wolf-head.svg";
 import kenkuHead from "../icon/kenku-head.svg"
-import archer from "../icon/archer.svg"
 import ladle from "../icon/ladle.svg"
-import wall from "../icon/stone-wall.svg";
 import stairs from "../icon/stairs.svg";
-import door from "../icon/door.svg";
-import beech from "../icon/beech.svg"
 import stonePile from "../icon/stone-pile.svg"
+import swordsman from "../icon/swordman.svg";
+import wall from "../icon/stone-wall.svg";
 import waterDrop from "../icon/water-drop.svg"
+import wolfHead from "../icon/wolf-head.svg";
 
 import { List, Map } from "immutable";
 
@@ -38,7 +44,7 @@ export const WALL_ICON: Icon = {
   id: "e1fe6c14-48c4-40e2-8eec-56bdde988324",
   img: wall,
   type: IconType.wall,
-  desc: "Wall"
+  desc: "wall"
 };
 
 export const ICONS: List<Icon> = List.of(
@@ -131,6 +137,42 @@ export const ICONS: List<Icon> = List.of(
     img: waterDrop,
     type: IconType.floor,
     desc: "water drop"
+  },
+  {
+    id: "cb34dddd-c611-4d31-9e6f-f8768a57cb5d",
+    img: bandit,
+    type: IconType.token,
+    desc: "bandit"
+  },
+  {
+    id: "d340c708-659f-4ad4-b5ee-1b096c3a7d20",
+    img: castle,
+    type: IconType.floor,
+    desc: "castle"
+  },
+  {
+    id: "779e7321-1f6c-4d4a-be4e-2687700dab05",
+    img: chest,
+    type: IconType.floor,
+    desc: "chest"
+  },
+  {
+    id: "12608a5c-8302-448e-8009-aaf532860079",
+    img: deadHead,
+    type: IconType.token,
+    desc: "dead head"
+  },
+  {
+    id: "b2c50962-a3d8-490f-805c-254ee65d45b6",
+    img: familyHouse,
+    type: IconType.floor,
+    desc: "family house"
+  },
+  {
+    id: "b92a258a-4c65-4013-ad30-cf59e906206b",
+    img: gate,
+    type: IconType.floor,
+    desc: "gate"
   },
   WALL_ICON
 );
