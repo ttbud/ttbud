@@ -33,10 +33,16 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const PING_LENGTH_MS = 3000;
-const TOKEN_SHEET_ICONS = ICONS.filter(icon => icon.type === IconType.token);
+const TOKEN_SHEET_CAPACITY = 7;
+const FLOOR_SHEET_CAPACITY = 5;
+
+const TOKEN_SHEET_ICONS = ICONS.filter(
+  icon => icon.type === IconType.token
+).take(TOKEN_SHEET_CAPACITY);
+
 const FLOOR_SHEET_ICONS = ICONS.filter(
   icon => icon.type === IconType.floor || icon.type === IconType.wall
-);
+).take(FLOOR_SHEET_CAPACITY);
 
 interface UiPing extends Ping {
   removalTimestamp: number;
