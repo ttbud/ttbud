@@ -14,8 +14,6 @@ jobs:
           command: |
             python -m venv venv
             . ./venv/bin/activate
-            PYTHONPATH=./src/:$PYTHONPATH
-            export PYTHONPATH
       - run:
           name: Install Deps
           command: pip install -r requirements.txt

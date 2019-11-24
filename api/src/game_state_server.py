@@ -45,9 +45,9 @@ class MessageError(Exception):
 
 
 class GameStateServer:
-    def __init__(self):
+    def __init__(self, room_store_dir):
         self._rooms = {}
-        self.rs = RoomStore()
+        self.rs = RoomStore(room_store_dir)
 
     def valid_previous_rooms(self) -> list:
         return self.rs.get_all_room_ids()
@@ -69,6 +69,8 @@ class GameStateServer:
             if not self._rooms[room_id].clients:
                 print('Writing room data')
                 self.rs.write_room_data(room_id, self._rooms[room_id].game_state)
+            else:
+                print(f'{len(self._rooms[room_id].clients)} clients remaining')
 
     def process_update(self, message: dict, room_id: str) -> dict:
         if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):

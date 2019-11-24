@@ -5,8 +5,6 @@ services:
     command: python -u -m watchgod main.main
     # watchgod will drop all stdout without a tty
     tty: true
-    environment:
-      ROOM_STORE_DIR: /var/ttbud/rooms
     volumes:
       - ./api:/app
       - ${ROOM_STORE_DIR}:/var/ttbud/rooms

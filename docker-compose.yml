@@ -7,6 +7,7 @@ services:
       DOMAIN:
       API_HTTP_PORT:
       API_WEBSOCKET_PORT:
+      ROOM_STORE_DIR: /var/ttbud/rooms
   web:
     image: ttbud-web
     build: web
