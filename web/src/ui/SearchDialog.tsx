@@ -13,9 +13,6 @@ import CardToken from "./token/CardToken";
 import { GRID_SIZE_PX } from "../config";
 
 const useStyles = makeStyles({
-  hiddenDialogRoot: {
-    visibility: "hidden"
-  },
   tokenList: {
     width: GRID_SIZE_PX * 5,
     height: GRID_SIZE_PX * 5
@@ -53,30 +50,25 @@ const SearchDialog: React.FC<Props> = props => {
       : props.icons;
   }, [search, props.icons]);
 
-  const hidden = dragState || !props.open;
-  const hiddenClasses = {
-    root: classes.hiddenDialogRoot
-  };
-
-  return (
-    <>
-      {dragState && (
-        <div
-          style={{ position: "absolute", visibility: "visible", zIndex: 1000 }}
-        >
-          <CardToken
-            icon={dragState.icon}
-            pos={{ z: 1000, ...dragState.startPos }}
-            startWithDragAt={{ z: 0, ...dragState.startMousePos }}
-            onDropped={(x, y) => {
-              props.onTokenPlaced(dragState.icon, x, y);
-              setDraggingState(null);
-            }}
-          />
-        </div>
-      )}
+  if (dragState) {
+    return (
+      <div
+        style={{ position: "absolute", visibility: "visible", zIndex: 1000 }}
+      >
+        <CardToken
+          icon={dragState.icon}
+          pos={{ z: 1000, ...dragState.startPos }}
+          startWithDragAt={{ z: 0, ...dragState.startMousePos }}
+          onDropped={(x, y) => {
+            props.onTokenPlaced(dragState.icon, x, y);
+            setDraggingState(null);
+          }}
+        />
+      </div>
+    );
+  } else {
+    return (
       <Dialog
-        classes={hidden ? hiddenClasses : {}}
         open={props.open}
         onClose={props.onLostFocus}
       >
@@ -113,8 +105,8 @@ const SearchDialog: React.FC<Props> = props => {
           </GridList>
         </DialogContent>
       </Dialog>
-    </>
-  );
+    );
+  }
 };
 
 export default SearchDialog;
