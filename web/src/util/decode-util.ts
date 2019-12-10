@@ -1,5 +1,5 @@
 import * as t from "io-ts";
-import { PathReporter } from "io-ts/es6/PathReporter";
+import { PathReporter } from "io-ts/lib/PathReporter";
 
 export function decode<T, O, I>(validator: t.Type<T, O, I>, input: I): T {
   const result = validator.decode(input);
