@@ -88,9 +88,8 @@ const SearchDialog: React.FC<Props> = props => {
         <DialogContent className={classes.content}>
           <div className={classes.tokenList}>
             {icons.map(icon => (
-              <div className={classes.token}>
+              <div key={icon.id} className={classes.token}>
                 <CardToken
-                  key={icon.id}
                   icon={icon}
                   pos={{ x: 0, y: 0, z: 0 }}
                   onDragStart={e => {
