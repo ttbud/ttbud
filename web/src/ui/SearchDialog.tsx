@@ -11,6 +11,10 @@ import { List } from "immutable";
 import CardToken from "./token/CardToken";
 
 const useStyles = makeStyles(theme => ({
+  content: {
+    width: "300px",
+    height: "300px",
+  },
   tokenList: {
     display: "flex",
     flexWrap: "wrap"
@@ -67,7 +71,7 @@ const SearchDialog: React.FC<Props> = props => {
     );
   } else {
     return (
-      <Dialog open={props.open} onClose={props.onLostFocus} maxWidth={"xs"}>
+      <Dialog open={props.open} onClose={props.onLostFocus}>
         <DialogTitle>
           <TextField
             fullWidth
@@ -81,7 +85,7 @@ const SearchDialog: React.FC<Props> = props => {
             value={search}
           />
         </DialogTitle>
-        <DialogContent>
+        <DialogContent className={classes.content}>
           <div className={classes.tokenList}>
             {icons.map(icon => (
               <div className={classes.token}>
