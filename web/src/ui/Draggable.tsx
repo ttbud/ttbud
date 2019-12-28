@@ -1,4 +1,9 @@
-import React, {MouseEventHandler, useEffect, useState} from "react";
+import React, {
+  MouseEventHandler,
+  ReactElement,
+  useEffect,
+  useState
+} from "react";
 
 interface Pos {
   x: number;
@@ -6,6 +11,7 @@ interface Pos {
 }
 
 interface Props {
+  children: ReactElement<any>;
   pos?: Pos;
   startWithDragAt?: Pos;
   onDragStart?: (e: MouseEvent) => void;
@@ -22,7 +28,7 @@ const Draggable: React.FC<Props> = ({
   const defaultPos = pos;
 
   const [isDragging, setDragging] = useState(!!startWithDragAt);
-  const [dragStart, setDragStart] = useState(startWithDragAt || {x: 0, y: 0});
+  const [dragStart, setDragStart] = useState(startWithDragAt || { x: 0, y: 0 });
   const [offset, setOffset] = useState(defaultPos);
 
   const onMouseDown: MouseEventHandler = e => {
@@ -77,13 +83,16 @@ const Draggable: React.FC<Props> = ({
   }, [defaultPos, dragStart, isDragging, onDragStop]);
 
   const translate = isDragging ? offset : defaultPos;
-  const style = { transform: `translate(${translate.x}px, ${translate.y}px)` };
+  const child = React.Children.only(children);
+  const style = {
+    ...child.props.style,
+    transform: `translate(${translate.x}px, ${translate.y}px)`
+  };
 
-  return (
-    <div onMouseDown={onMouseDown} style={style}>
-      {children}
-    </div>
-  );
+  return React.cloneElement(child, {
+    onMouseDown,
+    style
+  });
 };
 
 export default Draggable;
