@@ -1,0 +1,9 @@
+version: 1
+
+update_configs:
+  - package_manager: "python"
+    directory: "/api"
+    update_schedule: "live"
+  - package_manager: "javascript"
+    directory: "/web"
+    update_schedule: "live"
