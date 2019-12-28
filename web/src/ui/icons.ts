@@ -60,6 +60,7 @@ export const WALL_ICON: Icon = {
 };
 
 export const ICONS: List<Icon> = List.of(
+  WALL_ICON,
   {
     id: "a511ebd2-827b-490d-b20a-c206e4edd25e",
     img: beard,
@@ -257,8 +258,7 @@ export const ICONS: List<Icon> = List.of(
     img: woodenCreate,
     type: IconType.floor,
     desc: "wooden crate"
-  },
-  WALL_ICON
+  }
 );
 
 export const ICONS_BY_ID: Map<string, Icon> = byId(ICONS);
