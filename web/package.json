@@ -7,7 +7,7 @@
     "@material-ui/icons": "^4.5.1",
     "@material-ui/lab": "^4.0.0-alpha.29",
     "@types/jest": "24.0.19",
-    "@types/node": "12.11.2",
+    "@types/node": "13.1.1",
     "@types/react": "16.9.17",
     "@types/react-dom": "16.9.2",
     "fp-ts": "^2.1.1",
