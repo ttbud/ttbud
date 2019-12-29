@@ -1,5 +1,6 @@
 from websockets import WebSocketServerProtocol
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
+from typing import Union
 
 from room_store import RoomStore
 
@@ -15,17 +16,11 @@ class Token:
     end_y: int
     end_z: int
 
-    def to_dict(self) -> dict:
-        return {
-            'id': self.id,
-            'icon_id': self.icon_id,
-            'start_x': self.start_x,
-            'start_y': self.start_y,
-            'start_z': self.start_z,
-            'end_x': self.end_x,
-            'end_y': self.end_y,
-            'end_z': self.end_z,
-        }
+
+@dataclass
+class Reply:
+    type: str
+    data: Union[list, str]
 
 
 class RoomData:
@@ -72,7 +67,7 @@ class GameStateServer:
             else:
                 print(f'{len(self._rooms[room_id].clients)} clients remaining')
 
-    def process_update(self, message: dict, room_id: str) -> dict:
+    def process_update(self, message: dict, room_id: str) -> Reply:
         if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
             raise MessageError('Your room does not exist, somehow')
         action = message.get('action', None)
@@ -80,7 +75,6 @@ class GameStateServer:
         if not action or not data:
             raise MessageError('Did not receive a full message')
 
-        reply = {'type': None, 'data': None}
         if action == 'create' or action == 'update':
             token = self.dict_to_token(data)
             if not token or not self.is_valid_token(token):
@@ -88,21 +82,19 @@ class GameStateServer:
             if not self.is_valid_position(token, room_id):
                 raise MessageError('That position is occupied, bucko')
             self.create_or_update_token(token, room_id)
-            reply['type'] = 'state'
-            reply['data'] = self.get_state(room_id)
+            return Reply('state', self.get_state(room_id))
         elif action == 'delete':
             if type(data) != str:
                 raise MessageError('Data for delete actions must be a token ID')
             if self._rooms[room_id].game_state.get(data, False):
                 self.delete_token(data, room_id)
-                reply['type'] = 'state'
-                reply['data'] = self.get_state(room_id)
+                return Reply('state', self.get_state(room_id))
+            else:
+                raise MessageError('Cannot delete token because it does not exist')
         elif action == 'ping':
-            reply['type'] = 'ping'
-            reply['data'] = data
+            return Reply('ping', data)
         else:
             raise MessageError(f'Invalid action: {action}')
-        return reply
 
     @staticmethod
     def dict_to_token(data: dict):
@@ -137,7 +129,7 @@ class GameStateServer:
         self._rooms[room_id].id_to_positions[token.id] = blocks
         for block in blocks:
             self._rooms[room_id].positions_to_ids[block] = token.id
-        self._rooms[room_id].game_state[token.id] = token.to_dict()
+        self._rooms[room_id].game_state[token.id] = asdict(token)
 
     def delete_token(self, token_id: str, room_id: str) -> None:
         # Remove token data from position dictionaries
