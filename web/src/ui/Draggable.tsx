@@ -18,6 +18,10 @@ interface Props {
   onDragStop?: (pos: Pos) => void;
 }
 
+const MODIFIER_KEYS = [
+  "Alt", "Control", "Meta", "Shift"
+];
+
 const Draggable: React.FC<Props> = ({
   children,
   startWithDragAt,
@@ -31,8 +35,12 @@ const Draggable: React.FC<Props> = ({
   const [dragStart, setDragStart] = useState(startWithDragAt || { x: 0, y: 0 });
   const [offset, setOffset] = useState(defaultPos);
 
+  const modifierKeyPressed = (e: React.MouseEvent): boolean => {
+    return MODIFIER_KEYS.some(key => e.getModifierState(key))
+  };
+
   const onMouseDown: MouseEventHandler = e => {
-    if (e.button !== 0) {
+    if (e.button !== 0 || modifierKeyPressed(e)) {
       return;
     }
 
