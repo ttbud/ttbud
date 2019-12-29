@@ -5,8 +5,7 @@ import json
 class RoomStore:
     def __init__(self, room_store_dir):
         self.path = room_store_dir
-        if not os.path.exists(self.path):
-            os.mkdir(self.path)
+        os.makedirs(self.path, exist_ok=True)
 
     def get_all_room_ids(self) -> list:
         return os.listdir(self.path)
