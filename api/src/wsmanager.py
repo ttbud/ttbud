@@ -1,6 +1,7 @@
 import asyncio
 import queue
 import json
+from dataclasses import asdict
 from typing import Union
 
 import websockets
@@ -81,7 +82,7 @@ class WebsocketManager:
 
         for message in messages:
             try:
-                response = self.gss.process_update(message, room_id)
+                response = asdict(self.gss.process_update(message, room_id))
             except MessageError as err:
                 print(err)
                 await self.send_message_to_client({'Error': err.message}, client)
