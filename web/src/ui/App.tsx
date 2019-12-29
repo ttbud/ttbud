@@ -41,8 +41,8 @@ const TOKEN_SHEET_ICONS = ICONS.filter(
 ).take(TOKEN_SHEET_CAPACITY);
 
 const FLOOR_SHEET_ICONS = ICONS.filter(
-  icon => icon.type === IconType.floor || icon.type === IconType.wall
-).take(FLOOR_SHEET_CAPACITY);
+  icon => icon.type === IconType.floor
+).take(FLOOR_SHEET_CAPACITY - 1).insert(0, WALL_ICON);
 
 interface UiPing extends Ping {
   removalTimestamp: number;
