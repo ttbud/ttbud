@@ -4,10 +4,6 @@ https://{$DOMAIN} {
 
     rewrite /room/.* to /
 
-    proxy /api api:{$API_HTTP_PORT} {
-        transparent
-    }
-
     proxy /sockjs-node web:{$WEB_HTTP_PORT} {
         transparent
         websocket

@@ -14,7 +14,6 @@ def is_valid_uuid(uuid_string):
         val = UUID(uuid_string, version=4)
     except ValueError:
         return False
-    print(f'{val.hex} : {uuid_string}')
     return val.hex == uuid_string.replace('-', '')
 
 

@@ -4,10 +4,6 @@ https://{$DOMAIN} {
 
     rewrite /room/.* to /
     root /var/www/ttbud/web/
-
-    proxy /api api:{$API_HTTP_PORT} {
-        transparent
-    }
 }
 
 wss://{$DOMAIN}:{$API_WEBSOCKET_PORT} {
