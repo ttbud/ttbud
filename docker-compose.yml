@@ -11,6 +11,9 @@ services:
   web:
     image: ttbud-web
     build: web
+    environment:
+      REACT_APP_DOMAIN: ${DOMAIN}
+      REACT_APP_API_WEBSOCKET_PORT: ${API_WEBSOCKET_PORT}
     command: yarn run build
     volumes:
       - static-assets:/app/build

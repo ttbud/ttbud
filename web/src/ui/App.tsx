@@ -58,15 +58,8 @@ const App = () => {
   const [isSearching, setSearching] = useState(false);
 
   const getNewRoomUrl = async () => {
-    let resp;
-    let wsUrl;
-    try {
-      resp = await fetch("/api/socket");
-      const json = await resp.json();
-      wsUrl = json.path;
-    } catch (e) {
-      return null;
-    }
+    console.log(process.env);
+    const wsUrl = `wss://${process.env.REACT_APP_DOMAIN}:${process.env.REACT_APP_API_WEBSOCKET_PORT}/${uuid()}`;
     const httpUrl = `/room/${btoa(wsUrl)}`;
     window.history.replaceState({}, "Your special room", httpUrl);
     return wsUrl;
