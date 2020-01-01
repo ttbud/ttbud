@@ -6,6 +6,7 @@ const useStyles = makeStyles({
   ping: {
     boxShadow: `50px solid #999`,
     borderRadius: "50%",
+    zIndex: 1000,
     animation: "$pulsate 1s ease-out",
     animationIterationCount: "infinite"
   },
