@@ -5,7 +5,6 @@ services:
     build: api
     environment:
       DOMAIN:
-      API_HTTP_PORT:
       API_WEBSOCKET_PORT:
       ROOM_STORE_DIR: /var/ttbud/rooms
   web:
@@ -22,7 +21,6 @@ services:
     environment:
       DOMAIN:
       CERT_CONFIG:
-      API_HTTP_PORT:
       API_WEBSOCKET_PORT:
       ACME_AGREE: 'true'
     volumes:
