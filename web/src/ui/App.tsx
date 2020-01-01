@@ -57,8 +57,7 @@ const App = () => {
   const [client, setClient] = useState<TokenStateClient>();
   const [isSearching, setSearching] = useState(false);
 
-  const getNewRoomUrl = async () => {
-    console.log(process.env);
+  const getNewRoomUrl = () => {
     const wsUrl = `wss://${process.env.REACT_APP_DOMAIN}:${process.env.REACT_APP_API_WEBSOCKET_PORT}/${uuid()}`;
     const httpUrl = `/room/${btoa(wsUrl)}`;
     window.history.replaceState({}, "Your special room", httpUrl);
@@ -66,19 +65,14 @@ const App = () => {
   };
 
   useEffect(() => {
-    const connect = async () => {
-      const path = window.location.pathname.split("/room/")[1];
-      const roomUrl = path ? atob(path) : await getNewRoomUrl();
-      if (!roomUrl) {
-        return;
-      }
-      let socket = new WebSocket(roomUrl);
-      const client = new TokenStateClient(socket);
-      setClient(client);
-    };
-
-    // noinspection JSIgnoredPromiseFromCall
-    connect();
+    const path = window.location.pathname.split("/room/")[1];
+    const roomUrl = path ? atob(path) : getNewRoomUrl();
+    if (!roomUrl) {
+      return;
+    }
+    let socket = new WebSocket(roomUrl);
+    const client = new TokenStateClient(socket);
+    setClient(client);
   }, []);
 
   useEffect(() => {
