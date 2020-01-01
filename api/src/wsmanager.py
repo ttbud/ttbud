@@ -3,8 +3,10 @@ import json
 from dataclasses import asdict
 from typing import Union
 from uuid import UUID
+from http import HTTPStatus
 
 import websockets
+from websockets.http import Headers
 
 from game_state_server import GameStateServer, MessageError
 
@@ -25,9 +27,21 @@ class WebsocketManager:
         self.gss = GameStateServer(room_store_dir)
         self._valid_room_ids = set(self.gss.valid_previous_rooms())
 
+    @staticmethod
+    async def process_request(path, request_headers):
+        if is_valid_uuid(path.lstrip('/')):
+            return None
+        else:
+            return HTTPStatus.BAD_REQUEST, Headers(), b''
+
     def start_server(self) -> None:
         try:
-            ws_server = websockets.serve(self.consumer_handler, '0.0.0.0', self.port)
+            ws_server = websockets.serve(
+                self.consumer_handler,
+                '0.0.0.0',
+                self.port,
+                process_request=self.process_request,
+            )
             self._loop.run_until_complete(ws_server)
         except OSError as e:
             print(e)
@@ -38,7 +52,6 @@ class WebsocketManager:
         self, client: websockets.WebSocketServerProtocol, room_id: str
     ) -> None:
         room_id = room_id.lstrip('/')
-        print(room_id)
         if is_valid_uuid(room_id):
             response = self.gss.new_connection_request(client, room_id)
             await self.send_message_to_client(response, client)
