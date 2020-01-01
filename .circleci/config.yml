@@ -52,6 +52,8 @@ jobs:
           name: Run Tests
           environment:
             - JEST_JUNIT_OUTPUT_DIR: test-results
+            - REACT_APP_DOMAIN: localhost
+            - REACT_APP_API_WEBSOCKET_PORT: 1234
           command: yarn run test -- --reporters=default --reporters=jest-junit
       - store_test_results:
           path: test-results
