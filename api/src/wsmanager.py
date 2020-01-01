@@ -1,19 +1,27 @@
 import asyncio
-import queue
 import json
 from dataclasses import asdict
 from typing import Union
+from uuid import UUID
 
 import websockets
 
 from game_state_server import GameStateServer, MessageError
 
 
+def is_valid_uuid(uuid_string):
+    try:
+        val = UUID(uuid_string, version=4)
+    except ValueError:
+        return False
+    print(f'{val.hex} : {uuid_string}')
+    return val.hex == uuid_string.replace('-', '')
+
+
 class WebsocketManager:
-    def __init__(self, uuid_q, port, room_store_dir):
+    def __init__(self, port, room_store_dir):
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
-        self.uuid_q = uuid_q
         self.port = port
         self.gss = GameStateServer(room_store_dir)
         self._valid_room_ids = set(self.gss.valid_previous_rooms())
@@ -21,7 +29,6 @@ class WebsocketManager:
     def start_server(self) -> None:
         try:
             ws_server = websockets.serve(self.consumer_handler, '0.0.0.0', self.port)
-
             self._loop.run_until_complete(ws_server)
         except OSError as e:
             print(e)
@@ -33,12 +40,7 @@ class WebsocketManager:
     ) -> None:
         room_id = room_id.lstrip('/')
         print(room_id)
-        while True:
-            try:
-                self._valid_room_ids.add(str(self.uuid_q.get_nowait()))
-            except queue.Empty:
-                break
-        if room_id in self._valid_room_ids:
+        if is_valid_uuid(room_id):
             response = self.gss.new_connection_request(client, room_id)
             await self.send_message_to_client(response, client)
             try:
@@ -46,6 +48,8 @@ class WebsocketManager:
                     await self.consume(message, room_id, client)
             finally:
                 self.gss.connection_dropped(client, room_id)
+        else:
+            print(f'Invalid uuid: {room_id}')
 
     @staticmethod
     async def send_message_to_client(
@@ -89,6 +93,6 @@ class WebsocketManager:
         await self.send_message_to_room(response, room_id)
 
 
-def start_websocket(uuid_q, host_port, room_store_dir):
-    ws = WebsocketManager(uuid_q, host_port, room_store_dir)
+def start_websocket(host_port, room_store_dir):
+    ws = WebsocketManager(host_port, room_store_dir)
     ws.start_server()
