@@ -5,7 +5,7 @@ description = "Your virtual table friend"
 authors = ["Stephen Johnson <github@sjoh.net>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 websockets = "^8.1"
 
 [tool.poetry.dev-dependencies]
