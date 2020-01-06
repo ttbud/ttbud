@@ -2,31 +2,26 @@ version: 2
 jobs:
   api:
     docker:
-      - image: python:3.7
+      - image: circleci/python:3.8
     working_directory: ~/repo/api
     steps:
       - checkout:
           path: ~/repo
       - restore_cache:
-          key: api-deps-v1-{{ checksum "requirements.txt" }}
-      - run:
-          name: Activate virtualenv
-          command: |
-            python -m venv venv
-            . ./venv/bin/activate
+          key: api-deps-v1-{{ checksum "poetry.lock" }}
       - run:
           name: Install Deps
-          command: pip install -r requirements.txt
+          command: poetry install
       - save_cache:
-          key: api-deps-v1-{{ checksum "requirements.txt" }}
+          key: api-deps-v1-{{ checksum "poetry.lock" }}
           paths:
             - venv
       - run:
           name: Check Code Format
-          command: black -S src tests --check
+          command: poetry run black -S src tests --check
       - run:
           name: Run Tests
-          command: pytest tests --junitxml=test-results/junit.xml
+          command: poetry run pytest tests --junitxml=test-results/junit.xml
       - store_test_results:
           path: test-results
   web:

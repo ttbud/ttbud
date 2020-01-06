@@ -2,8 +2,10 @@ FROM python:3.7
 
 WORKDIR /app
 RUN pip install watchgod
-ADD requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install poetry
+RUN poetry config virtualenvs.create false
+ADD pyproject.toml .
+RUN poetry install
 
 ADD . .
 EXPOSE 5000
