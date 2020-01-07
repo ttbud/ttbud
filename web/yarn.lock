@@ -8653,10 +8653,10 @@ react-transition-group@^4.3.0:
     loose-envify "^1.4.0"
     prop-types "^15.6.2"
 
-react-use@^13.14.0:
-  version "13.14.0"
-  resolved "https://registry.yarnpkg.com/react-use/-/react-use-13.14.0.tgz#b0c27407c52897f2e42839e0801b392f2ad2718a"
-  integrity sha512-E9tmVppagnDVMgzWwdSA7V8rHEugtF1VTYmkmiBMw1RctkvZK7ib6lzsZh5KugHNEdR/7ffYFjwZZ3NZobm9KA==
+react-use@^13.14.1:
+  version "13.14.1"
+  resolved "https://registry.yarnpkg.com/react-use/-/react-use-13.14.1.tgz#4c13972735a864c5e674b1b766a01630a5c65ce2"
+  integrity sha512-UVrzjlq4ZvHXvmDTdZJ6iMp+lVitrAysoeW+Wo+TCkOkZdvSD+gNlDeNAapc4QwP71FkIbdDIPBi3B08q5da+A==
   dependencies:
     "@xobotyi/scrollbar-width" "1.5.0"
     copy-to-clipboard "^3.2.0"
