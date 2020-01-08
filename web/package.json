@@ -19,7 +19,7 @@
     "react-dom": "^16.10.2",
     "react-draggable": "^4.0.3",
     "react-scripts": "3.3.0",
-    "react-use": "^13.14.0",
+    "react-use": "^13.14.3",
     "typescript": "3.7.4",
     "uuid": "^3.3.3"
   },
