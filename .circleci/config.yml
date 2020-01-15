@@ -8,14 +8,17 @@ jobs:
       - checkout:
           path: ~/repo
       - restore_cache:
-          key: api-deps-v1-{{ checksum "poetry.lock" }}
+          key: api-deps-v2-{{ checksum "poetry.lock" }}
+      - run:
+          name: Configure Poetry
+          command: poetry config virtualenvs.in-project true && poetry config virtualenvs.path .venv
       - run:
           name: Install Deps
           command: poetry install
       - save_cache:
-          key: api-deps-v1-{{ checksum "poetry.lock" }}
+          key: api-deps-v2-{{ checksum "poetry.lock" }}
           paths:
-            - venv
+            - .venv
       - run:
           name: Check Code Format
           command: poetry run black -S src tests --check
