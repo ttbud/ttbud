@@ -11,7 +11,7 @@
     "@types/react": "16.9.17",
     "@types/react-dom": "16.9.4",
     "@types/webpack-env": "^1.15.0",
-    "fp-ts": "^2.1.1",
+    "fp-ts": "^2.4.1",
     "immutable": "^4.0.0-rc.12",
     "io-ts": "^2.0.5",
     "jest-junit": "^10.0.0",
