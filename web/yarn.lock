@@ -8663,10 +8663,10 @@ react-transition-group@^4.3.0:
     loose-envify "^1.4.0"
     prop-types "^15.6.2"
 
-react-use@^13.19.0:
-  version "13.19.0"
-  resolved "https://registry.yarnpkg.com/react-use/-/react-use-13.19.0.tgz#00c7650012021e75b5cf9ea8c1b1b4e1c22eb076"
-  integrity sha512-By7d8ZhdWo0Ns2BW/Gla5EDrj9rTJ8p/ueJKv7SbqlDQvu9lpwovWGWKjY5Vjz5gAG3tZrSSxd1gK+gw7gZniQ==
+react-use@^13.21.0:
+  version "13.21.0"
+  resolved "https://registry.yarnpkg.com/react-use/-/react-use-13.21.0.tgz#9dd689264d0cd6eca31512099c43e769850b14eb"
+  integrity sha512-JwGAYb6XRIRsadqJ9LoYy+kJC5QPB6HhHFsToPvdX/Hg3P0RBDHMIYt5ITkuRqWrEOkkdCYPt8p3jADH/0CRVw==
   dependencies:
     "@types/js-cookie" "2.2.4"
     "@xobotyi/scrollbar-width" "1.5.0"
