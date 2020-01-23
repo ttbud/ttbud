@@ -8,7 +8,7 @@
     "@material-ui/lab": "^4.0.0-alpha.39",
     "@types/jest": "24.9.0",
     "@types/node": "13.1.7",
-    "@types/react": "16.9.18",
+    "@types/react": "16.9.19",
     "@types/react-dom": "16.9.5",
     "@types/webpack-env": "^1.15.0",
     "fp-ts": "^2.4.1",
