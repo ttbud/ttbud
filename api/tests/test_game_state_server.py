@@ -11,6 +11,15 @@ class FakeRoomStore(RoomStore):
     def get_all_room_ids(self) -> list:
         return []
 
+    def write_room_data(self, room_id: str, data: dict):
+        print('Room data written')
+
+    def read_room_data(self, room_id: str) -> dict:
+        return {}
+
+    def room_data_exists(self, room_id: str) -> bool:
+        return True
+
 
 def test_new_connection():
     rs = FakeRoomStore('/my/path/to/rooms/')
