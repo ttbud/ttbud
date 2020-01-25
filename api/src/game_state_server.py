@@ -1,4 +1,3 @@
-from websockets import WebSocketServerProtocol
 from dataclasses import dataclass, asdict
 from typing import Union
 
@@ -40,30 +39,30 @@ class MessageError(Exception):
 
 
 class GameStateServer:
-    def __init__(self, room_store_dir):
+    def __init__(self, room_store):
         self._rooms = {}
-        self.rs = RoomStore(room_store_dir)
+        self.room_store = room_store
 
     def valid_previous_rooms(self) -> list:
-        return self.rs.get_all_room_ids()
+        return self.room_store.get_all_room_ids()
 
     def new_connection_request(
-        self, client: WebSocketServerProtocol, room_id: str
+        self, client: any, room_id: str
     ) -> Reply:
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.add(client)
         else:
             self._rooms[room_id] = RoomData(room_id, initial_connection=client)
-            if self.rs.room_data_exists(room_id):
-                self._rooms[room_id].game_state = self.rs.read_room_data(room_id)
+            if self.room_store.room_data_exists(room_id):
+                self._rooms[room_id].game_state = self.room_store.read_room_data(room_id)
         return Reply('state', self.get_state(room_id))
 
-    def connection_dropped(self, client: WebSocketServerProtocol, room_id: str) -> None:
+    def connection_dropped(self, client: any, room_id: str) -> None:
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.remove(client)
             if not self._rooms[room_id].clients:
                 print('Writing room data')
-                self.rs.write_room_data(room_id, self._rooms[room_id].game_state)
+                self.room_store.write_room_data(room_id, self._rooms[room_id].game_state)
             else:
                 print(f'{len(self._rooms[room_id].clients)} clients remaining')
 

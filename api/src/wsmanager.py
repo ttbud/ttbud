@@ -20,11 +20,11 @@ def is_valid_uuid(uuid_string):
 
 
 class WebsocketManager:
-    def __init__(self, port, room_store_dir):
+    def __init__(self, port, gss):
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
         self.port = port
-        self.gss = GameStateServer(room_store_dir)
+        self.gss = gss
         self._valid_room_ids = set(self.gss.valid_previous_rooms())
 
     @staticmethod
