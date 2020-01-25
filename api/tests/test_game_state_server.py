@@ -1,4 +1,6 @@
-from game_state_server import GameStateServer, Token
+import pytest
+
+from game_state_server import GameStateServer, Token, MessageError
 from room_store import RoomStore
 
 
@@ -7,18 +9,19 @@ class FakeRoomStore(RoomStore):
     # noinspection PyMissingConstructor
     def __init__(self, room_store_dir):
         self.path = room_store_dir
+        self.stored_data = {}
 
     def get_all_room_ids(self) -> list:
-        return []
+        return list(self.stored_data.keys())
 
     def write_room_data(self, room_id: str, data: dict):
-        print('Room data written')
+        self.stored_data[room_id] = data
 
     def read_room_data(self, room_id: str) -> dict:
-        return {}
+        return self.stored_data[room_id]
 
     def room_data_exists(self, room_id: str) -> bool:
-        return True
+        return room_id in self.stored_data.keys()
 
 
 def test_new_connection():
@@ -27,3 +30,10 @@ def test_new_connection():
     reply = gss.new_connection_request('test_client', 'room1')
     assert reply.type == 'state'
     assert len(reply.data) == 0
+
+
+def test_room_does_not_exist():
+    rs = FakeRoomStore('/my/path/to/rooms/')
+    gss = GameStateServer(rs)
+    with pytest.raises(MessageError):
+        gss.process_update({}, 'room id that does not exist')
