@@ -53,7 +53,7 @@ class WebsocketManager:
     ) -> None:
         room_id = room_id.lstrip('/')
         if is_valid_uuid(room_id):
-            response = self.gss.new_connection_request(client, room_id)
+            response = asdict(self.gss.new_connection_request(client, room_id))
             await self.send_message_to_client(response, client)
             try:
                 async for message in client:
@@ -91,18 +91,18 @@ class WebsocketManager:
             print(e)
             return
 
-        response = {
+        latest_state = {
             "type": "state",
             "data": self.gss.get_state(room_id),
         }
 
         for message in messages:
             try:
-                response = asdict(self.gss.process_update(message, room_id))
+                latest_state = asdict(self.gss.process_update(message, room_id))
             except MessageError as err:
                 print(err)
                 await self.send_message_to_client({'Error': err.message}, client)
-        await self.send_message_to_room(response, room_id)
+        await self.send_message_to_room(latest_state, room_id)
 
 
 def start_websocket(host_port, room_store_dir):
