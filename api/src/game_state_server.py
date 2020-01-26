@@ -1,8 +1,6 @@
 from dataclasses import dataclass, asdict
 from typing import Union
 
-from room_store import RoomStore
-
 
 @dataclass
 class Token:
