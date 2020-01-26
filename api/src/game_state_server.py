@@ -44,15 +44,15 @@ class GameStateServer:
     def valid_previous_rooms(self) -> list:
         return self.room_store.get_all_room_ids()
 
-    def new_connection_request(
-        self, client: any, room_id: str
-    ) -> Reply:
+    def new_connection_request(self, client: any, room_id: str) -> Reply:
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.add(client)
         else:
             self._rooms[room_id] = RoomData(room_id, initial_connection=client)
             if self.room_store.room_data_exists(room_id):
-                self._rooms[room_id].game_state = self.room_store.read_room_data(room_id)
+                self._rooms[room_id].game_state = self.room_store.read_room_data(
+                    room_id
+                )
         return Reply('state', self.get_state(room_id))
 
     def connection_dropped(self, client: any, room_id: str) -> None:
@@ -60,7 +60,9 @@ class GameStateServer:
             self._rooms[room_id].clients.remove(client)
             if not self._rooms[room_id].clients:
                 print('Writing room data')
-                self.room_store.write_room_data(room_id, self._rooms[room_id].game_state)
+                self.room_store.write_room_data(
+                    room_id, self._rooms[room_id].game_state
+                )
             else:
                 print(f'{len(self._rooms[room_id].clients)} clients remaining')
 
