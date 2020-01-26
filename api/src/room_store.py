@@ -24,7 +24,7 @@ class RoomStore(Protocol):
         raise NotImplementedError
 
 
-class FileRoomStore(RoomStore):
+class FileRoomStore:
     def __init__(self, path):
         self.path = path
         os.makedirs(self.path, exist_ok=True)
@@ -51,7 +51,7 @@ class FileRoomStore(RoomStore):
         return os.path.exists(f'{self.path}/{room_id}')
 
 
-class MemoryRoomStore(RoomStore):
+class MemoryRoomStore:
     def __init__(self, path):
         self.path = path
         self.stored_data = {}
