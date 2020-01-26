@@ -15,24 +15,27 @@ valid_data = {'id': 'some_id',
               }
 
 
-def test_new_connection():
-    rs = MemoryRoomStore('/my/path/to/rooms/')
-    gss = GameStateServer(rs)
+@pytest.fixture
+def set_up_gss():
+    rs = MemoryRoomStore('my/path/to/room/storage/')
+    return GameStateServer(rs)
+
+
+def test_new_connection(set_up_gss):
+    gss = set_up_gss
     reply = gss.new_connection_request('test_client', 'room1')
     assert reply.type == 'state'
     assert len(reply.data) == 0
 
 
-def test_room_does_not_exist():
-    rs = MemoryRoomStore('/my/path/to/rooms/')
-    gss = GameStateServer(rs)
+def test_room_does_not_exist(set_up_gss):
+    gss = set_up_gss
     with pytest.raises(MessageError):
         gss.process_update({}, 'room id that does not exist')
 
 
-def test_room_data_is_stored():
-    rs = MemoryRoomStore('/my/path/to/rooms/')
-    gss = GameStateServer(rs)
+def test_room_data_is_stored(set_up_gss):
+    gss = set_up_gss
     gss.new_connection_request('client1', 'room1')
     gss.process_update({
         'action': 'create',
