@@ -1,6 +1,8 @@
 from dataclasses import dataclass, asdict
 from typing import Union
 
+from room_store import RoomStore
+
 
 @dataclass
 class Token:
@@ -37,7 +39,7 @@ class MessageError(Exception):
 
 
 class GameStateServer:
-    def __init__(self, room_store):
+    def __init__(self, room_store: RoomStore):
         self._rooms = {}
         self.room_store = room_store
 
