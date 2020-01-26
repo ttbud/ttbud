@@ -24,8 +24,8 @@ class RoomData:
     def __init__(self, room_id: str, initial_connection=None):
         self.room_id = room_id
         self.game_state = {}
-        self._id_to_positions = {}
-        self._positions_to_ids = {}
+        self.id_to_positions = {}
+        self.positions_to_ids = {}
         self.clients = set()
         if initial_connection:
             self.clients.add(initial_connection)
