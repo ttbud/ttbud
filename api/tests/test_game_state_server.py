@@ -61,8 +61,10 @@ def test_duplicate_update_rejected(gss_with_client):
 def test_duplicate_update_in_different_room(gss):
     gss.new_connection_request('client1', 'room1')
     gss.new_connection_request('client2', 'room2')
-    gss.process_update(valid_update, 'room1')
-    gss.process_update(valid_update, 'room2')
+    reply1 = gss.process_update(valid_update, 'room1')
+    reply2 = gss.process_update(valid_update, 'room2')
+    assert reply1.data == [valid_data]
+    assert reply2.data == [valid_data]
 
 
 def test_delete_token(gss_with_client):
@@ -75,4 +77,6 @@ def test_delete_token(gss_with_client):
 
 def test_delete_non_existent_token(gss_with_client):
     with pytest.raises(MessageError):
-        gss_with_client.process_update({'action': 'delete', 'data': valid_data['id']}, TEST_ROOM_ID)
+        gss_with_client.process_update(
+            {'action': 'delete', 'data': valid_data['id']}, TEST_ROOM_ID
+        )
