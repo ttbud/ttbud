@@ -47,9 +47,9 @@ def test_room_does_not_exist(gss):
 def test_room_data_is_stored(gss_with_client):
     gss_with_client.process_update(valid_update, TEST_ROOM_ID)
     gss_with_client.connection_dropped(TEST_CLIENT, TEST_ROOM_ID)
-    assert gss_with_client.room_store.stored_data.get(TEST_ROOM_ID, False)
-    assert gss_with_client.room_store.stored_data[TEST_ROOM_ID].get(valid_data['id'], False)
-    assert gss_with_client.room_store.stored_data[TEST_ROOM_ID][valid_data['id']] == valid_data
+    stored_data = gss_with_client.room_store.read_room_data(TEST_ROOM_ID)
+    assert stored_data.get(valid_data['id'], False)
+    assert stored_data[valid_data['id']] == valid_data
 
 
 def test_duplicate_update_rejected(gss_with_client):
