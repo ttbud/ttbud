@@ -13,6 +13,7 @@ valid_data = {'id': 'some_id',
               'end_y': 1,
               'end_z': 1,
               }
+valid_update = {'action': 'create', 'data': valid_data}
 
 
 @pytest.fixture
@@ -37,11 +38,39 @@ def test_room_does_not_exist(set_up_gss):
 def test_room_data_is_stored(set_up_gss):
     gss = set_up_gss
     gss.new_connection_request('client1', 'room1')
-    gss.process_update({
-        'action': 'create',
-        'data': valid_data,
-    }, 'room1')
+    gss.process_update(valid_update, 'room1')
     gss.connection_dropped('client1', 'room1')
     assert gss.room_store.stored_data.get('room1', False)
     assert gss.room_store.stored_data['room1'].get(valid_data['id'], False)
     assert gss.room_store.stored_data['room1'][valid_data['id']] == valid_data
+
+
+def test_duplicate_update_rejected(set_up_gss):
+    gss = set_up_gss
+    gss.new_connection_request('client1', 'room1')
+    gss.process_update(valid_update, 'room1')
+    with pytest.raises(MessageError):
+        gss.process_update(valid_update, 'room1')
+
+
+def test_duplicate_update_in_different_room(set_up_gss):
+    gss = set_up_gss
+    gss.new_connection_request('client1', 'room1')
+    gss.new_connection_request('client2', 'room2')
+    gss.process_update(valid_update, 'room1')
+    gss.process_update(valid_update, 'room2')
+
+
+def test_delete_token(set_up_gss):
+    gss = set_up_gss
+    gss.new_connection_request('client1', 'room1')
+    gss.process_update(valid_update, 'room1')
+    reply = gss.process_update({'action': 'delete', 'data': valid_data['id']}, 'room1')
+    assert len(reply.data) == 0
+
+
+def test_delete_non_existent_token(set_up_gss):
+    gss = set_up_gss
+    gss.new_connection_request('client1', 'room1')
+    with pytest.raises(MessageError):
+        gss.process_update({'action': 'delete', 'data': valid_data['id']}, 'room1')
