@@ -1,5 +1,5 @@
 from dataclasses import dataclass, asdict
-from typing import Union
+from typing import Union, Hashable
 
 from room_store import RoomStore
 
@@ -46,7 +46,7 @@ class GameStateServer:
     def valid_previous_rooms(self) -> list:
         return self.room_store.get_all_room_ids()
 
-    def new_connection_request(self, client: any, room_id: str) -> Reply:
+    def new_connection_request(self, client: Hashable, room_id: str) -> Reply:
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.add(client)
         else:
@@ -57,7 +57,7 @@ class GameStateServer:
                 )
         return Reply('state', self.get_state(room_id))
 
-    def connection_dropped(self, client: any, room_id: str) -> None:
+    def connection_dropped(self, client: Hashable, room_id: str) -> None:
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.remove(client)
             if not self._rooms[room_id].clients:
