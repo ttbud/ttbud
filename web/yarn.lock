@@ -9450,10 +9450,10 @@ react-transition-group@^4.3.0:
     loose-envify "^1.4.0"
     prop-types "^15.6.2"
 
-react-use@^13.22.4:
-  version "13.22.4"
-  resolved "https://registry.yarnpkg.com/react-use/-/react-use-13.22.4.tgz#d16bd3f996eade4f1d71d3a1b6db158aca8f8c39"
-  integrity sha512-DrbU7Q6DBUhjXa4xJEFuAcnO34PpIpoXP5YQhsjAI8jZjS6z7pX7Q4YISBhSjDlTu2zXR3Qy1LTgOPEMAARMbQ==
+react-use@^13.23.0:
+  version "13.23.0"
+  resolved "https://registry.yarnpkg.com/react-use/-/react-use-13.23.0.tgz#b8223eeb053b77c8dd847db26e35537535f6664f"
+  integrity sha512-NryUiYW/M0nGmTFX0eG5qzGiH5o+pAIuaKrfBYJEC9ZC3HHDoV/0/Xm+J1Sxu1EoqC2Qi5G8BsLMHC7lOmWGmw==
   dependencies:
     "@types/js-cookie" "2.2.4"
     "@xobotyi/scrollbar-width" "1.8.2"
