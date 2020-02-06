@@ -80,3 +80,14 @@ def test_delete_non_existent_token(gss_with_client):
         gss_with_client.process_update(
             {'action': 'delete', 'data': valid_data['id']}, TEST_ROOM_ID
         )
+
+
+def test_delete_after_load(gss_with_client):
+    gss_with_client.process_update(valid_update, TEST_ROOM_ID)
+    gss_with_client.connection_dropped(TEST_CLIENT, TEST_ROOM_ID)
+    gss_with_client.new_connection_request(TEST_CLIENT, TEST_ROOM_ID)
+    reply = gss_with_client.process_update(
+        {'action': 'delete', 'data': valid_data['id']},
+        TEST_ROOM_ID,
+    )
+    assert len(reply.data) == 0
