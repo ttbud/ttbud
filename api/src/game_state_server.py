@@ -52,9 +52,7 @@ class GameStateServer:
         else:
             self._rooms[room_id] = RoomData(room_id, initial_connection=client)
             if self.room_store.room_data_exists(room_id):
-                state_to_load = self.room_store.read_room_data(
-                    room_id
-                )
+                state_to_load = self.room_store.read_room_data(room_id)
                 for token_d in state_to_load.values():
                     self._create_or_update_token(self._dict_to_token(token_d), room_id)
         return Reply('state', self.get_state(room_id))
