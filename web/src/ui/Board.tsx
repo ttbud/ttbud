@@ -31,8 +31,8 @@ const useStyles = makeStyles({
       ${GRID_COLOR} ${GRID_SIZE_PX}px
     )`,
     backgroundSize: `${GRID_SIZE_PX}px ${GRID_SIZE_PX}px`,
-    height: "100%",
-    width: "100%",
+    height: "2000px",
+    width: "4000px",
     zIndex: 0,
     position: "absolute",
     // All the tokens inside the map have to be position absolute so that the
@@ -49,10 +49,14 @@ enum MouseType {
   none = "none"
 }
 
-const dragSnapToGrid = (x: number) =>
-  Math.floor(x / GRID_SIZE_PX) * GRID_SIZE_PX;
-const clickSnapToGrid = (x: number) =>
-  Math.floor(x / GRID_SIZE_PX) * GRID_SIZE_PX;
+const snapToGrid = (x: number, y: number) => ({
+  x: Math.floor(getX(x) / GRID_SIZE_PX) * GRID_SIZE_PX,
+  y: Math.floor(getY(y) / GRID_SIZE_PX) * GRID_SIZE_PX
+});
+const getX = (x: number) =>
+    x + document.documentElement.scrollLeft;
+const getY = (x: number) =>
+    x + document.documentElement.scrollTop;
 
 interface Props {
   tokens: List<TokenState>;
@@ -86,10 +90,8 @@ const Board = (props: Props) => {
 
   const onMouseDown = (e: MouseEvent) => {
     if (e.button === 0 && e.shiftKey) {
-      props.onPingCreated(
-        clickSnapToGrid(e.clientX),
-        clickSnapToGrid(e.clientY)
-      );
+      const {x, y} = snapToGrid(e.clientX, e.clientY);
+      props.onPingCreated(x, y);
     } else if (e.button === 0) {
       setMouseType(MouseType.drawing_walls);
       placeFloorAt(props.activeFloor, e.clientX, e.clientY);
@@ -107,11 +109,10 @@ const Board = (props: Props) => {
   };
 
   const getTokenAt = (x: number, y: number) => {
-    const gridX = clickSnapToGrid(x);
-    const gridY = clickSnapToGrid(y);
+    const pos = snapToGrid(x, y);
 
     return props.tokens
-      .filter(token => token.x === gridX && token.y === gridY)
+      .filter(token => token.x === pos.x && token.y === pos.y)
       .maxBy(token => token.z);
   };
 
@@ -120,10 +121,11 @@ const Board = (props: Props) => {
       return;
     }
 
+    const pos = snapToGrid(x, y);
     props.onTokenCreated({
       id: uuid(),
-      x: clickSnapToGrid(x),
-      y: clickSnapToGrid(y),
+      x: pos.x,
+      y: pos.y,
       z: icon.type === IconType.floor ? 0 : 1,
       iconId: icon.id
     });
@@ -136,10 +138,11 @@ const Board = (props: Props) => {
     const pos = { x: token.x, y: token.y, z: token.z };
 
     const onDropped = (x: number, y: number) => {
+      const pos = snapToGrid(x, y);
       const newToken = {
         id: token.id,
-        x: dragSnapToGrid(x),
-        y: dragSnapToGrid(y),
+        x: pos.x,
+        y: pos.y,
         z: token.z,
         iconId: token.iconId
       };

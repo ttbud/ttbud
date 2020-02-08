@@ -14,18 +14,24 @@ import FloorTokenSheet from "./FloorTokenSheet";
 import Board from "./Board";
 import SearchDialog from "./SearchDialog";
 
-const dragSnapToGrid = (x: number) =>
-  Math.floor(x / GRID_SIZE_PX) * GRID_SIZE_PX;
+const snapToGrid = (x: number, y: number) => ({
+  x: Math.floor(getX(x) / GRID_SIZE_PX) * GRID_SIZE_PX,
+  y: Math.floor(getY(y) / GRID_SIZE_PX) * GRID_SIZE_PX
+});
+const getX = (x: number) =>
+    x + document.documentElement.scrollLeft;
+const getY = (x: number) =>
+    x + document.documentElement.scrollTop;
 
 const useStyles = makeStyles(theme => ({
   tokenSheet: {
-    position: "absolute",
+    position: "fixed",
     bottom: theme.spacing(1),
     left: theme.spacing(1)
   },
   floorSheet: {
     display: "inline-flex",
-    position: "absolute",
+    position: "fixed",
     bottom: theme.spacing(1),
     left: "50%",
     transform: "translateX(-50%)"
@@ -139,10 +145,11 @@ const App = () => {
   const onTokenPlaced = useCallback(
     (icon: Icon, x: number, y: number) => {
       setSearching(false);
+      const pos = snapToGrid(x, y);
       const token = {
         id: uuid(),
-        x: dragSnapToGrid(x),
-        y: dragSnapToGrid(y),
+        x: pos.x,
+        y: pos.y,
         z: icon.type === IconType.floor ? 0 : 1,
         iconId: icon.id,
         isDragging: false
