@@ -25,7 +25,6 @@ class WebsocketManager:
         asyncio.set_event_loop(self._loop)
         self.port = port
         self.gss = gss
-        self._valid_room_ids = set(self.gss.valid_previous_rooms())
 
     @staticmethod
     async def process_request(path, request_headers):
