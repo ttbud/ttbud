@@ -60,7 +60,8 @@ class GameStateServer:
     def connection_dropped(self, client: Hashable, room_id: str) -> None:
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.remove(client)
-            if not self._rooms[room_id].clients:
+            # Save the room if the last client leaves and there is something to save
+            if not self._rooms[room_id].clients and self._rooms[room_id].game_state:
                 print('Writing room data')
                 self.room_store.write_room_data(
                     room_id, self._rooms[room_id].game_state
