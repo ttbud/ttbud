@@ -90,3 +90,60 @@ def test_delete_after_load(gss_with_client):
         {'action': 'delete', 'data': valid_data['id']}, TEST_ROOM_ID,
     )
     assert len(reply.data) == 0
+
+
+def test_move_existing_token(gss_with_client):
+    gss_with_client.process_update(valid_update, TEST_ROOM_ID)
+    updated_token = {
+        'id': valid_data['id'],
+        'icon_id': valid_data['icon_id'],
+        'start_x': 7,
+        'start_y': 8,
+        'start_z': 9,
+        'end_x': 8,
+        'end_y': 9,
+        'end_z': 10,
+    }
+    reply = gss_with_client.process_update(
+        {'action': 'update', 'data': updated_token}, TEST_ROOM_ID
+    )
+    assert len(reply.data) == 1
+    assert reply.data[0] == updated_token
+
+
+def test_ping(gss_with_client):
+    valid_ping = {'key': 'some_id', 'x': 4, 'y': 4}
+    reply = gss_with_client.process_update(
+        {'action': 'ping', 'data': valid_ping}, TEST_ROOM_ID
+    )
+    assert reply.type == 'ping'
+    assert reply.data == valid_ping
+
+
+def test_invalid_action(gss_with_client):
+    with pytest.raises(MessageError):
+        gss_with_client.process_update(
+            {'action': 'destroy all humans', 'data': valid_data}, TEST_ROOM_ID
+        )
+
+
+def test_invalid_data(gss_with_client):
+    with pytest.raises(MessageError):
+        gss_with_client.process_update(
+            {'action': 'create', 'data': 'destroy all humans'}, TEST_ROOM_ID
+        )
+
+
+def test_incomplete_message(gss_with_client):
+    with pytest.raises(MessageError):
+        gss_with_client.process_update({'action': 'create'}, TEST_ROOM_ID)
+    with pytest.raises(MessageError):
+        gss_with_client.process_update({'data': valid_data}, TEST_ROOM_ID)
+
+
+def test_delete_with_full_token(gss_with_client):
+    gss_with_client.process_update(valid_update, TEST_ROOM_ID)
+    with pytest.raises(MessageError):
+        gss_with_client.process_update(
+            {'action': 'delete', 'data': valid_data}, TEST_ROOM_ID
+        )

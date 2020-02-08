@@ -43,9 +43,6 @@ class GameStateServer:
         self._rooms = {}
         self.room_store = room_store
 
-    def valid_previous_rooms(self) -> list:
-        return self.room_store.get_all_room_ids()
-
     def new_connection_request(self, client: Hashable, room_id: str) -> Reply:
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.add(client)
