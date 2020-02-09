@@ -1,13 +1,12 @@
 import React from "react";
 import { makeStyles, Paper } from "@material-ui/core";
-import { Icon } from "./icons";
-import { List } from "immutable";
+import { Icon } from "../icons";
 import ToggleButton from "@material-ui/lab/ToggleButton";
 import ToggleButtonGroup from "@material-ui/lab/ToggleButtonGroup";
-import { CARD_SIZE } from "../config";
+import { CARD_SIZE } from "../../config";
 
 interface Props {
-  icons: List<Icon>;
+  icons: Icon[];
   activeFloor: Icon;
   onFloorSelected: (icon: Icon) => void;
 }
@@ -19,7 +18,7 @@ const useStyles = makeStyles({
   }
 });
 
-const FloorTokenSheet = (props: Props) => {
+const FloorTray = (props: Props) => {
   const classes = useStyles();
   return (
     <Paper>
@@ -46,4 +45,4 @@ const FloorTokenSheet = (props: Props) => {
   );
 };
 
-export default FloorTokenSheet;
+export default FloorTray;

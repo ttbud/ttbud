@@ -25,6 +25,7 @@ const useStyles = makeStyles({
 const FloorToken: React.FC<Props> = (props: Props) => {
   const classes = useStyles();
   const style: CSSProperties = {
+    position: "absolute",
     top: props.pos.y,
     left: props.pos.x,
     backgroundImage: `url(${props.icon.img})`,

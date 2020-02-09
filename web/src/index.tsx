@@ -1,10 +1,33 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
-import App from "./ui/App";
 import * as serviceWorker from "./serviceWorker";
+import { DroppableMonitor } from "./drag/DroppableMonitor";
+import { Provider } from "react-redux";
+import DndContext from "./drag/DndContext";
+import { createStore } from "./state/store";
 
-ReactDOM.render(<App />, document.getElementById("root"));
+const monitor = new DroppableMonitor();
+const store = createStore(monitor);
+
+const render = () => {
+  const App = require("./ui/app/App").default;
+
+  ReactDOM.render(
+    <Provider store={store}>
+      <DndContext.Provider value={monitor}>
+        <App />
+      </DndContext.Provider>
+    </Provider>,
+    document.getElementById("root")
+  );
+};
+
+render();
+
+if (process.env.NODE_ENV === "development" && module.hot) {
+  module.hot.accept("./ui/app/App", render);
+}
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
