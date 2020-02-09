@@ -97,7 +97,7 @@ const SearchDialog: React.FC<Props> = props => {
                     const rect = target.getBoundingClientRect();
                     setDraggingState({
                       icon: icon,
-                      startPos: { x: rect.left, y: rect.top },
+                      startPos: { x: rect.left + document.documentElement.scrollLeft, y: rect.top + document.documentElement.scrollTop},
                       startMousePos: { x: e.clientX, y: e.clientY }
                     });
                   }}
