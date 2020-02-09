@@ -12,7 +12,7 @@ const useStyles = makeStyles({
   },
   "@keyframes pulsate": {
     "0%": {
-      boxShadow: "0 0 0 0px rgba(0, 0, 0, 0.3)"
+      boxShadow: "0 0 0 0px rgba(0, 0, 0, 0.5)"
     },
     "100%": {
       boxShadow: "0 0 0 35px rgba(0, 0, 0, 0)"
@@ -28,6 +28,7 @@ interface Props {
 const PingToken = (props: Props) => {
   const classes = useStyles();
   const style: CSSProperties = {
+    position: "absolute",
     left: props.x + GRID_SIZE_PX / 2,
     top: props.y + GRID_SIZE_PX / 2
   };
