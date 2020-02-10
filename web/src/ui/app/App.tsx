@@ -13,6 +13,7 @@ import uuid from "uuid";
 import { setActiveFloor } from "../../state/floor-tray-slice";
 import { RootState } from "../../state/rootReducer";
 import Pos2d from "../../util/shape-math";
+import { removeIcon } from "../../state/character-tray-slice";
 
 const useStyles = makeStyles(theme => ({
   app: {
@@ -93,6 +94,7 @@ const App = () => {
   };
 
   const onTokenDeleted = (id: string) => dispatch(removeToken({ id }));
+  const onTrayIconRemoved = (icon: Icon) => dispatch(removeIcon(icon));
 
   return (
     <div className={classes.app}>
@@ -111,7 +113,10 @@ const App = () => {
         onClose={onSearchDialogClose}
       />
       <div className={classes.characterTray}>
-        <CharacterTray icons={characterTrayIcons} />
+        <CharacterTray
+          icons={characterTrayIcons}
+          onIconRemoved={onTrayIconRemoved}
+        />
       </div>
       <div className={classes.floorTray}>
         <FloorTray

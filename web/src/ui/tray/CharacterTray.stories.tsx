@@ -6,6 +6,7 @@ import { DroppableMonitor } from "../../drag/DroppableMonitor";
 import { Provider } from "react-redux";
 import DndContext from "../../drag/DndContext";
 import { ICONS, IconType } from "../icons";
+import noop from "../../util/noop";
 
 export default {
   component: CharacterTray,
@@ -39,7 +40,7 @@ export const Default: React.FC = () => (
           top: 0
         }}
       >
-        <CharacterTray icons={icons} />
+        <CharacterTray icons={icons} onIconRemoved={noop} />
       </div>
     </DndContext.Provider>
   </Provider>

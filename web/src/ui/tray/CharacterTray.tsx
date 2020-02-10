@@ -1,7 +1,7 @@
 import React from "react";
 import { makeStyles, Paper } from "@material-ui/core";
 import SortableList from "../sort/SortableList";
-import { DROPPABLE_IDS } from "../DropIds";
+import { DROPPABLE_IDS } from "../DroppableIds";
 import { DraggableType, IconDraggable } from "../../drag/DragStateTypes";
 import { Icon } from "../icons";
 import Character from "../token/Character";
@@ -23,9 +23,10 @@ const DROPPABLE_ID = DROPPABLE_IDS.CHARACTER_TRAY;
 
 interface Props {
   icons: Icon[];
+  onIconRemoved: (icon: Icon) => void;
 }
 
-const CharacterTray: React.FC<Props> = ({ icons }) => {
+const CharacterTray: React.FC<Props> = ({ icons, onIconRemoved }) => {
   const classes = useStyles();
 
   const items = icons.map(icon => ({
@@ -41,7 +42,17 @@ const CharacterTray: React.FC<Props> = ({ icons }) => {
     <Paper className={classes.tokenSheet}>
       <SortableList id={DROPPABLE_ID} items={items}>
         {(item, isDragging, attributes) => (
-          <Character icon={item.icon} isDragging={isDragging} {...attributes} />
+          <Character
+            icon={item.icon}
+            isDragging={isDragging}
+            onContextMenu={e => {
+              e.preventDefault();
+              if (items.length > 2) {
+                onIconRemoved(item.icon);
+              }
+            }}
+            {...attributes}
+          />
         )}
       </SortableList>
     </Paper>

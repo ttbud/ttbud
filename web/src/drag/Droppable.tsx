@@ -8,6 +8,7 @@ import React, {
 import DndContext from "./DndContext";
 import { fail } from "../util/invariant";
 import { LocationCollector } from "./DroppableMonitor";
+import noop from "../util/noop";
 
 export interface DroppableAttributes {
   ref: RefObject<any>;
@@ -15,11 +16,17 @@ export interface DroppableAttributes {
 
 interface Props {
   id: string;
+  onBeforeDragStart?: () => void;
   getLocation: LocationCollector;
   children: (attributes: DroppableAttributes) => ReactElement;
 }
 
-const Droppable: React.FC<Props> = ({ id, getLocation, children }) => {
+const Droppable: React.FC<Props> = ({
+  id,
+  onBeforeDragStart = noop,
+  getLocation,
+  children
+}) => {
   const dndContext = useContext(DndContext) ?? fail("No DndContext found");
   const ref = useRef<HTMLElement>(null);
 
@@ -27,11 +34,12 @@ const Droppable: React.FC<Props> = ({ id, getLocation, children }) => {
     dndContext.addDroppable({
       id,
       ref,
-      getLocation
+      getLocation,
+      onBeforeDragStart
     });
 
     return () => dndContext.removeDroppable(id);
-  }, [dndContext, getLocation, id]);
+  }, [dndContext, getLocation, id, onBeforeDragStart]);
 
   return children({ ref });
 };

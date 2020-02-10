@@ -12,7 +12,7 @@ import Pos2d, { posAreEqual, snapToGrid } from "../../util/shape-math";
 import { assert } from "../../util/invariant";
 import { LocationCollector, TargetLocation } from "../../drag/DroppableMonitor";
 import { DraggableType, LocationType } from "../../drag/DragStateTypes";
-import { DROPPABLE_IDS } from "../DropIds";
+import { DROPPABLE_IDS } from "../DroppableIds";
 import { Ping, TokenState } from "../../network/TokenStateClient";
 
 let BACKGROUND_COLOR = "#F5F5DC";
@@ -147,7 +147,7 @@ const Board: React.FC<Props> = ({
                   position: "absolute",
                   left: pixelPos.x,
                   top: pixelPos.y,
-                  zIndex: isDragging ? 10_000 : pixelPos.z,
+                  zIndex: isDragging ? 10_000 : pixelPos.z
                 }}
               />
             )}
