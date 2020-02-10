@@ -3,7 +3,6 @@ import React, {
   PropsWithChildren,
   ReactElement,
   useCallback,
-  useEffect,
   useRef
 } from "react";
 import Droppable, { DroppableAttributes } from "../../drag/Droppable";
@@ -153,10 +152,7 @@ export default function SortableList<T extends DraggableItem>({
     }
   }, shallowEqual);
 
-  useEffect(() => {
-    if (isDragging) {
-      return;
-    }
+  const onBeforeDragStart = useCallback(() => {
     assert(container.current, "Container ref not set");
 
     //TODO: Uhh, not this
@@ -180,33 +176,36 @@ export default function SortableList<T extends DraggableItem>({
     });
     childrenBoundsWithEmptySlot.current = boundsWithEmptySlot;
     childrenBounds.current = bounds;
-  }, [isDragging]);
+  }, []);
 
-  const getLocation: LocationCollector = (draggable, pos) => {
-    const dragStartedHere = items.some(
-      item => item.descriptor.id === draggable.id
-    );
-    const childBounds = dragStartedHere
-      ? childrenBounds.current
-      : childrenBoundsWithEmptySlot.current;
+  const getLocation: LocationCollector = useCallback(
+    (draggable, pos) => {
+      const dragStartedHere = items.some(
+        item => item.descriptor.id === draggable.id
+      );
+      const childBounds = dragStartedHere
+        ? childrenBounds.current
+        : childrenBoundsWithEmptySlot.current;
 
-    for (const [idx, bounds] of childBounds.entries()) {
-      if (pos.y < bounds.bottom) {
-        return {
-          logicalLocation: {
-            type: LocationType.LIST,
-            idx
-          },
-          bounds: {
-            top: bounds.top,
-            left: bounds.left,
-            bottom: bounds.bottom,
-            right: bounds.right
-          }
-        };
+      for (const [idx, bounds] of childBounds.entries()) {
+        if (pos.y < bounds.bottom) {
+          return {
+            logicalLocation: {
+              type: LocationType.LIST,
+              idx
+            },
+            bounds: {
+              top: bounds.top,
+              left: bounds.left,
+              bottom: bounds.bottom,
+              right: bounds.right
+            }
+          };
+        }
       }
-    }
-  };
+    },
+    [items]
+  );
 
   const getChildStyle = useCallback(
     (idx: number, childDraggableId: string): CSSProperties => {
@@ -306,7 +305,11 @@ export default function SortableList<T extends DraggableItem>({
 
   return (
     <div ref={container}>
-      <Droppable id={id} getLocation={getLocation}>
+      <Droppable
+        id={id}
+        getLocation={getLocation}
+        onBeforeDragStart={onBeforeDragStart}
+      >
         {renderChildren}
       </Droppable>
     </div>

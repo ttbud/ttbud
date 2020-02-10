@@ -3,7 +3,7 @@ import { DragEndAction, dragEnded } from "../drag/drag-slice";
 import { getDragResult } from "../drag/util";
 import { reorderIcons } from "./util";
 import { Icon, ICONS, IconType, WALL_ICON } from "../ui/icons";
-import { DROPPABLE_IDS } from "../ui/DropIds";
+import { DROPPABLE_IDS } from "../ui/DroppableIds";
 import { assert } from "../util/invariant";
 
 export interface FloorTrayState {

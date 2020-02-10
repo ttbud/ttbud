@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Icon, ICONS, IconType } from "../ui/icons";
 import { DragEndAction, dragEnded } from "../drag/drag-slice";
 import { getDragResult } from "../drag/util";
-import { DROPPABLE_IDS } from "../ui/DropIds";
+import { DROPPABLE_IDS } from "../ui/DroppableIds";
 import { reorderIcons } from "./util";
 
 const DEFAULT_ICONS = ICONS.filter(icon => icon.type === IconType.token)
@@ -22,7 +22,7 @@ const characterTraySlice = createSlice({
     replaceIcons(state, action: PayloadAction<Icon[]>) {
       state.icons = action.payload;
     },
-    deleteIcon(state, action: PayloadAction<Icon>) {
+    removeIcon(state, action: PayloadAction<Icon>) {
       state.icons = state.icons.filter(icon => icon.id !== action.payload.id);
     }
   },
@@ -45,5 +45,5 @@ const characterTraySlice = createSlice({
   }
 });
 
-export const { replaceIcons, deleteIcon } = characterTraySlice.actions;
+export const { replaceIcons, removeIcon } = characterTraySlice.actions;
 export default characterTraySlice.reducer;

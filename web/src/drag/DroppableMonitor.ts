@@ -16,11 +16,18 @@ export type LocationCollector = (
 export interface DroppableConfig {
   id: string;
   ref: RefObject<HTMLElement>;
+  onBeforeDragStart: () => void;
   getLocation: LocationCollector;
 }
 
 export class DroppableMonitor {
   private droppables = new Map<string, DroppableConfig>();
+
+  public onBeforeDragStart() {
+    for (const droppable of this.droppables.values()) {
+      droppable.onBeforeDragStart();
+    }
+  }
 
   /**
    * Return the topmost droppable under the given point
