@@ -18,7 +18,7 @@ import { assert } from "../../util/invariants";
 import { LocationCollector, TargetLocation } from "../drag/DroppableMonitor";
 import { DraggableType, LocationType } from "../drag/DragStateTypes";
 import { DROPPABLE_IDS } from "../DroppableIds";
-import { Ping, TokenState } from "../../network/TokenStateClient";
+import { Ping, Token } from "../../network/TokenStateClient";
 
 let BACKGROUND_COLOR = "#F5F5DC";
 let GRID_COLOR = "#947C65";
@@ -66,7 +66,7 @@ const preventDefault: MouseEventHandler = e => e.preventDefault();
 
 interface Props {
   isDragging: boolean;
-  tokens: TokenState[];
+  tokens: Token[];
   pings: Ping[];
   activeFloor: Icon;
   onPingCreated: (pos: Pos2d) => void;

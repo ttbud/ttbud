@@ -6,11 +6,6 @@ import { Icon, ICONS, IconType, WALL_ICON } from "../ui/icons";
 import { DROPPABLE_IDS } from "../ui/DroppableIds";
 import { assert } from "../util/invariants";
 
-export interface FloorTrayState {
-  icons: Icon[];
-  activeFloor: Icon;
-}
-
 const DEFAULT_ICONS = ICONS.filter(icon => icon.type === IconType.floor)
   .take(4)
   .unshift(WALL_ICON)

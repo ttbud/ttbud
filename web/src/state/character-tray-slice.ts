@@ -9,10 +9,6 @@ const DEFAULT_ICONS = ICONS.filter(icon => icon.type === IconType.token)
   .take(5)
   .toArray();
 
-export interface CharacterTrayState {
-  icons: Icon[];
-}
-
 const characterTraySlice = createSlice({
   name: "characterTrayIcons",
   initialState: {
