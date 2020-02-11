@@ -7,7 +7,7 @@ export enum DragResult {
   NONE = "none"
 }
 
-export function getDragResult(
+export default function getDragResult(
   droppableId: string,
   endAction: DragEndAction
 ): DragResult {
