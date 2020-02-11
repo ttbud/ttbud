@@ -6,7 +6,7 @@ import React, {
   useRef
 } from "react";
 import DndContext from "./DndContext";
-import { fail } from "../../util/invariant";
+import { fail } from "../../util/invariants";
 import { LocationCollector } from "./DroppableMonitor";
 import noop from "../../util/noop";
 

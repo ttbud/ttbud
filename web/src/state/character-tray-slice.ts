@@ -3,7 +3,7 @@ import { Icon, ICONS, IconType } from "../ui/icons";
 import { DragEndAction, dragEnded } from "./drag-slice";
 import getDragResult from "./getDragResult";
 import { DROPPABLE_IDS } from "../ui/DroppableIds";
-import { reorderIcons } from "./util";
+import { reorderIcons } from "./reorderIcons";
 
 const DEFAULT_ICONS = ICONS.filter(icon => icon.type === IconType.token)
   .take(5)

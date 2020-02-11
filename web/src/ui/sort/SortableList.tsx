@@ -11,7 +11,7 @@ import Pos2d, { centerOf } from "../../util/shape-math";
 import { shallowEqual, useSelector } from "react-redux";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import { LocationCollector } from "../drag/DroppableMonitor";
-import { assert } from "../../util/invariant";
+import { assert } from "../../util/invariants";
 import {
   DraggableDescriptor,
   DragStateType,

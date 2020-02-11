@@ -4,7 +4,7 @@ import noBorder from "../__stories__/no-border";
 import { DroppableMonitor } from "../drag/DroppableMonitor";
 import { Provider } from "react-redux";
 import DndContext from "../drag/DndContext";
-import { createStore } from "../../state/store";
+import createStore from "../../state/createStore";
 
 export default {
   component: App,

@@ -2,12 +2,12 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DragEndAction, dragEnded } from "./drag-slice";
 import { Ping, TokenState } from "../network/TokenStateClient";
 import { DROPPABLE_IDS } from "../ui/DroppableIds";
-import { assert } from "../util/invariant";
+import { assert } from "../util/invariants";
 import { DraggableType, LocationType } from "../ui/drag/DragStateTypes";
 import uuid from "uuid";
 import getDragResult, { DragResult } from "./getDragResult";
 import UnreachableCaseError from "../util/UnreachableCaseError";
-import { AppThunk } from "./store";
+import { AppThunk } from "./createStore";
 import Pos2d from "../util/shape-math";
 
 export interface BoardState {

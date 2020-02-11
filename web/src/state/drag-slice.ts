@@ -1,13 +1,13 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import Pos2d, { Bounds, boundsAreEqual, centerOf } from "../util/shape-math";
-import { assert } from "../util/invariant";
+import { assert } from "../util/invariants";
 import {
   DraggableDescriptor,
   DragState,
   DragStateType,
   DroppableLocation
 } from "../ui/drag/DragStateTypes";
-import { AppThunk } from "./store";
+import { AppThunk } from "./createStore";
 
 const INITIAL_STATE: DragState = {
   type: DragStateType.NOT_DRAGGING

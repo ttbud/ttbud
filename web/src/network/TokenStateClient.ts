@@ -1,5 +1,5 @@
 import * as t from "io-ts";
-import { decode } from "../util/decode-util";
+import decode from "../util/decode";
 import { GRID_SIZE_PX } from "../config";
 import uuid from "uuid";
 

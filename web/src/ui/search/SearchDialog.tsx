@@ -16,7 +16,7 @@ import {
 } from "../drag/DragStateTypes";
 import { useSelector } from "react-redux";
 import Character from "../token/Character";
-import { assert } from "../../util/invariant";
+import { assert } from "../../util/invariants";
 import { RootState } from "../../state/rootReducer";
 
 const useStyles = makeStyles(theme => ({
