@@ -1,4 +1,9 @@
-import React, { MouseEventHandler, useCallback, useRef } from "react";
+import React, {
+  MouseEventHandler,
+  PointerEventHandler,
+  useCallback,
+  useRef
+} from "react";
 import { makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "../../config";
 import { Icon, ICONS_BY_ID, IconType, WALL_ICON } from "../icons";
@@ -188,31 +193,51 @@ const Board: React.FC<Props> = ({
     }
   };
 
-  const onMouseMove: MouseEventHandler = ({
-    clientX: x,
-    clientY: y,
-    buttons,
-    shiftKey
-  }) => {
+  const onPointerMove: PointerEventHandler = e => {
     if (isDragging) {
       return;
     }
 
-    const gridPos = toGridPos({ x, y });
-    if (buttons === LEFT_MOUSE && shiftKey) {
-      if (!pings.find(ping => posAreEqual(ping, gridPos))) {
-        onPingCreated(gridPos);
+    // Pointer events are only triggered once per frame, but if the mouse is
+    // moving quickly it can actually move over an entire grid square in less
+    // than a frame's time, so we'll miss drawing walls in certain places. In
+    // browsers that support it, we can request all of the mouse move events
+    // since the last frame, and then batch process those
+    let events;
+    // @ts-ignore
+    if (e.nativeEvent.getCoalescedEvents) {
+      // @ts-ignore
+      events = e.nativeEvent.getCoalescedEvents();
+    } else {
+      events = [e];
+    }
+
+    const processedPositions: Pos2d[] = [];
+    for (const event of events) {
+      const { clientX: x, clientY: y, buttons, shiftKey } = event;
+      const gridPos = toGridPos({ x, y });
+      // Skip mouse events that result in the same grid position
+      if (processedPositions.some(pos => posAreEqual(pos, gridPos))) {
+        continue;
       }
-    } else if (
-      buttons === LEFT_MOUSE &&
-      !tokens.find(token => posAreEqual(token, gridPos))
-    ) {
-      onFloorCreated(activeFloor.id, gridPos);
-    } else if (buttons === RIGHT_MOUSE) {
-      const toDelete = tokens.find(token => posAreEqual(token, gridPos));
-      if (toDelete) {
-        onTokenDeleted(toDelete.id);
+
+      if (buttons === LEFT_MOUSE && shiftKey) {
+        if (!pings.find(ping => posAreEqual(ping, gridPos))) {
+          onPingCreated(gridPos);
+        }
+      } else if (
+        buttons === LEFT_MOUSE &&
+        !tokens.find(token => posAreEqual(token, gridPos))
+      ) {
+        onFloorCreated(activeFloor.id, gridPos);
+      } else if (buttons === RIGHT_MOUSE) {
+        const toDelete = tokens.find(token => posAreEqual(token, gridPos));
+        if (toDelete) {
+          onTokenDeleted(toDelete.id);
+        }
       }
+
+      processedPositions.push(gridPos);
     }
   };
 
@@ -221,7 +246,7 @@ const Board: React.FC<Props> = ({
       ref={container}
       className={classes.container}
       onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
+      onPointerMove={onPointerMove}
       onContextMenu={preventDefault}
     >
       <Droppable id={DROPPABLE_IDS.BOARD} getLocation={getLocation}>
