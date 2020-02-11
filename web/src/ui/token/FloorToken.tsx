@@ -22,15 +22,16 @@ const useStyles = makeStyles({
   }
 });
 
-const FloorToken: React.FC<Props> = (props: Props) => {
+const FloorToken: React.FC<Props> = ({ icon, pos }) => {
   const classes = useStyles();
   const style: CSSProperties = {
     position: "absolute",
-    top: props.pos.y,
-    left: props.pos.x,
-    backgroundImage: `url(${props.icon.img})`,
+    top: pos.y,
+    left: pos.x,
+    backgroundImage: `url(${icon.img})`,
     zIndex: 0
   };
+
   // Using an actual image element here makes it so sometimes if you click and
   // drag over the icon you get the "image dragging" ui that browsers provide.
   // Setting draggable to false or user-drag to none on this or its parent
