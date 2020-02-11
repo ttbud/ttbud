@@ -7,7 +7,7 @@ import { Icon, ICONS } from "../icons";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { startSearching, stopSearching } from "../../state/app-slice";
 import FloorTray from "../tray/FloorTray";
-import { DragStateType } from "../../drag/DragStateTypes";
+import { DragStateType } from "../drag/DragStateTypes";
 import { addFloor, addPing, removeToken } from "../../state/board-slice";
 import uuid from "uuid";
 import { setActiveFloor } from "../../state/floor-tray-slice";

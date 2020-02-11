@@ -1,11 +1,11 @@
-import { DragResult } from "../drag/util";
+import { DragResult } from "./drag-util";
 import { Icon, ICONS_BY_ID } from "../ui/icons";
 import { assert } from "../util/invariant";
 import {
   DraggableDescriptor,
   DroppableLocation,
   LocationType
-} from "../drag/DragStateTypes";
+} from "../ui/drag/DragStateTypes";
 import UnreachableCaseError from "../util/UnreachableCaseError";
 
 interface ReorderIconsParams {

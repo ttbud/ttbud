@@ -1,5 +1,5 @@
-import Pos2d, { Bounds } from "../util/shape-math";
-import { Icon } from "../ui/icons";
+import Pos2d, { Bounds } from "../../util/shape-math";
+import { Icon } from "../icons";
 
 export enum DraggableType {
   ICON = "icon",

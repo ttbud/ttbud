@@ -2,7 +2,7 @@ import React, { memo } from "react";
 import { makeStyles, Paper } from "@material-ui/core";
 import SortableList from "../sort/SortableList";
 import { DROPPABLE_IDS } from "../DroppableIds";
-import { DraggableType, IconDraggable } from "../../drag/DragStateTypes";
+import { DraggableType, IconDraggable } from "../drag/DragStateTypes";
 import { Icon } from "../icons";
 import Character from "../token/Character";
 

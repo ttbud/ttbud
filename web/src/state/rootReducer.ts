@@ -2,7 +2,7 @@ import characterTrayReducer from "./character-tray-slice";
 import floorTrayReducer from "./floor-tray-slice";
 import appReducer from "./app-slice";
 import boardReducer from "./board-slice";
-import dragReducer from "../drag/drag-slice";
+import dragReducer from "./drag-slice";
 import { combineReducers } from "@reduxjs/toolkit";
 
 const rootReducer = combineReducers({

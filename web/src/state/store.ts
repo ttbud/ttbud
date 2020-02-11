@@ -4,7 +4,7 @@ import {
   getDefaultMiddleware,
   ThunkAction
 } from "@reduxjs/toolkit";
-import { DroppableMonitor } from "../drag/DroppableMonitor";
+import { DroppableMonitor } from "../ui/drag/DroppableMonitor";
 import rootReducer, { RootState } from "./rootReducer";
 
 export function createStore(monitor: DroppableMonitor) {

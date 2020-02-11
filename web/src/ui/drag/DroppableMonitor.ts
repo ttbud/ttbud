@@ -1,6 +1,6 @@
 import { RefObject } from "react";
-import { assert } from "../util/invariant";
-import Pos2d, { Bounds } from "../util/shape-math";
+import { assert } from "../../util/invariant";
+import Pos2d, { Bounds } from "../../util/shape-math";
 import { DraggableDescriptor, LogicalLocation } from "./DragStateTypes";
 
 export interface TargetLocation {

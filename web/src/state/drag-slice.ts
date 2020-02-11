@@ -6,8 +6,8 @@ import {
   DragState,
   DragStateType,
   DroppableLocation
-} from "./DragStateTypes";
-import { AppThunk } from "../state/store";
+} from "../ui/drag/DragStateTypes";
+import { AppThunk } from "./store";
 
 const INITIAL_STATE: DragState = {
   type: DragStateType.NOT_DRAGGING

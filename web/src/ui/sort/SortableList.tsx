@@ -5,19 +5,19 @@ import React, {
   useCallback,
   useRef
 } from "react";
-import Droppable, { DroppableAttributes } from "../../drag/Droppable";
-import Draggable, { DragAttributes } from "../../drag/Draggable";
+import Droppable, { DroppableAttributes } from "../drag/Droppable";
+import Draggable, { DragAttributes } from "../drag/Draggable";
 import Pos2d, { centerOf } from "../../util/shape-math";
 import { shallowEqual, useSelector } from "react-redux";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
-import { LocationCollector } from "../../drag/DroppableMonitor";
+import { LocationCollector } from "../drag/DroppableMonitor";
 import { assert } from "../../util/invariant";
 import {
   DraggableDescriptor,
   DragStateType,
   DroppableLocation,
   LocationType
-} from "../../drag/DragStateTypes";
+} from "../drag/DragStateTypes";
 import { RootState } from "../../state/rootReducer";
 
 export interface DraggableItem {

@@ -1,7 +1,7 @@
 import React from "react";
 import DraggableSquare from "../__stories__/DragAwareSquare";
 import SortableList, { DraggableItem } from "./SortableList";
-import { DroppableMonitor } from "../../drag/DroppableMonitor";
+import { DroppableMonitor } from "../drag/DroppableMonitor";
 import { Provider, useSelector } from "react-redux";
 import {
   configureStore,
@@ -9,11 +9,11 @@ import {
   getDefaultMiddleware,
   PayloadAction
 } from "@reduxjs/toolkit";
-import dragReducer, { DragEndAction, dragEnded } from "../../drag/drag-slice";
+import dragReducer, { DragEndAction, dragEnded } from "../../state/drag-slice";
 import { assert } from "../../util/invariant";
-import { DraggableType, LocationType } from "../../drag/DragStateTypes";
+import { DraggableType, LocationType } from "../drag/DragStateTypes";
 import { WALL_ICON } from "../icons";
-import DndContext from "../../drag/DndContext";
+import DndContext from "../drag/DndContext";
 
 export default {
   component: SortableList,

@@ -8,12 +8,12 @@ import {
 import React, { memo, useCallback, useMemo, useState } from "react";
 import { List } from "immutable";
 import { Icon } from "../icons";
-import Draggable from "../../drag/Draggable";
+import Draggable from "../drag/Draggable";
 import {
   DraggableType,
   DragStateType,
   IconDraggable
-} from "../../drag/DragStateTypes";
+} from "../drag/DragStateTypes";
 import { useSelector } from "react-redux";
 import Character from "../token/Character";
 import { assert } from "../../util/invariant";
