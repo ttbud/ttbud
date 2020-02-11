@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { makeStyles, Paper } from "@material-ui/core";
 import { Icon } from "../icons";
 import ToggleButton from "@material-ui/lab/ToggleButton";
@@ -18,31 +18,31 @@ const useStyles = makeStyles({
   }
 });
 
-const FloorTray = (props: Props) => {
+const FloorTray: React.FC<Props> = memo(function FloorTray({
+  icons,
+  activeFloor,
+  onFloorSelected
+}) {
   const classes = useStyles();
   return (
     <Paper>
       <ToggleButtonGroup
         exclusive
-        value={props.activeFloor}
+        value={activeFloor}
         onChange={(e, newFloor) => {
           if (newFloor !== null) {
-            props.onFloorSelected(newFloor);
+            onFloorSelected(newFloor);
           }
         }}
       >
-        {props.icons.map(floorIcon => (
-          <ToggleButton value={floorIcon} key={floorIcon.id}>
-            <img
-              src={floorIcon.img}
-              className={classes.icon}
-              alt={floorIcon.desc}
-            />
+        {icons.map(icon => (
+          <ToggleButton value={icon} key={icon.id}>
+            <img src={icon.img} className={classes.icon} alt={icon.desc} />
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
     </Paper>
   );
-};
+});
 
 export default FloorTray;
