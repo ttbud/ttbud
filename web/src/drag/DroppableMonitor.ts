@@ -16,13 +16,26 @@ export type LocationCollector = (
 export interface DroppableConfig {
   id: string;
   ref: RefObject<HTMLElement>;
+  /**
+   * A callback to synchronously collect measurement information
+   * before a drag starts.
+   */
   onBeforeDragStart: () => void;
+  /**
+   * Fetch the location a draggable should animate to if it is
+   * dropped here. The position is the center of the proposed
+   * drop location.
+   */
   getLocation: LocationCollector;
 }
 
 export class DroppableMonitor {
   private droppables = new Map<string, DroppableConfig>();
 
+  /**
+   * Notify droppables that a drag is about to start so
+   * they can collect required measurement information
+   */
   public onBeforeDragStart() {
     for (const droppable of this.droppables.values()) {
       droppable.onBeforeDragStart();
