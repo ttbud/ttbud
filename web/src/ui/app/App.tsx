@@ -28,7 +28,7 @@ const useStyles = makeStyles(theme => ({
   },
   floorTray: {
     display: "inline-flex",
-    position: "absolute",
+    position: "fixed",
     bottom: theme.spacing(1),
     left: "50%",
     transform: "translateX(-50%)"
