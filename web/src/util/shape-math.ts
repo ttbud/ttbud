@@ -32,15 +32,6 @@ export function boundsAreEqual(left: Bounds, right: Bounds): boolean {
   );
 }
 
-export function offsetBy(bounds: Bounds, offset: Pos2d): Bounds {
-  return {
-    top: bounds.top + offset.y,
-    left: bounds.left + offset.x,
-    bottom: bounds.bottom + offset.y,
-    right: bounds.right + offset.x
-  };
-}
-
 export function centerOf(bounds: Bounds): Pos2d {
   const width = bounds.right - bounds.left;
   const height = bounds.bottom - bounds.top;

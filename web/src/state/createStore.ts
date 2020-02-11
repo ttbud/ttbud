@@ -7,7 +7,7 @@ import {
 import { DroppableMonitor } from "../ui/drag/DroppableMonitor";
 import rootReducer, { RootState } from "./rootReducer";
 
-export function createStore(monitor: DroppableMonitor) {
+export default function createStore(monitor: DroppableMonitor) {
   const store = configureStore({
     reducer: rootReducer,
     middleware: getDefaultMiddleware({

@@ -10,7 +10,7 @@ import {
   PayloadAction
 } from "@reduxjs/toolkit";
 import dragReducer, { DragEndAction, dragEnded } from "../../state/drag-slice";
-import { assert } from "../../util/invariant";
+import { assert } from "../../util/invariants";
 import { DraggableType, LocationType } from "../drag/DragStateTypes";
 import { WALL_ICON } from "../icons";
 import DndContext from "../drag/DndContext";

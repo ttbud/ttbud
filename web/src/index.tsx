@@ -5,7 +5,7 @@ import * as serviceWorker from "./serviceWorker";
 import { DroppableMonitor } from "./ui/drag/DroppableMonitor";
 import { Provider } from "react-redux";
 import DndContext from "./ui/drag/DndContext";
-import { createStore } from "./state/store";
+import createStore from "./state/createStore";
 
 const monitor = new DroppableMonitor();
 const store = createStore(monitor);

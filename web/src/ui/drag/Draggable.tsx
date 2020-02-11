@@ -10,7 +10,7 @@ import React, {
   useRef
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { assert } from "../../util/invariant";
+import { assert } from "../../util/invariants";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import {
   dragPortaled,

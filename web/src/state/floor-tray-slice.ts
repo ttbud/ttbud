@@ -1,10 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DragEndAction, dragEnded } from "./drag-slice";
 import getDragResult from "./getDragResult";
-import { reorderIcons } from "./util";
+import { reorderIcons } from "./reorderIcons";
 import { Icon, ICONS, IconType, WALL_ICON } from "../ui/icons";
 import { DROPPABLE_IDS } from "../ui/DroppableIds";
-import { assert } from "../util/invariant";
+import { assert } from "../util/invariants";
 
 export interface FloorTrayState {
   icons: Icon[];

@@ -1,6 +1,6 @@
 import { DragResult } from "./getDragResult";
 import { Icon, ICONS_BY_ID } from "../ui/icons";
-import { assert } from "../util/invariant";
+import { assert } from "../util/invariants";
 import {
   DraggableDescriptor,
   DroppableLocation,

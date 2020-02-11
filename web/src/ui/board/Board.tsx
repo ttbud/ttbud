@@ -14,7 +14,7 @@ import PingToken from "../token/PingToken";
 import Draggable from "../drag/Draggable";
 import Droppable from "../drag/Droppable";
 import Pos2d, { posAreEqual, snapToGrid } from "../../util/shape-math";
-import { assert } from "../../util/invariant";
+import { assert } from "../../util/invariants";
 import { LocationCollector, TargetLocation } from "../drag/DroppableMonitor";
 import { DraggableType, LocationType } from "../drag/DragStateTypes";
 import { DROPPABLE_IDS } from "../DroppableIds";
