@@ -197,7 +197,7 @@ function releaseDrag(
     const state = getState();
     assert(
       state.drag.type === DragStateType.DRAGGING,
-      `Draggable tried to release drag when no drag ocurred`
+      `Draggable tried to release drag when no drag occurred`
     );
 
     const bounds = updatedBounds(
