@@ -1,11 +1,11 @@
 import SearchDialog from "./SearchDialog";
 import { ICONS } from "../icons";
 import React from "react";
-import { DroppableMonitor } from "../../drag/DroppableMonitor";
+import { DroppableMonitor } from "../drag/DroppableMonitor";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
-import dragReducer from "../../drag/drag-slice";
+import dragReducer from "../../state/drag-slice";
 import { Provider } from "react-redux";
-import DndContext from "../../drag/DndContext";
+import DndContext from "../drag/DndContext";
 import noop from "../../util/noop";
 
 export default {

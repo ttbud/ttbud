@@ -11,12 +11,12 @@ import FloorToken from "../token/FloorToken";
 import Character from "../token/Character";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import PingToken from "../token/PingToken";
-import Draggable from "../../drag/Draggable";
-import Droppable from "../../drag/Droppable";
+import Draggable from "../drag/Draggable";
+import Droppable from "../drag/Droppable";
 import Pos2d, { posAreEqual, snapToGrid } from "../../util/shape-math";
 import { assert } from "../../util/invariant";
-import { LocationCollector, TargetLocation } from "../../drag/DroppableMonitor";
-import { DraggableType, LocationType } from "../../drag/DragStateTypes";
+import { LocationCollector, TargetLocation } from "../drag/DroppableMonitor";
+import { DraggableType, LocationType } from "../drag/DragStateTypes";
 import { DROPPABLE_IDS } from "../DroppableIds";
 import { Ping, TokenState } from "../../network/TokenStateClient";
 

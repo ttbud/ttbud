@@ -1,12 +1,12 @@
 import React from "react";
 import Draggable from "./Draggable";
-import DraggableSquare from "../ui/__stories__/DragAwareSquare";
+import DraggableSquare from "../__stories__/DragAwareSquare";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
-import dragReducer from "./drag-slice";
+import dragReducer from "../../state/drag-slice";
 import { Provider } from "react-redux";
 import { DroppableMonitor } from "./DroppableMonitor";
 import { DraggableType } from "./DragStateTypes";
-import { WALL_ICON } from "../ui/icons";
+import { WALL_ICON } from "../icons";
 import DndContext from "./DndContext";
 
 export default {

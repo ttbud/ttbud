@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DragEndAction, dragEnded } from "../drag/drag-slice";
-import { getDragResult } from "../drag/util";
+import { DragEndAction, dragEnded } from "./drag-slice";
+import { getDragResult } from "./drag-util";
 import { reorderIcons } from "./util";
 import { Icon, ICONS, IconType, WALL_ICON } from "../ui/icons";
 import { DROPPABLE_IDS } from "../ui/DroppableIds";

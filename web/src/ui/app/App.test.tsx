@@ -1,10 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import App from "./App";
-import { DroppableMonitor } from "../../drag/DroppableMonitor";
+import { DroppableMonitor } from "../drag/DroppableMonitor";
 import { createStore } from "../../state/store";
 import { Provider } from "react-redux";
-import DndContext from "../../drag/DndContext";
+import DndContext from "../drag/DndContext";
 
 it("renders without crashing", () => {
   const monitor = new DroppableMonitor();
