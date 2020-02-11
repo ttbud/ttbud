@@ -15,7 +15,7 @@ export function createStore(monitor: DroppableMonitor) {
         extraArgument: monitor
       }
     }),
-    devTools: process.env.NODE_ENV !== "production"
+    devTools: process.env.NODE_ENV === "development"
   });
 
   if (process.env.NODE_ENV === "development" && module.hot) {
