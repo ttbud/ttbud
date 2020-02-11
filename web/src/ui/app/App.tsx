@@ -94,7 +94,10 @@ const App = () => {
   };
 
   const onTokenDeleted = (id: string) => dispatch(removeToken({ id }));
-  const onTrayIconRemoved = (icon: Icon) => dispatch(removeIcon(icon));
+  const onTrayIconRemoved = useCallback(
+    (icon: Icon) => dispatch(removeIcon(icon)),
+    [dispatch]
+  );
 
   return (
     <div className={classes.app}>

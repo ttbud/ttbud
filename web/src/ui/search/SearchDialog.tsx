@@ -5,7 +5,7 @@ import {
   makeStyles,
   TextField
 } from "@material-ui/core";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import { List } from "immutable";
 import { Icon } from "../icons";
 import Draggable from "../../drag/Draggable";
@@ -43,7 +43,7 @@ interface Props {
   onClose: () => void;
 }
 
-const SearchDialog: React.FC<Props> = ({ icons, open, onClose }) => {
+const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
   const classes = useStyles();
   const [search, setSearch] = useState("");
   const onChange = useCallback(e => setSearch(e.target.value), [setSearch]);
@@ -131,6 +131,6 @@ const SearchDialog: React.FC<Props> = ({ icons, open, onClose }) => {
   );
 
   return activeDraggable ? renderDraggable() : renderDialog();
-};
+});
 
 export default SearchDialog;

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { makeStyles, Paper } from "@material-ui/core";
 import SortableList from "../sort/SortableList";
 import { DROPPABLE_IDS } from "../DroppableIds";
@@ -26,7 +26,10 @@ interface Props {
   onIconRemoved: (icon: Icon) => void;
 }
 
-const CharacterTray: React.FC<Props> = ({ icons, onIconRemoved }) => {
+const CharacterTray: React.FC<Props> = memo(function CharacterTray({
+  icons,
+  onIconRemoved
+}) {
   const classes = useStyles();
 
   const items = icons.map(icon => ({
@@ -57,6 +60,6 @@ const CharacterTray: React.FC<Props> = ({ icons, onIconRemoved }) => {
       </SortableList>
     </Paper>
   );
-};
+});
 
 export default CharacterTray;
