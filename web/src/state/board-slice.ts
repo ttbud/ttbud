@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DragEndAction, dragEnded } from "./drag-slice";
-import { Ping, TokenState } from "../network/TokenStateClient";
+import { Ping, Token } from "../network/TokenStateClient";
 import { DROPPABLE_IDS } from "../ui/DroppableIds";
 import { assert } from "../util/invariants";
 import { DraggableType, LocationType } from "../ui/drag/DragStateTypes";
@@ -11,7 +11,7 @@ import { AppThunk } from "./createStore";
 import Pos2d from "../util/shape-math";
 
 export interface BoardState {
-  tokens: TokenState[];
+  tokens: Token[];
   pings: Ping[];
 }
 
@@ -59,7 +59,7 @@ const boardSlice = createSlice({
   name: "board",
   initialState: INITIAL_STATE,
   reducers: {
-    replaceTokens(state, action: PayloadAction<TokenState[]>) {
+    replaceTokens(state, action: PayloadAction<Token[]>) {
       state.tokens = action.payload;
     },
     addFloor(state, action: PayloadAction<AddTokenAction>) {

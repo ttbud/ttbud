@@ -27,7 +27,7 @@ const BoardStateMessage = t.type({
 
 const MessageDecoder = t.union([PingMessage, BoardStateMessage]);
 
-export interface TokenState {
+export interface Token {
   id: string;
   x: number;
   y: number;
@@ -41,7 +41,7 @@ export interface Ping {
   y: number;
 }
 
-type StateListener = (state: TokenState[]) => void;
+type StateListener = (state: Token[]) => void;
 type PingListener = (ping: Ping) => void;
 
 export class TokenStateClient {
@@ -95,7 +95,7 @@ export class TokenStateClient {
     this.scheduleSendEvent();
   }
 
-  public queueCreate(token: TokenState) {
+  public queueCreate(token: Token) {
     this.updates.push({
       action: "create",
       data: TokenStateClient.toNetworkState(token)
@@ -103,7 +103,7 @@ export class TokenStateClient {
     this.scheduleSendEvent();
   }
 
-  public queueUpdate(token: TokenState) {
+  public queueUpdate(token: Token) {
     this.updates.push({
       action: "update",
       data: TokenStateClient.toNetworkState(token)
@@ -176,7 +176,7 @@ export class TokenStateClient {
     }
   }
 
-  private static toNetworkState(token: TokenState) {
+  private static toNetworkState(token: Token) {
     const normalized_x = token.x / GRID_SIZE_PX;
     const normalized_y = token.y / GRID_SIZE_PX;
 
