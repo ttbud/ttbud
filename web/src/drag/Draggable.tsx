@@ -1,6 +1,6 @@
 import React, {
   CSSProperties,
-  MouseEventHandler,
+  PointerEventHandler,
   ReactElement,
   RefObject,
   TransitionEventHandler,
@@ -27,7 +27,7 @@ import { RootState } from "../state/rootReducer";
 export interface DragAttributes {
   ref: RefObject<any>;
   style: CSSProperties;
-  onMouseDown?: MouseEventHandler;
+  onPointerDown?: PointerEventHandler;
   onTransitionEnd?: TransitionEventHandler;
 }
 
@@ -168,7 +168,7 @@ const Draggable: React.FC<Props> = ({
     );
   }, [descriptor, dispatch, dragState.type, usePortal]);
 
-  const onMouseDown: MouseEventHandler = useCallback(
+  const onPointerDown: PointerEventHandler = useCallback(
     e => {
       if (e.buttons !== LEFT_MOUSE || modifierKeyPressed(e)) {
         return;
@@ -194,7 +194,7 @@ const Draggable: React.FC<Props> = ({
   );
 
   useEffect(() => {
-    const onMouseUp = ({ clientX: x, clientY: y }: MouseEvent) => {
+    const onPointerUp = ({ clientX: x, clientY: y }: PointerEvent) => {
       if (dragState.type !== DragStateType.DRAGGING) {
         return;
       }
@@ -203,7 +203,7 @@ const Draggable: React.FC<Props> = ({
       dispatch(releaseDrag(descriptor, { x, y }));
     };
 
-    const onMouseMove = (e: MouseEvent) => {
+    const onPointerMove = (e: PointerEvent) => {
       if (dragState.type !== DragStateType.DRAGGING) {
         return;
       }
@@ -213,13 +213,13 @@ const Draggable: React.FC<Props> = ({
     };
 
     if (dragState.type === DragStateType.DRAGGING) {
-      window.addEventListener("mousemove", onMouseMove);
-      window.addEventListener("mouseup", onMouseUp);
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", onPointerUp);
     }
 
     return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
     };
   }, [descriptor, dragState, dispatch]);
 
@@ -233,7 +233,7 @@ const Draggable: React.FC<Props> = ({
   const getHandlers = (state: InternalDragState) => {
     switch (state.type) {
       case DragStateType.NOT_DRAGGING:
-        return { onMouseDown };
+        return { onPointerDown };
       case DragStateType.DRAG_END_ANIMATING:
         return { onTransitionEnd };
       case DragStateType.DRAGGING:

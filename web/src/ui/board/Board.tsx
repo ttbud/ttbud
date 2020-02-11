@@ -171,7 +171,7 @@ const Board: React.FC<Props> = ({
     />
   ));
 
-  const onMouseDown: MouseEventHandler = ({
+  const onPointerDown: PointerEventHandler = ({
     clientX: x,
     clientY: y,
     shiftKey,
@@ -245,7 +245,7 @@ const Board: React.FC<Props> = ({
     <div
       ref={container}
       className={classes.container}
-      onMouseDown={onMouseDown}
+      onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onContextMenu={preventDefault}
     >
