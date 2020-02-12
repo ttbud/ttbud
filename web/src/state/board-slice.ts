@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DragEndAction, dragEnded } from "./drag-slice";
-import { Ping, Token } from "../network/BoardStateApiClient";
+import { Ping, Token } from "../network/TokenStateClient";
 import { DROPPABLE_IDS } from "../ui/DroppableIds";
 import { assert } from "../util/invariants";
 import { DraggableType, LocationType } from "../ui/drag/DragStateTypes";
