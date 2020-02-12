@@ -7,14 +7,14 @@ import {
 import { DroppableMonitor } from "../ui/drag/DroppableMonitor";
 import rootReducer, { RootState } from "./rootReducer";
 
+interface ThunkExtras {
+  monitor: DroppableMonitor;
+}
+
 export default function createStore(monitor: DroppableMonitor) {
   const store = configureStore({
     reducer: rootReducer,
-    middleware: getDefaultMiddleware({
-      thunk: {
-        extraArgument: monitor
-      }
-    }),
+    middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
     devTools: process.env.NODE_ENV === "development"
   });
 
@@ -31,6 +31,6 @@ export default function createStore(monitor: DroppableMonitor) {
 export type AppThunk = ThunkAction<
   void,
   RootState,
-  DroppableMonitor,
+  ThunkExtras,
   Action<string>
 >;
