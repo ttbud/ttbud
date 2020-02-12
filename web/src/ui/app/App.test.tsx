@@ -5,14 +5,10 @@ import { DroppableMonitor } from "../drag/DroppableMonitor";
 import createStore from "../../state/createStore";
 import { Provider } from "react-redux";
 import DndContext from "../drag/DndContext";
-import { BoardStateApiClient } from "../../network/BoardStateApiClient";
 
 it("renders without crashing", () => {
   const monitor = new DroppableMonitor();
-  const apiClient = new BoardStateApiClient("invalid", addr => {
-    return new WebSocket(addr);
-  });
-  const store = createStore(monitor, apiClient);
+  const store = createStore(monitor);
 
   const div = document.createElement("div");
 
