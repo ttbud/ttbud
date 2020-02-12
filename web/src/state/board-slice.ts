@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DragEndAction, dragEnded } from "./drag-slice";
-import { Ping, Token } from "../network/TokenStateClient";
+import { Ping, Token } from "../network/BoardStateApiClient";
 import { DROPPABLE_IDS } from "../ui/DroppableIds";
 import { assert } from "../util/invariants";
 import { DraggableType, LocationType } from "../ui/drag/DragStateTypes";
@@ -35,7 +35,7 @@ function _removeToken(state: BoardState, tokenId: String) {
   state.tokens = state.tokens.filter(token => token.id !== tokenId);
 }
 
-function _addToken(
+function addToken(
   state: BoardState,
   iconId: string,
   pos: Pos2d,
@@ -64,7 +64,7 @@ const boardSlice = createSlice({
     },
     addFloor(state, action: PayloadAction<AddTokenAction>) {
       const { iconId, pos } = action.payload;
-      _addToken(state, iconId, pos, 0);
+      addToken(state, iconId, pos, 0);
     },
     removeToken(state, action: PayloadAction<{ id: string }>) {
       const { id } = action.payload;
@@ -110,7 +110,7 @@ const boardSlice = createSlice({
             "Dropped in board but drop type was not grid"
           );
 
-          _addToken(state, draggable.icon.id, destination.logicalLocation, 1);
+          addToken(state, draggable.icon.id, destination.logicalLocation, 1);
           break;
         case DragResult.NONE:
           break;
