@@ -66,6 +66,9 @@ interface Dragging {
    * Difference between the top left of the draggable bounds and mouse position at drag start
    */
   mouseOffset: Pos2d;
+  /**
+   * Client bounds of the element being dragged
+   */
   bounds: Bounds;
   hoveredDroppableId?: string;
 }
