@@ -142,7 +142,7 @@ function startDrag(
   mousePos: Pos2d,
   bounds: Bounds
 ): AppThunk {
-  return (dispatch, getState, monitor) => {
+  return (dispatch, getState, { monitor }) => {
     let droppable, location;
 
     monitor.onBeforeDragStart();
@@ -168,7 +168,7 @@ function startDrag(
 }
 
 function moveDrag(draggable: DraggableDescriptor, mousePos: Pos2d): AppThunk {
-  return (dispatch, getState, monitor) => {
+  return (dispatch, getState, { monitor }) => {
     const state = getState();
     if (state.drag.type !== DragStateType.DRAGGING) {
       // This happens a lot because we get another mouse move event before the store is updated to tell the draggable
@@ -193,7 +193,7 @@ function releaseDrag(
   draggable: DraggableDescriptor,
   mousePos: Pos2d
 ): AppThunk {
-  return (dispatch, getState, monitor) => {
+  return (dispatch, getState, { monitor }) => {
     const state = getState();
     assert(
       state.drag.type === DragStateType.DRAGGING,
