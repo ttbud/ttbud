@@ -122,6 +122,10 @@ const dragSlice = createSlice({
         };
       }
     },
+    /**
+     * Handle this event to get notified when a drag has fully completed, and
+     * affected droppables should update their state and re-render
+     */
     dragEnded(state, _action: PayloadAction<DragEndAction>) {
       return { type: DragStateType.NOT_DRAGGING };
     }
@@ -136,6 +140,14 @@ const {
   portalDrag
 } = dragSlice.actions;
 
+/**
+ * A drag has started
+ *
+ * @param draggable The draggable being dragged
+ * @param droppableId The droppable parent of the draggable being dragged
+ * @param mousePos The client position of the mouse
+ * @param bounds The client bounds of the dragged element
+ */
 function startDrag(
   draggable: DraggableDescriptor,
   droppableId: string | undefined,
