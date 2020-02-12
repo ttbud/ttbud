@@ -6,16 +6,9 @@ import { DroppableMonitor } from "./ui/drag/DroppableMonitor";
 import { Provider } from "react-redux";
 import DndContext from "./ui/drag/DndContext";
 import createStore from "./state/createStore";
-import { BoardStateApiClient } from "./network/BoardStateApiClient";
 
-const apiHost = process.env.REACT_APP_DOMAIN;
-const apiPort = process.env.REACT_APP_API_WEBSOCKET_PORT;
 const monitor = new DroppableMonitor();
-const apiClient = new BoardStateApiClient(
-  `wss://${apiHost}:${apiPort}`,
-  url => new WebSocket(url)
-);
-const store = createStore(monitor, apiClient);
+const store = createStore(monitor);
 
 const render = () => {
   const App = require("./ui/app/App").default;
