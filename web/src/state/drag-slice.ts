@@ -67,7 +67,7 @@ const dragSlice = createSlice({
         source
       };
     },
-    dragPortaled(state, action: PayloadAction<DragPortalAction>) {
+    portalDrag(state, action: PayloadAction<DragPortalAction>) {
       const { draggable, bounds } = action.payload;
       assert(
         state.type === DragStateType.DRAGGING,
@@ -133,7 +133,7 @@ const {
   dragReleased,
   dragMoved,
   dragEnded,
-  dragPortaled
+  portalDrag
 } = dragSlice.actions;
 
 function startDrag(
@@ -271,7 +271,7 @@ export {
   moveDrag,
   releaseDrag,
   endDrag,
-  dragPortaled,
+  portalDrag,
   // This shouldn't be called directly, but other slices need to
   // respond to this event to update their state, so we export it
   dragEnded
