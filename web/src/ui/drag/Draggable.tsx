@@ -13,7 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { assert } from "../../util/invariants";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import {
-  dragPortaled,
+  portalDrag,
   endDrag,
   moveDrag,
   releaseDrag,
@@ -156,7 +156,7 @@ const Draggable: React.FC<Props> = ({
 
     const bounds = ref.current.getBoundingClientRect();
     dispatch(
-      dragPortaled({
+      portalDrag({
         draggable: descriptor,
         bounds: {
           top: bounds.top,
