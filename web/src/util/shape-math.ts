@@ -32,6 +32,15 @@ export function boundsAreEqual(left: Bounds, right: Bounds): boolean {
   );
 }
 
+export function contains(bounds: Bounds, pos: Pos2d) {
+  return (
+    bounds.left < pos.x &&
+    bounds.right > pos.x &&
+    bounds.top < pos.y &&
+    bounds.bottom > pos.y
+  );
+}
+
 export function centerOf(bounds: Bounds): Pos2d {
   const width = bounds.right - bounds.left;
   const height = bounds.bottom - bounds.top;

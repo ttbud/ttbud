@@ -6,7 +6,7 @@ import noBorder from "../__stories__/no-border";
 import { Provider, useSelector } from "react-redux";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 import dragReducer from "../../state/drag-slice";
-import { DroppableMonitor } from "../drag/DroppableMonitor";
+import { DomDroppableMonitor } from "../drag/DroppableMonitor";
 import DndContext from "../drag/DndContext";
 import noop from "../../util/noop";
 import { DragStateType } from "../drag/DragStateTypes";
@@ -35,7 +35,7 @@ const floors = ICONS.filter(icon => icon.type === IconType.floor)
 
 const tokens = cards.concat(floors).toArray();
 
-const monitor = new DroppableMonitor();
+const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: {
     drag: dragReducer

@@ -13,14 +13,10 @@ export type LocationCollector = (
   pos: Pos2d
 ) => TargetLocation | undefined;
 
-export interface DroppableConfig {
+// Split the api and the config passed in so that only what's
+// required is returned from methods that return a droppable
+export interface DroppableConfigApi {
   id: string;
-  ref: RefObject<HTMLElement>;
-  /**
-   * A callback to synchronously collect measurement information
-   * before a drag starts.
-   */
-  onBeforeDragStart: () => void;
   /**
    * Fetch the location a draggable should animate to if it is
    * dropped here. The position is the center of the proposed
@@ -29,7 +25,22 @@ export interface DroppableConfig {
   getLocation: LocationCollector;
 }
 
-export class DroppableMonitor {
+export interface DroppableConfig extends DroppableConfigApi {
+  ref: RefObject<HTMLElement>;
+  /**
+   * A callback to synchronously collect measurement information
+   * before a drag starts.
+   */
+  onBeforeDragStart: () => void;
+}
+
+export interface DroppableMonitor {
+  onBeforeDragStart(): void;
+  findDroppableAt(pos: Pos2d): DroppableConfigApi | undefined;
+  getDroppable(id: string): DroppableConfigApi;
+}
+
+export class DomDroppableMonitor implements DroppableMonitor {
   private droppables = new Map<string, DroppableConfig>();
 
   /**
@@ -58,7 +69,7 @@ export class DroppableMonitor {
     }
   }
 
-  public getDroppable(id: string): DroppableConfig {
+  public getDroppable(id: string): DroppableConfigApi {
     const droppable = this.droppables.get(id);
     assert(droppable, `No droppable found with id ${id}`);
     return droppable;

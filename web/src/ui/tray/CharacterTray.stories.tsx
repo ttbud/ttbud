@@ -2,7 +2,7 @@ import React from "react";
 import CharacterTray from "./CharacterTray";
 import dragReducer from "../../state/drag-slice";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
-import { DroppableMonitor } from "../drag/DroppableMonitor";
+import { DomDroppableMonitor } from "../drag/DroppableMonitor";
 import { Provider } from "react-redux";
 import DndContext from "../drag/DndContext";
 import { ICONS, IconType } from "../icons";
@@ -13,7 +13,7 @@ export default {
   title: "CharacterTray"
 };
 
-const monitor = new DroppableMonitor();
+const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: {
     drag: dragReducer
