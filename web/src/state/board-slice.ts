@@ -55,6 +55,9 @@ interface AddTokenAction {
   pos: Pos2d;
 }
 
+const FLOOR_HEIGHT = 0;
+const CHARACTER_HEIGHT = 1;
+
 const boardSlice = createSlice({
   name: "board",
   initialState: INITIAL_STATE,
@@ -64,7 +67,7 @@ const boardSlice = createSlice({
     },
     addFloor(state, action: PayloadAction<AddTokenAction>) {
       const { iconId, pos } = action.payload;
-      addToken(state, iconId, pos, 0);
+      addToken(state, iconId, pos, FLOOR_HEIGHT);
     },
     removeToken(state, action: PayloadAction<{ id: string }>) {
       const { id } = action.payload;
@@ -110,7 +113,12 @@ const boardSlice = createSlice({
             "Dropped in board but drop type was not grid"
           );
 
-          addToken(state, draggable.icon.id, destination.logicalLocation, 1);
+          addToken(
+            state,
+            draggable.icon.id,
+            destination.logicalLocation,
+            CHARACTER_HEIGHT
+          );
           break;
         case DragResult.NONE:
           break;
