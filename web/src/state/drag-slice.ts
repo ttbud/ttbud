@@ -82,9 +82,10 @@ const dragSlice = createSlice({
     },
     dragMoved(state, action: PayloadAction<DragMoveAction>) {
       const { draggable, bounds, hoveredDroppableId } = action.payload;
+      // The wrapper for this action also checks for this case, so this check
+      // is impossible to trigger from the public API
+      /* istanbul ignore next */
       if (state.type !== DragStateType.DRAGGING) {
-        // This happens a lot because we get another mouse move event before the store is updated to tell the draggable
-        // to stop listening to move events, so just ignore it
         return;
       }
       assert(
@@ -102,7 +103,7 @@ const dragSlice = createSlice({
         `Draggable ${draggable.id} attempted to release a drag while no drag was occurring`
       );
       assert(
-        state.draggable.id,
+        state.draggable.id === draggable.id,
         `Draggable ${draggable.id} attempted to release a drag while another draggable is dragging`
       );
 
@@ -209,7 +210,7 @@ function releaseDrag(
     const state = getState();
     assert(
       state.drag.type === DragStateType.DRAGGING,
-      `Draggable tried to release drag when no drag occurred`
+      `Draggable ${draggable.id} attempted to release a drag while no drag was occurring`
     );
 
     const bounds = updatedBounds(
@@ -284,8 +285,10 @@ export {
   releaseDrag,
   endDrag,
   portalDrag,
-  // This shouldn't be called directly, but other slices need to
-  // respond to this event to update their state, so we export it
+  /**
+   * This shouldn't be called directly, but other slices need to
+   * respond to this event to update their state, so we export it
+   */
   dragEnded
 };
 

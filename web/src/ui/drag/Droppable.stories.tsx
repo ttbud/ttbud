@@ -6,7 +6,7 @@ import DraggableSquare from "../__stories__/DragAwareSquare";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 import dragReducer from "../../state/drag-slice";
 import { Provider, useSelector } from "react-redux";
-import { DroppableMonitor } from "./DroppableMonitor";
+import { DomDroppableMonitor } from "./DroppableMonitor";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import { DraggableType, DragStateType } from "./DragStateTypes";
 import { WALL_ICON } from "../icons";
@@ -18,7 +18,7 @@ export default {
   title: "Droppable"
 };
 
-const monitor = new DroppableMonitor();
+const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: { drag: dragReducer },
   middleware: getDefaultMiddleware({ thunk: { extraArgument: monitor } })

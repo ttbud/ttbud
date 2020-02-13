@@ -1,7 +1,7 @@
 import React from "react";
 import DraggableSquare from "../__stories__/DragAwareSquare";
 import SortableList, { DraggableItem } from "./SortableList";
-import { DroppableMonitor } from "../drag/DroppableMonitor";
+import { DomDroppableMonitor } from "../drag/DroppableMonitor";
 import { Provider, useSelector } from "react-redux";
 import {
   configureStore,
@@ -20,7 +20,7 @@ export default {
   title: "SortableList"
 };
 
-const monitor = new DroppableMonitor();
+const monitor = new DomDroppableMonitor();
 
 function coloredDraggableItem(color: string): DraggableItem {
   return {

@@ -1,7 +1,7 @@
 import SearchDialog from "./SearchDialog";
 import { ICONS } from "../icons";
 import React from "react";
-import { DroppableMonitor } from "../drag/DroppableMonitor";
+import { DomDroppableMonitor } from "../drag/DroppableMonitor";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 import dragReducer from "../../state/drag-slice";
 import { Provider } from "react-redux";
@@ -13,7 +13,7 @@ export default {
   title: "SearchDialog"
 };
 
-const monitor = new DroppableMonitor();
+const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: {
     drag: dragReducer
