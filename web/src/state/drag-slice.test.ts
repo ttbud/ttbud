@@ -71,14 +71,14 @@ function createTestStore(initialState: DragState) {
   });
 }
 
-it("Refuses to start a new drag when a drag is already started", () => {
+it("refuses to start a new drag when a drag is already started", () => {
   const store = createTestStore(DRAGGING);
   expect(() => {
     store.dispatch(startDrag(DRAGGABLE, undefined, ORIGIN_POS, ORIGIN_BOUNDS));
   }).toThrow("attempted to start a drag during an existing drag");
 });
 
-it("Can start a drag outside of a droppable", () => {
+it("can start a drag outside of a droppable", () => {
   const store = createTestStore(NOT_DRAGGING);
 
   const bounds = { top: 10, left: 10, bottom: 10, right: 10 };
@@ -96,7 +96,7 @@ it("Can start a drag outside of a droppable", () => {
   });
 });
 
-it("Collects a source location if the draggable came from a droppable", () => {
+it("collects a source location if the draggable came from a droppable", () => {
   const store = createTestStore(NOT_DRAGGING);
 
   const bounds = { top: 10, left: 10, bottom: 10, right: 10 };
@@ -131,7 +131,7 @@ it("Collects a source location if the draggable came from a droppable", () => {
   });
 });
 
-it("Refuses to portal when not dragging", () => {
+it("refuses to portal when not dragging", () => {
   const store = createTestStore(NOT_DRAGGING);
   expect(() =>
     store.dispatch(
@@ -143,7 +143,7 @@ it("Refuses to portal when not dragging", () => {
   ).toThrow("attempted to portal while no drag was occurring");
 });
 
-it("Refuses to portal a draggable that is not currently dragging", () => {
+it("refuses to portal a draggable that is not currently dragging", () => {
   const store = createTestStore(DRAGGING);
   expect(() =>
     store.dispatch(
@@ -152,7 +152,7 @@ it("Refuses to portal a draggable that is not currently dragging", () => {
   ).toThrow("attempted to portal while another draggable is dragging");
 });
 
-it("Updates source bounds when a draggable portals", () => {
+it("updates source bounds when a draggable portals", () => {
   const store = createTestStore(DRAGGING);
   const newBounds = { top: 10, left: 10, bottom: 50, right: 50 };
 
@@ -164,7 +164,7 @@ it("Updates source bounds when a draggable portals", () => {
   });
 });
 
-it("Ignores drag move events when a drag isn't started", () => {
+it("ignores drag move events when a drag isn't started", () => {
   const store = createTestStore(NOT_DRAGGING);
 
   store.dispatch(moveDrag(DRAGGABLE, ORIGIN_POS));
@@ -172,14 +172,14 @@ it("Ignores drag move events when a drag isn't started", () => {
   expect(store.getState()).toEqual({ drag: NOT_DRAGGING });
 });
 
-it("Refuses to move a draggable that is not already dragging", () => {
+it("refuses to move a draggable that is not already dragging", () => {
   const store = createTestStore(DRAGGING);
   expect(() =>
     store.dispatch(moveDrag(INACTIVE_DRAGGABLE, ORIGIN_POS))
   ).toThrow("attempted to move while another draggable is dragging");
 });
 
-it("Updates bounds and hovered droppable on drag move", () => {
+it("updates bounds and hovered droppable on drag move", () => {
   const store = createTestStore(DRAGGING);
 
   // Create a droppable we will hover over
@@ -200,21 +200,21 @@ it("Updates bounds and hovered droppable on drag move", () => {
   });
 });
 
-it("Refuses to release drags that haven't started", () => {
+it("refuses to release drags that haven't started", () => {
   const store = createTestStore(NOT_DRAGGING);
   expect(() => store.dispatch(releaseDrag(DRAGGABLE, ORIGIN_POS))).toThrow(
     "attempted to release a drag while no drag was occurring"
   );
 });
 
-it("Refuses to release a drag from a draggable that is not dragging", () => {
+it("refuses to release a drag from a draggable that is not dragging", () => {
   const store = createTestStore(DRAGGING);
   expect(() =>
     store.dispatch(releaseDrag(INACTIVE_DRAGGABLE, ORIGIN_POS))
   ).toThrow("attempted to release a drag while another draggable is dragging");
 });
 
-it("Animates back to start when not dropped on a droppable", () => {
+it("animates back to start when not dropped on a droppable", () => {
   const store = createTestStore(DRAGGING);
   store.dispatch(releaseDrag(DRAGGABLE, MOVED_MOUSE_POS));
   expect(store.getState().drag).toEqual({
@@ -225,7 +225,7 @@ it("Animates back to start when not dropped on a droppable", () => {
   });
 });
 
-it("Animates back to start when droppable rejects the drop", () => {
+it("animates back to start when droppable rejects the drop", () => {
   const store = createTestStore(DRAGGING);
 
   monitor.setDroppables([
@@ -246,7 +246,7 @@ it("Animates back to start when droppable rejects the drop", () => {
   });
 });
 
-it("Animates to destination if droppable provides one", () => {
+it("animates to destination if droppable provides one", () => {
   const store = createTestStore(DRAGGING);
 
   const destination = {
@@ -274,7 +274,7 @@ it("Animates to destination if droppable provides one", () => {
   });
 });
 
-it("Skips animating if destination and current bounds are the same", () => {
+it("skips animating if destination and current bounds are the same", () => {
   const store = createTestStore(DRAGGING);
   const destination = {
     bounds: DRAGGING.bounds,
@@ -294,21 +294,21 @@ it("Skips animating if destination and current bounds are the same", () => {
   expect(store.getState().drag).toEqual(NOT_DRAGGING);
 });
 
-it("Refuses to end drags that haven't started", () => {
+it("refuses to end drags that haven't started", () => {
   const store = createTestStore(NOT_DRAGGING);
   expect(() => store.dispatch(endDrag(DRAGGABLE))).toThrow(
     "tried to finish a drag animation when no drag was occurring"
   );
 });
 
-it("Refuses to end drags from draggables that aren't dragging", () => {
+it("refuses to end drags from draggables that aren't dragging", () => {
   const store = createTestStore(DRAG_END_ANIMATING);
   expect(() => store.dispatch(endDrag(INACTIVE_DRAGGABLE))).toThrow(
     "tried to finish a drag animation when another draggable was dragging"
   );
 });
 
-it("Ends valid drags successfully", () => {
+it("ends valid drags successfully", () => {
   const store = createTestStore(DRAG_END_ANIMATING);
   store.dispatch(endDrag(DRAGGABLE));
   expect(store.getState().drag).toEqual(NOT_DRAGGING);
