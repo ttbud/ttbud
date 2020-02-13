@@ -67,15 +67,8 @@ const sortSlice = createSlice({
 });
 
 const store = configureStore({
-  reducer: {
-    drag: dragReducer,
-    sort: sortSlice.reducer
-  },
-  middleware: getDefaultMiddleware({
-    thunk: {
-      extraArgument: monitor
-    }
-  })
+  reducer: { drag: dragReducer, sort: sortSlice.reducer },
+  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
 });
 
 const ColorList = () => {
