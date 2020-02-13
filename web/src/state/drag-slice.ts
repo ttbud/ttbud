@@ -156,10 +156,10 @@ function startDrag(
   bounds: Bounds
 ): AppThunk {
   return (dispatch, getState, { monitor }) => {
-    let droppable, location;
 
     monitor.onBeforeDragStart();
 
+    let droppable, location;
     if (droppableId) {
       const center = centerOf(bounds);
       droppable = monitor.getDroppable(droppableId);
