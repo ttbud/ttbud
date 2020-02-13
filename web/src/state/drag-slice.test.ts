@@ -61,15 +61,11 @@ const DRAG_END_ANIMATING: DragState = {
 };
 
 let monitor: FakeDroppableMonitor;
-beforeEach(() => {
-  monitor = new FakeDroppableMonitor();
-});
+beforeEach(() => (monitor = new FakeDroppableMonitor()));
 
 function createTestStore(initialState: DragState) {
   return configureStore({
-    reducer: {
-      drag: dragReducer
-    },
+    reducer: { drag: dragReducer },
     preloadedState: { drag: initialState },
     middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
   });
