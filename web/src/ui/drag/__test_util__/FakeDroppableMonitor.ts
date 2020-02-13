@@ -1,13 +1,11 @@
-import {
-  DroppableConfigApi,
-  DroppableMonitor
-} from "../../ui/drag/DroppableMonitor";
-import Pos2d, { Bounds, contains } from "../../util/shape-math";
-import { assert } from "../../util/invariants";
+import { DroppableConfigApi, DroppableMonitor } from "../DroppableMonitor";
+import Pos2d, { Bounds, contains } from "../../../util/shape-math";
+import { assert } from "../../../util/invariants";
 
 export interface FakeDroppable extends DroppableConfigApi {
   bounds: Bounds;
   zIndex: number;
+  onBeforeDragStart?: () => void;
 }
 
 export class FakeDroppableMonitor implements DroppableMonitor {
@@ -29,5 +27,11 @@ export class FakeDroppableMonitor implements DroppableMonitor {
     return droppable;
   }
 
-  onBeforeDragStart(): void {}
+  onBeforeDragStart(): void {
+    for (const droppable of this.droppables) {
+      if (droppable.onBeforeDragStart) {
+        droppable.onBeforeDragStart();
+      }
+    }
+  }
 }
