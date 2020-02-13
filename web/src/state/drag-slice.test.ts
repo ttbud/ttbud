@@ -30,7 +30,7 @@ const DRAGGABLE: IconDraggable = {
   icon: WALL_ICON
 };
 
-const ANOTHER_DRAGGABLE: IconDraggable = {
+const INACTIVE_DRAGGABLE: IconDraggable = {
   id: "another-draggable-id",
   type: DraggableType.ICON,
   icon: WALL_ICON
@@ -136,7 +136,7 @@ it("Refuses to portal when not dragging", () => {
   expect(() =>
     store.dispatch(
       portalDrag({
-        draggable: ANOTHER_DRAGGABLE,
+        draggable: INACTIVE_DRAGGABLE,
         bounds: ORIGIN_BOUNDS
       })
     )
@@ -147,7 +147,7 @@ it("Refuses to portal a draggable that is not currently dragging", () => {
   const store = createTestStore(DRAGGING);
   expect(() =>
     store.dispatch(
-      portalDrag({ draggable: ANOTHER_DRAGGABLE, bounds: ORIGIN_BOUNDS })
+      portalDrag({ draggable: INACTIVE_DRAGGABLE, bounds: ORIGIN_BOUNDS })
     )
   ).toThrow("attempted to portal while another draggable is dragging");
 });
@@ -159,11 +159,8 @@ it("Updates source bounds when a draggable portals", () => {
   store.dispatch(portalDrag({ draggable: DRAGGABLE, bounds: newBounds }));
 
   expect(store.getState().drag).toEqual({
-    type: DragStateType.DRAGGING,
-    draggable: DRAGGABLE,
-    source: { bounds: newBounds },
-    mouseOffset: DRAGGING.mouseOffset,
-    bounds: DRAGGING.bounds
+    ...DRAGGING,
+    source: { bounds: newBounds }
   });
 });
 
@@ -177,9 +174,9 @@ it("Ignores drag move events when a drag isn't started", () => {
 
 it("Refuses to move a draggable that is not already dragging", () => {
   const store = createTestStore(DRAGGING);
-  expect(() => store.dispatch(moveDrag(ANOTHER_DRAGGABLE, ORIGIN_POS))).toThrow(
-    "attempted to move while another draggable is dragging"
-  );
+  expect(() =>
+    store.dispatch(moveDrag(INACTIVE_DRAGGABLE, ORIGIN_POS))
+  ).toThrow("attempted to move while another draggable is dragging");
 });
 
 it("Updates bounds and hovered droppable on drag move", () => {
@@ -213,7 +210,7 @@ it("Refuses to release drags that haven't started", () => {
 it("Refuses to release a drag from a draggable that is not dragging", () => {
   const store = createTestStore(DRAGGING);
   expect(() =>
-    store.dispatch(releaseDrag(ANOTHER_DRAGGABLE, ORIGIN_POS))
+    store.dispatch(releaseDrag(INACTIVE_DRAGGABLE, ORIGIN_POS))
   ).toThrow("attempted to release a drag while another draggable is dragging");
 });
 
@@ -306,7 +303,7 @@ it("Refuses to end drags that haven't started", () => {
 
 it("Refuses to end drags from draggables that aren't dragging", () => {
   const store = createTestStore(DRAG_END_ANIMATING);
-  expect(() => store.dispatch(endDrag(ANOTHER_DRAGGABLE))).toThrow(
+  expect(() => store.dispatch(endDrag(INACTIVE_DRAGGABLE))).toThrow(
     "tried to finish a drag animation when another draggable was dragging"
   );
 });
