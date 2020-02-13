@@ -20,7 +20,7 @@ const store = configureStore({
   },
   middleware: getDefaultMiddleware({
     thunk: {
-      extraArgument: monitor
+      extraArgument: { monitor }
     }
   })
 });

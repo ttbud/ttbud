@@ -19,11 +19,8 @@ const store = configureStore({
   reducer: {
     drag: dragReducer
   },
-  middleware: getDefaultMiddleware({
-    thunk: { extraArgument: monitor }
-  })
+  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
 });
-
 export const Default = () => (
   <Provider store={store}>
     <DndContext.Provider value={monitor}>

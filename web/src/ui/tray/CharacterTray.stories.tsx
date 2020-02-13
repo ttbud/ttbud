@@ -15,14 +15,8 @@ export default {
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
-  reducer: {
-    drag: dragReducer
-  },
-  middleware: getDefaultMiddleware({
-    thunk: {
-      extraArgument: monitor
-    }
-  })
+  reducer: { drag: dragReducer },
+  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
 });
 
 const icons = ICONS.filter(icon => icon.type === IconType.token)

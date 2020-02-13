@@ -40,11 +40,7 @@ const store = configureStore({
   reducer: {
     drag: dragReducer
   },
-  middleware: getDefaultMiddleware({
-    thunk: {
-      extraArgument: monitor
-    }
-  })
+  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
 });
 
 const ExampleBoard: React.FC = () => {

@@ -21,7 +21,7 @@ export default {
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: { drag: dragReducer },
-  middleware: getDefaultMiddleware({ thunk: { extraArgument: monitor } })
+  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
 });
 
 const ColoredDroppable: React.FC<{ color: string }> = ({ color }) => (
