@@ -71,8 +71,7 @@ function createTestStore(initialState: DragState) {
       drag: dragReducer
     },
     preloadedState: { drag: initialState },
-    middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
-    devTools: process.env.NODE_ENV === "development"
+    middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
   });
 }
 
