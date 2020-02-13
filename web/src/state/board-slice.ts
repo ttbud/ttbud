@@ -9,6 +9,7 @@ import getDragResult, { DragResult } from "./getDragResult";
 import UnreachableCaseError from "../util/UnreachableCaseError";
 import { AppThunk } from "./createStore";
 import Pos2d from "../util/shape-math";
+import timeout from "../util/timeout";
 
 export interface BoardState {
   tokens: Token[];
@@ -140,12 +141,10 @@ const {
 const PING_TIMEOUT_MS = 5000;
 
 function addPing(ping: Ping): AppThunk {
-  return dispatch => {
+  return async dispatch => {
     dispatch(pingAdded(ping));
-    window.setTimeout(
-      () => dispatch(pingRemoved({ id: ping.id })),
-      PING_TIMEOUT_MS
-    );
+    await timeout(PING_TIMEOUT_MS);
+    dispatch(pingRemoved({ id: ping.id }));
   };
 }
 
