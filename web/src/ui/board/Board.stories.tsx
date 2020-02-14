@@ -5,11 +5,11 @@ import uuid from "uuid";
 import noBorder from "../__stories__/no-border";
 import { Provider, useSelector } from "react-redux";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
-import dragReducer from "../../state/drag-slice";
-import { DomDroppableMonitor } from "../drag/DroppableMonitor";
-import DndContext from "../drag/DndContext";
+import dragReducer from "../../drag/drag-slice";
+import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
+import DndContext from "../../drag/DndContext";
 import noop from "../../util/noop";
-import { DragStateType } from "../drag/DragStateTypes";
+import { DragStateType } from "../../drag/DragStateTypes";
 import { RootState } from "../../state/rootReducer";
 
 export default {

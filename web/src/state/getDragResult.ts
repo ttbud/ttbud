@@ -1,4 +1,4 @@
-import { DragEndAction } from "./drag-slice";
+import { DragEndAction } from "../drag/drag-slice";
 
 export enum DragResult {
   DRAGGED_OUT_OF = "dragged out of",

@@ -13,8 +13,8 @@ import {
   IconDraggable,
   LocationType,
   LogicalLocation
-} from "../ui/drag/DragStateTypes";
-import { FakeDroppableMonitor } from "../ui/drag/__test_util__/FakeDroppableMonitor";
+} from "./DragStateTypes";
+import { FakeDroppableMonitor } from "./__test_util__/FakeDroppableMonitor";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 
 const ORIGIN_BOUNDS = { top: 0, left: 0, bottom: 50, right: 50 };

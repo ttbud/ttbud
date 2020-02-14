@@ -2,9 +2,9 @@ import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
 import * as serviceWorker from "./serviceWorker";
-import { DomDroppableMonitor } from "./ui/drag/DroppableMonitor";
+import { DomDroppableMonitor } from "./drag/DroppableMonitor";
 import { Provider } from "react-redux";
-import DndContext from "./ui/drag/DndContext";
+import DndContext from "./drag/DndContext";
 import createStore from "./state/createStore";
 
 const monitor = new DomDroppableMonitor();

@@ -4,7 +4,7 @@ import {
   getDefaultMiddleware,
   ThunkAction
 } from "@reduxjs/toolkit";
-import { DroppableMonitor } from "../ui/drag/DroppableMonitor";
+import { DroppableMonitor } from "../drag/DroppableMonitor";
 import rootReducer, { RootState } from "./rootReducer";
 
 interface ThunkExtras {

@@ -1,6 +1,6 @@
 import { DroppableConfigApi, DroppableMonitor } from "../DroppableMonitor";
-import Pos2d, { Bounds, contains } from "../../../util/shape-math";
-import { assert } from "../../../util/invariants";
+import Pos2d, { Bounds, contains } from "../../util/shape-math";
+import { assert } from "../../util/invariants";
 
 export interface FakeDroppable extends DroppableConfigApi {
   bounds: Bounds;

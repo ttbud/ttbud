@@ -6,9 +6,9 @@ import React, {
   useRef
 } from "react";
 import DndContext from "./DndContext";
-import { fail } from "../../util/invariants";
+import { fail } from "../util/invariants";
 import { LocationCollector } from "./DroppableMonitor";
-import noop from "../../util/noop";
+import noop from "../util/noop";
 
 export interface DroppableAttributes {
   ref: RefObject<any>;

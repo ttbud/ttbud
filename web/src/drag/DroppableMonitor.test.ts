@@ -9,8 +9,8 @@ import {
   FakeDroppable,
   FakeDroppableMonitor
 } from "./__test_util__/FakeDroppableMonitor";
-import { Bounds } from "../../util/shape-math";
-import noop from "../../util/noop";
+import { Bounds } from "../util/shape-math";
+import noop from "../util/noop";
 
 interface FakeDroppableConfig {
   id: string;

@@ -1,17 +1,17 @@
 import React from "react";
 import Draggable from "./Draggable";
 import Droppable from "./Droppable";
-import Square from "../__stories__/Square";
-import DraggableSquare from "../__stories__/DragAwareSquare";
+import Square from "../ui/__stories__/Square";
+import DraggableSquare from "../ui/__stories__/DragAwareSquare";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
-import dragReducer from "../../state/drag-slice";
+import dragReducer from "./drag-slice";
 import { Provider, useSelector } from "react-redux";
 import { DomDroppableMonitor } from "./DroppableMonitor";
-import UnreachableCaseError from "../../util/UnreachableCaseError";
+import UnreachableCaseError from "../util/UnreachableCaseError";
 import { DraggableType, DragStateType } from "./DragStateTypes";
-import { WALL_ICON } from "../icons";
+import { WALL_ICON } from "../ui/icons";
 import DndContext from "./DndContext";
-import { RootState } from "../../state/rootReducer";
+import { RootState } from "../state/rootReducer";
 
 export default {
   component: Droppable,

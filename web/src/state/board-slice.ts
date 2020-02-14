@@ -1,9 +1,9 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DragEndAction, dragEnded } from "./drag-slice";
+import { DragEndAction, dragEnded } from "../drag/drag-slice";
 import { Ping, Token } from "../network/TokenStateClient";
 import { DROPPABLE_IDS } from "../ui/DroppableIds";
 import { assert } from "../util/invariants";
-import { DraggableType, LocationType } from "../ui/drag/DragStateTypes";
+import { DraggableType, LocationType } from "../drag/DragStateTypes";
 import uuid from "uuid";
 import getDragResult, { DragResult } from "./getDragResult";
 import UnreachableCaseError from "../util/UnreachableCaseError";
@@ -52,6 +52,7 @@ function addToken(
 }
 
 interface AddTokenAction {
+  id: string;
   iconId: string;
   pos: Pos2d;
 }
@@ -66,9 +67,14 @@ const boardSlice = createSlice({
     replaceTokens(state, action: PayloadAction<Token[]>) {
       state.tokens = action.payload;
     },
-    addFloor(state, action: PayloadAction<AddTokenAction>) {
-      const { iconId, pos } = action.payload;
-      addToken(state, iconId, pos, FLOOR_HEIGHT);
+    addFloor: {
+      reducer: (state, action: PayloadAction<AddTokenAction>) => {
+        const { id, iconId, pos } = action.payload;
+        state.tokens.push({ id, iconId, z: FLOOR_HEIGHT, ...pos });
+      },
+      prepare: (iconId: string, pos: Pos2d) => ({
+        payload: { id: uuid(), iconId, pos }
+      })
     },
     removeToken(state, action: PayloadAction<{ id: string }>) {
       const { id } = action.payload;
@@ -140,11 +146,18 @@ const {
 
 const PING_TIMEOUT_MS = 5000;
 
-function addPing(ping: Ping): AppThunk {
-  return async dispatch => {
-    dispatch(pingAdded(ping));
+function addPing(newPing: Ping): AppThunk {
+  return async (dispatch, getState) => {
+    const alreadyAdded = getState().board.pings.some(
+      ping => ping.id === newPing.id
+    );
+    if (alreadyAdded) {
+      return;
+    }
+
+    dispatch(pingAdded(newPing));
     await timeout(PING_TIMEOUT_MS);
-    dispatch(pingRemoved({ id: ping.id }));
+    dispatch(pingRemoved({ id: newPing.id }));
   };
 }
 
