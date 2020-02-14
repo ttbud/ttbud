@@ -5,19 +5,19 @@ import React, {
   useCallback,
   useRef
 } from "react";
-import Droppable, { DroppableAttributes } from "../drag/Droppable";
-import Draggable, { DragAttributes } from "../drag/Draggable";
+import Droppable, { DroppableAttributes } from "../../drag/Droppable";
+import Draggable, { DragAttributes } from "../../drag/Draggable";
 import Pos2d, { centerOf } from "../../util/shape-math";
 import { shallowEqual, useSelector } from "react-redux";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
-import { LocationCollector } from "../drag/DroppableMonitor";
+import { LocationCollector } from "../../drag/DroppableMonitor";
 import { assert } from "../../util/invariants";
 import {
   DraggableDescriptor,
   DragStateType,
   DroppableLocation,
   LocationType
-} from "../drag/DragStateTypes";
+} from "../../drag/DragStateTypes";
 import { RootState } from "../../state/rootReducer";
 
 export interface DraggableItem {
@@ -164,6 +164,7 @@ export default function SortableList<T extends DraggableItem>({
     }
 
     const boundsWithEmptySlot = Array.from<Rect>(bounds);
+    //TODO: Handle the case that there are no children
     const firstChild = bounds[0];
     const secondChild = bounds[1];
     const margin = secondChild.top - firstChild.bottom;

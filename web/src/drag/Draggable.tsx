@@ -10,19 +10,19 @@ import React, {
   useRef
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { assert } from "../../util/invariants";
-import UnreachableCaseError from "../../util/UnreachableCaseError";
+import { assert } from "../util/invariants";
+import UnreachableCaseError from "../util/UnreachableCaseError";
 import {
   portalDrag,
   endDrag,
   moveDrag,
   releaseDrag,
   startDrag
-} from "../../state/drag-slice";
-import Pos2d, { posAreEqual } from "../../util/shape-math";
+} from "./drag-slice";
+import Pos2d, { posAreEqual } from "../util/shape-math";
 import { DraggableDescriptor, DragStateType } from "./DragStateTypes";
 import { createPortal } from "react-dom";
-import { RootState } from "../../state/rootReducer";
+import { RootState } from "../state/rootReducer";
 
 export interface DragAttributes {
   ref: RefObject<any>;

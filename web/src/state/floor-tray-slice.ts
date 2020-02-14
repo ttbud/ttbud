@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DragEndAction, dragEnded } from "./drag-slice";
+import { DragEndAction, dragEnded } from "../drag/drag-slice";
 import getDragResult from "./getDragResult";
 import { reorderIcons } from "./reorderIcons";
 import { Icon, ICONS, IconType, WALL_ICON } from "../ui/icons";

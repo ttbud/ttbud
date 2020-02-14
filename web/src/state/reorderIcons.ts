@@ -5,7 +5,7 @@ import {
   DraggableDescriptor,
   DroppableLocation,
   LocationType
-} from "../ui/drag/DragStateTypes";
+} from "../drag/DragStateTypes";
 import UnreachableCaseError from "../util/UnreachableCaseError";
 
 interface ReorderIconsParams {
