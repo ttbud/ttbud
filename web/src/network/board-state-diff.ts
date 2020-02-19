@@ -1,6 +1,5 @@
 import { Ping, Token } from "./TokenStateClient";
 import { posAreEqual } from "../util/shape-math";
-import uuid from "uuid";
 import UnreachableCaseError from "../util/UnreachableCaseError";
 
 export interface CreateToken {
@@ -27,48 +26,6 @@ export type Update = CreateToken | MoveToken | DeleteToken | CreatePing;
 
 function isUpdateOrMove(update: Update): update is CreateToken | MoveToken {
   return update.type === "create" || update.type === "move";
-}
-
-function compareById(left: Token, right: Token): number {
-  if (left.id === right.id) {
-    return 0;
-  }
-
-  return left.id < right.id ? -1 : 1;
-}
-
-function getNetworkUpdates2(
-  networkTokens: Token[],
-  uiTokens: Token[],
-  unackedUpdates: Update[]
-) {
-  const sortedNetworkTokens = networkTokens.sort(compareById);
-  const sortedUiTokens = uiTokens.sort(compareById);
-
-  let uiIdx = 0;
-  let networkIdx = 0;
-
-  const updates: Update[] = [];
-  while (
-    uiIdx < sortedUiTokens.length &&
-    networkIdx < sortedNetworkTokens.length
-  ) {
-    let uiToken = sortedUiTokens[uiIdx];
-    let networkToken = sortedNetworkTokens[uiIdx];
-
-    if (uiToken === undefined) {
-      networkIdx++;
-    } else if (networkToken === undefined) {
-      uiIdx++;
-    } else if (uiToken > networkToken) {
-      networkIdx++;
-    } else if (uiToken < networkToken) {
-      uiIdx++;
-    } else {
-      uiIdx++;
-      networkIdx++;
-    }
-  }
 }
 
 interface DiffState {
@@ -127,9 +84,9 @@ export function getNetworkUpdates({
   return createsAndMoves.concat(deletes);
 }
 
-function getNewLocalState(
+export function getNewLocalState(
   networkTokens: Token[],
-  unackedUpdates: Update[]
+  unackedUpdates: Iterable<Update>
 ): Token[] {
   const localState = Array.from(networkTokens);
   // Apply updates to the network state
@@ -140,7 +97,7 @@ function getNewLocalState(
         break;
       case "move":
         const idxToMove = localState.findIndex(
-            networkToken => networkToken.id === uiUpdate.token.id
+          networkToken => networkToken.id === uiUpdate.token.id
         );
         if (idxToMove > -1) {
           localState.splice(idxToMove, 1);
@@ -149,7 +106,7 @@ function getNewLocalState(
         break;
       case "delete":
         const idxToDelete = localState.findIndex(
-            networkToken => networkToken.id === uiUpdate.tokenId
+          networkToken => networkToken.id === uiUpdate.tokenId
         );
         if (idxToDelete > -1) {
           localState.splice(idxToDelete, 1);
