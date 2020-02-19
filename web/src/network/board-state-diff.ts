@@ -1,6 +1,7 @@
 import { Ping, Token } from "./TokenStateClient";
 import { posAreEqual } from "../util/shape-math";
 import uuid from "uuid";
+import UnreachableCaseError from "../util/UnreachableCaseError";
 
 export interface CreateToken {
   type: "create";
@@ -126,10 +127,40 @@ export function getNetworkUpdates({
   return createsAndMoves.concat(deletes);
 }
 
-function getNewUiState(
+function getNewLocalState(
   networkTokens: Token[],
-  uiState: Token[],
   unackedUpdates: Update[]
 ): Token[] {
-  return [];
+  const localState = Array.from(networkTokens);
+  // Apply updates to the network state
+  for (const uiUpdate of unackedUpdates) {
+    switch (uiUpdate.type) {
+      case "create":
+        localState.push(uiUpdate.token);
+        break;
+      case "move":
+        const idxToMove = localState.findIndex(
+            networkToken => networkToken.id === uiUpdate.token.id
+        );
+        if (idxToMove > -1) {
+          localState.splice(idxToMove, 1);
+          localState.push(uiUpdate.token);
+        }
+        break;
+      case "delete":
+        const idxToDelete = localState.findIndex(
+            networkToken => networkToken.id === uiUpdate.tokenId
+        );
+        if (idxToDelete > -1) {
+          localState.splice(idxToDelete, 1);
+        }
+        break;
+      case "ping":
+        // Pings are not included in the game state right now
+        break;
+      default:
+        throw new UnreachableCaseError(uiUpdate);
+    }
+  }
+  return localState;
 }
