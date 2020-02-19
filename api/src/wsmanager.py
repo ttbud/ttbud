@@ -85,22 +85,23 @@ class WebsocketManager:
         client: websockets.WebSocketServerProtocol,
     ) -> None:
         try:
-            messages = json.loads(json_message)
+            message = json.loads(json_message)
         except json.JSONDecodeError as e:
             print(e)
             return
-
+        updates = message['updates']
         latest_state = {
-            "type": "state",
-            "data": self.gss.get_state(room_id),
+            'type': 'state',
+            'data': self.gss.get_state(room_id),
         }
 
-        for message in messages:
+        for update in updates:
             try:
-                latest_state = asdict(self.gss.process_update(message, room_id))
+                latest_state = asdict(self.gss.process_update(update, room_id))
             except MessageError as err:
                 print(err)
                 await self.send_message_to_client({'Error': err.message}, client)
+        latest_state['request_id'] = message['request_id']
         await self.send_message_to_room(latest_state, room_id)
 
 
