@@ -13,7 +13,7 @@
     "@types/webpack-env": "^1.15.1",
     "fp-ts": "^2.5.0",
     "immutable": "^4.0.0-rc.12",
-    "io-ts": "^2.1.0",
+    "io-ts": "^2.1.1",
     "jest-junit": "^10.0.0",
     "react": "^16.10.2",
     "react-dom": "^16.10.2",
