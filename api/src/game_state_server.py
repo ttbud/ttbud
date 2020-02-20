@@ -52,7 +52,7 @@ class GameStateServer:
                 state_to_load = self.room_store.read_room_data(room_id)
                 for token_d in state_to_load.values():
                     self._create_or_update_token(self._dict_to_token(token_d), room_id)
-        return Reply('state', self.get_state(room_id))
+        return Reply('connected', self.get_state(room_id))
 
     def connection_dropped(self, client: Hashable, room_id: str) -> None:
         if self._rooms.get(room_id, False):
