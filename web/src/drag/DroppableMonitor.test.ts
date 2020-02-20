@@ -126,12 +126,14 @@ describe("DomDroppableMonitor", () => {
   });
 
   it("should disallow removing droppables that don't exist", () => {
-    expect(() => domDroppableMonitor.removeDroppable("invalid droppable id")).toThrow();
+    expect(() =>
+      domDroppableMonitor.removeDroppable("invalid droppable id")
+    ).toThrow();
   });
 
   it("should allow removing droppables", () => {
     const firstDroppableId = domDroppables[0].id;
     domDroppableMonitor.removeDroppable(firstDroppableId);
     expect(() => domDroppableMonitor.getDroppable(firstDroppableId)).toThrow();
-  })
+  });
 });
