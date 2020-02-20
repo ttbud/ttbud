@@ -17,20 +17,25 @@ import { removeIcon } from "../../state/character-tray-slice";
 
 const useStyles = makeStyles(theme => ({
   app: {
-    width: "100vw",
-    height: "100vh"
+    width: 4000,
+    height: 2000
   },
   characterTray: {
     position: "fixed",
     zIndex: 2,
-    bottom: theme.spacing(1),
+    // Same location whether the scrollbar is visible or not
+    // (Scrollbar width = 100vh - 100%)
+    bottom: `calc(${theme.spacing(3)}px - (100vh - 100%))`,
     left: theme.spacing(1)
   },
   floorTray: {
     display: "inline-flex",
     position: "fixed",
-    bottom: theme.spacing(1),
-    left: "50%",
+    zIndex: 2,
+    // Same location whether the scrollbar is visible or not
+    // (Scrollbar width = 100vh - 100%)
+    bottom: `calc(${theme.spacing(3)}px - (100vh - 100%))`,
+    left: "calc(50% + (100vw - 100%)/2)",
     transform: "translateX(-50%)"
   }
 }));

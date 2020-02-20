@@ -51,8 +51,15 @@ const useStyles = makeStyles({
   }
 });
 
+const scrolledPos = (pixelPos: Pos2d) => {
+  return {
+    x: pixelPos.x + document.documentElement.scrollLeft,
+    y: pixelPos.y + document.documentElement.scrollTop
+  };
+};
+
 const toGridPos = (pixelPos: Pos2d) => {
-  const snappedPixelPos = snapToGrid(pixelPos);
+  const snappedPixelPos = snapToGrid(scrolledPos(pixelPos));
   return {
     x: snappedPixelPos.x / GRID_SIZE_PX,
     y: snappedPixelPos.y / GRID_SIZE_PX
@@ -101,7 +108,7 @@ const Board: React.FC<Props> = ({
       }
 
       const containerRect = container.current.getBoundingClientRect();
-      const snappedPixelPos = snapToGrid(pos);
+      const snappedPixelPos = snapToGrid(scrolledPos(pos));
       return {
         logicalLocation: {
           type: LocationType.GRID,
