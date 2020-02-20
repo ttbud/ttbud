@@ -10,6 +10,7 @@ import UnreachableCaseError from "../util/UnreachableCaseError";
 import { AppThunk } from "./createStore";
 import Pos2d from "../util/shape-math";
 import timeout from "../util/timeout";
+import { IconType } from "../ui/icons";
 
 export interface BoardState {
   tokens: Token[];
@@ -128,7 +129,9 @@ const boardSlice = createSlice({
             state,
             draggable.icon.id,
             destination.logicalLocation,
-            CHARACTER_HEIGHT
+            draggable.icon.type === IconType.token
+              ? CHARACTER_HEIGHT
+              : FLOOR_HEIGHT
           );
           break;
         case DragResult.NONE:
