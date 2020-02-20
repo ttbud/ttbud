@@ -1,8 +1,8 @@
 import * as t from "io-ts";
 import decode from "../util/decode";
-import { GRID_SIZE_PX } from "../config";
 import noop from "../util/noop";
 import { Update } from "./board-state-diff";
+import UnreachableCaseError from "../util/UnreachableCaseError";
 
 const PingMessage = t.type({
   type: t.literal("ping"),
@@ -28,7 +28,31 @@ const BoardStateMessage = t.type({
   )
 });
 
-const MessageDecoder = t.union([PingMessage, BoardStateMessage]);
+const ErrorMessage = t.type({
+  type: t.literal("error"),
+  request_id: t.string,
+  error: t.string
+});
+
+const ConnectionResult = t.type({
+  type: t.literal("connected"),
+  data: t.array(
+    t.type({
+      id: t.string,
+      start_x: t.number,
+      start_y: t.number,
+      start_z: t.number,
+      icon_id: t.string
+    })
+  )
+});
+
+const MessageDecoder = t.union([
+  PingMessage,
+  BoardStateMessage,
+  ErrorMessage,
+  ConnectionResult
+]);
 
 export function toApiToken(token: Token) {
   return {
@@ -77,6 +101,7 @@ export enum EventType {
   TOKEN_UPDATE = "tokens",
   PING = "ping",
   CONNECT = "connect",
+  INITIAL_STATE = "initial state",
   ERROR = "error",
   DISCONNECT = "disconnect"
 }
@@ -97,9 +122,15 @@ interface ConnectionStatusEvent {
   type: EventType.DISCONNECT | EventType.CONNECT;
 }
 
+interface InitialStateEvent {
+  type: EventType.INITIAL_STATE;
+  tokens: Token[];
+}
+
 interface ErrorEvent {
   type: EventType.ERROR;
   error: Error;
+  requestId?: string;
   /**
    * The raw message received from the server that triggered the error
    */
@@ -110,12 +141,12 @@ export type Event =
   | BoardStateEvent
   | PingEvent
   | ConnectionStatusEvent
-  | ErrorEvent;
+  | ErrorEvent
+  | InitialStateEvent;
 
 export type ApiEventHandler = (event: Event) => void;
 
 export class BoardStateApiClient {
-  private updates: QueueableMessage[] = [];
   private eventHandler: ApiEventHandler = noop;
   private socket: WebSocket | undefined;
 
@@ -146,33 +177,6 @@ export class BoardStateApiClient {
 
   public close() {
     this.socket?.close();
-  }
-
-  public delete(tokenId: string, requestId: string) {
-    this.updates.push({
-      action: "delete",
-      request_id: requestId,
-      data: tokenId
-    });
-    this.scheduleSendEvent();
-  }
-
-  public create(token: Token, requestId: string) {
-    this.updates.push({
-      action: "create",
-      request_id: requestId,
-      data: toApiToken(token)
-    });
-    this.scheduleSendEvent();
-  }
-
-  public upsert(token: Token, requestId: string) {
-    this.updates.push({
-      action: "update",
-      request_id: requestId,
-      data: toApiToken(token)
-    });
-    this.scheduleSendEvent();
   }
 
   public send(requestId: string, updates: Update[]) {
@@ -218,43 +222,6 @@ export class BoardStateApiClient {
     this.socket?.send(JSON.stringify(toSend));
   }
 
-  public ping(ping: Ping, requestId: string) {
-    this.socket?.send(
-      JSON.stringify([
-        {
-          action: "ping",
-          request_id: requestId,
-          data: {
-            x: ping.x / GRID_SIZE_PX,
-            y: ping.y / GRID_SIZE_PX,
-            id: ping.id
-          }
-        }
-      ])
-    );
-  }
-
-  private scheduleSendEvent() {
-    this.sendEvents();
-    // if (this.updateCallback != null) {
-    //   window.clearTimeout(this.updateCallback);
-    // }
-    // this.updateCallback = window.setTimeout(this.sendEvents.bind(this), 200);
-  }
-
-  private isConnected() {
-    return this.socket?.readyState === WebSocket.OPEN;
-  }
-
-  private sendEvents() {
-    if (!this.isConnected()) {
-      console.log("not connected");
-      return;
-    }
-    this.socket?.send(JSON.stringify(this.updates));
-    this.updates = [];
-  }
-
   private onConnect() {
     console.log("connected");
     this.eventHandler({ type: EventType.CONNECT });
@@ -266,11 +233,21 @@ export class BoardStateApiClient {
   }
 
   private onMessage(event: MessageEvent) {
+    let message;
     try {
       const json = JSON.parse(event.data);
-      const message = decode(MessageDecoder, json);
-      console.log({ message });
-      if (message.type === "ping") {
+      message = decode(MessageDecoder, json);
+    } catch (e) {
+      this.eventHandler({
+        type: EventType.ERROR,
+        error: e,
+        rawMessage: event.data
+      });
+      return;
+    }
+
+    switch (message.type) {
+      case "ping":
         this.eventHandler({
           type: EventType.PING,
           requestId: message.request_id,
@@ -280,7 +257,8 @@ export class BoardStateApiClient {
             y: message.data.y
           }
         });
-      } else {
+        break;
+      case "state":
         this.eventHandler({
           type: EventType.TOKEN_UPDATE,
           requestId: message.request_id,
@@ -292,13 +270,29 @@ export class BoardStateApiClient {
             iconId: tokenState.icon_id
           }))
         });
-      }
-    } catch (e) {
-      this.eventHandler({
-        type: EventType.ERROR,
-        error: e,
-        rawMessage: event.data
-      });
+        break;
+      case "error":
+        this.eventHandler({
+          type: EventType.ERROR,
+          requestId: message.request_id,
+          rawMessage: event.data,
+          error: new Error(message.error)
+        });
+        break;
+      case "connected":
+        this.eventHandler({
+          type: EventType.INITIAL_STATE,
+          tokens: message.data.map(tokenState => ({
+            id: tokenState.id,
+            x: tokenState.start_x,
+            y: tokenState.start_y,
+            z: tokenState.start_z,
+            iconId: tokenState.icon_id
+          }))
+        });
+        break;
+      default:
+        throw new UnreachableCaseError(message);
     }
   }
 }

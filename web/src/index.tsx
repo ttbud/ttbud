@@ -9,8 +9,8 @@ import createStore from "./state/createStore";
 import { BoardStateApiClient, EventType } from "./network/BoardStateApiClient";
 import { addPing, replaceTokens } from "./state/board-slice";
 import {
+  getLocalState,
   getNetworkUpdates,
-  getNewLocalState,
   Update
 } from "./network/board-state-diff";
 import { Token } from "./network/TokenStateClient";
@@ -26,50 +26,54 @@ const apiClient = new BoardStateApiClient(
 let unackedUpdates = new Map<string, Update[]>();
 let networkTokens: Token[] = [];
 
-apiClient.connect("ff461aa1-d7e4-4f4e-a8dc-caae57bfa549");
 apiClient.setEventHandler(event => {
   switch (event.type) {
-    case EventType.TOKEN_UPDATE:
-      unackedUpdates.delete(event.requestId);
+    case EventType.INITIAL_STATE:
       networkTokens = event.tokens;
-      const newLocalState = getNewLocalState(
-        networkTokens,
+      store.dispatch(replaceTokens(event.tokens));
+      break;
+    case EventType.TOKEN_UPDATE:
+      networkTokens = event.tokens;
+      unackedUpdates.delete(event.requestId);
+      const localState = getLocalState(
+        event.tokens,
         Array.from(unackedUpdates.values()).flat()
       );
 
-      console.log({
-        networkTokens,
-        unackedUpdates: Array.from(unackedUpdates.values()).flat(),
-        newLocalState,
-      });
-      store.dispatch(replaceTokens(newLocalState));
+      store.dispatch(replaceTokens(localState));
       break;
     case EventType.PING:
       unackedUpdates.delete(event.requestId);
       store.dispatch(addPing(event.ping));
       break;
+    case EventType.ERROR:
+      if (event.requestId) {
+        unackedUpdates.delete(event.requestId);
+      }
+      console.log(event);
+      console.error(event.error);
+      break;
   }
 });
 
-store.subscribe(
-  () => {
-    const state = store.getState();
-    const diffState = {
-      networkTokens,
-      uiTokens: state.board.tokens,
-      unackedUpdates: Array.from(unackedUpdates.values()).flat()
-    };
-    const updates = getNetworkUpdates(diffState);
+store.subscribe(() => {
+  const state = store.getState();
+  const updates = getNetworkUpdates({
+    networkTokens,
+    uiTokens: state.board.tokens,
+    unackedUpdates: Array.from(unackedUpdates.values()).flat()
+  });
 
-    if (updates.length === 0) {
-      return;
-    }
-
-    const requestId = uuid();
-    apiClient.send(requestId, updates);
-    unackedUpdates.set(requestId, updates);
+  if (updates.length === 0) {
+    return;
   }
-);
+
+  const requestId = uuid();
+  apiClient.send(requestId, updates);
+  unackedUpdates.set(requestId, updates);
+});
+
+apiClient.connect(uuid());
 
 const render = () => {
   const App = require("./ui/app/App").default;

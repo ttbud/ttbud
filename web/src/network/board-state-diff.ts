@@ -24,7 +24,7 @@ export interface CreatePing {
 
 export type Update = CreateToken | MoveToken | DeleteToken | CreatePing;
 
-function isUpdateOrMove(update: Update): update is CreateToken | MoveToken {
+function isCreateOrMove(update: Update): update is CreateToken | MoveToken {
   return update.type === "create" || update.type === "move";
 }
 
@@ -41,9 +41,10 @@ export function getNetworkUpdates({
 }: DiffState): Update[] {
   const createsAndMoves: Update[] = [];
 
-  const movesAndCreates = unackedUpdates.filter(isUpdateOrMove);
+  const unackedCreatesAndMoves = unackedUpdates.filter(isCreateOrMove);
   const unqueuedTokens = uiTokens.filter(
-    token => !movesAndCreates.some(update => update.token.id === token.id)
+    token =>
+      !unackedCreatesAndMoves.some(update => update.token.id === token.id)
   );
 
   for (const uiToken of unqueuedTokens) {
@@ -84,9 +85,9 @@ export function getNetworkUpdates({
   return createsAndMoves.concat(deletes);
 }
 
-export function getNewLocalState(
+export function getLocalState(
   networkTokens: Token[],
-  unackedUpdates: Iterable<Update>
+  unackedUpdates: Update[]
 ): Token[] {
   const localState = Array.from(networkTokens);
   // Apply updates to the network state
