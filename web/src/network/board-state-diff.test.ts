@@ -1,4 +1,4 @@
-import { getNetworkUpdates } from "./board-state-diff";
+import { getNetworkUpdates, getNewLocalState } from "./board-state-diff";
 import { Token } from "./BoardStateApiClient";
 
 const TOKEN_1: Token = {
@@ -15,6 +15,14 @@ const MOVED_TOKEN_1: Token = {
   x: 1,
   y: 1,
   z: 1
+};
+
+const TOKEN_2: Token = {
+  id: "token-2",
+  iconId: "icon-id",
+  x: 2,
+  y: 2,
+  z: 2
 };
 
 describe("getNetworkUpdates", () => {
@@ -85,6 +93,19 @@ describe("getNetworkUpdates", () => {
         type: "move",
         token: MOVED_TOKEN_1
       }
+    ]);
+  });
+});
+
+describe("getNewLocalState", () =>{
+  it("should return a state including an unacked create update", () => {
+    expect(
+        getNewLocalState(
+            [TOKEN_1],
+            [{type: "create", token: TOKEN_2}]
+        )
+    ).toEqual([
+        [TOKEN_1, TOKEN_2]
     ]);
   });
 });
