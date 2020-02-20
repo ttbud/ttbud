@@ -1,4 +1,4 @@
-import { getNetworkUpdates, getNewLocalState } from "./board-state-diff";
+import { getNetworkUpdates, getLocalState } from "./board-state-diff";
 import { Token } from "./BoardStateApiClient";
 
 const TOKEN_1: Token = {
@@ -97,15 +97,33 @@ describe("getNetworkUpdates", () => {
   });
 });
 
-describe("getNewLocalState", () =>{
+describe("getLocalState", () =>{
   it("should return a state including an unacked create update", () => {
     expect(
-        getNewLocalState(
+        getLocalState(
             [TOKEN_1],
             [{type: "create", token: TOKEN_2}]
         )
     ).toEqual([
-        [TOKEN_1, TOKEN_2]
+        TOKEN_1, TOKEN_2
     ]);
   });
+  it("should return a state not including an unacked delete update", () => {
+    expect(
+        getLocalState(
+            [TOKEN_1],
+            [{type:"delete", tokenId: TOKEN_1.id}]
+        )
+    ).toEqual([]);
+  });
+  it("should return a state including an unacked move update", () => {
+    expect(
+        getLocalState(
+            [TOKEN_1],
+            [{type: "move", token: MOVED_TOKEN_1}]
+        )
+    ).toEqual([
+        MOVED_TOKEN_1
+    ])
+  })
 });
