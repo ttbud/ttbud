@@ -17,6 +17,14 @@ valid_data = {
     'end_z': 1,
 }
 valid_update = {'action': 'create', 'data': valid_data}
+valid_ping = {
+    'action': 'ping',
+    'data': {
+        'id': 'ping_id',
+        'x': 0,
+        'y': 0
+    }
+}
 
 
 @pytest.fixture
@@ -35,7 +43,7 @@ def gss_with_client():
 
 def test_new_connection(gss):
     reply = gss.new_connection_request('test_client', 'room1')
-    assert reply.type == 'state'
+    assert reply.type == 'connected'
     assert len(reply.data) == 0
 
 
@@ -112,7 +120,6 @@ def test_move_existing_token(gss_with_client):
 
 
 def test_ping(gss_with_client):
-    valid_ping = {'key': 'some_id', 'x': 4, 'y': 4}
     reply = gss_with_client.process_update(
         {'action': 'ping', 'data': valid_ping}, TEST_ROOM_ID
     )
