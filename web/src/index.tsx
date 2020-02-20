@@ -73,7 +73,10 @@ store.subscribe(() => {
   unackedUpdates.set(requestId, updates);
 });
 
-apiClient.connect(uuid());
+const path = window.location.pathname.split("/room/")[1];
+const roomId = path ? atob(path) : uuid();
+window.history.replaceState({}, "Your special room", `/room/${btoa(roomId)}`);
+apiClient.connect(roomId);
 
 const render = () => {
   const App = require("./ui/app/App").default;
