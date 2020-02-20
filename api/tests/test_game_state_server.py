@@ -121,10 +121,12 @@ def test_move_existing_token(gss_with_client):
 
 def test_ping(gss_with_client):
     reply = gss_with_client.process_update(
-        {'action': 'ping', 'data': valid_ping}, TEST_ROOM_ID
+        valid_ping,
+        TEST_ROOM_ID
     )
-    assert reply.type == 'ping'
-    assert reply.data == valid_ping
+    assert reply.type == 'state'
+    assert len(reply.data) == 1
+    assert reply.data[0] == valid_ping['data']
 
 
 def test_invalid_action(gss_with_client):

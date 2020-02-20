@@ -17,6 +17,13 @@ class Token:
 
 
 @dataclass
+class Ping:
+    id: str
+    x: int
+    y: int
+
+
+@dataclass
 class Reply:
     type: str
     data: Union[list, str]
@@ -77,8 +84,8 @@ class GameStateServer:
 
         if action == 'create' or action == 'update':
             token = self._dict_to_token(data)
-            if not token or not self._is_valid_token(token):
-                raise MessageError(f'Received a bad token {data}')
+            if not self._is_valid_token(token):
+                raise MessageError(f'Received a bad token: {data}')
             if not self._is_valid_position(token, room_id):
                 raise MessageError('That position is occupied, bucko')
             self._create_or_update_token(token, room_id)
@@ -92,17 +99,27 @@ class GameStateServer:
             else:
                 raise MessageError('Cannot delete token because it does not exist')
         elif action == 'ping':
-            return Reply('ping', data)
+            ping = self._dict_to_ping(data)
+            self._create_ping(ping, room_id)
+            return Reply('state', self.get_state(room_id))
         else:
             raise MessageError(f'Invalid action: {action}')
 
     @staticmethod
-    def _dict_to_token(data: dict):
+    def _dict_to_token(data: dict) -> Token:
         try:
             token = Token(**data)
         except TypeError:
-            return None
+            raise MessageError(f'Received a bad token: {data}')
         return token
+
+    @staticmethod
+    def _dict_to_ping(data: dict) -> Ping:
+        try:
+            ping = Ping(**data)
+        except TypeError:
+            raise MessageError(f'Received a bad ping: {data}')
+        return ping
 
     @staticmethod
     def _is_valid_token(token: Token) -> bool:
@@ -130,6 +147,9 @@ class GameStateServer:
         for block in blocks:
             self._rooms[room_id].positions_to_ids[block] = token.id
         self._rooms[room_id].game_state[token.id] = asdict(token)
+
+    def _create_ping(self, ping: Ping, room_id: str) -> None:
+        self._rooms[room_id].game_state[ping.id] = asdict(ping)
 
     def _delete_token(self, token_id: str, room_id: str) -> None:
         # Remove token data from position dictionaries
