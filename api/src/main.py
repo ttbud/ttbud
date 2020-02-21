@@ -1,4 +1,6 @@
 import os
+import sched
+import time
 
 from wsmanager import start_websocket
 from room_store import FileRoomStore
@@ -10,7 +12,8 @@ def main():
     room_store_dir = os.environ['ROOM_STORE_DIR']
 
     room_store = FileRoomStore(room_store_dir)
-    gss = GameStateServer(room_store)
+    ping_remover = sched.scheduler()
+    gss = GameStateServer(room_store, ping_remover)
 
     start_websocket(websocket_port, gss)
 
