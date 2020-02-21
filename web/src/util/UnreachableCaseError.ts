@@ -6,6 +6,9 @@
  * @see http://ideasintosoftware.com/exhaustive-switch-in-typescript/
  */
 export default class UnreachableCaseError extends Error {
+  // The whole point of this class is that it should be
+  // impossible to ever call
+  /* istanbul ignore next */
   constructor(val: never) {
     super(`Unreachable case: ${val}`);
   }
