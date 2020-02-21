@@ -1,28 +1,41 @@
-import { getNetworkUpdates, getLocalState } from "./board-state-diff";
-import { Token } from "./BoardStateApiClient";
+import {
+  getLocalState,
+  getNetworkUpdates,
+  UpdateType
+} from "./board-state-diff";
+import { Token, TokenType } from "./BoardStateApiClient";
 
 const TOKEN_1: Token = {
   id: "token-1",
+  type: TokenType.CHARACTER,
   iconId: "icon-id",
-  x: 0,
-  y: 0,
-  z: 0
+  pos: {
+    x: 0,
+    y: 0,
+    z: 0
+  }
 };
 
 const MOVED_TOKEN_1: Token = {
   id: "token-1",
+  type: TokenType.CHARACTER,
   iconId: "icon-id",
-  x: 1,
-  y: 1,
-  z: 1
+  pos: {
+    x: 1,
+    y: 1,
+    z: 1
+  }
 };
 
 const TOKEN_2: Token = {
   id: "token-2",
+  type: TokenType.CHARACTER,
   iconId: "icon-id",
-  x: 2,
-  y: 2,
-  z: 2
+  pos: {
+    x: 2,
+    y: 2,
+    z: 2
+  }
 };
 
 describe("getNetworkUpdates", () => {
@@ -69,7 +82,7 @@ describe("getNetworkUpdates", () => {
         uiTokens: [TOKEN_1],
         unackedUpdates: [
           {
-            type: "create",
+            type: UpdateType.CREATE,
             token: TOKEN_1
           }
         ]
@@ -77,9 +90,7 @@ describe("getNetworkUpdates", () => {
     ).toEqual([]);
   });
 
-  it("should not return a delete if it already exists in unackedUpdates", () => {
-    
-  });
+  it("should not return a delete if it already exists in unackedUpdates", () => {});
 
   it("should return a move if the token has been moved", () => {
     expect(
@@ -97,33 +108,26 @@ describe("getNetworkUpdates", () => {
   });
 });
 
-describe("getLocalState", () =>{
+describe("getLocalState", () => {
   it("should return a state including an unacked create update", () => {
     expect(
-        getLocalState(
-            [TOKEN_1],
-            [{type: "create", token: TOKEN_2}]
-        )
-    ).toEqual([
-        TOKEN_1, TOKEN_2
-    ]);
+      getLocalState([TOKEN_1], [{ type: UpdateType.CREATE, token: TOKEN_2 }])
+    ).toEqual([TOKEN_1, TOKEN_2]);
   });
   it("should return a state not including an unacked delete update", () => {
     expect(
-        getLocalState(
-            [TOKEN_1],
-            [{type:"delete", tokenId: TOKEN_1.id}]
-        )
+      getLocalState(
+        [TOKEN_1],
+        [{ type: UpdateType.DELETE, tokenId: TOKEN_1.id }]
+      )
     ).toEqual([]);
   });
   it("should return a state including an unacked move update", () => {
     expect(
-        getLocalState(
-            [TOKEN_1],
-            [{type: "move", token: MOVED_TOKEN_1}]
-        )
-    ).toEqual([
-        MOVED_TOKEN_1
-    ])
-  })
+      getLocalState(
+        [TOKEN_1],
+        [{ type: UpdateType.MOVE, token: MOVED_TOKEN_1 }]
+      )
+    ).toEqual([MOVED_TOKEN_1]);
+  });
 });

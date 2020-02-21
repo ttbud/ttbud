@@ -12,6 +12,12 @@ export default interface Pos2d {
   y: number;
 }
 
+export interface Pos3d {
+  x: number;
+  y: number;
+  z: number;
+}
+
 export function snapToGrid(pos: Pos2d): Pos2d {
   return {
     x: snapDimensionToGrid(pos.x),

@@ -11,6 +11,7 @@ import DndContext from "../../drag/DndContext";
 import noop from "../../util/noop";
 import { DragStateType } from "../../drag/DragStateTypes";
 import { RootState } from "../../state/rootReducer";
+import { Token, TokenType } from "../../network/BoardStateApiClient";
 
 export default {
   component: Board,
@@ -18,10 +19,13 @@ export default {
   decorators: [noBorder]
 };
 
-const toToken = (icon: Icon, i: number) => ({
-  x: i,
-  y: i,
-  z: icon.type === IconType.floor ? 0 : 1,
+const toToken = (icon: Icon, i: number): Token => ({
+  type: icon.type === IconType.floor ? TokenType.CHARACTER : TokenType.FLOOR,
+  pos: {
+    x: i,
+    y: i,
+    z: icon.type === IconType.floor ? 0 : 1
+  },
   id: uuid(),
   iconId: icon.id
 });
@@ -52,7 +56,6 @@ const ExampleBoard: React.FC = () => {
     <div style={{ width: "100vw", height: "100vh" }}>
       <Board
         isDragging={isDragging}
-        pings={[]}
         tokens={tokens}
         activeFloor={WALL_ICON}
         onFloorCreated={noop}

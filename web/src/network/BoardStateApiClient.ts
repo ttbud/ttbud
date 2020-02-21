@@ -1,105 +1,165 @@
 import * as t from "io-ts";
 import decode from "../util/decode";
 import noop from "../util/noop";
-import { Update } from "./board-state-diff";
+import { Update, UpdateType } from "./board-state-diff";
 import UnreachableCaseError from "../util/UnreachableCaseError";
+import Pos2d, { Pos3d } from "../util/shape-math";
 
-const PingMessage = t.type({
+const PingTokenDecoder = t.type({
+  id: t.string,
   type: t.literal("ping"),
-  request_id: t.string,
-  data: t.type({
-    id: t.string,
-    x: t.number,
-    y: t.number
-  })
+  x: t.number,
+  y: t.number
 });
 
-const BoardStateMessage = t.type({
+const IconTokenDecoder = t.type({
+  id: t.string,
+  type: t.union([t.literal("character"), t.literal("floor")]),
+  icon_id: t.string,
+  start_x: t.number,
+  start_y: t.number,
+  start_z: t.number,
+  end_x: t.number,
+  end_y: t.number,
+  end_z: t.number
+});
+
+const ApiTokenDecoder = t.union([IconTokenDecoder, PingTokenDecoder]);
+
+const BoardStateDecoder = t.type({
   type: t.literal("state"),
   request_id: t.string,
-  data: t.array(
-    t.type({
-      id: t.string,
-      start_x: t.number,
-      start_y: t.number,
-      start_z: t.number,
-      icon_id: t.string
-    })
-  )
+  data: t.array(ApiTokenDecoder)
 });
 
-const ErrorMessage = t.type({
+const ErrorMessageDecoder = t.type({
   type: t.literal("error"),
   request_id: t.string,
   error: t.string
 });
 
-const ConnectionResult = t.type({
+const ConnectionResultDecoder = t.type({
   type: t.literal("connected"),
-  data: t.array(
-    t.type({
-      id: t.string,
-      start_x: t.number,
-      start_y: t.number,
-      start_z: t.number,
-      icon_id: t.string
-    })
-  )
+  data: t.array(ApiTokenDecoder)
 });
 
 const MessageDecoder = t.union([
-  PingMessage,
-  BoardStateMessage,
-  ErrorMessage,
-  ConnectionResult
+  BoardStateDecoder,
+  ErrorMessageDecoder,
+  ConnectionResultDecoder
 ]);
 
-export function toApiToken(token: Token) {
-  return {
-    id: token.id,
-    icon_id: token.iconId,
-    start_x: token.x,
-    start_y: token.y,
-    start_z: token.z,
-    end_x: token.x + 1,
-    end_y: token.y + 1,
-    end_z: token.z + 1
-  };
+type ApiPingToken = t.TypeOf<typeof PingTokenDecoder>;
+type ApiIconToken = t.TypeOf<typeof IconTokenDecoder>;
+type ApiToken = t.TypeOf<typeof ApiTokenDecoder>;
+
+export enum TokenType {
+  CHARACTER = "character",
+  FLOOR = "floor",
+  PING = "ping"
 }
 
-type ApiToken = ReturnType<typeof toApiToken>;
-
-interface CreateOrUpdateTokenMessage {
-  action: "create" | "update";
-  request_id: string;
-  data: ApiToken;
-}
-
-interface DeleteTokenMessage {
-  action: "delete";
-  request_id: string;
-  data: string;
-}
-
-export type QueueableMessage = CreateOrUpdateTokenMessage | DeleteTokenMessage;
-
-export interface Token {
+export interface PingToken {
+  type: TokenType.PING;
   id: string;
-  x: number;
-  y: number;
-  z: number;
+  pos: Pos2d;
+}
+
+export interface IconToken {
+  type: TokenType.CHARACTER | TokenType.FLOOR;
+  id: string;
+  pos: Pos3d;
   iconId: string;
 }
 
-export interface Ping {
-  id: string;
-  x: number;
-  y: number;
+export type Token = PingToken | IconToken;
+
+interface PingApiUpdate {
+  action: "ping";
+  data: ApiPingToken;
+}
+
+interface IconApiUpdate {
+  action: "update";
+  data: ApiIconToken;
+}
+
+interface TokenDelete {
+  action: "delete";
+  data: string;
+}
+
+type ApiUpdate = PingApiUpdate | IconApiUpdate | TokenDelete;
+
+function toApiUpdate(update: Update): ApiUpdate {
+  switch (update.type) {
+    case UpdateType.CREATE:
+    case UpdateType.MOVE:
+      if (update.token.type === TokenType.PING) {
+        const { id, type, pos } = update.token;
+        return {
+          action: "ping",
+          data: { id, type, x: pos.x, y: pos.y }
+        };
+      } else {
+        const { id, type, iconId, pos } = update.token;
+        return {
+          action: "update",
+          data: {
+            id,
+            type,
+            icon_id: iconId,
+            start_x: pos.x,
+            start_y: pos.y,
+            start_z: pos.z,
+            end_x: pos.x + 1,
+            end_y: pos.y + 1,
+            end_z: pos.z + 1
+          }
+        };
+      }
+    case UpdateType.DELETE:
+      return {
+        action: "delete",
+        data: update.tokenId
+      };
+    default:
+      throw new UnreachableCaseError(update);
+  }
+}
+
+function toToken(apiToken: ApiToken): Token {
+  switch (apiToken.type) {
+    case "ping":
+      return {
+        type: TokenType.PING,
+        id: apiToken.id,
+        pos: {
+          x: apiToken.x,
+          y: apiToken.y
+        }
+      };
+    case "character":
+    case "floor":
+      return {
+        id: apiToken.id,
+        //TODO: Figure out why typescript doesn't like this
+        // @ts-ignore
+        type: apiToken.type,
+        iconId: apiToken.icon_id,
+        pos: {
+          x: apiToken.start_x,
+          y: apiToken.start_y,
+          z: apiToken.start_z
+        }
+      };
+    default:
+      throw new UnreachableCaseError(apiToken);
+  }
 }
 
 export enum EventType {
   TOKEN_UPDATE = "tokens",
-  PING = "ping",
   CONNECT = "connect",
   INITIAL_STATE = "initial state",
   ERROR = "error",
@@ -110,12 +170,6 @@ interface BoardStateEvent {
   type: EventType.TOKEN_UPDATE;
   requestId: string;
   tokens: Token[];
-}
-
-interface PingEvent {
-  type: EventType.PING;
-  requestId: string;
-  ping: Ping;
 }
 
 interface ConnectionStatusEvent {
@@ -139,7 +193,6 @@ interface ErrorEvent {
 
 export type Event =
   | BoardStateEvent
-  | PingEvent
   | ConnectionStatusEvent
   | ErrorEvent
   | InitialStateEvent;
@@ -180,46 +233,12 @@ export class BoardStateApiClient {
   }
 
   public send(requestId: string, updates: Update[]) {
-    const batchedUpdates = [];
-    for (const update of updates) {
-      switch (update.type) {
-        case "create":
-        case "move":
-          batchedUpdates.push({
-            action: "update",
-            data: toApiToken(update.token)
-          });
-          break;
-        case "delete":
-          batchedUpdates.push({
-            action: "delete",
-            data: update.tokenId
-          });
-          break;
-        case "ping":
-          // const requestId = uuid();
-          // requestIds.push(requestId);
-          // this.socket?.send(
-          //   JSON.stringify({
-          //     action: "ping",
-          //     request_id: requestId,
-          //     data: {
-          //       id: update.ping.id,
-          //       x: update.ping.x,
-          //       y: update.ping.y
-          //     }
-          //   })
-          // );
-          break;
-      }
-    }
-
-    const toSend = {
-      request_id: requestId,
-      updates: batchedUpdates
-    };
-    console.log("sending", toSend);
-    this.socket?.send(JSON.stringify(toSend));
+    this.socket?.send(
+      JSON.stringify({
+        request_id: requestId,
+        updates: updates.map(toApiUpdate)
+      })
+    );
   }
 
   private onConnect() {
@@ -247,28 +266,11 @@ export class BoardStateApiClient {
     }
 
     switch (message.type) {
-      case "ping":
-        this.eventHandler({
-          type: EventType.PING,
-          requestId: message.request_id,
-          ping: {
-            id: message.data.id,
-            x: message.data.x,
-            y: message.data.y
-          }
-        });
-        break;
       case "state":
         this.eventHandler({
           type: EventType.TOKEN_UPDATE,
           requestId: message.request_id,
-          tokens: message.data.map(tokenState => ({
-            id: tokenState.id,
-            x: tokenState.start_x,
-            y: tokenState.start_y,
-            z: tokenState.start_z,
-            iconId: tokenState.icon_id
-          }))
+          tokens: message.data.map(toToken)
         });
         break;
       case "error":
@@ -282,13 +284,7 @@ export class BoardStateApiClient {
       case "connected":
         this.eventHandler({
           type: EventType.INITIAL_STATE,
-          tokens: message.data.map(tokenState => ({
-            id: tokenState.id,
-            x: tokenState.start_x,
-            y: tokenState.start_y,
-            z: tokenState.start_z,
-            iconId: tokenState.icon_id
-          }))
+          tokens: message.data.map(toToken)
         });
         break;
       default:

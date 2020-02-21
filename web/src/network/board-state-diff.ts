@@ -1,28 +1,29 @@
-import { Ping, Token } from "./TokenStateClient";
 import { posAreEqual } from "../util/shape-math";
 import UnreachableCaseError from "../util/UnreachableCaseError";
+import { Token } from "./BoardStateApiClient";
+
+export enum UpdateType {
+  CREATE = "create",
+  MOVE = "move",
+  DELETE = "delete"
+}
 
 export interface CreateToken {
-  type: "create";
+  type: UpdateType.CREATE;
   token: Token;
 }
 
 export interface MoveToken {
-  type: "move";
+  type: UpdateType.MOVE;
   token: Token;
 }
 
 export interface DeleteToken {
-  type: "delete";
+  type: UpdateType.DELETE;
   tokenId: string;
 }
 
-export interface CreatePing {
-  type: "ping";
-  ping: Ping;
-}
-
-export type Update = CreateToken | MoveToken | DeleteToken | CreatePing;
+export type Update = CreateToken | MoveToken | DeleteToken;
 
 function isCreateOrMove(update: Update): update is CreateToken | MoveToken {
   return update.type === "create" || update.type === "move";
@@ -55,13 +56,13 @@ export function getNetworkUpdates({
     if (!networkToken) {
       // The network doesn't have it, so tell them to create it
       createsAndMoves.push({
-        type: "create",
+        type: UpdateType.CREATE,
         token: uiToken
       });
-    } else if (!posAreEqual(networkToken, uiToken)) {
+    } else if (!posAreEqual(networkToken.pos, uiToken.pos)) {
       // The network has it, but we have a new position, so send the new position
       createsAndMoves.push({
-        type: "move",
+        type: UpdateType.MOVE,
         token: uiToken
       });
     }
@@ -78,7 +79,7 @@ export function getNetworkUpdates({
   const deletes: DeleteToken[] = networkTokens
     .filter(token => !existsInUi(token.id) && !isQueuedToDelete(token.id))
     .map(token => ({
-      type: "delete",
+      type: UpdateType.DELETE,
       tokenId: token.id
     }));
 
@@ -93,10 +94,10 @@ export function getLocalState(
   // Apply updates to the network state
   for (const uiUpdate of unackedUpdates) {
     switch (uiUpdate.type) {
-      case "create":
+      case UpdateType.CREATE:
         localState.push(uiUpdate.token);
         break;
-      case "move":
+      case UpdateType.MOVE:
         const idxToMove = localState.findIndex(
           networkToken => networkToken.id === uiUpdate.token.id
         );
@@ -105,16 +106,13 @@ export function getLocalState(
           localState.push(uiUpdate.token);
         }
         break;
-      case "delete":
+      case UpdateType.DELETE:
         const idxToDelete = localState.findIndex(
           networkToken => networkToken.id === uiUpdate.tokenId
         );
         if (idxToDelete > -1) {
           localState.splice(idxToDelete, 1);
         }
-        break;
-      case "ping":
-        // Pings are not included in the game state right now
         break;
       default:
         throw new UnreachableCaseError(uiUpdate);

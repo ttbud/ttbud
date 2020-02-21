@@ -9,7 +9,6 @@ import { startSearching, stopSearching } from "../../state/app-slice";
 import FloorTray from "../tray/FloorTray";
 import { DragStateType } from "../../drag/DragStateTypes";
 import { addFloor, addPing, removeToken } from "../../state/board-slice";
-import uuid from "uuid";
 import { setActiveFloor } from "../../state/floor-tray-slice";
 import { RootState } from "../../state/rootReducer";
 import Pos2d from "../../util/shape-math";
@@ -46,7 +45,6 @@ const App = () => {
   const {
     isDragging,
     tokens,
-    pings,
     activeFloor,
     searching,
     floorTrayIcons,
@@ -55,7 +53,6 @@ const App = () => {
     (state: RootState) => ({
       isDragging: state.drag.type === DragStateType.DRAGGING,
       tokens: state.board.tokens,
-      pings: state.board.pings,
       activeFloor: state.floorTray.activeFloor,
       searching: state.app.searching,
       floorTrayIcons: state.floorTray.icons,
@@ -88,17 +85,9 @@ const App = () => {
   const onFloorCreated = (iconId: string, pos: Pos2d) =>
     dispatch(addFloor(iconId, pos));
 
-  const onPingCreated = (pos: Pos2d) => {
-    return dispatch(
-      addPing({
-        id: uuid(),
-        x: pos.x,
-        y: pos.y
-      })
-    );
-  };
+  const onPingCreated = (pos: Pos2d) => dispatch(addPing(pos));
+  const onTokenDeleted = (id: string) => dispatch(removeToken(id));
 
-  const onTokenDeleted = (id: string) => dispatch(removeToken({ id }));
   const onTrayIconRemoved = useCallback(
     (icon: Icon) => dispatch(removeIcon(icon)),
     [dispatch]
@@ -110,7 +99,6 @@ const App = () => {
         activeFloor={activeFloor}
         isDragging={isDragging}
         tokens={tokens}
-        pings={pings}
         onFloorCreated={onFloorCreated}
         onPingCreated={onPingCreated}
         onTokenDeleted={onTokenDeleted}

@@ -1,25 +1,20 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DragEndAction, dragEnded } from "../drag/drag-slice";
-import { Ping, Token } from "../network/TokenStateClient";
 import { DROPPABLE_IDS } from "../ui/DroppableIds";
 import { assert } from "../util/invariants";
 import { DraggableType, LocationType } from "../drag/DragStateTypes";
 import uuid from "uuid";
 import getDragResult, { DragResult } from "./getDragResult";
 import UnreachableCaseError from "../util/UnreachableCaseError";
-import { AppThunk } from "./createStore";
 import Pos2d from "../util/shape-math";
-import timeout from "../util/timeout";
-import { IconType } from "../ui/icons";
+import { Token, TokenType } from "../network/BoardStateApiClient";
 
 export interface BoardState {
   tokens: Token[];
-  pings: Ping[];
 }
 
 const INITIAL_STATE: BoardState = {
-  tokens: [],
-  pings: []
+  tokens: []
 };
 
 function moveToken(state: BoardState, tokenId: string, dest: Pos2d) {
@@ -29,34 +24,22 @@ function moveToken(state: BoardState, tokenId: string, dest: Pos2d) {
     return;
   }
 
-  tokenToMove.x = dest.x;
-  tokenToMove.y = dest.y;
+  tokenToMove.pos.x = dest.x;
+  tokenToMove.pos.y = dest.y;
 }
 
 function _removeToken(state: BoardState, tokenId: string) {
   state.tokens = state.tokens.filter(token => token.id !== tokenId);
 }
 
-function addToken(
-  state: BoardState,
-  iconId: string,
-  pos: Pos2d,
-  height: number
-) {
-  const token = {
-    id: uuid(),
-    iconId,
-    x: pos.x,
-    y: pos.y,
-    z: height
-  };
-
-  state.tokens.push(token);
-}
-
 interface AddTokenAction {
   id: string;
   iconId: string;
+  pos: Pos2d;
+}
+
+interface AddPingAction {
+  id: string;
   pos: Pos2d;
 }
 
@@ -73,24 +56,36 @@ const boardSlice = createSlice({
     addFloor: {
       reducer: (state, action: PayloadAction<AddTokenAction>) => {
         const { id, iconId, pos } = action.payload;
-        const token = { id, iconId, z: FLOOR_HEIGHT, ...pos };
+        const token = {
+          id,
+          iconId,
+          type: TokenType.FLOOR,
+          pos: {
+            ...pos,
+            z: FLOOR_HEIGHT
+          }
+        };
         state.tokens.push(token);
       },
       prepare: (iconId: string, pos: Pos2d) => ({
         payload: { id: uuid(), iconId, pos }
       })
     },
-    removeToken(state, action: PayloadAction<{ id: string }>) {
-      const { id } = action.payload;
-      _removeToken(state, id);
+    addPing: {
+      reducer: (state, action: PayloadAction<AddPingAction>) => {
+        const { id, pos } = action.payload;
+        state.tokens.push({
+          type: TokenType.PING,
+          id,
+          pos
+        });
+      },
+      prepare: (pos: Pos2d) => ({
+        payload: { id: uuid(), pos }
+      })
     },
-    pingAdded(state, action: PayloadAction<Ping>) {
-      const ping = action.payload;
-      state.pings.push(ping);
-    },
-    pingRemoved(state, action: PayloadAction<{ id: string }>) {
-      const { id } = action.payload;
-      state.pings = state.pings.filter(ping => ping.id !== id);
+    removeToken(state, action: PayloadAction<string>) {
+      _removeToken(state, action.payload);
     }
   },
   extraReducers: {
@@ -125,14 +120,13 @@ const boardSlice = createSlice({
             "Dropped in board but drop type was not grid"
           );
 
-          addToken(
-            state,
-            draggable.icon.id,
-            destination.logicalLocation,
-            draggable.icon.type === IconType.token
-              ? CHARACTER_HEIGHT
-              : FLOOR_HEIGHT
-          );
+          const { x, y } = destination.logicalLocation;
+          state.tokens.push({
+            type: TokenType.CHARACTER,
+            id: uuid(),
+            iconId: draggable.icon.id,
+            pos: { x, y, z: CHARACTER_HEIGHT }
+          });
           break;
         case DragResult.NONE:
           break;
@@ -143,30 +137,7 @@ const boardSlice = createSlice({
   }
 });
 
-const {
-  addFloor,
-  removeToken,
-  pingAdded,
-  pingRemoved,
-  replaceTokens
-} = boardSlice.actions;
+const { addFloor, addPing, removeToken, replaceTokens } = boardSlice.actions;
 
-const PING_TIMEOUT_MS = 5000;
-
-function addPing(newPing: Ping): AppThunk {
-  return async (dispatch, getState) => {
-    const alreadyAdded = getState().board.pings.some(
-      ping => ping.id === newPing.id
-    );
-    if (alreadyAdded) {
-      return;
-    }
-
-    dispatch(pingAdded(newPing));
-    await timeout(PING_TIMEOUT_MS);
-    dispatch(pingRemoved({ id: newPing.id }));
-  };
-}
-
-export { addFloor, removeToken, replaceTokens, addPing };
+export { addFloor, addPing, removeToken, replaceTokens };
 export default boardSlice.reducer;
