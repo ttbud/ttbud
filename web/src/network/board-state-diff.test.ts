@@ -127,6 +127,7 @@ describe("getLocalState", () => {
       getLocalState([TOKEN_1], [{ type: UpdateType.CREATE, token: TOKEN_2 }])
     ).toEqual([TOKEN_1, TOKEN_2]);
   });
+
   it("should return a state not including an unacked delete update", () => {
     expect(
       getLocalState(
@@ -135,6 +136,7 @@ describe("getLocalState", () => {
       )
     ).toEqual([]);
   });
+
   it("should return a state including an unacked move update", () => {
     expect(
       getLocalState(
