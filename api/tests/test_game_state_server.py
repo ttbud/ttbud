@@ -42,7 +42,7 @@ updated_token = {
 
 
 def fake_delay_func(some_arg):
-    raise TypeError
+    pass
 
 
 @pytest.fixture
@@ -136,7 +136,6 @@ def test_ping(gss_with_client):
     def fake_callback(state: dict, room_id: str):
         nonlocal received_state
         received_state = state
-        raise TypeError
 
     gss_with_client.set_websocket_callback(fake_callback)
     reply = gss_with_client.process_update(

@@ -1,6 +1,5 @@
 import os
 import sched
-import time
 
 from wsmanager import start_websocket
 from room_store import FileRoomStore
