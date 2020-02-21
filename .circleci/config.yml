@@ -47,6 +47,9 @@ jobs:
           name: Check Style
           command: yarn run checkstyle
       - run:
+          name: Typecheck
+          command: yarn run typecheck
+      - run:
           name: Run Tests
           environment:
             - JEST_JUNIT_OUTPUT_DIR: test-results
