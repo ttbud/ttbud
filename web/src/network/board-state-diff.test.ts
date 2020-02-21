@@ -90,7 +90,20 @@ describe("getNetworkUpdates", () => {
     ).toEqual([]);
   });
 
-  it("should not return a delete if it already exists in unackedUpdates", () => {});
+  it("should not return a delete if it already exists in unackedUpdates", () => {
+    expect(
+      getNetworkUpdates({
+        networkTokens: [TOKEN_1],
+        uiTokens: [],
+        unackedUpdates: [
+          {
+            type: UpdateType.DELETE,
+            tokenId: TOKEN_1.id
+          }
+        ]
+      })
+    ).toEqual([]);
+  });
 
   it("should return a move if the token has been moved", () => {
     expect(
