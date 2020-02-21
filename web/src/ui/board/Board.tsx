@@ -6,7 +6,7 @@ import React, {
 } from "react";
 import { makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "../../config";
-import { Icon, ICONS_BY_ID, IconType, WALL_ICON } from "../icons";
+import { Icon, ICONS_BY_ID, WALL_ICON } from "../icons";
 import FloorToken from "../token/FloorToken";
 import Character from "../token/Character";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
@@ -18,7 +18,7 @@ import { assert } from "../../util/invariants";
 import { LocationCollector, TargetLocation } from "../../drag/DroppableMonitor";
 import { DraggableType, LocationType } from "../../drag/DragStateTypes";
 import { DROPPABLE_IDS } from "../DroppableIds";
-import { Ping, Token } from "../../network/TokenStateClient";
+import { Token, TokenType } from "../../network/BoardStateApiClient";
 
 let BACKGROUND_COLOR = "#F5F5DC";
 let GRID_COLOR = "#947C65";
@@ -74,7 +74,6 @@ const preventDefault: MouseEventHandler = e => e.preventDefault();
 interface Props {
   isDragging: boolean;
   tokens: Token[];
-  pings: Ping[];
   activeFloor: Icon;
   onPingCreated: (pos: Pos2d) => void;
   onFloorCreated: (iconId: string, pos: Pos2d) => void;
@@ -84,7 +83,6 @@ interface Props {
 const Board: React.FC<Props> = ({
   isDragging,
   tokens,
-  pings,
   activeFloor,
   onPingCreated,
   onFloorCreated,
@@ -99,7 +97,8 @@ const Board: React.FC<Props> = ({
       const gridPos = toGridPos(pos);
 
       const existingTokenId = tokens.find(
-        token => posAreEqual(token, gridPos) && token.z !== 0
+        token =>
+          posAreEqual(token.pos, gridPos) && token.type === TokenType.CHARACTER
       )?.id;
       const draggedTokenId =
         draggable.type === DraggableType.TOKEN ? draggable.tokenId : undefined;
@@ -126,18 +125,17 @@ const Board: React.FC<Props> = ({
   );
 
   const tokenIcons = tokens.map(token => {
-    const icon = ICONS_BY_ID.get(token.iconId, WALL_ICON);
     const pixelPos = {
-      x: token.x * GRID_SIZE_PX,
-      y: token.y * GRID_SIZE_PX,
-      z: token.z
+      x: token.pos.x * GRID_SIZE_PX,
+      y: token.pos.y * GRID_SIZE_PX
     };
 
-    switch (icon.type) {
-      case IconType.floor:
-      case IconType.wall:
-        return <FloorToken key={token.id} icon={icon} pos={pixelPos} />;
-      case IconType.token:
+    switch (token.type) {
+      case TokenType.FLOOR:
+        const floorIcon = ICONS_BY_ID.get(token.iconId, WALL_ICON);
+        return <FloorToken key={token.id} icon={floorIcon} pos={pixelPos} />;
+      case TokenType.CHARACTER:
+        const characterIcon = ICONS_BY_ID.get(token.iconId, WALL_ICON);
         return (
           <Draggable
             key={token.id}
@@ -145,38 +143,32 @@ const Board: React.FC<Props> = ({
             descriptor={{
               id: `${DROPPABLE_IDS.BOARD}-${token.id}`,
               type: DraggableType.TOKEN,
-              icon: icon,
+              icon: characterIcon,
               tokenId: token.id
             }}
           >
             {(isDragging, attributes) => (
               <Character
                 {...attributes}
-                icon={icon}
+                icon={characterIcon}
                 isDragging={isDragging}
                 style={{
                   ...attributes.style,
                   position: "absolute",
                   left: pixelPos.x,
                   top: pixelPos.y,
-                  zIndex: isDragging ? 10_000 : pixelPos.z
+                  zIndex: isDragging ? 10_000 : token.pos.z
                 }}
               />
             )}
           </Draggable>
         );
+      case TokenType.PING:
+        return <PingToken key={token.id} x={pixelPos.x} y={pixelPos.y} />;
       default:
-        throw new UnreachableCaseError(icon.type);
+        throw new UnreachableCaseError(token);
     }
   });
-
-  const pingIcons = pings.map(ping => (
-    <PingToken
-      key={ping.id}
-      x={ping.x * GRID_SIZE_PX}
-      y={ping.y * GRID_SIZE_PX}
-    />
-  ));
 
   const onPointerDown: PointerEventHandler = ({
     clientX: x,
@@ -189,11 +181,11 @@ const Board: React.FC<Props> = ({
       onPingCreated(gridPos);
     } else if (
       buttons === LEFT_MOUSE &&
-      !tokens.find(token => posAreEqual(token, gridPos))
+      !tokens.find(token => posAreEqual(token.pos, gridPos))
     ) {
       onFloorCreated(activeFloor.id, gridPos);
     } else if (buttons === RIGHT_MOUSE) {
-      const id = tokens.find(token => posAreEqual(token, gridPos))?.id;
+      const id = tokens.find(token => posAreEqual(token.pos, gridPos))?.id;
       if (id) {
         onTokenDeleted(id);
       }
@@ -229,16 +221,21 @@ const Board: React.FC<Props> = ({
       }
 
       if (buttons === LEFT_MOUSE && shiftKey) {
-        if (!pings.find(ping => posAreEqual(ping, gridPos))) {
+        if (
+          !tokens.find(
+            token =>
+              token.type === TokenType.PING && posAreEqual(token.pos, gridPos)
+          )
+        ) {
           onPingCreated(gridPos);
         }
       } else if (
         buttons === LEFT_MOUSE &&
-        !tokens.find(token => posAreEqual(token, gridPos))
+        !tokens.find(token => posAreEqual(token.pos, gridPos))
       ) {
         onFloorCreated(activeFloor.id, gridPos);
       } else if (buttons === RIGHT_MOUSE) {
-        const toDelete = tokens.find(token => posAreEqual(token, gridPos));
+        const toDelete = tokens.find(token => posAreEqual(token.pos, gridPos));
         if (toDelete) {
           onTokenDeleted(toDelete.id);
         }
@@ -260,7 +257,6 @@ const Board: React.FC<Props> = ({
         {attributes => (
           <div {...attributes} className={classes.board}>
             {tokenIcons}
-            {pingIcons}
           </div>
         )}
       </Droppable>

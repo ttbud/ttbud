@@ -6,14 +6,17 @@ import { DomDroppableMonitor } from "./drag/DroppableMonitor";
 import { Provider } from "react-redux";
 import DndContext from "./drag/DndContext";
 import createStore from "./state/createStore";
-import { BoardStateApiClient, EventType } from "./network/BoardStateApiClient";
-import { addPing, replaceTokens } from "./state/board-slice";
+import {
+  BoardStateApiClient,
+  EventType,
+  Token
+} from "./network/BoardStateApiClient";
+import { replaceTokens } from "./state/board-slice";
 import {
   getLocalState,
   getNetworkUpdates,
   Update
 } from "./network/board-state-diff";
-import { Token } from "./network/TokenStateClient";
 import uuid from "uuid";
 
 const monitor = new DomDroppableMonitor();
@@ -42,16 +45,11 @@ apiClient.setEventHandler(event => {
 
       store.dispatch(replaceTokens(localState));
       break;
-    case EventType.PING:
-      unackedUpdates.delete(event.requestId);
-      store.dispatch(addPing(event.ping));
-      break;
     case EventType.ERROR:
       if (event.requestId) {
         unackedUpdates.delete(event.requestId);
       }
-      console.log(event);
-      console.error(event.error);
+      console.log(event.rawMessage);
       break;
   }
 });

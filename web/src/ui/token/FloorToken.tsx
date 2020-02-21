@@ -2,16 +2,11 @@ import { Icon } from "../icons";
 import React, { CSSProperties } from "react";
 import { makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "../../config";
+import Pos2d from "../../util/shape-math";
 
 interface Props {
   icon: Icon;
-  pos: Pos;
-}
-
-interface Pos {
-  x: number;
-  y: number;
-  z: number;
+  pos: Pos2d;
 }
 
 const useStyles = makeStyles({
