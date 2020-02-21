@@ -13,9 +13,9 @@ import {
 import uuid from "uuid";
 
 /**
- * Watch sync board changes between network and ui
+ * Sync board changes between network and ui
  */
-export function networkBoardSyncer(apiClient: BoardStateApiClient): Middleware {
+export function boardSyncer(apiClient: BoardStateApiClient): Middleware {
   let unackedUpdates = new Map<string, Update[]>();
   let networkTokens: Token[] = [];
 
