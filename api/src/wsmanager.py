@@ -102,11 +102,7 @@ class WebsocketManager:
             except MessageError as err:
                 print(err)
                 await self.send_message_to_client(
-                    {
-                        'error': err.message,
-                        'request_id': message['request_id']
-                    },
-                    client,
+                    {'error': err.message, 'request_id': message['request_id']}, client,
                 )
         latest_state['request_id'] = message['request_id']
         await self.send_message_to_room(latest_state, room_id)

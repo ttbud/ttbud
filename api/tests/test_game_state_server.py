@@ -1,7 +1,7 @@
 import pytest
 import sched
 
-from game_state_server import GameStateServer, MessageError, Token
+from game_state_server import GameStateServer, MessageError
 from room_store import MemoryRoomStore
 
 
@@ -21,12 +21,7 @@ valid_data = {
 valid_update = {'action': 'create', 'data': valid_data}
 valid_ping = {
     'action': 'ping',
-    'data': {
-        'id': 'ping_id',
-        'type': 'ping',
-        'x': 0,
-        'y': 0
-    }
+    'data': {'id': 'ping_id', 'type': 'ping', 'x': 0, 'y': 0},
 }
 updated_token = {
     'id': valid_data['id'],
@@ -138,10 +133,7 @@ def test_ping(gss_with_client):
         received_state = state
 
     gss_with_client.set_websocket_callback(fake_callback)
-    reply = gss_with_client.process_update(
-        valid_ping,
-        TEST_ROOM_ID
-    )
+    reply = gss_with_client.process_update(valid_ping, TEST_ROOM_ID)
     assert reply.type == 'state'
     assert len(reply.data) == 1
     assert reply.data[0] == valid_ping['data']
