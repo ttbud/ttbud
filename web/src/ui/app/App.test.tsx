@@ -5,10 +5,14 @@ import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
 import createStore from "../../state/createStore";
 import { Provider } from "react-redux";
 import DndContext from "../../drag/DndContext";
+import { BoardStateApiClient } from "../../network/BoardStateApiClient";
 
 it("renders without crashing", () => {
   const monitor = new DomDroppableMonitor();
-  const store = createStore(monitor);
+  const apiClient = new BoardStateApiClient("invalid", () => {
+    throw new Error("No connecting to servers in tests");
+  });
+  const store = createStore(monitor, apiClient);
 
   const div = document.createElement("div");
 

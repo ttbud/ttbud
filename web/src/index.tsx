@@ -6,70 +6,15 @@ import { DomDroppableMonitor } from "./drag/DroppableMonitor";
 import { Provider } from "react-redux";
 import DndContext from "./drag/DndContext";
 import createStore from "./state/createStore";
-import {
-  BoardStateApiClient,
-  EventType,
-  Token
-} from "./network/BoardStateApiClient";
-import { replaceTokens } from "./state/board-slice";
-import {
-  getLocalState,
-  getNetworkUpdates,
-  Update
-} from "./network/board-state-diff";
+import { BoardStateApiClient } from "./network/BoardStateApiClient";
 import uuid from "uuid";
 
 const monitor = new DomDroppableMonitor();
-const store = createStore(monitor);
 const apiClient = new BoardStateApiClient(
   `wss://${process.env.REACT_APP_DOMAIN}:${process.env.REACT_APP_API_WEBSOCKET_PORT}`,
   url => new WebSocket(url)
 );
-
-let unackedUpdates = new Map<string, Update[]>();
-let networkTokens: Token[] = [];
-
-apiClient.setEventHandler(event => {
-  switch (event.type) {
-    case EventType.INITIAL_STATE:
-      networkTokens = event.tokens;
-      store.dispatch(replaceTokens(event.tokens));
-      break;
-    case EventType.TOKEN_UPDATE:
-      networkTokens = event.tokens;
-      unackedUpdates.delete(event.requestId);
-      const localState = getLocalState(
-        event.tokens,
-        Array.from(unackedUpdates.values()).flat()
-      );
-
-      store.dispatch(replaceTokens(localState));
-      break;
-    case EventType.ERROR:
-      if (event.requestId) {
-        unackedUpdates.delete(event.requestId);
-      }
-      console.log(event.rawMessage);
-      break;
-  }
-});
-
-store.subscribe(() => {
-  const state = store.getState();
-  const updates = getNetworkUpdates({
-    networkTokens,
-    uiTokens: state.board.tokens,
-    unackedUpdates: Array.from(unackedUpdates.values()).flat()
-  });
-
-  if (updates.length === 0) {
-    return;
-  }
-
-  const requestId = uuid();
-  apiClient.send(requestId, updates);
-  unackedUpdates.set(requestId, updates);
-});
+const store = createStore(monitor, apiClient);
 
 const path = window.location.pathname.split("/room/")[1];
 const roomId = path ? atob(path) : uuid();
