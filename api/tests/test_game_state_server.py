@@ -1,4 +1,5 @@
 import pytest
+import sched
 
 from game_state_server import GameStateServer, MessageError, Token
 from room_store import MemoryRoomStore
@@ -8,6 +9,7 @@ TEST_ROOM_ID = 'test_room'
 TEST_CLIENT = 'test_client'
 valid_data = {
     'id': 'some_id',
+    'type': 'character',
     'icon_id': 'some_icon_id',
     'start_x': 0,
     'start_y': 0,
@@ -21,22 +23,40 @@ valid_ping = {
     'action': 'ping',
     'data': {
         'id': 'ping_id',
+        'type': 'ping',
         'x': 0,
         'y': 0
     }
 }
+updated_token = {
+    'id': valid_data['id'],
+    'type': 'character',
+    'icon_id': valid_data['icon_id'],
+    'start_x': 7,
+    'start_y': 8,
+    'start_z': 9,
+    'end_x': 8,
+    'end_y': 9,
+    'end_z': 10,
+}
+
+
+def fake_delay_func(some_arg):
+    raise TypeError
 
 
 @pytest.fixture
 def gss():
     rs = MemoryRoomStore('/my/path/to/room/storage/')
-    return GameStateServer(rs)
+    pr = sched.scheduler(delayfunc=fake_delay_func)
+    return GameStateServer(rs, pr)
 
 
 @pytest.fixture
 def gss_with_client():
     rs = MemoryRoomStore('/my/path/to/room/storage/')
-    gss = GameStateServer(rs)
+    pr = sched.scheduler(delayfunc=fake_delay_func)
+    gss = GameStateServer(rs, pr)
     gss.new_connection_request(TEST_CLIENT, TEST_ROOM_ID)
     return gss
 
@@ -102,16 +122,6 @@ def test_delete_after_load(gss_with_client):
 
 def test_move_existing_token(gss_with_client):
     gss_with_client.process_update(valid_update, TEST_ROOM_ID)
-    updated_token = {
-        'id': valid_data['id'],
-        'icon_id': valid_data['icon_id'],
-        'start_x': 7,
-        'start_y': 8,
-        'start_z': 9,
-        'end_x': 8,
-        'end_y': 9,
-        'end_z': 10,
-    }
     reply = gss_with_client.process_update(
         {'action': 'update', 'data': updated_token}, TEST_ROOM_ID
     )
@@ -120,6 +130,15 @@ def test_move_existing_token(gss_with_client):
 
 
 def test_ping(gss_with_client):
+    # Set up callback so we get the state when the ping is removed
+    received_state = None
+
+    def fake_callback(state: dict, room_id: str):
+        nonlocal received_state
+        received_state = state
+        raise TypeError
+
+    gss_with_client.set_websocket_callback(fake_callback)
     reply = gss_with_client.process_update(
         valid_ping,
         TEST_ROOM_ID
@@ -127,6 +146,7 @@ def test_ping(gss_with_client):
     assert reply.type == 'state'
     assert len(reply.data) == 1
     assert reply.data[0] == valid_ping['data']
+    assert received_state == []
 
 
 def test_invalid_action(gss_with_client):

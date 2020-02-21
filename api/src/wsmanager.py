@@ -8,7 +8,7 @@ from http import HTTPStatus
 import websockets
 from websockets.http import Headers
 
-from game_state_server import GameStateServer, MessageError
+from game_state_server import MessageError
 
 
 def is_valid_uuid(uuid_string):
@@ -25,6 +25,7 @@ class WebsocketManager:
         asyncio.set_event_loop(self._loop)
         self.port = port
         self.gss = gss
+        self.gss.set_websocket_callback = self.send_message_to_room
 
     @staticmethod
     async def process_request(path, request_headers):
@@ -100,7 +101,13 @@ class WebsocketManager:
                 latest_state = asdict(self.gss.process_update(update, room_id))
             except MessageError as err:
                 print(err)
-                await self.send_message_to_client({'Error': err.message}, client)
+                await self.send_message_to_client(
+                    {
+                        'error': err.message,
+                        'request_id': message['request_id']
+                    },
+                    client,
+                )
         latest_state['request_id'] = message['request_id']
         await self.send_message_to_room(latest_state, room_id)
 
