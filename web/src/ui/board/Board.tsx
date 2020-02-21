@@ -231,7 +231,10 @@ const Board: React.FC<Props> = ({
         }
       } else if (
         buttons === LEFT_MOUSE &&
-        !tokens.find(token => posAreEqual(token.pos, gridPos))
+        !tokens.find(
+          token =>
+            token.type !== TokenType.PING && posAreEqual(token.pos, gridPos)
+        )
       ) {
         onFloorCreated(activeFloor.id, gridPos);
       } else if (buttons === RIGHT_MOUSE) {
