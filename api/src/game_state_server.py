@@ -158,7 +158,9 @@ class GameStateServer:
 
     def _create_ping(self, ping: Ping, room_id: str) -> None:
         self._rooms[room_id].game_state[ping.id] = asdict(ping)
-        self.ping_remover.enter(3, 0, self._remove_ping_from_state, argument=(ping.id, room_id))
+        self.ping_remover.enter(
+            3, 0, self._remove_ping_from_state, argument=(ping.id, room_id)
+        )
         self.ping_remover.run()
 
     def _delete_token(self, token_id: str, room_id: str) -> None:
