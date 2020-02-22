@@ -36,6 +36,13 @@ const useStyles = makeStyles(theme => ({
     bottom: `calc(${theme.spacing(3)}px - (100vh - 100%))`,
     left: "calc(50% + (100vw - 100%)/2)",
     transform: "translateX(-50%)"
+  },
+  aboutLink: {
+    position: "fixed",
+    color: "black",
+    fontWeight: "bold",
+    bottom: `calc(${theme.spacing(3)}px - (100vh - 100%))`,
+    right: `calc(${theme.spacing(3)}px - (100vw - 100%))`
   }
 }));
 
@@ -121,6 +128,12 @@ const App = () => {
           onFloorSelected={onFloorSelected}
         />
       </div>
+      <a
+        className={classes.aboutLink}
+        href={"https://github.com/sjohnson31/ttbud"}
+      >
+        ?
+      </a>
     </div>
   );
 };
