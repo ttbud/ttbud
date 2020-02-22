@@ -238,7 +238,10 @@ const Board: React.FC<Props> = ({
       ) {
         onFloorCreated(activeFloor.id, gridPos);
       } else if (buttons === RIGHT_MOUSE) {
-        const toDelete = tokens.find(token => posAreEqual(token.pos, gridPos));
+        const toDelete = tokens.find(
+          token =>
+            token.type !== TokenType.PING && posAreEqual(token.pos, gridPos)
+        );
         if (toDelete) {
           onTokenDeleted(toDelete.id);
         }
