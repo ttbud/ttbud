@@ -98,10 +98,10 @@ const Board: React.FC<Props> = ({
 
       const existingTokenId = tokens.find(
         token =>
-          posAreEqual(token.pos, gridPos) && token.type === TokenType.CHARACTER
+          posAreEqual(token.pos, gridPos) && token.type === TokenType.Character
       )?.id;
       const draggedTokenId =
-        draggable.type === DraggableType.TOKEN ? draggable.tokenId : undefined;
+        draggable.type === DraggableType.Token ? draggable.tokenId : undefined;
       if (existingTokenId && existingTokenId !== draggedTokenId) {
         return;
       }
@@ -110,7 +110,7 @@ const Board: React.FC<Props> = ({
       const snappedPixelPos = snapToGrid(scrolledPos(pos));
       return {
         logicalLocation: {
-          type: LocationType.GRID,
+          type: LocationType.Grid,
           ...gridPos
         },
         bounds: {
@@ -131,10 +131,10 @@ const Board: React.FC<Props> = ({
     };
 
     switch (token.type) {
-      case TokenType.FLOOR:
+      case TokenType.Floor:
         const floorIcon = ICONS_BY_ID.get(token.iconId, WALL_ICON);
         return <FloorToken key={token.id} icon={floorIcon} pos={pixelPos} />;
-      case TokenType.CHARACTER:
+      case TokenType.Character:
         const characterIcon = ICONS_BY_ID.get(token.iconId, WALL_ICON);
         return (
           <Draggable
@@ -142,7 +142,7 @@ const Board: React.FC<Props> = ({
             droppableId={DROPPABLE_IDS.BOARD}
             descriptor={{
               id: `${DROPPABLE_IDS.BOARD}-${token.id}`,
-              type: DraggableType.TOKEN,
+              type: DraggableType.Token,
               icon: characterIcon,
               tokenId: token.id
             }}
@@ -163,7 +163,7 @@ const Board: React.FC<Props> = ({
             )}
           </Draggable>
         );
-      case TokenType.PING:
+      case TokenType.Ping:
         return <PingToken key={token.id} x={pixelPos.x} y={pixelPos.y} />;
       default:
         throw new UnreachableCaseError(token);
@@ -224,7 +224,7 @@ const Board: React.FC<Props> = ({
         if (
           !tokens.find(
             token =>
-              token.type === TokenType.PING && posAreEqual(token.pos, gridPos)
+              token.type === TokenType.Ping && posAreEqual(token.pos, gridPos)
           )
         ) {
           onPingCreated(gridPos);
@@ -233,14 +233,14 @@ const Board: React.FC<Props> = ({
         buttons === LEFT_MOUSE &&
         !tokens.find(
           token =>
-            token.type !== TokenType.PING && posAreEqual(token.pos, gridPos)
+            token.type !== TokenType.Ping && posAreEqual(token.pos, gridPos)
         )
       ) {
         onFloorCreated(activeFloor.id, gridPos);
       } else if (buttons === RIGHT_MOUSE) {
         const toDelete = tokens.find(
           token =>
-            token.type !== TokenType.PING && posAreEqual(token.pos, gridPos)
+            token.type !== TokenType.Ping && posAreEqual(token.pos, gridPos)
         );
         if (toDelete) {
           onTokenDeleted(toDelete.id);

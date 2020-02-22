@@ -26,7 +26,7 @@ function coloredDraggableItem(color: string): DraggableItem {
   return {
     descriptor: {
       id: `${color}`,
-      type: DraggableType.ICON,
+      type: DraggableType.Icon,
       icon: WALL_ICON
     }
   };
@@ -47,11 +47,11 @@ const sortSlice = createSlice({
     ) => {
       const { source, destination } = action.payload;
       assert(
-        source.logicalLocation?.type === LocationType.LIST,
+        source.logicalLocation?.type === LocationType.List,
         "Drag started from outside sortable list"
       );
       assert(
-        destination.logicalLocation?.type === LocationType.LIST,
+        destination.logicalLocation?.type === LocationType.List,
         "Drag ended outside sortable list"
       );
       const startIdx = source.logicalLocation.idx;

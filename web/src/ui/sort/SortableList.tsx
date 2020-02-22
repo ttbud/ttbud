@@ -69,7 +69,7 @@ function getListIdx(
 ): number | undefined {
   if (location.id === droppableId) {
     assert(
-      location.logicalLocation?.type === LocationType.LIST,
+      location.logicalLocation?.type === LocationType.List,
       "Location is sortable list but logical location is not of type list"
     );
 
@@ -118,12 +118,12 @@ export default function SortableList<T extends DraggableItem>({
     const dragState = state.drag;
 
     switch (dragState.type) {
-      case DragStateType.NOT_DRAGGING:
+      case DragStateType.NotDragging:
         return NOT_SORTING;
-      case DragStateType.DRAGGING:
+      case DragStateType.Dragging:
         if (dragState.source.id === id) {
           assert(
-            dragState.source.logicalLocation?.type === LocationType.LIST,
+            dragState.source.logicalLocation?.type === LocationType.List,
             "Drag started from sortable list but source location isn't of type list"
           );
         }
@@ -139,7 +139,7 @@ export default function SortableList<T extends DraggableItem>({
           dragStartIdx: getListIdx(id, dragState.source),
           draggableId: dragState.draggable?.id
         };
-      case DragStateType.DRAG_END_ANIMATING:
+      case DragStateType.DragEndAnimating:
         return {
           isHovering: dragState.destination.id === id,
           isDragging: true,
@@ -192,7 +192,7 @@ export default function SortableList<T extends DraggableItem>({
         if (pos.y < bounds.bottom) {
           return {
             logicalLocation: {
-              type: LocationType.LIST,
+              type: LocationType.List,
               idx
             },
             bounds: {

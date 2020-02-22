@@ -1,10 +1,10 @@
 import { DragEndAction } from "../drag/drag-slice";
 
 export enum DragResult {
-  DRAGGED_OUT_OF = "dragged out of",
-  DRAGGED_INTO = "dragged into",
-  MOVED_INSIDE = "moved inside",
-  NONE = "none"
+  DraggedOutOf = "dragged out of",
+  DraggedInto = "dragged into",
+  MovedInside = "moved inside",
+  None = "none"
 }
 
 export default function getDragResult(
@@ -13,12 +13,12 @@ export default function getDragResult(
 ): DragResult {
   const { source, destination } = endAction;
   if (source.id === droppableId && destination.id !== droppableId) {
-    return DragResult.DRAGGED_OUT_OF;
+    return DragResult.DraggedOutOf;
   } else if (source.id !== droppableId && destination.id === droppableId) {
-    return DragResult.DRAGGED_INTO;
+    return DragResult.DraggedInto;
   } else if (source.id === droppableId && destination.id === droppableId) {
-    return DragResult.MOVED_INSIDE;
+    return DragResult.MovedInside;
   } else {
-    return DragResult.NONE;
+    return DragResult.None;
   }
 }

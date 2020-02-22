@@ -54,19 +54,19 @@ type ApiIconToken = t.TypeOf<typeof IconTokenDecoder>;
 type ApiToken = t.TypeOf<typeof ApiTokenDecoder>;
 
 export enum TokenType {
-  CHARACTER = "character",
-  FLOOR = "floor",
-  PING = "ping"
+  Character = "character",
+  Floor = "floor",
+  Ping = "ping"
 }
 
 export interface PingToken {
-  type: TokenType.PING;
+  type: TokenType.Ping;
   id: string;
   pos: Pos2d;
 }
 
 export interface IconToken {
-  type: TokenType.CHARACTER | TokenType.FLOOR;
+  type: TokenType.Character | TokenType.Floor;
   id: string;
   pos: Pos3d;
   iconId: string;
@@ -95,7 +95,7 @@ function toApiUpdate(update: Update): ApiUpdate {
   switch (update.type) {
     case UpdateType.CREATE:
     case UpdateType.MOVE:
-      if (update.token.type === TokenType.PING) {
+      if (update.token.type === TokenType.Ping) {
         const { id, type, pos } = update.token;
         return {
           action: "ping",
@@ -132,7 +132,7 @@ function toToken(apiToken: ApiToken): Token {
   switch (apiToken.type) {
     case "ping":
       return {
-        type: TokenType.PING,
+        type: TokenType.Ping,
         id: apiToken.id,
         pos: {
           x: apiToken.x,
@@ -159,30 +159,30 @@ function toToken(apiToken: ApiToken): Token {
 }
 
 export enum EventType {
-  TOKEN_UPDATE = "tokens",
-  CONNECT = "connect",
-  INITIAL_STATE = "initial state",
-  ERROR = "error",
-  DISCONNECT = "disconnect"
+  TokenUpdate = "tokens",
+  Connect = "connect",
+  InitialState = "initial state",
+  Error = "error",
+  Disconnect = "disconnect"
 }
 
 interface BoardStateEvent {
-  type: EventType.TOKEN_UPDATE;
+  type: EventType.TokenUpdate;
   requestId: string;
   tokens: Token[];
 }
 
 interface ConnectionStatusEvent {
-  type: EventType.DISCONNECT | EventType.CONNECT;
+  type: EventType.Disconnect | EventType.Connect;
 }
 
 interface InitialStateEvent {
-  type: EventType.INITIAL_STATE;
+  type: EventType.InitialState;
   tokens: Token[];
 }
 
 interface ErrorEvent {
-  type: EventType.ERROR;
+  type: EventType.Error;
   error: Error;
   requestId?: string;
   /**
@@ -243,12 +243,12 @@ export class BoardStateApiClient {
 
   private onConnect() {
     console.log("connected");
-    this.eventHandler({ type: EventType.CONNECT });
+    this.eventHandler({ type: EventType.Connect });
   }
 
   private onClose() {
     console.log("disconnected");
-    this.eventHandler({ type: EventType.DISCONNECT });
+    this.eventHandler({ type: EventType.Disconnect });
   }
 
   private onMessage(event: MessageEvent) {
@@ -258,7 +258,7 @@ export class BoardStateApiClient {
       message = decode(MessageDecoder, json);
     } catch (e) {
       this.eventHandler({
-        type: EventType.ERROR,
+        type: EventType.Error,
         error: e,
         rawMessage: event.data
       });
@@ -268,14 +268,14 @@ export class BoardStateApiClient {
     switch (message.type) {
       case "state":
         this.eventHandler({
-          type: EventType.TOKEN_UPDATE,
+          type: EventType.TokenUpdate,
           requestId: message.request_id,
           tokens: message.data.map(toToken)
         });
         break;
       case "error":
         this.eventHandler({
-          type: EventType.ERROR,
+          type: EventType.Error,
           requestId: message.request_id,
           rawMessage: event.data,
           error: new Error(message.error)
@@ -283,7 +283,7 @@ export class BoardStateApiClient {
         break;
       case "connected":
         this.eventHandler({
-          type: EventType.INITIAL_STATE,
+          type: EventType.InitialState,
           tokens: message.data.map(toToken)
         });
         break;

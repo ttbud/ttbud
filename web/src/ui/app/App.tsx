@@ -58,7 +58,7 @@ const App = () => {
     characterTrayIcons
   } = useSelector(
     (state: RootState) => ({
-      isDragging: state.drag.type === DragStateType.DRAGGING,
+      isDragging: state.drag.type === DragStateType.Dragging,
       tokens: state.board.tokens,
       activeFloor: state.floorTray.activeFloor,
       searching: state.app.searching,

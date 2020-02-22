@@ -26,27 +26,27 @@ const NO_OFFSET = { x: 0, y: 0 };
 
 const DRAGGABLE: IconDraggable = {
   id: "draggable-id",
-  type: DraggableType.ICON,
+  type: DraggableType.Icon,
   icon: WALL_ICON
 };
 
 const INACTIVE_DRAGGABLE: IconDraggable = {
   id: "another-draggable-id",
-  type: DraggableType.ICON,
+  type: DraggableType.Icon,
   icon: WALL_ICON
 };
 
 const DEFAULT_LOCATION: LogicalLocation = {
-  type: LocationType.LIST,
+  type: LocationType.List,
   idx: 0
 };
 
 const NOT_DRAGGING: DragState = {
-  type: DragStateType.NOT_DRAGGING
+  type: DragStateType.NotDragging
 };
 
 const DRAGGING: DragState = {
-  type: DragStateType.DRAGGING,
+  type: DragStateType.Dragging,
   draggable: DRAGGABLE,
   source: { bounds: ORIGIN_BOUNDS },
   mouseOffset: NO_OFFSET,
@@ -54,7 +54,7 @@ const DRAGGING: DragState = {
 };
 
 const DRAG_END_ANIMATING: DragState = {
-  type: DragStateType.DRAG_END_ANIMATING,
+  type: DragStateType.DragEndAnimating,
   draggable: DRAGGABLE,
   source: { bounds: ORIGIN_BOUNDS },
   destination: { bounds: ORIGIN_BOUNDS }
@@ -88,7 +88,7 @@ it("can start a drag outside of a droppable", () => {
   store.dispatch(startDrag(DRAGGABLE, undefined, mousePos, bounds));
 
   expect(store.getState().drag).toEqual({
-    type: DragStateType.DRAGGING,
+    type: DragStateType.Dragging,
     draggable: DRAGGABLE,
     source: { bounds: bounds },
     mouseOffset: expectedMouseOffset,
@@ -118,7 +118,7 @@ it("collects a source location if the draggable came from a droppable", () => {
   store.dispatch(startDrag(DRAGGABLE, "droppable id", mousePos, bounds));
 
   expect(store.getState().drag).toEqual({
-    type: DragStateType.DRAGGING,
+    type: DragStateType.Dragging,
     draggable: DRAGGABLE,
     source: {
       id: "droppable id",
@@ -218,7 +218,7 @@ it("animates back to start when not dropped on a droppable", () => {
   const store = createTestStore(DRAGGING);
   store.dispatch(releaseDrag(DRAGGABLE, MOVED_MOUSE_POS));
   expect(store.getState().drag).toEqual({
-    type: DragStateType.DRAG_END_ANIMATING,
+    type: DragStateType.DragEndAnimating,
     draggable: DRAGGABLE,
     source: DRAGGING.source,
     destination: DRAGGING.source
@@ -239,7 +239,7 @@ it("animates back to start when droppable rejects the drop", () => {
 
   store.dispatch(releaseDrag(DRAGGABLE, MOVED_MOUSE_POS));
   expect(store.getState().drag).toEqual({
-    type: DragStateType.DRAG_END_ANIMATING,
+    type: DragStateType.DragEndAnimating,
     draggable: DRAGGABLE,
     source: DRAGGING.source,
     destination: DRAGGING.source
@@ -264,7 +264,7 @@ it("animates to destination if droppable provides one", () => {
 
   store.dispatch(releaseDrag(DRAGGABLE, MOVED_MOUSE_POS));
   expect(store.getState().drag).toEqual({
-    type: DragStateType.DRAG_END_ANIMATING,
+    type: DragStateType.DragEndAnimating,
     draggable: DRAGGABLE,
     source: DRAGGING.source,
     destination: {

@@ -51,7 +51,7 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
   const items: List<IconDraggable> = useMemo(
     () =>
       icons.map(icon => ({
-        type: DraggableType.ICON,
+        type: DraggableType.Icon,
         icon,
         id: `search-dialog-${icon.id}`
       })),
@@ -59,7 +59,7 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
   );
 
   const activeDraggable = useSelector((state: RootState) => {
-    if (!open || state.drag.type === DragStateType.NOT_DRAGGING) {
+    if (!open || state.drag.type === DragStateType.NotDragging) {
       return;
     }
 

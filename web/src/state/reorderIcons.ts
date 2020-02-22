@@ -24,29 +24,29 @@ export function reorderIcons({
   draggable
 }: ReorderIconsParams) {
   switch (dragResult) {
-    case DragResult.DRAGGED_INTO:
+    case DragResult.DraggedInto:
       const icon = ICONS_BY_ID.get(draggable.icon.id);
       assert(icon, `Icon ID ${draggable.icon.id} is invalid`);
       assert(
-        destination.logicalLocation?.type === LocationType.LIST,
+        destination.logicalLocation?.type === LocationType.List,
         `Dragged into character tray but destination type is not list`
       );
       icons.splice(destination.logicalLocation.idx, 0, icon);
       break;
-    case DragResult.MOVED_INSIDE:
+    case DragResult.MovedInside:
       assert(
-        destination.logicalLocation?.type === LocationType.LIST,
+        destination.logicalLocation?.type === LocationType.List,
         `Dragged to character tray but destination type is not list`
       );
       assert(
-        source.logicalLocation?.type === LocationType.LIST,
+        source.logicalLocation?.type === LocationType.List,
         `Dragged from character tray but source type is not list`
       );
       const [removed] = icons.splice(source.logicalLocation.idx, 1);
       icons.splice(destination.logicalLocation.idx, 0, removed);
       break;
-    case DragResult.DRAGGED_OUT_OF:
-    case DragResult.NONE:
+    case DragResult.DraggedOutOf:
+    case DragResult.None:
       break;
     default:
       throw new UnreachableCaseError(dragResult);

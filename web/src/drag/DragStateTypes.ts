@@ -2,18 +2,18 @@ import Pos2d, { Bounds } from "../util/shape-math";
 import { Icon } from "../ui/icons";
 
 export enum DraggableType {
-  ICON = "icon",
-  TOKEN = "token"
+  Icon = "icon",
+  Token = "token"
 }
 
 export interface IconDraggable {
-  type: DraggableType.ICON;
+  type: DraggableType.Icon;
   id: string;
   icon: Icon;
 }
 
 export interface TokenDraggable {
-  type: DraggableType.TOKEN;
+  type: DraggableType.Token;
   id: string;
   tokenId: string;
   icon: Icon;
@@ -22,18 +22,18 @@ export interface TokenDraggable {
 export type DraggableDescriptor = IconDraggable | TokenDraggable;
 
 export enum LocationType {
-  GRID = "grid",
-  LIST = "list"
+  Grid = "grid",
+  List = "list"
 }
 
 export interface GridLocation {
-  type: LocationType.GRID;
+  type: LocationType.Grid;
   x: number;
   y: number;
 }
 
 export interface ListLocation {
-  type: LocationType.LIST;
+  type: LocationType.List;
   idx: number;
 }
 
@@ -46,17 +46,17 @@ export interface DroppableLocation {
 }
 
 export enum DragStateType {
-  NOT_DRAGGING = "NOT_DRAGGING",
-  DRAGGING = "DRAGGING",
-  DRAG_END_ANIMATING = "DRAG_END_ANIMATING"
+  NotDragging = "NotDragging",
+  Dragging = "Dragging",
+  DragEndAnimating = "DragEndAnimating"
 }
 
 interface NotDragging {
-  type: DragStateType.NOT_DRAGGING;
+  type: DragStateType.NotDragging;
 }
 
 interface Dragging {
-  type: DragStateType.DRAGGING;
+  type: DragStateType.Dragging;
   draggable: DraggableDescriptor;
   /**
    * Where the drag started
@@ -74,7 +74,7 @@ interface Dragging {
 }
 
 interface DragEndAnimating {
-  type: DragStateType.DRAG_END_ANIMATING;
+  type: DragStateType.DragEndAnimating;
   draggable: DraggableDescriptor;
   source: DroppableLocation;
   destination: DroppableLocation;

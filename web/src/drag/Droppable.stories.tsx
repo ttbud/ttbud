@@ -34,13 +34,13 @@ const DropTargets: React.FC = () => {
   const message = useSelector((state: RootState) => {
     const dragState = state.drag;
     switch (dragState.type) {
-      case DragStateType.NOT_DRAGGING:
+      case DragStateType.NotDragging:
         return "Not Dragging";
-      case DragStateType.DRAGGING:
+      case DragStateType.Dragging:
         return dragState.hoveredDroppableId
           ? `Hovering over ${dragState.hoveredDroppableId}`
           : "Dragging";
-      case DragStateType.DRAG_END_ANIMATING:
+      case DragStateType.DragEndAnimating:
         return "Drag End Animating";
       default:
         return new UnreachableCaseError(dragState);
@@ -54,7 +54,7 @@ const DropTargets: React.FC = () => {
       <ColoredDroppable color="green" />
       <Draggable
         descriptor={{
-          type: DraggableType.ICON,
+          type: DraggableType.Icon,
           id: "draggable",
           icon: WALL_ICON
         }}

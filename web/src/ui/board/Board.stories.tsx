@@ -20,7 +20,7 @@ export default {
 };
 
 const toToken = (icon: Icon, i: number): Token => ({
-  type: icon.type === IconType.floor ? TokenType.CHARACTER : TokenType.FLOOR,
+  type: icon.type === IconType.floor ? TokenType.Character : TokenType.Floor,
   pos: {
     x: i,
     y: i,
@@ -49,7 +49,7 @@ const store = configureStore({
 
 const ExampleBoard: React.FC = () => {
   const isDragging = useSelector(
-    (state: RootState) => state.drag.type !== DragStateType.NOT_DRAGGING
+    (state: RootState) => state.drag.type !== DragStateType.NotDragging
   );
 
   return (

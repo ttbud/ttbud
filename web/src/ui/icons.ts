@@ -6,7 +6,7 @@ function byId(icons: List<Icon>): Map<string, Icon> {
 }
 
 export enum IconType {
-  wall = "wall",
+  Wall = "wall",
   token = "token",
   floor = "floor"
 }

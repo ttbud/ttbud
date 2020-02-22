@@ -26,7 +26,7 @@ export const Default = () => (
     <DndContext.Provider value={monitor}>
       <Draggable
         descriptor={{
-          type: DraggableType.ICON,
+          type: DraggableType.Icon,
           id: "draggable",
           icon: WALL_ICON
         }}
