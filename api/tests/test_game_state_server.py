@@ -1,5 +1,4 @@
 import pytest
-import sched
 
 from game_state_server import GameStateServer, MessageError
 from room_store import MemoryRoomStore
@@ -43,15 +42,13 @@ def fake_delay_func(some_arg):
 @pytest.fixture
 def gss():
     rs = MemoryRoomStore('/my/path/to/room/storage/')
-    pr = sched.scheduler(delayfunc=fake_delay_func)
-    return GameStateServer(rs, pr)
+    return GameStateServer(rs)
 
 
 @pytest.fixture
 def gss_with_client():
     rs = MemoryRoomStore('/my/path/to/room/storage/')
-    pr = sched.scheduler(delayfunc=fake_delay_func)
-    gss = GameStateServer(rs, pr)
+    gss = GameStateServer(rs)
     gss.new_connection_request(TEST_CLIENT, TEST_ROOM_ID)
     return gss
 
@@ -125,19 +122,10 @@ def test_move_existing_token(gss_with_client):
 
 
 def test_ping(gss_with_client):
-    # Set up callback so we get the state when the ping is removed
-    received_state = None
-
-    def fake_callback(state: dict, room_id: str):
-        nonlocal received_state
-        received_state = state
-
-    gss_with_client.set_websocket_callback(fake_callback)
     reply = gss_with_client.process_update(valid_ping, TEST_ROOM_ID)
     assert reply.type == 'state'
     assert len(reply.data) == 1
     assert reply.data[0] == valid_ping['data']
-    assert received_state == []
 
 
 def test_invalid_action(gss_with_client):

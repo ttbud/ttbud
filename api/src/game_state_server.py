@@ -1,6 +1,6 @@
 from dataclasses import dataclass, asdict
 from typing import Union, Hashable
-from sched import scheduler
+from asyncio import sleep
 
 from room_store import RoomStore
 
@@ -49,14 +49,9 @@ class MessageError(Exception):
 
 
 class GameStateServer:
-    def __init__(self, room_store: RoomStore, ping_remover: scheduler):
+    def __init__(self, room_store: RoomStore):
         self._rooms = {}
         self.room_store = room_store
-        self.ping_remover = ping_remover
-        self.websocket_callback = None
-
-    def set_websocket_callback(self, websocket_callback):
-        self.websocket_callback = websocket_callback
 
     def new_connection_request(self, client: Hashable, room_id: str) -> Reply:
         if self._rooms.get(room_id, False):
@@ -82,7 +77,7 @@ class GameStateServer:
             else:
                 print(f'{len(self._rooms[room_id].clients)} clients remaining')
 
-    def process_update(self, message: dict, room_id: str) -> Reply:
+    async def process_update(self, message: dict, room_id: str) -> Reply:
         if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
             raise MessageError('Your room does not exist, somehow')
         action = message.get('action', None)
@@ -97,19 +92,22 @@ class GameStateServer:
             if not self._is_valid_position(token, room_id):
                 raise MessageError('That position is occupied, bucko')
             self._create_or_update_token(token, room_id)
-            return Reply('state', self.get_state(room_id))
+            yield Reply('state', self.get_state(room_id))
         elif action == 'delete':
             if type(data) != str:
                 raise MessageError('Data for delete actions must be a token ID')
             if self._rooms[room_id].game_state.get(data, False):
                 self._delete_token(data, room_id)
-                return Reply('state', self.get_state(room_id))
+                yield Reply('state', self.get_state(room_id))
             else:
                 raise MessageError('Cannot delete token because it does not exist')
         elif action == 'ping':
             ping = self._dict_to_ping(data)
             self._create_ping(ping, room_id)
-            return Reply('state', self.get_state(room_id))
+            yield Reply('state', self.get_state(room_id))
+            await sleep(3)
+            self._remove_ping_from_state(ping.id, room_id)
+            yield Reply('state', self.get_state(room_id))
         else:
             raise MessageError(f'Invalid action: {action}')
 
@@ -158,10 +156,6 @@ class GameStateServer:
 
     def _create_ping(self, ping: Ping, room_id: str) -> None:
         self._rooms[room_id].game_state[ping.id] = asdict(ping)
-        self.ping_remover.enter(
-            3, 0, self._remove_ping_from_state, argument=(ping.id, room_id)
-        )
-        self.ping_remover.run()
 
     def _delete_token(self, token_id: str, room_id: str) -> None:
         # Remove token data from position dictionaries
@@ -182,8 +176,6 @@ class GameStateServer:
         ping_to_remove = self._rooms[room_id].game_state.get(ping_id)
         if ping_to_remove:
             del self._rooms[room_id].game_state[ping_id]
-            if self.websocket_callback:
-                self.websocket_callback(self.get_state(room_id), room_id)
 
     @staticmethod
     def _get_unit_blocks(token: Token) -> list:
