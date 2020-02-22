@@ -59,7 +59,7 @@ const boardSlice = createSlice({
         const token = {
           id,
           iconId,
-          type: TokenType.FLOOR,
+          type: TokenType.Floor,
           pos: {
             ...pos,
             z: FLOOR_HEIGHT
@@ -75,7 +75,7 @@ const boardSlice = createSlice({
       reducer: (state, action: PayloadAction<AddPingAction>) => {
         const { id, pos } = action.payload;
         state.tokens.push({
-          type: TokenType.PING,
+          type: TokenType.Ping,
           id,
           pos
         });
@@ -95,40 +95,40 @@ const boardSlice = createSlice({
       const dragResult = getDragResult(DROPPABLE_IDS.BOARD, action.payload);
 
       switch (dragResult) {
-        case DragResult.MOVED_INSIDE:
+        case DragResult.MovedInside:
           assert(
-            draggable.type === DraggableType.TOKEN,
+            draggable.type === DraggableType.Token,
             "Dragged from board but draggable type was not token"
           );
           assert(
-            destination.logicalLocation?.type === LocationType.GRID,
+            destination.logicalLocation?.type === LocationType.Grid,
             "Dropped in board but drop type was not grid"
           );
           moveToken(state, draggable.tokenId, destination.logicalLocation);
           break;
-        case DragResult.DRAGGED_OUT_OF:
+        case DragResult.DraggedOutOf:
           assert(
-            draggable.type === DraggableType.TOKEN,
+            draggable.type === DraggableType.Token,
             "Dragged from board but draggable type was not token"
           );
 
           _removeToken(state, draggable.tokenId);
           break;
-        case DragResult.DRAGGED_INTO:
+        case DragResult.DraggedInto:
           assert(
-            destination.logicalLocation?.type === LocationType.GRID,
+            destination.logicalLocation?.type === LocationType.Grid,
             "Dropped in board but drop type was not grid"
           );
 
           const { x, y } = destination.logicalLocation;
           state.tokens.push({
-            type: TokenType.CHARACTER,
+            type: TokenType.Character,
             id: uuid(),
             iconId: draggable.icon.id,
             pos: { x, y, z: CHARACTER_HEIGHT }
           });
           break;
-        case DragResult.NONE:
+        case DragResult.None:
           break;
         default:
           throw new UnreachableCaseError(dragResult);

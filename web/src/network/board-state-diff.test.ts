@@ -7,7 +7,7 @@ import { Token, TokenType } from "./BoardStateApiClient";
 
 const TOKEN_1: Token = {
   id: "token-1",
-  type: TokenType.CHARACTER,
+  type: TokenType.Character,
   iconId: "icon-id",
   pos: {
     x: 0,
@@ -18,7 +18,7 @@ const TOKEN_1: Token = {
 
 const MOVED_TOKEN_1: Token = {
   id: "token-1",
-  type: TokenType.CHARACTER,
+  type: TokenType.Character,
   iconId: "icon-id",
   pos: {
     x: 1,
@@ -29,7 +29,7 @@ const MOVED_TOKEN_1: Token = {
 
 const TOKEN_2: Token = {
   id: "token-2",
-  type: TokenType.CHARACTER,
+  type: TokenType.Character,
   iconId: "icon-id",
   pos: {
     x: 2,

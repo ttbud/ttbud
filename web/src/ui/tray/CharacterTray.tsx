@@ -35,7 +35,7 @@ const CharacterTray: React.FC<Props> = memo(function CharacterTray({
   const items = icons.map(icon => ({
     icon,
     descriptor: {
-      type: DraggableType.ICON,
+      type: DraggableType.Icon,
       id: `${DROPPABLE_ID}-${icon.id}`,
       icon: icon
     } as IconDraggable

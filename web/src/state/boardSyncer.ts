@@ -22,11 +22,11 @@ export function boardSyncer(apiClient: BoardStateApiClient): Middleware {
   return store => {
     apiClient.setEventHandler(event => {
       switch (event.type) {
-        case EventType.INITIAL_STATE:
+        case EventType.InitialState:
           networkTokens = event.tokens;
           store.dispatch(replaceTokens(event.tokens));
           break;
-        case EventType.TOKEN_UPDATE:
+        case EventType.TokenUpdate:
           networkTokens = event.tokens;
           unackedUpdates.delete(event.requestId);
           const localState = getLocalState(
@@ -36,7 +36,7 @@ export function boardSyncer(apiClient: BoardStateApiClient): Middleware {
 
           store.dispatch(replaceTokens(localState));
           break;
-        case EventType.ERROR:
+        case EventType.Error:
           if (event.requestId) {
             unackedUpdates.delete(event.requestId);
           }

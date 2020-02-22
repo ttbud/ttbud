@@ -26,7 +26,7 @@ const EMPTY_BOARD: BoardState = {
 
 const TOKEN_1: Token = {
   id: "token-1",
-  type: TokenType.CHARACTER,
+  type: TokenType.Character,
   iconId: "icon-id",
   pos: {
     x: 0,
@@ -37,7 +37,7 @@ const TOKEN_1: Token = {
 
 const TOKEN_2: Token = {
   id: "token-2",
-  type: TokenType.CHARACTER,
+  type: TokenType.Character,
   iconId: "icon-id",
   pos: {
     x: 1,
@@ -52,7 +52,7 @@ it("adds floors", () => {
   expect(store.getState().board.tokens).toMatchObject([
     {
       iconId: "icon-id",
-      type: TokenType.FLOOR,
+      type: TokenType.Floor,
       pos: { x: 0, y: 0, z: 0 }
     }
   ]);
@@ -63,7 +63,7 @@ it("adds pings", () => {
   store.dispatch(addPing({ x: 1, y: 1 }));
   expect(store.getState().board.tokens).toMatchObject([
     {
-      type: TokenType.PING,
+      type: TokenType.Ping,
       pos: { x: 1, y: 1 }
     }
   ]);
@@ -87,7 +87,7 @@ it("removes tokens from the board when they are dragged off", () => {
     dragEnded({
       draggable: {
         id: "draggable-id",
-        type: DraggableType.TOKEN,
+        type: DraggableType.Token,
         icon: WALL_ICON,
         tokenId: TOKEN_1.id
       },
@@ -110,7 +110,7 @@ it("adds tokens to the board when they are dragged in", () => {
     dragEnded({
       draggable: {
         id: "draggable-id",
-        type: DraggableType.ICON,
+        type: DraggableType.Icon,
         icon: WALL_ICON
       },
       source: {
@@ -120,7 +120,7 @@ it("adds tokens to the board when they are dragged in", () => {
         id: DROPPABLE_IDS.BOARD,
         bounds: { top: 0, left: 0, bottom: 10, right: 10 },
         logicalLocation: {
-          type: LocationType.GRID,
+          type: LocationType.Grid,
           x: 0,
           y: 0
         }
@@ -133,7 +133,7 @@ it("adds tokens to the board when they are dragged in", () => {
     {
       iconId: WALL_ICON.id,
       pos: { x: 0, y: 0 },
-      type: TokenType.CHARACTER
+      type: TokenType.Character
     }
   ]);
 });
@@ -144,19 +144,19 @@ it("moves tokens when they are dragged around inside the board", () => {
     dragEnded({
       draggable: {
         id: "draggable-id",
-        type: DraggableType.TOKEN,
+        type: DraggableType.Token,
         icon: WALL_ICON,
         tokenId: TOKEN_1.id
       },
       source: {
         id: DROPPABLE_IDS.BOARD,
         bounds: { top: 0, left: 0, bottom: 0, right: 0 },
-        logicalLocation: { type: LocationType.GRID, x: 0, y: 0 }
+        logicalLocation: { type: LocationType.Grid, x: 0, y: 0 }
       },
       destination: {
         id: DROPPABLE_IDS.BOARD,
         bounds: { top: 50, left: 50, bottom: 60, right: 60 },
-        logicalLocation: { type: LocationType.GRID, x: 5, y: 5 }
+        logicalLocation: { type: LocationType.Grid, x: 5, y: 5 }
       }
     })
   );
@@ -180,7 +180,7 @@ it("ignores drags that don't involve the board", () => {
     dragEnded({
       draggable: {
         id: "draggable-id",
-        type: DraggableType.ICON,
+        type: DraggableType.Icon,
         icon: WALL_ICON
       },
       source: {
@@ -204,7 +204,7 @@ it("ignores drags on deleted tokens", () => {
     dragEnded({
       draggable: {
         id: "draggable-id",
-        type: DraggableType.TOKEN,
+        type: DraggableType.Token,
         icon: WALL_ICON,
         tokenId: TOKEN_2.id
       },
@@ -212,7 +212,7 @@ it("ignores drags on deleted tokens", () => {
         id: DROPPABLE_IDS.BOARD,
         bounds: { top: 0, left: 0, bottom: 10, right: 10 },
         logicalLocation: {
-          type: LocationType.GRID,
+          type: LocationType.Grid,
           x: 0,
           y: 0
         }
@@ -221,7 +221,7 @@ it("ignores drags on deleted tokens", () => {
         id: DROPPABLE_IDS.BOARD,
         bounds: { top: 50, left: 50, bottom: 60, right: 60 },
         logicalLocation: {
-          type: LocationType.GRID,
+          type: LocationType.Grid,
           x: 5,
           y: 5
         }

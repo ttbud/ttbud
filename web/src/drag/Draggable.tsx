@@ -48,11 +48,11 @@ const modifierKeyPressed = (e: React.MouseEvent): boolean => {
 };
 
 interface NotDragging {
-  type: DragStateType.NOT_DRAGGING;
+  type: DragStateType.NotDragging;
 }
 
 interface DraggingOrAnimating {
-  type: DragStateType.DRAGGING | DragStateType.DRAG_END_ANIMATING;
+  type: DragStateType.Dragging | DragStateType.DragEndAnimating;
   offset: Pos2d;
 }
 
@@ -63,8 +63,8 @@ const dragStatesAreEqual = (
   right: InternalDragState
 ) => {
   if (
-    left.type === DragStateType.NOT_DRAGGING ||
-    right.type === DragStateType.NOT_DRAGGING
+    left.type === DragStateType.NotDragging ||
+    right.type === DragStateType.NotDragging
   ) {
     return left.type === right.type;
   }
@@ -78,23 +78,23 @@ const getStyle = (
 ): CSSProperties => {
   const style: CSSProperties = {
     userSelect: "none",
-    cursor: state.type === DragStateType.DRAGGING ? "grabbing" : "grab"
+    cursor: state.type === DragStateType.Dragging ? "grabbing" : "grab"
   };
 
   if (
-    state.type === DragStateType.DRAGGING ||
-    state.type === DragStateType.DRAG_END_ANIMATING
+    state.type === DragStateType.Dragging ||
+    state.type === DragStateType.DragEndAnimating
   ) {
     style.transform = `translate(${state.offset.x}px, ${state.offset.y}px)`;
     style.zIndex = 10_000;
   }
-  if (state.type === DragStateType.DRAG_END_ANIMATING) {
+  if (state.type === DragStateType.DragEndAnimating) {
     style.transition = "transform 0.2s cubic-bezier(0.2, 0, 0, 1)";
   }
 
   const isDragging =
-    state.type === DragStateType.DRAGGING ||
-    state.type === DragStateType.DRAG_END_ANIMATING;
+    state.type === DragStateType.Dragging ||
+    state.type === DragStateType.DragEndAnimating;
 
   if (usePortal && isDragging) {
     style.position = "fixed";
@@ -116,25 +116,25 @@ const Draggable: React.FC<Props> = ({
   const dragState = useSelector((appState: RootState): InternalDragState => {
     const state = appState.drag;
     if (
-      state.type === DragStateType.NOT_DRAGGING ||
+      state.type === DragStateType.NotDragging ||
       // Only care if it's us that's dragging
       state.draggable.id !== descriptor.id
     ) {
-      return { type: DragStateType.NOT_DRAGGING };
+      return { type: DragStateType.NotDragging };
     }
 
     switch (state.type) {
-      case DragStateType.DRAGGING:
+      case DragStateType.Dragging:
         return {
-          type: DragStateType.DRAGGING,
+          type: DragStateType.Dragging,
           offset: {
             x: state.bounds.left - state.source.bounds.left,
             y: state.bounds.top - state.source.bounds.top
           }
         };
-      case DragStateType.DRAG_END_ANIMATING:
+      case DragStateType.DragEndAnimating:
         return {
-          type: DragStateType.DRAG_END_ANIMATING,
+          type: DragStateType.DragEndAnimating,
           offset: {
             x: state.destination.bounds.left - state.source.bounds.left,
             y: state.destination.bounds.top - state.source.bounds.top
@@ -149,7 +149,7 @@ const Draggable: React.FC<Props> = ({
     // If we're using a portal, we need to re-measure ourselves as
     // soon as we re-render into a portal for dragging since we've
     // likely just jumped around the page
-    if (dragState.type !== DragStateType.DRAGGING || !usePortal) {
+    if (dragState.type !== DragStateType.Dragging || !usePortal) {
       return;
     }
     assert(ref.current, `Draggable ${descriptor.id} ref not set`);
@@ -195,7 +195,7 @@ const Draggable: React.FC<Props> = ({
 
   useEffect(() => {
     const onPointerUp = ({ clientX: x, clientY: y }: PointerEvent) => {
-      if (dragState.type !== DragStateType.DRAGGING) {
+      if (dragState.type !== DragStateType.Dragging) {
         return;
       }
       assert(ref.current, `Ref for draggable ${descriptor} not set`);
@@ -204,7 +204,7 @@ const Draggable: React.FC<Props> = ({
     };
 
     const onPointerMove = (e: PointerEvent) => {
-      if (dragState.type !== DragStateType.DRAGGING) {
+      if (dragState.type !== DragStateType.Dragging) {
         return;
       }
 
@@ -212,7 +212,7 @@ const Draggable: React.FC<Props> = ({
       e.stopPropagation();
     };
 
-    if (dragState.type === DragStateType.DRAGGING) {
+    if (dragState.type === DragStateType.Dragging) {
       window.addEventListener("pointermove", onPointerMove);
       window.addEventListener("pointerup", onPointerUp);
     }
@@ -224,7 +224,7 @@ const Draggable: React.FC<Props> = ({
   }, [descriptor, dragState, dispatch]);
 
   const onTransitionEnd = useCallback(() => {
-    if (dragState.type !== DragStateType.DRAG_END_ANIMATING) {
+    if (dragState.type !== DragStateType.DragEndAnimating) {
       return;
     }
     dispatch(endDrag(descriptor));
@@ -232,11 +232,11 @@ const Draggable: React.FC<Props> = ({
 
   const getHandlers = (state: InternalDragState) => {
     switch (state.type) {
-      case DragStateType.NOT_DRAGGING:
+      case DragStateType.NotDragging:
         return { onPointerDown };
-      case DragStateType.DRAG_END_ANIMATING:
+      case DragStateType.DragEndAnimating:
         return { onTransitionEnd };
-      case DragStateType.DRAGGING:
+      case DragStateType.Dragging:
         return {};
       default:
         throw new UnreachableCaseError(state);
@@ -244,8 +244,8 @@ const Draggable: React.FC<Props> = ({
   };
 
   const isDragging =
-    dragState.type === DragStateType.DRAGGING ||
-    dragState.type === DragStateType.DRAG_END_ANIMATING;
+    dragState.type === DragStateType.Dragging ||
+    dragState.type === DragStateType.DragEndAnimating;
 
   const element = children(isDragging, {
     ref,

@@ -10,7 +10,7 @@ import {
 import { AppThunk } from "../state/createStore";
 
 const INITIAL_STATE: DragState = {
-  type: DragStateType.NOT_DRAGGING
+  type: DragStateType.NotDragging
 };
 
 interface DragStartAction {
@@ -49,7 +49,7 @@ const dragSlice = createSlice({
     dragStarted(state, action: PayloadAction<DragStartAction>) {
       const { draggable, source, mousePos } = action.payload;
       assert(
-        state.type === DragStateType.NOT_DRAGGING,
+        state.type === DragStateType.NotDragging,
         `Draggable ${draggable.id} attempted to start a drag during an existing drag`
       );
 
@@ -59,7 +59,7 @@ const dragSlice = createSlice({
       };
 
       return {
-        type: DragStateType.DRAGGING,
+        type: DragStateType.Dragging,
         draggable: draggable,
         hoveredDroppableId: source.id,
         bounds: source.bounds,
@@ -70,7 +70,7 @@ const dragSlice = createSlice({
     portalDrag(state, action: PayloadAction<DragPortalAction>) {
       const { draggable, bounds } = action.payload;
       assert(
-        state.type === DragStateType.DRAGGING,
+        state.type === DragStateType.Dragging,
         `Draggable ${draggable.id} attempted to portal while no drag was occurring`
       );
       assert(
@@ -85,7 +85,7 @@ const dragSlice = createSlice({
       // The wrapper for this action also checks for this case, so this check
       // is impossible to trigger from the public API
       /* istanbul ignore next */
-      if (state.type !== DragStateType.DRAGGING) {
+      if (state.type !== DragStateType.Dragging) {
         return;
       }
       assert(
@@ -99,7 +99,7 @@ const dragSlice = createSlice({
     dragReleased(state, action: PayloadAction<DragReleaseAction>) {
       const { draggable, destination, bounds } = action.payload;
       assert(
-        state.type === DragStateType.DRAGGING,
+        state.type === DragStateType.Dragging,
         `Draggable ${draggable.id} attempted to release a drag while no drag was occurring`
       );
       assert(
@@ -112,11 +112,11 @@ const dragSlice = createSlice({
 
       if (boundsAreEqual(finalDestination.bounds, bounds)) {
         return {
-          type: DragStateType.NOT_DRAGGING
+          type: DragStateType.NotDragging
         };
       } else {
         return {
-          type: DragStateType.DRAG_END_ANIMATING,
+          type: DragStateType.DragEndAnimating,
           draggable: state.draggable,
           source: state.source,
           destination: finalDestination
@@ -128,7 +128,7 @@ const dragSlice = createSlice({
      * affected droppables should update their state and re-render
      */
     dragEnded(state, _action: PayloadAction<DragEndAction>) {
-      return { type: DragStateType.NOT_DRAGGING };
+      return { type: DragStateType.NotDragging };
     }
   }
 });
@@ -182,7 +182,7 @@ function startDrag(
 function moveDrag(draggable: DraggableDescriptor, mousePos: Pos2d): AppThunk {
   return (dispatch, getState, { monitor }) => {
     const state = getState();
-    if (state.drag.type !== DragStateType.DRAGGING) {
+    if (state.drag.type !== DragStateType.Dragging) {
       // This happens a lot because we get another mouse move event before the store is updated to tell the draggable
       // to stop listening to move events, so just ignore it
       return;
@@ -208,7 +208,7 @@ function releaseDrag(
   return (dispatch, getState, { monitor }) => {
     const state = getState();
     assert(
-      state.drag.type === DragStateType.DRAGGING,
+      state.drag.type === DragStateType.Dragging,
       `Draggable ${draggable.id} attempted to release a drag while no drag was occurring`
     );
 
@@ -238,7 +238,7 @@ function endDrag(draggable: DraggableDescriptor): AppThunk {
   return (dispatch, getState) => {
     const state = getState();
     assert(
-      state.drag.type === DragStateType.DRAG_END_ANIMATING,
+      state.drag.type === DragStateType.DragEndAnimating,
       `Draggable ${draggable.id} tried to finish a drag animation when no drag was occurring`
     );
     assert(
