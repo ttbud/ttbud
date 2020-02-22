@@ -25,7 +25,6 @@ class WebsocketManager:
         asyncio.set_event_loop(self._loop)
         self.port = port
         self.gss = gss
-        self.gss.set_websocket_callback = self.send_message_to_room
 
     @staticmethod
     async def process_request(path, request_headers):
@@ -57,7 +56,7 @@ class WebsocketManager:
             await self.send_message_to_client(response, client)
             try:
                 async for message in client:
-                    await self.consume(message, room_id, client)
+                    asyncio.ensure_future(self.consume(message, room_id, client))
             finally:
                 self.gss.connection_dropped(client, room_id)
         else:
@@ -96,16 +95,19 @@ class WebsocketManager:
             'data': self.gss.get_state(room_id),
         }
 
-        for update in updates:
-            try:
-                latest_state = asdict(self.gss.process_update(update, room_id))
-            except MessageError as err:
-                print(err)
-                await self.send_message_to_client(
-                    {'error': err.message, 'request_id': message['request_id']}, client,
-                )
-        latest_state['request_id'] = message['request_id']
-        await self.send_message_to_room(latest_state, room_id)
+        update = updates[0]
+        try:
+            async for reply in self.gss.process_update(update, room_id):
+                latest_state = asdict(reply)
+                latest_state['request_id'] = message['request_id']
+                await self.send_message_to_room(latest_state, room_id)
+        except MessageError as err:
+            print(err)
+            await self.send_message_to_client(
+                {'error': err.message, 'request_id': message['request_id']}, client,
+            )
+            latest_state['request_id'] = message['request_id']
+            await self.send_message_to_room(latest_state, room_id)
 
 
 def start_websocket(host_port, room_store_dir):
