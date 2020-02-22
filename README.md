@@ -25,6 +25,6 @@ docker-compose up -d
 ## Licenses
 
 - icons in web/src/icon - Licensed from [game-icons.net](https://game-icons.net) under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)
-- web/public/favicon.ico - Made by [Kiranshastry](https://www.flaticon.com/authors/kiranshastry) from
+- web/public/\[favicon.ico,logo128.png,logo512.png\] - Made by [Kiranshastry](https://www.flaticon.com/authors/kiranshastry) from
 [www.flaticon.com](https://www.flaticon.com). Licensed under the [FlatIcon license](https://file000.flaticon.com/downloads/license/license.pdf)
 - Everything else - Licensed under MIT, see LICENSE file in repo
