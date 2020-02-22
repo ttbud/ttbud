@@ -1,11 +1,14 @@
 # ttbud
+
 Your virtual table friend
 
 ## Requirements
-* [docker](https://docs.docker.com/v17.09/engine/installation/)
-* [docker-compose](https://docs.docker.com/compose/install/)
+
+- [docker](https://docs.docker.com/v17.09/engine/installation/)
+- [docker-compose](https://docs.docker.com/compose/install/)
 
 ## Development
+
 ```bash
 # Configure your environment
 cp .env.example .env
@@ -18,3 +21,8 @@ docker-compose run --rm web yarn install
 # Start the development server in the background
 docker-compose up -d
 ```
+
+## Licenses
+
+- icons in web/src/icon - Licensed from [game-icons.net](https://game-icons.net) under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)
+- Everything else - Licensed under MIT, see LICENSE file in repo
