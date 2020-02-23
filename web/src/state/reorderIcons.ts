@@ -25,6 +25,9 @@ export function reorderIcons({
 }: ReorderIconsParams) {
   switch (dragResult) {
     case DragResult.DraggedInto:
+      if (icons.some(icon => icon.id === draggable.icon.id)) {
+        return;
+      }
       const icon = ICONS_BY_ID.get(draggable.icon.id);
       assert(icon, `Icon ID ${draggable.icon.id} is invalid`);
       assert(

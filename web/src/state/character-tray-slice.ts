@@ -25,9 +25,6 @@ const characterTraySlice = createSlice({
   extraReducers: {
     [dragEnded.type]: (state, action: PayloadAction<DragEndAction>) => {
       const { draggable, source, destination } = action.payload;
-      if (state.icons.some(icon => icon.id === draggable.icon.id)) {
-        return;
-      }
 
       const dragResult = getDragResult(
         DROPPABLE_IDS.CHARACTER_TRAY,
