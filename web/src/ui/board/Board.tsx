@@ -10,7 +10,7 @@ import { Icon, ICONS_BY_ID, WALL_ICON } from "../icons";
 import FloorToken from "../token/FloorToken";
 import Character from "../token/Character";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
-import PingToken from "../token/PingToken";
+import Ping from "../token/Ping";
 import Draggable from "../../drag/Draggable";
 import Droppable from "../../drag/Droppable";
 import Pos2d, { posAreEqual, snapToGrid } from "../../util/shape-math";
@@ -19,6 +19,9 @@ import { LocationCollector, TargetLocation } from "../../drag/DroppableMonitor";
 import { DraggableType, LocationType } from "../../drag/DragStateTypes";
 import { DROPPABLE_IDS } from "../DroppableIds";
 import { Token, TokenType } from "../../network/BoardStateApiClient";
+import { TransitionGroup } from "react-transition-group";
+import Shrink from "../transition/Shrink";
+import Fade from "../transition/Fade";
 
 let BACKGROUND_COLOR = "#F5F5DC";
 let GRID_COLOR = "#947C65";
@@ -133,38 +136,47 @@ const Board: React.FC<Props> = ({
     switch (token.type) {
       case TokenType.Floor:
         const floorIcon = ICONS_BY_ID.get(token.iconId, WALL_ICON);
-        return <FloorToken key={token.id} icon={floorIcon} pos={pixelPos} />;
+        return (
+          <Fade lengthMs={50} key={token.id}>
+            <FloorToken key={token.id} icon={floorIcon} pos={pixelPos} />
+          </Fade>
+        );
       case TokenType.Character:
         const characterIcon = ICONS_BY_ID.get(token.iconId, WALL_ICON);
         return (
-          <Draggable
-            key={token.id}
-            droppableId={DROPPABLE_IDS.BOARD}
-            descriptor={{
-              id: `${DROPPABLE_IDS.BOARD}-${token.id}`,
-              type: DraggableType.Token,
-              icon: characterIcon,
-              tokenId: token.id
-            }}
-          >
-            {(isDragging, attributes) => (
-              <Character
-                {...attributes}
-                icon={characterIcon}
-                isDragging={isDragging}
-                style={{
-                  ...attributes.style,
-                  position: "absolute",
-                  left: pixelPos.x,
-                  top: pixelPos.y,
-                  zIndex: isDragging ? 10_000 : token.pos.z
-                }}
-              />
-            )}
-          </Draggable>
+          <Shrink lengthMs={100} key={token.id}>
+            <Draggable
+              droppableId={DROPPABLE_IDS.BOARD}
+              descriptor={{
+                id: `${DROPPABLE_IDS.BOARD}-${token.id}`,
+                type: DraggableType.Token,
+                icon: characterIcon,
+                tokenId: token.id
+              }}
+            >
+              {(isDragging, attributes) => (
+                <Character
+                  {...attributes}
+                  icon={characterIcon}
+                  isDragging={isDragging}
+                  style={{
+                    ...attributes.style,
+                    position: "absolute",
+                    left: pixelPos.x,
+                    top: pixelPos.y,
+                    zIndex: isDragging ? 10_000 : token.pos.z
+                  }}
+                />
+              )}
+            </Draggable>
+          </Shrink>
         );
       case TokenType.Ping:
-        return <PingToken key={token.id} x={pixelPos.x} y={pixelPos.y} />;
+        return (
+          <Fade lengthMs={1000}>
+            <Ping key={token.id} x={pixelPos.x} y={pixelPos.y} />
+          </Fade>
+        );
       default:
         throw new UnreachableCaseError(token);
     }
@@ -262,7 +274,7 @@ const Board: React.FC<Props> = ({
       <Droppable id={DROPPABLE_IDS.BOARD} getLocation={getLocation}>
         {attributes => (
           <div {...attributes} className={classes.board}>
-            {tokenIcons}
+            <TransitionGroup>{tokenIcons}</TransitionGroup>
           </div>
         )}
       </Droppable>
