@@ -1,31 +1,11 @@
 from dataclasses import dataclass, asdict
-from typing import Union, Hashable, AsyncIterator, Iterable, Optional
+from typing import Union, Hashable, AsyncIterator, Iterable, Optional, Dict
 
 # It's important to import the whole module here because we mock sleep in tests
 import asyncio
 
 from room_store import RoomStore
-
-
-@dataclass
-class Token:
-    id: str
-    type: str
-    icon_id: str
-    start_x: int
-    start_y: int
-    start_z: int
-    end_x: int
-    end_y: int
-    end_z: int
-
-
-@dataclass
-class Ping:
-    id: str
-    type: str
-    x: int
-    y: int
+from game_components import Token, Ping
 
 
 @dataclass
@@ -43,8 +23,8 @@ class Message:
 
 class RoomData:
     def __init__(self, room_id: str, initial_connection=None):
-        self.room_id = room_id
-        self.game_state = {}
+        self.room_id: str = room_id
+        self.game_state: Dict[str, Union[Ping, Token]] = {}
         self.id_to_positions = {}
         self.positions_to_ids = {}
         self.clients = set()
@@ -89,17 +69,18 @@ class GameStateServer:
                 print(f'{len(self._rooms[room_id].clients)} clients remaining')
 
     async def process_updates(
-        self, updates: dict, room_id: str, client_id: Hashable, request_id: str
-    ) -> AsyncIterator[MessageContents]:
+        self, updates: Iterable[dict], room_id: str, client_id: Hashable, request_id: str
+    ) -> AsyncIterator[Message]:
         pings_created = []
+        if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
+            yield Message(
+                [client_id],
+                MessageContents(
+                    'error', 'Your room does not exist, somehow', request_id
+                ),
+            )
+            return
         for update in updates:
-            if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
-                yield Message(
-                    [client_id],
-                    MessageContents(
-                        'error', 'Your room does not exist, somehow', request_id
-                    ),
-                )
             action = update.get('action', None)
             data = update.get('data', None)
             if not action or not data:
@@ -176,7 +157,7 @@ class GameStateServer:
             for ping_id in pings_created:
                 self._remove_ping_from_state(ping_id, room_id)
             yield Message(
-                'state', MessageContents('state', self.get_state(room_id), request_id)
+                self._rooms[room_id].clients, MessageContents('state', self.get_state(room_id), request_id)
             )
 
     @staticmethod
@@ -204,7 +185,7 @@ class GameStateServer:
         self._rooms[room_id].id_to_positions[token.id] = blocks
         for block in blocks:
             self._rooms[room_id].positions_to_ids[block] = token.id
-        self._rooms[room_id].game_state[token.id] = asdict(token)
+        self._rooms[room_id].game_state[token.id] = token
 
     def _create_ping(self, ping: Ping, room_id: str) -> None:
         self._rooms[room_id].game_state[ping.id] = asdict(ping)
