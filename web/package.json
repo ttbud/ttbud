@@ -21,7 +21,7 @@
     "react-scripts": "3.4.0",
     "react-use": "^13.26.1",
     "typescript": "3.7.5",
-    "uuid": "^3.4.0"
+    "uuid": "^7.0.0"
   },
   "scripts": {
     "start": "react-scripts start",
