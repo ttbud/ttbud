@@ -20,8 +20,8 @@ import { DraggableType, LocationType } from "../../drag/DragStateTypes";
 import { DROPPABLE_IDS } from "../DroppableIds";
 import { Token, TokenType } from "../../network/BoardStateApiClient";
 import { TransitionGroup } from "react-transition-group";
-import Shrink from "../transition/Shrink";
 import Fade from "../transition/Fade";
+import NoopTransition from "../transition/NoopTransition";
 
 let BACKGROUND_COLOR = "#F5F5DC";
 let GRID_COLOR = "#947C65";
@@ -144,7 +144,9 @@ const Board: React.FC<Props> = ({
       case TokenType.Character:
         const characterIcon = ICONS_BY_ID.get(token.iconId, WALL_ICON);
         return (
-          <Shrink lengthMs={100} key={token.id}>
+          // Need to have some sort of transition otherwise the element will
+          // never be removed from the dom :(
+          <NoopTransition key={token.id}>
             <Draggable
               droppableId={DROPPABLE_IDS.BOARD}
               descriptor={{
@@ -169,12 +171,12 @@ const Board: React.FC<Props> = ({
                 />
               )}
             </Draggable>
-          </Shrink>
+          </NoopTransition>
         );
       case TokenType.Ping:
         return (
-          <Fade lengthMs={1000}>
-            <Ping key={token.id} x={pixelPos.x} y={pixelPos.y} />
+          <Fade key={token.id} lengthMs={1000}>
+            <Ping x={pixelPos.x} y={pixelPos.y} />
           </Fade>
         );
       default:
