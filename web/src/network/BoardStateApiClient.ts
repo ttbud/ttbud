@@ -35,7 +35,7 @@ const BoardStateDecoder = t.type({
 const ErrorMessageDecoder = t.type({
   type: t.literal("error"),
   request_id: t.string,
-  error: t.string
+  data: t.string
 });
 
 const ConnectionResultDecoder = t.type({
@@ -278,7 +278,7 @@ export class BoardStateApiClient {
           type: EventType.Error,
           requestId: message.request_id,
           rawMessage: event.data,
-          error: new Error(message.error)
+          error: new Error(message.data)
         });
         break;
       case "connected":

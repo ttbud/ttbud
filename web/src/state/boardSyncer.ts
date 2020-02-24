@@ -4,13 +4,16 @@ import {
   Token
 } from "../network/BoardStateApiClient";
 import { Middleware } from "@reduxjs/toolkit";
-import { replaceTokens } from "./board-slice";
+import { BoardState, replaceTokens } from "./board-slice";
 import {
   getLocalState,
   getNetworkUpdates,
   Update
 } from "../network/board-state-diff";
 import uuid from "uuid";
+import throttle from "../util/throttle";
+
+const UPDATE_RATE_MS = 60;
 
 /**
  * Sync board changes between network and ui
@@ -18,6 +21,7 @@ import uuid from "uuid";
 export function boardSyncer(apiClient: BoardStateApiClient): Middleware {
   let unackedUpdates = new Map<string, Update[]>();
   let networkTokens: Token[] = [];
+  let lastTokens: Token[] | undefined = [];
 
   return store => {
     apiClient.setEventHandler(event => {
@@ -45,12 +49,10 @@ export function boardSyncer(apiClient: BoardStateApiClient): Middleware {
       }
     });
 
-    return next => action => {
-      const result = next(action);
-      const state = store.getState();
+    const sendNetworkUpdates = throttle((state: BoardState) => {
       const updates = getNetworkUpdates({
         networkTokens,
-        uiTokens: state.board.tokens,
+        uiTokens: state.tokens,
         unackedUpdates: Array.from(unackedUpdates.values()).flat()
       });
 
@@ -61,6 +63,15 @@ export function boardSyncer(apiClient: BoardStateApiClient): Middleware {
       const requestId = uuid();
       apiClient.send(requestId, updates);
       unackedUpdates.set(requestId, updates);
+    }, UPDATE_RATE_MS);
+
+    return next => action => {
+      const result = next(action);
+      const state = store.getState();
+      if (lastTokens !== state.board.tokens) {
+        sendNetworkUpdates(state.board);
+        lastTokens = state.board.tokens;
+      }
 
       return result;
     };
