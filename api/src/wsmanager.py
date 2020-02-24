@@ -8,7 +8,7 @@ from http import HTTPStatus
 import websockets
 from websockets.http import Headers
 
-from game_state_server import MessageError
+from game_state_server import Message, MessageContents
 
 
 def is_valid_uuid(uuid_string):
@@ -25,6 +25,7 @@ class WebsocketManager:
         asyncio.set_event_loop(self._loop)
         self.port = port
         self.gss = gss
+        self._client_ids = {}
 
     @staticmethod
     async def process_request(path, request_headers):
@@ -52,8 +53,9 @@ class WebsocketManager:
     ) -> None:
         room_id = room_id.lstrip('/')
         if is_valid_uuid(room_id):
-            response = asdict(self.gss.new_connection_request(client, room_id))
-            await self.send_message_to_client(response, client)
+            self._client_ids[hash(client)] = client
+            response = asdict(self.gss.new_connection_request(hash(client), room_id))
+            await self.send_message(response)
             try:
                 async for message in client:
                     asyncio.ensure_future(self.consume(message, room_id, client))
@@ -62,21 +64,9 @@ class WebsocketManager:
         else:
             print(f'Invalid uuid: {room_id}')
 
-    @staticmethod
-    async def send_message_to_client(
-        message: dict, client: websockets.WebSocketServerProtocol
-    ) -> None:
-        if message and client:
-            await client.send(json.dumps(message))
-
-    async def send_message_to_room(self, message: dict, room_id: str) -> None:
-        if message:
-            await asyncio.wait(
-                [
-                    client.send(json.dumps(message))
-                    for client in self.gss.get_clients(room_id)
-                ]
-            )
+    async def send_message(self, message: Message):
+        for target in message.targets:
+            self._client_ids[target].send(json.dumps(asdict(message.contents)))
 
     async def consume(
         self,
@@ -90,24 +80,22 @@ class WebsocketManager:
             print(e)
             return
         updates = message['updates']
-        latest_state = {
-            'type': 'state',
-            'data': self.gss.get_state(room_id),
-        }
 
-        update = updates[0]
         try:
-            async for reply in self.gss.process_update(update, room_id):
-                latest_state = asdict(reply)
-                latest_state['request_id'] = message['request_id']
-                await self.send_message_to_room(latest_state, room_id)
-        except MessageError as err:
+            async for reply in self.gss.process_updates(
+                updates, room_id, hash(client), message['request_id']
+            ):
+                await self.send_message(reply)
+        except Exception as err:
             print(err)
-            await self.send_message_to_client(
-                {'error': err.message, 'request_id': message['request_id']}, client,
+            await self.send_message(
+                Message(
+                    [hash(client)],
+                    MessageContents(
+                        'error', 'Something went wrong', message['request_id']
+                    ),
+                )
             )
-            latest_state['request_id'] = message['request_id']
-            await self.send_message_to_room(latest_state, room_id)
 
 
 def start_websocket(host_port, room_store_dir):
