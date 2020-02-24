@@ -1,6 +1,8 @@
 from dataclasses import dataclass, asdict
-from typing import Union, Hashable
-from asyncio import sleep
+from typing import Union, Hashable, AsyncIterator
+
+# It's important to import the whole module here because we mock sleep in tests
+import asyncio
 
 from room_store import RoomStore
 
@@ -77,7 +79,7 @@ class GameStateServer:
             else:
                 print(f'{len(self._rooms[room_id].clients)} clients remaining')
 
-    async def process_update(self, message: dict, room_id: str) -> Reply:
+    async def process_update(self, message: dict, room_id: str) -> AsyncIterator[Reply]:
         if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
             raise MessageError('Your room does not exist, somehow')
         action = message.get('action', None)
@@ -105,7 +107,7 @@ class GameStateServer:
             ping = self._dict_to_ping(data)
             self._create_ping(ping, room_id)
             yield Reply('state', self.get_state(room_id))
-            await sleep(3)
+            await asyncio.sleep(3)
             self._remove_ping_from_state(ping.id, room_id)
             yield Reply('state', self.get_state(room_id))
         else:
