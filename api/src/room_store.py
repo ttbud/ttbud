@@ -1,7 +1,10 @@
 import os
 import json
-from typing import Protocol
+from typing import Protocol, Iterable
 from abc import abstractmethod
+from dataclasses import asdict
+
+from game_components import Token, Ping
 
 
 class RoomStore(Protocol):
@@ -35,8 +38,9 @@ class FileRoomStore:
     def _is_valid_path(self, full_path: str) -> bool:
         return os.path.abspath(full_path).startswith(self.path)
 
-    def write_room_data(self, room_id: str, data: dict) -> None:
+    def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
         full_path = f'{self.path}/{room_id}'
+        map(asdict, data)
         if self._is_valid_path(full_path):
             with open(full_path, 'w') as f:
                 f.write(json.dumps(data))

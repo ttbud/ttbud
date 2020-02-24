@@ -54,19 +54,23 @@ class WebsocketManager:
         room_id = room_id.lstrip('/')
         if is_valid_uuid(room_id):
             self._client_ids[hash(client)] = client
-            response = asdict(self.gss.new_connection_request(hash(client), room_id))
+            response = self.gss.new_connection_request(hash(client), room_id)
             await self.send_message(response)
             try:
                 async for message in client:
                     asyncio.ensure_future(self.consume(message, room_id, client))
             finally:
-                self.gss.connection_dropped(client, room_id)
+                self.gss.connection_dropped(hash(client), room_id)
         else:
             print(f'Invalid uuid: {room_id}')
 
     async def send_message(self, message: Message):
         for target in message.targets:
-            self._client_ids[target].send(json.dumps(asdict(message.contents)))
+            client = self._client_ids.get(target)
+            if client:
+                await client.send(json.dumps(asdict(message.contents)))
+            else:
+                print(f'Cannot send message to target: {target} because it does not exist')
 
     async def consume(
         self,
@@ -87,7 +91,7 @@ class WebsocketManager:
             ):
                 await self.send_message(reply)
         except Exception as err:
-            print(err)
+            print(f'Error: {err}')
             await self.send_message(
                 Message(
                     [hash(client)],
