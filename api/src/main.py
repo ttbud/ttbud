@@ -1,4 +1,5 @@
 import os
+import signal
 
 from wsmanager import start_websocket
 from room_store import FileRoomStore
@@ -13,6 +14,7 @@ def main():
     gss = GameStateServer(room_store)
 
     start_websocket(websocket_port, gss)
+    signal.signal(signal.SIGTERM, gss.save_all)
 
 
 if __name__ == '__main__':
