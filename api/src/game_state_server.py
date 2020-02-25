@@ -34,7 +34,7 @@ class RoomData:
 
 class GameStateServer:
     def __init__(self, room_store: RoomStore):
-        self._rooms = {}
+        self._rooms: Dict[str, RoomData] = {}
         self.room_store = room_store
 
     def new_connection_request(self, client_id: Hashable, room_id: str) -> Message:
@@ -67,6 +67,11 @@ class GameStateServer:
                 del self._rooms[room_id]
             else:
                 print(f'{len(self._rooms[room_id].clients)} clients remaining')
+
+    def save_all(self):
+        for room in self._rooms.values():
+            if room.game_state:
+                self.room_store.write_room_data(room.room_id, room.game_state)
 
     async def process_updates(
         self, updates: Iterable[dict], room_id: str, client_id: Hashable, request_id: str
