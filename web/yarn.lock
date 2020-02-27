@@ -2061,10 +2061,10 @@
     jest-diff "^25.1.0"
     pretty-format "^25.1.0"
 
-"@types/js-cookie@2.2.4":
-  version "2.2.4"
-  resolved "https://registry.yarnpkg.com/@types/js-cookie/-/js-cookie-2.2.4.tgz#f79720b4755aa197c2e15e982e2f438f5748e348"
-  integrity sha512-WTfSE1Eauak/Nrg6cA9FgPTFvVawejsai6zXoq0QYTQ3mxONeRtGhKxa7wMlUzWWmzrmTeV+rwLjHgsCntdrsA==
+"@types/js-cookie@2.2.5":
+  version "2.2.5"
+  resolved "https://registry.yarnpkg.com/@types/js-cookie/-/js-cookie-2.2.5.tgz#38dfaacae8623b37cc0b0d27398e574e3fc28b1e"
+  integrity sha512-cpmwBRcHJmmZx0OGU7aPVwGWGbs4iKwVYchk9iuMtxNCA2zorwdaTz4GkLgs2WGxiRZRFKnV1k6tRUHX7tBMxg==
 
 "@types/json-schema@^7.0.3":
   version "7.0.4"
@@ -2341,10 +2341,10 @@
     "@webassemblyjs/wast-parser" "1.8.5"
     "@xtuc/long" "4.2.2"
 
-"@xobotyi/scrollbar-width@1.9.0":
-  version "1.9.0"
-  resolved "https://registry.yarnpkg.com/@xobotyi/scrollbar-width/-/scrollbar-width-1.9.0.tgz#2a5d02f15c7f5624339e5d690aba432bfd9e79f0"
-  integrity sha512-W8oNXd3HkW9eQHxk+47iRx4aqd0yIV9NoeykUTd0uE0sYx3LOAQE7rfHOd8xtMP7IADfLIdG0o0H1sXvHUF7dw==
+"@xobotyi/scrollbar-width@1.9.3":
+  version "1.9.3"
+  resolved "https://registry.yarnpkg.com/@xobotyi/scrollbar-width/-/scrollbar-width-1.9.3.tgz#76a82f3a3452967cf05509e472c6e154804ba07d"
+  integrity sha512-15JdCA3BjDktOdJ9xRdxkZcd2ZiHHbb3ycSPtC9JCjwkHzvrPr3n8uZoNw9CYF6UhkIMnW85d+P9mi3eXaKcFg==
 
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"
@@ -9442,13 +9442,13 @@ react-transition-group@^4.3.0:
     loose-envify "^1.4.0"
     prop-types "^15.6.2"
 
-react-use@^13.26.1:
-  version "13.26.1"
-  resolved "https://registry.yarnpkg.com/react-use/-/react-use-13.26.1.tgz#a26e51b26ebe1a3a00cadfe4d7f15c25bb19780b"
-  integrity sha512-hDc4s8w4WI8G7c1BX+IsrdQFcZPfCHE/6oLpGPtcIPoxVhwj4QvVmNE8RnsnddBJ57HN8Xvkc3jp/8Z/4OB53w==
+react-use@^13.26.3:
+  version "13.26.3"
+  resolved "https://registry.yarnpkg.com/react-use/-/react-use-13.26.3.tgz#d278bb0f8c995c3684a15de2026fbb51bd04df02"
+  integrity sha512-81I+p1F7LFxdkGM3qiLjF9NUi2mTupvaiN76IAWL5JMY7BHTGSk6PFdzByqJrxnTJ/RBrbIVttmqvYKHOz/9Tw==
   dependencies:
-    "@types/js-cookie" "2.2.4"
-    "@xobotyi/scrollbar-width" "1.9.0"
+    "@types/js-cookie" "2.2.5"
+    "@xobotyi/scrollbar-width" "1.9.3"
     copy-to-clipboard "^3.2.0"
     fast-deep-equal "^3.1.1"
     fast-shallow-equal "^1.0.0"
