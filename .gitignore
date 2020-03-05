@@ -2,10 +2,10 @@
 .idea
 *.iml
 
-# Python
-__pycache__
-venv/
-
 # Config
 .env
 .envrc
+
+# Visual Studio Code
+.vscode/
+.history/
