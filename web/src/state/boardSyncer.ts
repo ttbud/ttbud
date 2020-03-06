@@ -24,6 +24,27 @@ export function boardSyncer(apiClient: BoardStateApiClient): Middleware {
   let lastTokens: Token[] | undefined = [];
 
   return store => {
+    const sendNetworkUpdates = (state: BoardState) => {
+      const updates = getNetworkUpdates({
+        networkTokens,
+        uiTokens: state.tokens,
+        unackedUpdates: Array.from(unackedUpdates.values()).flat()
+      });
+
+      if (updates.length === 0) {
+        return;
+      }
+
+      const requestId = uuid();
+      apiClient.send(requestId, updates);
+      unackedUpdates.set(requestId, updates);
+    };
+
+    const sendNetworkUpdatesThrottled = throttle(
+      sendNetworkUpdates,
+      UPDATE_RATE_MS
+    );
+
     apiClient.setEventHandler(event => {
       switch (event.type) {
         case EventType.InitialState:
@@ -31,8 +52,12 @@ export function boardSyncer(apiClient: BoardStateApiClient): Middleware {
           store.dispatch(replaceTokens(event.tokens));
           break;
         case EventType.TokenUpdate:
-          networkTokens = event.tokens;
+          const state = store.getState();
+          sendNetworkUpdates(state.board);
+          lastTokens = state.board.tokens;
           unackedUpdates.delete(event.requestId);
+          networkTokens = event.tokens;
+
           const localState = getLocalState(
             event.tokens,
             Array.from(unackedUpdates.values()).flat()
@@ -49,27 +74,11 @@ export function boardSyncer(apiClient: BoardStateApiClient): Middleware {
       }
     });
 
-    const sendNetworkUpdates = throttle((state: BoardState) => {
-      const updates = getNetworkUpdates({
-        networkTokens,
-        uiTokens: state.tokens,
-        unackedUpdates: Array.from(unackedUpdates.values()).flat()
-      });
-
-      if (updates.length === 0) {
-        return;
-      }
-
-      const requestId = uuid();
-      apiClient.send(requestId, updates);
-      unackedUpdates.set(requestId, updates);
-    }, UPDATE_RATE_MS);
-
     return next => action => {
       const result = next(action);
       const state = store.getState();
       if (lastTokens !== state.board.tokens) {
-        sendNetworkUpdates(state.board);
+        sendNetworkUpdatesThrottled(state.board);
         lastTokens = state.board.tokens;
       }
 
