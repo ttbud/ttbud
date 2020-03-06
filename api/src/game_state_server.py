@@ -1,4 +1,4 @@
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Union, Hashable, AsyncIterator, Iterable, Optional, Dict
 
 # It's important to import the whole module here because we mock sleep in tests
@@ -43,10 +43,10 @@ class GameStateServer:
         else:
             self._rooms[room_id] = RoomData(room_id, initial_connection=client_id)
             if self.room_store.room_data_exists(room_id):
-                state_to_load = self.room_store.read_room_data(room_id)
-                for token_d in state_to_load.values():
+                tokens_to_load = self.room_store.read_room_data(room_id)
+                for token_data in tokens_to_load:
                     try:
-                        token = Token(**token_d)
+                        token = Token(**token_data)
                     except TypeError:
                         raise
                     else:
@@ -61,8 +61,12 @@ class GameStateServer:
             # Save the room if the last client leaves and there is something to save
             if not self._rooms[room_id].clients and self._rooms[room_id].game_state:
                 print('Writing room data')
+                data_to_store = []
+                for game_object in self._rooms[room_id].game_state.values():
+                    if type(game_object) is Token:
+                        data_to_store.append(game_object)
                 self.room_store.write_room_data(
-                    room_id, self._rooms[room_id].game_state
+                    room_id, data_to_store
                 )
                 del self._rooms[room_id]
             else:
@@ -79,7 +83,7 @@ class GameStateServer:
         pings_created = []
         if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
             yield Message(
-                [client_id],
+                {client_id},
                 MessageContents(
                     'error', 'Your room does not exist, somehow', request_id
                 ),
@@ -90,28 +94,28 @@ class GameStateServer:
             data = update.get('data', None)
             if not action or not data:
                 yield Message(
-                    [client_id],
+                    {client_id},
                     MessageContents(
                         'error', 'Did not receive a full update', request_id
                     ),
                 )
 
-            if action == 'create' or action == 'update':
+            elif action == 'create' or action == 'update':
                 try:
                     token = Token(**data)
                 except TypeError:
-                    yield Message([client_id], MessageContents('error', f'Received bad token: {data}', request_id))
+                    yield Message({client_id}, MessageContents('error', f'Received bad token: {data}', request_id))
                 else:
                     if not self._is_valid_token(token):
                         yield Message(
-                            [client_id],
+                            {client_id},
                             MessageContents(
                                 'error', f'Received a bad token: {data}', request_id
                             ),
                         )
                     if not self._is_valid_position(token, room_id):
                         yield Message(
-                            [client_id],
+                            {client_id},
                             MessageContents(
                                 'error', 'That position is occupied, bucko', request_id
                             ),
@@ -120,18 +124,18 @@ class GameStateServer:
             elif action == 'delete':
                 if type(data) != str:
                     yield Message(
-                        [client_id],
+                        {client_id},
                         MessageContents(
                             'error',
                             'Data for delete actions must be a token ID',
                             request_id,
                         ),
                     )
-                if self._rooms[room_id].game_state.get(data, False):
+                elif self._rooms[room_id].game_state.get(data, False):
                     self._delete_token(data, room_id)
                 else:
                     yield Message(
-                        [client_id],
+                        {client_id},
                         MessageContents(
                             'error',
                             'Cannot delete token because it does not exist',
@@ -149,7 +153,7 @@ class GameStateServer:
             else:
                 print(f'Invalid action: {action}')
                 yield Message(
-                    [client_id],
+                    {client_id},
                     MessageContents('error', f'Invalid action: {action}', request_id),
                 )
         yield Message(
@@ -193,7 +197,7 @@ class GameStateServer:
         self._rooms[room_id].game_state[token.id] = token
 
     def _create_ping(self, ping: Ping, room_id: str) -> None:
-        self._rooms[room_id].game_state[ping.id] = asdict(ping)
+        self._rooms[room_id].game_state[ping.id] = ping
 
     def _delete_token(self, token_id: str, room_id: str) -> None:
         # Remove token data from position dictionaries

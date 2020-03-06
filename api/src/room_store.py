@@ -40,10 +40,10 @@ class FileRoomStore:
 
     def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
         full_path = f'{self.path}/{room_id}'
-        map(asdict, data)
+        storable_data = list(map(asdict, data))
         if self._is_valid_path(full_path):
             with open(full_path, 'w') as f:
-                f.write(json.dumps(data))
+                f.write(json.dumps(storable_data))
 
     def read_room_data(self, room_id: str) -> dict:
         full_path = f'{self.path}/{room_id}'
@@ -63,8 +63,9 @@ class MemoryRoomStore:
     def get_all_room_ids(self) -> list:
         return list(self.stored_data.keys())
 
-    def write_room_data(self, room_id: str, data: dict):
-        self.stored_data[room_id] = data
+    def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
+        storable_data = list(map(asdict, data))
+        self.stored_data[room_id] = storable_data
 
     def read_room_data(self, room_id: str) -> dict:
         return self.stored_data[room_id]
