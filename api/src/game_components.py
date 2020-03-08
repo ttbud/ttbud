@@ -20,5 +20,3 @@ class Ping:
     type: str
     x: int
     y: int
-
-

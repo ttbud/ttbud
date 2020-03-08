@@ -65,9 +65,7 @@ class GameStateServer:
                 for game_object in self._rooms[room_id].game_state.values():
                     if type(game_object) is Token:
                         data_to_store.append(game_object)
-                self.room_store.write_room_data(
-                    room_id, data_to_store
-                )
+                self.room_store.write_room_data(room_id, data_to_store)
                 del self._rooms[room_id]
             else:
                 print(f'{len(self._rooms[room_id].clients)} clients remaining')
@@ -78,7 +76,11 @@ class GameStateServer:
                 self.room_store.write_room_data(room.room_id, room.game_state)
 
     async def process_updates(
-        self, updates: Iterable[dict], room_id: str, client_id: Hashable, request_id: str
+        self,
+        updates: Iterable[dict],
+        room_id: str,
+        client_id: Hashable,
+        request_id: str,
     ) -> AsyncIterator[Message]:
         pings_created = []
         if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
@@ -104,7 +106,12 @@ class GameStateServer:
                 try:
                     token = Token(**data)
                 except TypeError:
-                    yield Message({client_id}, MessageContents('error', f'Received bad token: {data}', request_id))
+                    yield Message(
+                        {client_id},
+                        MessageContents(
+                            'error', f'Received bad token: {data}', request_id
+                        ),
+                    )
                 else:
                     if not self._is_valid_token(token):
                         yield Message(
@@ -146,7 +153,12 @@ class GameStateServer:
                 try:
                     ping = Ping(**data)
                 except TypeError:
-                    yield Message([client_id], MessageContents('error', f'Received bad ping: {data}', request_id))
+                    yield Message(
+                        [client_id],
+                        MessageContents(
+                            'error', f'Received bad ping: {data}', request_id
+                        ),
+                    )
                 else:
                     self._create_ping(ping, room_id)
                     pings_created.append(ping.id)
@@ -166,7 +178,8 @@ class GameStateServer:
             for ping_id in pings_created:
                 self._remove_ping_from_state(ping_id, room_id)
             yield Message(
-                self._rooms[room_id].clients, MessageContents('state', self.get_state(room_id), request_id)
+                self._rooms[room_id].clients,
+                MessageContents('state', self.get_state(room_id), request_id),
             )
 
     @staticmethod
