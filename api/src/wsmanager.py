@@ -70,7 +70,9 @@ class WebsocketManager:
             if client:
                 await client.send(json.dumps(asdict(message.contents)))
             else:
-                print(f'Cannot send message to target: {target} because it does not exist')
+                print(
+                    f'Cannot send message to target: {target} because it does not exist'
+                )
 
     async def consume(
         self,
