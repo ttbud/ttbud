@@ -7,7 +7,7 @@ import { Provider } from "react-redux";
 import DndContext from "./drag/DndContext";
 import createStore from "./state/createStore";
 import { BoardStateApiClient } from "./network/BoardStateApiClient";
-import uuid from "uuid";
+import { v4 as uuid } from "uuid";
 
 const monitor = new DomDroppableMonitor();
 const apiClient = new BoardStateApiClient(

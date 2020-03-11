@@ -3,7 +3,7 @@ import { DragEndAction, dragEnded } from "../drag/drag-slice";
 import { DROPPABLE_IDS } from "../ui/DroppableIds";
 import { assert } from "../util/invariants";
 import { DraggableType, LocationType } from "../drag/DragStateTypes";
-import uuid from "uuid";
+import { v4 as uuid } from "uuid";
 import getDragResult, { DragResult } from "./getDragResult";
 import UnreachableCaseError from "../util/UnreachableCaseError";
 import Pos2d from "../util/shape-math";
