@@ -1,31 +1,31 @@
 import React, {
   CSSProperties,
+  MutableRefObject,
   PointerEventHandler,
   ReactElement,
-  RefObject,
   TransitionEventHandler,
   useCallback,
   useEffect,
   useLayoutEffect,
   useRef
 } from "react";
+import { createPortal } from "react-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../state/rootReducer";
 import { assert } from "../util/invariants";
+import Pos2d, { posAreEqual } from "../util/shape-math";
 import UnreachableCaseError from "../util/UnreachableCaseError";
 import {
-  portalDrag,
   endDrag,
   moveDrag,
+  portalDrag,
   releaseDrag,
   startDrag
 } from "./drag-slice";
-import Pos2d, { posAreEqual } from "../util/shape-math";
 import { DraggableDescriptor, DragStateType } from "./DragStateTypes";
-import { createPortal } from "react-dom";
-import { RootState } from "../state/rootReducer";
 
 export interface DragAttributes {
-  ref: RefObject<any>;
+  ref: MutableRefObject<any>;
   style: CSSProperties;
   onPointerDown?: PointerEventHandler;
   onTransitionEnd?: TransitionEventHandler;

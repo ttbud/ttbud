@@ -9,10 +9,13 @@ import { startSearching, stopSearching } from "../../state/app-slice";
 import FloorTray from "../tray/FloorTray";
 import { DragStateType } from "../../drag/DragStateTypes";
 import { addFloor, addPing, removeToken } from "../../state/board-slice";
-import { setActiveFloor } from "../../state/floor-tray-slice";
+import {
+  setActiveFloor,
+  removeIcon as removeFloorIcon
+} from "../../state/floor-tray-slice";
 import { RootState } from "../../state/rootReducer";
 import Pos2d from "../../util/shape-math";
-import { removeIcon } from "../../state/character-tray-slice";
+import { removeIcon as removeCharacterIcon } from "../../state/character-tray-slice";
 
 const useStyles = makeStyles(theme => ({
   app: {
@@ -85,6 +88,11 @@ const App = () => {
     [dispatch]
   );
 
+  const onFloorRemoved = useCallback(
+    (icon: Icon) => dispatch(removeFloorIcon(icon)),
+    [dispatch]
+  );
+
   const onSearchDialogClose = useCallback(() => dispatch(stopSearching()), [
     dispatch
   ]);
@@ -96,7 +104,7 @@ const App = () => {
   const onTokenDeleted = (id: string) => dispatch(removeToken(id));
 
   const onTrayIconRemoved = useCallback(
-    (icon: Icon) => dispatch(removeIcon(icon)),
+    (icon: Icon) => dispatch(removeCharacterIcon(icon)),
     [dispatch]
   );
 
@@ -126,6 +134,7 @@ const App = () => {
           icons={floorTrayIcons}
           activeFloor={activeFloor}
           onFloorSelected={onFloorSelected}
+          onFloorRemoved={onFloorRemoved}
         />
       </div>
       <a
