@@ -1,10 +1,10 @@
 import pytest
 from dataclasses import asdict
 
-from game_state_server import GameStateServer, Message, MessageContents
-from room_store import MemoryRoomStore
-from game_components import Token, Ping
-from async_collect import async_collect
+from src.game_state_server import GameStateServer, Message, MessageContents
+from src.room_store import MemoryRoomStore
+from src.game_components import Token, Ping
+from src.async_collect import async_collect
 
 
 TEST_ROOM_ID = 'test_room'

@@ -4,7 +4,7 @@ from typing import Protocol, Iterable
 from abc import abstractmethod
 from dataclasses import asdict
 
-from game_components import Token, Ping
+from .game_components import Token
 
 
 class RoomStore(Protocol):
@@ -15,7 +15,7 @@ class RoomStore(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def write_room_data(self, room_id: str, data: dict) -> None:
+    def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -50,6 +50,7 @@ class FileRoomStore:
         if self._is_valid_path(full_path):
             with open(full_path, 'r') as f:
                 return json.loads(f.read())
+        raise KeyError(f"Unknown room id {room_id}")
 
     def room_data_exists(self, room_id: str) -> bool:
         return os.path.exists(f'{self.path}/{room_id}')

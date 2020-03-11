@@ -8,7 +8,7 @@ from http import HTTPStatus
 import websockets
 from websockets.http import Headers
 
-from game_state_server import Message, MessageContents
+from .game_state_server import Message, MessageContents
 
 
 def is_valid_uuid(uuid_string):
@@ -64,7 +64,7 @@ class WebsocketManager:
         else:
             print(f'Invalid uuid: {room_id}')
 
-    async def send_message(self, message: Message):
+    async def send_message(self, message: Message) -> None:
         for target in message.targets:
             client = self._client_ids.get(target)
             if client:

@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Union, Hashable, AsyncIterator, Iterable, Optional, Dict
+from typing import Union, Hashable, AsyncIterator, Iterable, Optional, Dict, Tuple, List
 
 # It's important to import the whole module here because we mock sleep in tests
 import asyncio
 
-from room_store import RoomStore
-from game_components import Token, Ping
+from .room_store import RoomStore
+from .game_components import Token, Ping
 
 
 @dataclass
@@ -22,11 +22,11 @@ class Message:
 
 
 class RoomData:
-    def __init__(self, room_id: str, initial_connection=None):
+    def __init__(self, room_id: str, initial_connection: Optional[Hashable] = None):
         self.room_id: str = room_id
         self.game_state: Dict[str, Union[Ping, Token]] = {}
-        self.id_to_positions = {}
-        self.positions_to_ids = {}
+        self.id_to_positions: Dict[str, List[Tuple[int, int, int]]] = {}
+        self.positions_to_ids: Dict[Tuple[int, int, int], str] = {}
         self.clients = set()
         if initial_connection:
             self.clients.add(initial_connection)
@@ -61,9 +61,9 @@ class GameStateServer:
             # Save the room if the last client leaves and there is something to save
             if not self._rooms[room_id].clients and self._rooms[room_id].game_state:
                 print('Writing room data')
-                data_to_store = []
+                data_to_store: List[Token] = []
                 for game_object in self._rooms[room_id].game_state.values():
-                    if type(game_object) is Token:
+                    if isinstance(game_object, Token):
                         data_to_store.append(game_object)
                 self.room_store.write_room_data(room_id, data_to_store)
                 del self._rooms[room_id]
@@ -233,7 +233,7 @@ class GameStateServer:
             del self._rooms[room_id].game_state[ping_id]
 
     @staticmethod
-    def _get_unit_blocks(token: Token) -> list:
+    def _get_unit_blocks(token: Token) -> List[Tuple[int, int, int]]:
         unit_blocks = []
         for x in range(token.start_x, token.end_x):
             for y in range(token.start_y, token.end_y):

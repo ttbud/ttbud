@@ -1,9 +1,9 @@
 import os
 import signal
 
-from wsmanager import start_websocket
-from room_store import FileRoomStore
-from game_state_server import GameStateServer
+from src.wsmanager import start_websocket
+from src.room_store import FileRoomStore
+from src.game_state_server import GameStateServer
 
 
 def main():

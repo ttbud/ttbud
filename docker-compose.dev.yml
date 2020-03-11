@@ -1,7 +1,7 @@
 version: '3'
 services:
   api:
-    working_dir: /app/src/
+    working_dir: /app/
     command: python -u -m watchgod main.main
     # watchgod will drop all stdout without a tty
     tty: true
