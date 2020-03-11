@@ -25,7 +25,10 @@ jobs:
             - .venv
       - run:
           name: Check Code Format
-          command: poetry run black -S src tests --check
+          command: poetry run black -S src tests main.py --check
+      - run:
+          name: Typecheck
+          command: poetry run mypy src tests main.py
       - run:
           name: Run Tests
           command: poetry run pytest tests --junitxml=test-results/junit.xml

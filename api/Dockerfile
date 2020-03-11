@@ -12,4 +12,4 @@ EXPOSE 5000
 
 #TODO: (#27) Serve this with a real production-grade server
 # -u for unbuffered output so logs show immediately
-CMD ["python", "-u", "src/main.py"]
+CMD ["python", "-u", "main.py"]
