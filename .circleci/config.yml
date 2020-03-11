@@ -8,7 +8,11 @@ jobs:
       - checkout:
           path: ~/repo
       - restore_cache:
-          key: api-deps-v2-{{ checksum "poetry.lock" }}
+          keys:
+            # Restore the cache with the exact dependencies,
+            - api-deps-v2-{{ checksum "poetry.lock" }}
+            # or, failing that, just the most recent cache entry
+            - api-deps-v2
       - run:
           name: Configure Poetry
           command: poetry config virtualenvs.in-project true && poetry config virtualenvs.path .venv
@@ -35,7 +39,11 @@ jobs:
       - checkout:
           path: ~/repo
       - restore_cache:
-          key: web-deps-v1-{{ checksum "yarn.lock" }}
+          keys:
+            # Restore the cache with the exact dependencies,
+            - web-deps-v1-{{ checksum "yarn.lock" }}
+            # or, failing that, just the most recent cache entry
+            - web-deps-v1
       - run:
           name: Install Deps
           command: yarn install
