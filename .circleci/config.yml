@@ -30,6 +30,9 @@ jobs:
           name: Typecheck
           command: poetry run mypy src tests main.py
       - run:
+          name: Lint
+          command: poetry run flake8 src tests main.py
+      - run:
           name: Run Tests
           command: poetry run pytest tests --junitxml=test-results/junit.xml
       - store_test_results:
