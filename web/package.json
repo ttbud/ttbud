@@ -67,7 +67,7 @@
     "@types/uuid": "^3.4.7",
     "jest-junit": "^10.0.0",
     "prettier": "1.19.1",
-    "storybook": "^5.3.9"
+    "storybook": "^5.3.14"
   },
   "description": "This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).",
   "main": "index.js",
