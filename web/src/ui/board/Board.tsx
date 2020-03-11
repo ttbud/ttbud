@@ -216,13 +216,11 @@ const Board: React.FC<Props> = ({
     // than a frame's time, so we'll miss drawing walls in certain places. In
     // browsers that support it, we can request all of the mouse move events
     // since the last frame, and then batch process those
-    let events;
-    // @ts-ignore
+    let events: PointerEvent[];
     if (e.nativeEvent.getCoalescedEvents) {
-      // @ts-ignore
       events = e.nativeEvent.getCoalescedEvents();
     } else {
-      events = [e];
+      events = [e.nativeEvent];
     }
 
     const processedPositions: Pos2d[] = [];
