@@ -26,7 +26,7 @@ const floorTraySlice = createSlice({
       );
       state.activeFloor = activeIcon;
     },
-    deleteIcon(state, action: PayloadAction<Icon>) {
+    removeIcon(state, action: PayloadAction<Icon>) {
       state.icons = state.icons.filter(icon => icon.id !== action.payload.id);
     }
   },
@@ -50,4 +50,5 @@ const floorTraySlice = createSlice({
 });
 
 export default floorTraySlice.reducer;
-export const { setActiveFloor } = floorTraySlice.actions;
+
+export const { setActiveFloor, removeIcon } = floorTraySlice.actions;

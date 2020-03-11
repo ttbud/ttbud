@@ -156,7 +156,7 @@ function startDrag(
   bounds: Bounds
 ): AppThunk {
   return (dispatch, getState, { monitor }) => {
-    monitor.onBeforeDragStart();
+    monitor.onBeforeDragStart(draggable, bounds);
 
     let droppable, location;
     if (droppableId) {

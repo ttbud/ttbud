@@ -9,6 +9,8 @@ import DndContext from "./DndContext";
 import { fail } from "../util/invariants";
 import { LocationCollector } from "./DroppableMonitor";
 import noop from "../util/noop";
+import { DraggableDescriptor } from "./DragStateTypes";
+import { Bounds } from "../util/shape-math";
 
 export interface DroppableAttributes {
   ref: RefObject<any>;
@@ -16,7 +18,7 @@ export interface DroppableAttributes {
 
 interface Props {
   id: string;
-  onBeforeDragStart?: () => void;
+  onBeforeDragStart?: (draggable: DraggableDescriptor, bounds: Bounds) => void;
   getLocation: LocationCollector;
   children: (attributes: DroppableAttributes) => ReactElement;
 }

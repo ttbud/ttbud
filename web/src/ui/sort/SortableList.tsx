@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import Droppable, { DroppableAttributes } from "../../drag/Droppable";
 import Draggable, { DragAttributes } from "../../drag/Draggable";
-import Pos2d, { centerOf } from "../../util/shape-math";
+import Pos2d, { centerOf, Bounds, contains } from "../../util/shape-math";
 import { shallowEqual, useSelector } from "react-redux";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import { LocationCollector } from "../../drag/DroppableMonitor";
@@ -24,14 +24,26 @@ export interface DraggableItem {
   descriptor: DraggableDescriptor;
 }
 
+export interface Target {
+  dropBounds: Bounds;
+  destination: Bounds;
+}
+
+export interface Targets {
+  innerDrag: Target[];
+  outerDrag: Target[];
+}
+
 interface Props<T> {
+  id: string;
   items: T[];
+  getTargets: (draggable: DraggableDescriptor, bounds: Bounds) => Targets;
+  style?: CSSProperties;
   children: (
     item: T,
     isDragging: boolean,
     attributes: DragAttributes
   ) => ReactElement;
-  id: string;
 }
 
 interface Rect {
@@ -42,7 +54,8 @@ interface Rect {
 }
 
 const SHUFFLE_TRANSITION = "transform 0.2s cubic-bezier(0.2, 0, 0, 1)";
-const SPACER_TRANSITION = "height 0.2s cubic-bezier(0.2, 0, 0, 1)";
+const SPACER_TRANSITION =
+  "height 0.2s cubic-bezier(0.2, 0, 0, 1), width 0.2s cubic-bezier(0.2, 0, 0, 1)";
 
 interface SortState {
   draggableId?: string;
@@ -83,26 +96,27 @@ function getListIdx(
 export default function SortableList<T extends DraggableItem>({
   id,
   items,
-  children: renderChild
+  getTargets,
+  children: renderChild,
+  style = {}
 }: PropsWithChildren<Props<T>>): ReactElement {
-  const container = useRef<HTMLDivElement>(null);
-  const childrenBounds = useRef<Rect[]>([]);
-  const childrenBoundsWithEmptySlot = useRef<Rect[]>([]);
+  const targets = useRef<Targets>();
 
   const getHoverIdx = ({
     pos,
     dragStartedHere,
     isHovering
   }: HoverState): number | undefined => {
-    if (!childrenBoundsWithEmptySlot || !childrenBounds || !isHovering) {
+    if (!isHovering) {
       return;
     }
+    assert(targets.current, "onBeforeDragStart not called before drag started");
 
     const bounds = dragStartedHere
-      ? childrenBounds.current
-      : childrenBoundsWithEmptySlot.current;
-    for (const [idx, bound] of bounds.entries()) {
-      if (pos.y < bound.bottom) {
+      ? targets.current.innerDrag
+      : targets.current.outerDrag;
+    for (const [idx, target] of bounds.entries()) {
+      if (contains(target.dropBounds, pos)) {
         return idx;
       }
     }
@@ -152,54 +166,37 @@ export default function SortableList<T extends DraggableItem>({
     }
   }, shallowEqual);
 
-  const onBeforeDragStart = useCallback(() => {
-    assert(container.current, "Container ref not set");
-
-    //TODO: Uhh, not this
-    const children = container.current.children[0].children;
-    const bounds = [];
-    for (const child of children) {
-      const rect = child.getBoundingClientRect();
-      bounds.push(rect);
-    }
-
-    const boundsWithEmptySlot = Array.from<Rect>(bounds);
-    //TODO: Handle the case that there are no children
-    const firstChild = bounds[0];
-    const secondChild = bounds[1];
-    const margin = secondChild.top - firstChild.bottom;
-    const height = firstChild.bottom - firstChild.top;
-    boundsWithEmptySlot.unshift({
-      top: firstChild.top - margin - height,
-      right: firstChild.right,
-      bottom: firstChild.top - margin,
-      left: firstChild.left
-    });
-    childrenBoundsWithEmptySlot.current = boundsWithEmptySlot;
-    childrenBounds.current = bounds;
-  }, []);
+  const onBeforeDragStart = useCallback(
+    (draggable: DraggableDescriptor, bounds: Bounds) =>
+      (targets.current = getTargets(draggable, bounds)),
+    [getTargets]
+  );
 
   const getLocation: LocationCollector = useCallback(
     (draggable, pos) => {
       const dragStartedHere = items.some(
         item => item.descriptor.id === draggable.id
       );
+      assert(
+        targets.current,
+        "onBeforeDragStart not called before drag started"
+      );
       const childBounds = dragStartedHere
-        ? childrenBounds.current
-        : childrenBoundsWithEmptySlot.current;
+        ? targets.current.innerDrag
+        : targets.current.outerDrag;
 
-      for (const [idx, bounds] of childBounds.entries()) {
-        if (pos.y < bounds.bottom) {
+      for (const [idx, target] of childBounds.entries()) {
+        if (contains(target.dropBounds, pos)) {
           return {
             logicalLocation: {
               type: LocationType.List,
               idx
             },
             bounds: {
-              top: bounds.top,
-              left: bounds.left,
-              bottom: bounds.bottom,
-              right: bounds.right
+              top: target.destination.top,
+              left: target.destination.left,
+              bottom: target.destination.bottom,
+              right: target.destination.right
             }
           };
         }
@@ -223,22 +220,27 @@ export default function SortableList<T extends DraggableItem>({
       const eDragStartIdx = dragStartIdx === undefined ? 0 : dragStartIdx;
       const eIdx = dragStartIdx === undefined ? idx + 1 : idx;
 
+      assert(
+        targets.current,
+        "onBeforeDragStart not called before drag started"
+      );
       const bounds =
         dragStartIdx === undefined
-          ? childrenBoundsWithEmptySlot
-          : childrenBounds;
+          ? targets.current.outerDrag
+          : targets.current.innerDrag;
 
       if (
         hoverIdx < eDragStartIdx &&
         eDragStartIdx > eIdx &&
         hoverIdx <= eIdx
       ) {
-        const oldBounds = bounds.current[eIdx];
-        const newBounds = bounds.current[eIdx + 1];
-        const offset = newBounds.top - oldBounds.top;
+        const oldBounds = bounds[eIdx].destination;
+        const newBounds = bounds[eIdx + 1].destination;
+        const offsetX = newBounds.left - oldBounds.left;
+        const offsetY = newBounds.top - oldBounds.top;
 
         return {
-          transform: `translate(0px, ${offset}px)`,
+          transform: `translate(${offsetX}px, ${offsetY}px)`,
           transition: SHUFFLE_TRANSITION
         };
       } else if (
@@ -246,12 +248,13 @@ export default function SortableList<T extends DraggableItem>({
         eDragStartIdx < eIdx &&
         hoverIdx >= eIdx
       ) {
-        const oldBounds = bounds.current[eIdx];
-        const newBounds = bounds.current[eIdx - 1];
-        const offset = newBounds.top - oldBounds.top;
+        const oldBounds = bounds[eIdx].destination;
+        const newBounds = bounds[eIdx - 1].destination;
+        const offsetX = newBounds.left - oldBounds.left;
+        const offsetY = newBounds.top - oldBounds.top;
 
         return {
-          transform: `translate(0px, ${offset}px)`,
+          transform: `translate(${offsetX}px, ${offsetY}px)`,
           transition: SHUFFLE_TRANSITION
         };
       } else {
@@ -268,11 +271,21 @@ export default function SortableList<T extends DraggableItem>({
       return;
     }
 
+    assert(
+      targets.current,
+      "onBeforeDragStart not called before starting a drag"
+    );
+
+    const firstDestination = targets.current.outerDrag[0].destination;
     let style: CSSProperties;
     if (isHovering) {
-      style = { height: 40, transition: SPACER_TRANSITION };
+      style = {
+        height: firstDestination.bottom - firstDestination.top,
+        width: firstDestination.right - firstDestination.left,
+        transition: SPACER_TRANSITION
+      };
     } else {
-      style = { height: 0, transition: SPACER_TRANSITION, margin: 0 };
+      style = { height: 0, width: 0, transition: SPACER_TRANSITION, margin: 0 };
     }
 
     return <div style={style} />;
@@ -280,7 +293,7 @@ export default function SortableList<T extends DraggableItem>({
 
   const renderChildren = useCallback(
     (attributes: DroppableAttributes) => (
-      <div {...attributes}>
+      <div style={style} {...attributes}>
         {renderSpacer()}
         {items.map((item, idx) => (
           <Draggable
@@ -301,11 +314,11 @@ export default function SortableList<T extends DraggableItem>({
         ))}
       </div>
     ),
-    [getChildStyle, id, items, renderChild, renderSpacer]
+    [getChildStyle, id, items, renderChild, renderSpacer, style]
   );
 
   return (
-    <div ref={container}>
+    <>
       <Droppable
         id={id}
         getLocation={getLocation}
@@ -313,6 +326,6 @@ export default function SortableList<T extends DraggableItem>({
       >
         {renderChildren}
       </Droppable>
-    </div>
+    </>
   );
 }
