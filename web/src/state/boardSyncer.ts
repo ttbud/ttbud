@@ -10,7 +10,7 @@ import {
   getNetworkUpdates,
   Update
 } from "../network/board-state-diff";
-import uuid from "uuid";
+import { v4 as uuid } from "uuid";
 import throttle from "../util/throttle";
 
 const UPDATE_RATE_MS = 60;

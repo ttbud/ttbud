@@ -1,7 +1,7 @@
 import React from "react";
 import { Icon, ICONS, IconType, WALL_ICON } from "../icons";
 import Board from "./Board";
-import uuid from "uuid";
+import { v4 as uuid } from "uuid";
 import noBorder from "../__stories__/no-border";
 import { Provider, useSelector } from "react-redux";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
