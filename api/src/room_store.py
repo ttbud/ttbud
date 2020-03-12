@@ -43,7 +43,7 @@ class FileRoomStore:
 
     def read_room_data(self, room_id: str) -> Optional[dict]:
         full_path = f'{self.path}/{room_id}'
-        if self._is_valid_path(full_path):
+        if self._is_valid_path(full_path) and os.path.exists(full_path):
             with open(full_path, 'r') as f:
                 return json.loads(f.read())
 
