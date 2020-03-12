@@ -148,6 +148,7 @@ const FloorTray: React.FC<Props> = memo(function FloorTray({
         id={DROPPABLE_IDS.FLOOR_TRAY}
         items={items}
         getTargets={getTargets}
+        constrainDragsToContainer={true}
         style={{
           display: "flex",
           flexDirection: "row"

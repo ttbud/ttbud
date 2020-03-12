@@ -23,6 +23,12 @@ export interface DroppableConfigApi {
    * drop location.
    */
   getLocation: LocationCollector;
+  /**
+   * Fetch the drag bounds for draggables inside this droppable. Draggables
+   * within this droppable will not be allowed to be dragged out of the drag
+   * bounds
+   */
+  getDragBounds?: () => Bounds | undefined;
 }
 
 export interface DroppableConfig extends DroppableConfigApi {

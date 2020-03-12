@@ -70,6 +70,10 @@ interface Dragging {
    * Client bounds of the element being dragged
    */
   bounds: Bounds;
+  /**
+   * Bounds the dragged element is constrained to while dragging
+   */
+  dragBounds?: Bounds;
   hoveredDroppableId?: string;
 }
 
