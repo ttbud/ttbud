@@ -63,7 +63,7 @@
     "@storybook/react": "^5.3.14",
     "@testing-library/react": "^9.5.0",
     "@types/react-transition-group": "^4.2.3",
-    "@types/uuid": "^3.4.7",
+    "@types/uuid": "^7.0.0",
     "jest-junit": "^10.0.0",
     "prettier": "1.19.1",
     "storybook": "^5.3.14"
