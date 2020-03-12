@@ -42,8 +42,8 @@ class GameStateServer:
             self._rooms[room_id].clients.add(client_id)
         else:
             self._rooms[room_id] = RoomData(room_id, initial_connection=client_id)
-            if self.room_store.room_data_exists(room_id):
                 tokens_to_load = self.room_store.read_room_data(room_id)
+            if tokens_to_load:
                 for token_data in tokens_to_load:
                     try:
                         token = Token(**token_data)

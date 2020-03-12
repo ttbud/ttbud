@@ -1,6 +1,6 @@
 import os
 import json
-from typing import Protocol, Iterable
+from typing import Protocol, Iterable, Optional
 from abc import abstractmethod
 from dataclasses import asdict
 
@@ -19,11 +19,7 @@ class RoomStore(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def read_room_data(self, room_id: str) -> dict:
-        raise NotImplementedError
-
-    @abstractmethod
-    def room_data_exists(self, room_id: str) -> bool:
+    def read_room_data(self, room_id: str) -> Optional[dict]:
         raise NotImplementedError
 
 
@@ -45,15 +41,13 @@ class FileRoomStore:
             with open(full_path, 'w') as f:
                 f.write(json.dumps(storable_data))
 
-    def read_room_data(self, room_id: str) -> dict:
+    def read_room_data(self, room_id: str) -> Optional[dict]:
         full_path = f'{self.path}/{room_id}'
         if self._is_valid_path(full_path):
             with open(full_path, 'r') as f:
                 return json.loads(f.read())
-        raise KeyError(f"Unknown room id {room_id}")
 
-    def room_data_exists(self, room_id: str) -> bool:
-        return os.path.exists(f'{self.path}/{room_id}')
+        return None
 
 
 class MemoryRoomStore:
@@ -68,8 +62,5 @@ class MemoryRoomStore:
         storable_data = list(map(asdict, data))
         self.stored_data[room_id] = storable_data
 
-    def read_room_data(self, room_id: str) -> dict:
-        return self.stored_data[room_id]
-
-    def room_data_exists(self, room_id: str) -> bool:
-        return room_id in self.stored_data.keys()
+    def read_room_data(self, room_id: str) -> Optional[dict]:
+        return self.stored_data.get(room_id)
