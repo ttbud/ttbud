@@ -4,11 +4,18 @@ import {
   getDefaultMiddleware,
   ThunkAction
 } from "@reduxjs/toolkit";
+import {
+  FLUSH,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+  REHYDRATE
+} from "redux-persist";
 import { DroppableMonitor } from "../drag/DroppableMonitor";
-import rootReducer, { RootState } from "./rootReducer";
 import { BoardStateApiClient } from "../network/BoardStateApiClient";
 import { boardSyncer } from "./boardSyncer";
-
+import rootReducer, { RootState } from "./rootReducer";
 interface ThunkExtras {
   monitor: DroppableMonitor;
 }
@@ -19,9 +26,16 @@ export default function createStore(
 ) {
   const store = configureStore({
     reducer: rootReducer,
+    preloadedState: {},
     middleware: [
       boardSyncer(apiClient),
-      ...getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
+      ...getDefaultMiddleware({
+        thunk: { extraArgument: { monitor } },
+        // redux-persist uses non-serializable actions, and that's core to how it works :(.
+        serializableCheck: {
+          ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER]
+        }
+      })
     ],
     devTools: process.env.NODE_ENV === "development"
   });

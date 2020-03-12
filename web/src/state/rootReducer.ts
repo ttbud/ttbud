@@ -4,8 +4,10 @@ import appReducer from "./app-slice";
 import boardReducer from "./board-slice";
 import dragReducer from "../drag/drag-slice";
 import { combineReducers } from "@reduxjs/toolkit";
+import { persistReducer } from "redux-persist";
+import storage from "redux-persist/lib/storage";
 
-const rootReducer = combineReducers({
+const reducers = combineReducers({
   characterTray: characterTrayReducer,
   floorTray: floorTrayReducer,
   app: appReducer,
@@ -13,6 +15,13 @@ const rootReducer = combineReducers({
   drag: dragReducer
 });
 
-export type RootState = ReturnType<typeof rootReducer>;
+export type RootState = ReturnType<typeof reducers>;
 
+const persistConfig = {
+  key: "settings",
+  storage,
+  whitelist: ["characterTray", "floorTray"]
+};
+
+const rootReducer = persistReducer(persistConfig, reducers);
 export default rootReducer;
