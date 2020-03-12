@@ -24,7 +24,7 @@ const useStyles = makeStyles(theme => ({
   },
   characterTray: {
     position: "fixed",
-    zIndex: 2,
+    zIndex: 3,
     // Same location whether the scrollbar is visible or not
     // (Scrollbar width = 100vh - 100%)
     bottom: `calc(${theme.spacing(3)}px - (100vh - 100%))`,
