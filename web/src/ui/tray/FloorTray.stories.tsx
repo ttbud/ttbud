@@ -5,7 +5,7 @@ import DndContext from "../../drag/DndContext";
 import dragReducer from "../../drag/drag-slice";
 import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
 import noop from "../../util/noop";
-import { ICONS, IconType, WALL_ICON } from "../icons";
+import { DEFAULT_FLOOR_ICONS, WALL_ICON } from "../icons";
 import FloorTray from "./FloorTray";
 
 export default {
@@ -18,10 +18,6 @@ const store = configureStore({
   reducer: { drag: dragReducer },
   middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
 });
-
-const icons = ICONS.filter(icon => icon.type === IconType.floor)
-  .take(5)
-  .toArray();
 
 export const Default: React.FC = () => (
   <Provider store={store}>
@@ -39,7 +35,7 @@ export const Default: React.FC = () => (
         }}
       >
         <FloorTray
-          icons={icons}
+          icons={DEFAULT_FLOOR_ICONS}
           activeFloor={WALL_ICON}
           onFloorSelected={noop}
           onFloorRemoved={noop}

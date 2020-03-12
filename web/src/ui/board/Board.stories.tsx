@@ -1,17 +1,17 @@
-import React from "react";
-import { Icon, ICONS, IconType, WALL_ICON } from "../icons";
-import Board from "./Board";
-import { v4 as uuid } from "uuid";
-import noBorder from "../__stories__/no-border";
-import { Provider, useSelector } from "react-redux";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
-import dragReducer from "../../drag/drag-slice";
-import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
+import React from "react";
+import { Provider, useSelector } from "react-redux";
+import { v4 as uuid } from "uuid";
 import DndContext from "../../drag/DndContext";
-import noop from "../../util/noop";
+import dragReducer from "../../drag/drag-slice";
 import { DragStateType } from "../../drag/DragStateTypes";
+import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
+import { IconToken, TokenType } from "../../network/BoardStateApiClient";
 import { RootState } from "../../state/rootReducer";
-import { Token, TokenType } from "../../network/BoardStateApiClient";
+import noop from "../../util/noop";
+import { Icon, ICONS, WALL_ICON } from "../icons";
+import noBorder from "../__stories__/no-border";
+import Board from "./Board";
 
 export default {
   component: Board,
@@ -19,25 +19,20 @@ export default {
   decorators: [noBorder]
 };
 
-const toToken = (icon: Icon, i: number): Token => ({
-  type: icon.type === IconType.floor ? TokenType.Character : TokenType.Floor,
+const toToken = (icon: Icon, i: number): IconToken => ({
+  type: i % 2 ? TokenType.Floor : TokenType.Character,
   pos: {
     x: i,
     y: i,
-    z: icon.type === IconType.floor ? 0 : 1
+    z: i % 2 ? 0 : 1
   },
   id: uuid(),
   iconId: icon.id
 });
 
-const cards = ICONS.filter(icon => icon.type === IconType.token)
-  .take(3)
-  .map(toToken);
-const floors = ICONS.filter(icon => icon.type === IconType.floor)
-  .take(3)
-  .map(toToken);
-
-const tokens = cards.concat(floors).toArray();
+const tokens = ICONS.take(6)
+  .map(toToken)
+  .toArray();
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
