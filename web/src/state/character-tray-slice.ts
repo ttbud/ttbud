@@ -15,9 +15,6 @@ const characterTraySlice = createSlice({
     icons: DEFAULT_ICONS
   },
   reducers: {
-    replaceIcons(state, action: PayloadAction<Icon[]>) {
-      state.icons = action.payload;
-    },
     removeIcon(state, action: PayloadAction<Icon>) {
       state.icons = state.icons.filter(icon => icon.id !== action.payload.id);
     }
@@ -42,5 +39,5 @@ const characterTraySlice = createSlice({
   }
 });
 
-export const { replaceIcons, removeIcon } = characterTraySlice.actions;
+export const { removeIcon } = characterTraySlice.actions;
 export default characterTraySlice.reducer;
