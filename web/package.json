@@ -69,7 +69,7 @@
     "prettier": "1.19.1",
     "storybook": "^5.3.14"
   },
-  "description": "This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).",
+  "description": "Your virtual table friend",
   "main": "index.js",
   "keywords": [],
   "author": "",
