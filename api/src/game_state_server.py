@@ -42,7 +42,7 @@ class GameStateServer:
             self._rooms[room_id].clients.add(client_id)
         else:
             self._rooms[room_id] = RoomData(room_id, initial_connection=client_id)
-                tokens_to_load = self.room_store.read_room_data(room_id)
+            tokens_to_load = self.room_store.read_room_data(room_id)
             if tokens_to_load:
                 for token_data in tokens_to_load:
                     try:
@@ -61,7 +61,7 @@ class GameStateServer:
             # Save the room if the last client leaves and there is something to save
             if not self._rooms[room_id].clients and self._rooms[room_id].game_state:
                 print('Writing room data')
-                data_to_store: List[Token] = []
+                data_to_store = []
                 for game_object in self._rooms[room_id].game_state.values():
                     if isinstance(game_object, Token):
                         data_to_store.append(game_object)
