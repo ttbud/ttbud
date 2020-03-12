@@ -8,6 +8,8 @@ import DndContext from "./drag/DndContext";
 import createStore from "./state/createStore";
 import { BoardStateApiClient } from "./network/BoardStateApiClient";
 import { v4 as uuid } from "uuid";
+import { PersistGate } from "redux-persist/integration/react";
+import { persistStore } from "redux-persist";
 
 const monitor = new DomDroppableMonitor();
 const apiClient = new BoardStateApiClient(
@@ -21,14 +23,18 @@ const roomId = path ? atob(path) : uuid();
 window.history.replaceState({}, "Your special room", `/room/${btoa(roomId)}`);
 apiClient.connect(roomId);
 
+let persistor = persistStore(store);
+
 const render = () => {
   const App = require("./ui/app/App").default;
 
   ReactDOM.render(
     <Provider store={store}>
-      <DndContext.Provider value={monitor}>
-        <App />
-      </DndContext.Provider>
+      <PersistGate loading={null} persistor={persistor}>
+        <DndContext.Provider value={monitor}>
+          <App />
+        </DndContext.Provider>
+      </PersistGate>
     </Provider>,
     document.getElementById("root")
   );
