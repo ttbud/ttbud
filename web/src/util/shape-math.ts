@@ -40,10 +40,10 @@ export function boundsAreEqual(left: Bounds, right: Bounds): boolean {
 
 export function contains(bounds: Bounds, pos: Pos2d) {
   return (
-    bounds.left < pos.x &&
-    bounds.right > pos.x &&
-    bounds.top < pos.y &&
-    bounds.bottom > pos.y
+    bounds.left <= pos.x &&
+    bounds.right >= pos.x &&
+    bounds.top <= pos.y &&
+    bounds.bottom >= pos.y
   );
 }
 
