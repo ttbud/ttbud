@@ -1,20 +1,15 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DragEndAction, dragEnded } from "../drag/drag-slice";
+import { DROPPABLE_IDS } from "../ui/DroppableIds";
+import { DEFAULT_FLOOR_ICONS, Icon, WALL_ICON } from "../ui/icons";
+import { assert } from "../util/invariants";
 import getDragResult from "./getDragResult";
 import { reorderIcons } from "./reorderIcons";
-import { Icon, ICONS, IconType, WALL_ICON } from "../ui/icons";
-import { DROPPABLE_IDS } from "../ui/DroppableIds";
-import { assert } from "../util/invariants";
-
-const DEFAULT_ICONS = ICONS.filter(icon => icon.type === IconType.floor)
-  .take(4)
-  .unshift(WALL_ICON)
-  .toArray();
 
 const floorTraySlice = createSlice({
   name: "floorTrayIcons",
   initialState: {
-    icons: DEFAULT_ICONS,
+    icons: DEFAULT_FLOOR_ICONS,
     activeFloor: WALL_ICON
   },
   reducers: {

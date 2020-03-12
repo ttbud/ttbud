@@ -32,4 +32,21 @@ export const ICONS = List(
 );
 
 export const ICONS_BY_ID = byId(ICONS);
+
 export const WALL_ICON = ICONS_BY_ID.get("./wall/stone-wall.svg")!;
+
+export const DEFAULT_FLOOR_ICONS = [
+  WALL_ICON,
+  ICONS_BY_ID.get("./floor/bed.svg")!,
+  ICONS_BY_ID.get("./floor/wooden-crate.svg")!,
+  ICONS_BY_ID.get("./floor/locked-chest.svg")!,
+  ICONS_BY_ID.get("./floor/door.svg")!
+];
+
+export const DEFAULT_CHARACTER_ICONS = [
+  ICONS_BY_ID.get("./token/archer.svg")!,
+  ICONS_BY_ID.get("./token/bandit.svg")!,
+  ICONS_BY_ID.get("./token/bear-head.svg")!,
+  ICONS_BY_ID.get("./token/beard.svg")!,
+  ICONS_BY_ID.get("./token/cowled.svg")!
+];
