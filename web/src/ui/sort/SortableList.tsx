@@ -39,6 +39,11 @@ interface Props<T> {
   items: T[];
   getTargets: (draggable: DraggableDescriptor, bounds: Bounds) => Targets;
   style?: CSSProperties;
+  /**
+   * If true, draggables inside the list will not be allowed to be dragged
+   * outside of the parent container
+   */
+  constrainDragsToContainer?: boolean;
   children: (
     item: T,
     isDragging: boolean,
@@ -97,10 +102,12 @@ export default function SortableList<T extends DraggableItem>({
   id,
   items,
   getTargets,
+  constrainDragsToContainer = false,
   children: renderChild,
   style = {}
 }: PropsWithChildren<Props<T>>): ReactElement {
   const targets = useRef<Targets>();
+  const container = useRef<HTMLElement>();
 
   const getHoverIdx = ({
     pos,
@@ -205,6 +212,16 @@ export default function SortableList<T extends DraggableItem>({
     [items]
   );
 
+  const getDragBounds = useCallback(() => {
+    assert(
+      container.current,
+      "SortableList container ref not set up correctly"
+    );
+    return constrainDragsToContainer
+      ? container.current.getBoundingClientRect()
+      : undefined;
+  }, [constrainDragsToContainer]);
+
   const getChildStyle = useCallback(
     (idx: number, childDraggableId: string): CSSProperties => {
       if (draggableId === childDraggableId || !isDragging) {
@@ -292,28 +309,36 @@ export default function SortableList<T extends DraggableItem>({
   }, [dragStartIdx, isDragging, isHovering]);
 
   const renderChildren = useCallback(
-    (attributes: DroppableAttributes) => (
-      <div style={style} {...attributes}>
-        {renderSpacer()}
-        {items.map((item, idx) => (
-          <Draggable
-            key={item.descriptor.id}
-            descriptor={item.descriptor}
-            droppableId={id}
-          >
-            {(isDragging, attributes) =>
-              renderChild(item, isDragging, {
-                ...attributes,
-                style: {
-                  ...attributes.style,
-                  ...getChildStyle(idx, item.descriptor.id)
-                }
-              })
-            }
-          </Draggable>
-        ))}
-      </div>
-    ),
+    (attributes: DroppableAttributes) => {
+      return (
+        <div
+          ref={el => {
+            container.current = el ?? undefined;
+            attributes.ref.current = el;
+          }}
+          style={style}
+        >
+          {renderSpacer()}
+          {items.map((item, idx) => (
+            <Draggable
+              key={item.descriptor.id}
+              descriptor={item.descriptor}
+              droppableId={id}
+            >
+              {(isDragging, attributes) =>
+                renderChild(item, isDragging, {
+                  ...attributes,
+                  style: {
+                    ...attributes.style,
+                    ...getChildStyle(idx, item.descriptor.id)
+                  }
+                })
+              }
+            </Draggable>
+          ))}
+        </div>
+      );
+    },
     [getChildStyle, id, items, renderChild, renderSpacer, style]
   );
 
@@ -323,6 +348,7 @@ export default function SortableList<T extends DraggableItem>({
         id={id}
         getLocation={getLocation}
         onBeforeDragStart={onBeforeDragStart}
+        getDragBounds={getDragBounds}
       >
         {renderChildren}
       </Droppable>

@@ -1,5 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import Pos2d, { Bounds, boundsAreEqual, centerOf } from "../util/shape-math";
+import Pos2d, {
+  Bounds,
+  boundsAreEqual,
+  centerOf,
+  constrainBoxTo
+} from "../util/shape-math";
 import { assert } from "../util/invariants";
 import {
   DraggableDescriptor,
@@ -17,6 +22,7 @@ interface DragStartAction {
   draggable: DraggableDescriptor;
   source: DroppableLocation;
   mousePos: Pos2d;
+  dragBounds?: Bounds;
 }
 
 interface DragPortalAction {
@@ -31,7 +37,6 @@ interface DragMoveAction {
 }
 
 interface DragReleaseAction {
-  bounds: Bounds;
   draggable: DraggableDescriptor;
   destination?: DroppableLocation;
 }
@@ -47,7 +52,7 @@ const dragSlice = createSlice({
   initialState: INITIAL_STATE as DragState,
   reducers: {
     dragStarted(state, action: PayloadAction<DragStartAction>) {
-      const { draggable, source, mousePos } = action.payload;
+      const { draggable, source, mousePos, dragBounds } = action.payload;
       assert(
         state.type === DragStateType.NotDragging,
         `Draggable ${draggable.id} attempted to start a drag during an existing drag`
@@ -64,6 +69,7 @@ const dragSlice = createSlice({
         hoveredDroppableId: source.id,
         bounds: source.bounds,
         mouseOffset,
+        dragBounds,
         source
       };
     },
@@ -97,7 +103,7 @@ const dragSlice = createSlice({
       state.hoveredDroppableId = hoveredDroppableId;
     },
     dragReleased(state, action: PayloadAction<DragReleaseAction>) {
-      const { draggable, destination, bounds } = action.payload;
+      const { draggable, destination } = action.payload;
       assert(
         state.type === DragStateType.Dragging,
         `Draggable ${draggable.id} attempted to release a drag while no drag was occurring`
@@ -110,18 +116,12 @@ const dragSlice = createSlice({
       // If we don't have a destination, animate back to where we started
       const finalDestination = destination ?? state.source;
 
-      if (boundsAreEqual(finalDestination.bounds, bounds)) {
-        return {
-          type: DragStateType.NotDragging
-        };
-      } else {
-        return {
-          type: DragStateType.DragEndAnimating,
-          draggable: state.draggable,
-          source: state.source,
-          destination: finalDestination
-        };
-      }
+      return {
+        type: DragStateType.DragEndAnimating,
+        draggable: state.draggable,
+        source: state.source,
+        destination: finalDestination
+      };
     },
     /**
      * Handle this event to get notified when a drag has fully completed, and
@@ -158,11 +158,12 @@ function startDrag(
   return (dispatch, getState, { monitor }) => {
     monitor.onBeforeDragStart(draggable, bounds);
 
-    let droppable, location;
+    let droppable, location, dragBounds;
     if (droppableId) {
       const center = centerOf(bounds);
       droppable = monitor.getDroppable(droppableId);
       location = droppable.getLocation(draggable, center);
+      dragBounds = droppable.getDragBounds?.();
     }
     assert(
       !droppable || location,
@@ -173,6 +174,7 @@ function startDrag(
       dragStarted({
         draggable,
         mousePos,
+        dragBounds: dragBounds,
         source: { id: droppable?.id, bounds, ...location }
       })
     );
@@ -191,7 +193,8 @@ function moveDrag(draggable: DraggableDescriptor, mousePos: Pos2d): AppThunk {
     const bounds = updatedBounds(
       mousePos,
       state.drag.mouseOffset,
-      state.drag.source.bounds
+      state.drag.source.bounds,
+      state.drag.dragBounds
     );
     const hoveredDroppableId = monitor.findDroppableAt(centerOf(bounds))?.id;
     dispatch(dragMoved({ draggable, hoveredDroppableId, bounds }));
@@ -215,7 +218,8 @@ function releaseDrag(
     const bounds = updatedBounds(
       mousePos,
       state.drag.mouseOffset,
-      state.drag.source.bounds
+      state.drag.source.bounds,
+      state.drag.dragBounds
     );
     const center = centerOf(bounds);
     const droppable = monitor.findDroppableAt(center);
@@ -228,6 +232,18 @@ function releaseDrag(
         }
       : undefined;
     dispatch(dragReleased({ draggable, destination, bounds }));
+
+    // If we don't need to animate into position (because we're already there),
+    // immediately dispatch the dragEnded action
+    if (destination && boundsAreEqual(destination.bounds, bounds)) {
+      dispatch(
+        dragEnded({
+          destination,
+          draggable,
+          source: state.drag.source
+        })
+      );
+    }
   };
 }
 
@@ -266,16 +282,18 @@ function endDrag(draggable: DraggableDescriptor): AppThunk {
 function updatedBounds(
   newMousePos: Pos2d,
   mouseOffset: Pos2d,
-  originalBounds: Bounds
+  originalBounds: Bounds,
+  dragBounds: Bounds | undefined
 ): Bounds {
   const width = originalBounds.right - originalBounds.left;
   const height = originalBounds.bottom - originalBounds.top;
-  return {
+  const movedBounds = {
     top: newMousePos.y + mouseOffset.y,
     left: newMousePos.x + mouseOffset.x,
     bottom: newMousePos.y + mouseOffset.y + height,
     right: newMousePos.x + mouseOffset.x + width
   };
+  return dragBounds ? constrainBoxTo(movedBounds, dragBounds) : movedBounds;
 }
 
 export {
