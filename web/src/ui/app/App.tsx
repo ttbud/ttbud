@@ -1,14 +1,15 @@
-import React, { useCallback, useEffect } from "react";
-import Board from "../board/Board";
-import CharacterTray from "../tray/CharacterTray";
 import { makeStyles } from "@material-ui/core";
-import SearchDialog from "../search/SearchDialog";
-import { Icon, ICONS } from "../icons";
+import React, { useCallback, useEffect } from "react";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
-import { startSearching, stopSearching } from "../../state/app-slice";
-import FloorTray from "../tray/FloorTray";
 import { DragStateType } from "../../drag/DragStateTypes";
+import { startSearching, stopSearching } from "../../state/app-slice";
 import { addFloor, addPing, removeToken } from "../../state/board-slice";
+import Board from "../board/Board";
+import { Icon, ICONS } from "../icons";
+import SearchDialog from "../search/SearchDialog";
+import Settings from "../settings/Settings";
+import CharacterTray from "../tray/CharacterTray";
+import FloorTray from "../tray/FloorTray";
 import {
   setActiveFloor,
   removeIcon as removeFloorIcon
@@ -40,10 +41,8 @@ const useStyles = makeStyles(theme => ({
     left: "calc(50% + (100vw - 100%)/2)",
     transform: "translateX(-50%)"
   },
-  aboutLink: {
+  settings: {
     position: "fixed",
-    color: "black",
-    fontWeight: "bold",
     bottom: `calc(${theme.spacing(3)}px - (100vh - 100%))`,
     right: `calc(${theme.spacing(3)}px - (100vw - 100%))`
   }
@@ -137,12 +136,7 @@ const App = () => {
           onFloorRemoved={onFloorRemoved}
         />
       </div>
-      <a
-        className={classes.aboutLink}
-        href={"https://github.com/sjohnson31/ttbud"}
-      >
-        ?
-      </a>
+      <Settings className={classes.settings} />
     </div>
   );
 };
