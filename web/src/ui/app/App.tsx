@@ -5,7 +5,7 @@ import { DragStateType } from "../../drag/DragStateTypes";
 import { startSearching, stopSearching } from "../../state/app-slice";
 import { addFloor, addPing, removeToken } from "../../state/board-slice";
 import Board from "../board/Board";
-import { ICONS } from "../icons";
+import { Icon, ICONS } from "../icons";
 import SearchDialog from "../search/SearchDialog";
 import Settings from "../settings/Settings";
 import CharacterTray from "../tray/CharacterTray";
