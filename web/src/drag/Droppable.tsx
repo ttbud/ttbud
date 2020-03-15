@@ -1,29 +1,35 @@
 import React, {
+  MutableRefObject,
   ReactElement,
-  RefObject,
   useContext,
   useEffect,
   useRef
 } from "react";
-import DndContext from "./DndContext";
 import { fail } from "../util/invariants";
-import { LocationCollector } from "./DroppableMonitor";
 import noop from "../util/noop";
+import { Bounds } from "../util/shape-math";
+import DndContext from "./DndContext";
+import { DraggableDescriptor } from "./DragStateTypes";
+import { LocationCollector } from "./DroppableMonitor";
 
 export interface DroppableAttributes {
-  ref: RefObject<any>;
+  ref: MutableRefObject<any>;
 }
 
 interface Props {
   id: string;
-  onBeforeDragStart?: () => void;
+  onBeforeDragStart?: (draggable: DraggableDescriptor, bounds: Bounds) => void;
   getLocation: LocationCollector;
+  getDragBounds?: () => Bounds | undefined;
   children: (attributes: DroppableAttributes) => ReactElement;
 }
+
+const noBounds = () => undefined;
 
 const Droppable: React.FC<Props> = ({
   id,
   onBeforeDragStart = noop,
+  getDragBounds = noBounds,
   getLocation,
   children
 }) => {
@@ -35,11 +41,12 @@ const Droppable: React.FC<Props> = ({
       id,
       ref,
       getLocation,
-      onBeforeDragStart
+      onBeforeDragStart,
+      getDragBounds
     });
 
     return () => dndContext.removeDroppable(id);
-  }, [dndContext, getLocation, id, onBeforeDragStart]);
+  }, [dndContext, getDragBounds, getLocation, id, onBeforeDragStart]);
 
   return children({ ref });
 };

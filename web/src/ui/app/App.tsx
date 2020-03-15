@@ -4,16 +4,19 @@ import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { DragStateType } from "../../drag/DragStateTypes";
 import { startSearching, stopSearching } from "../../state/app-slice";
 import { addFloor, addPing, removeToken } from "../../state/board-slice";
-import { removeIcon } from "../../state/character-tray-slice";
-import { setActiveFloor } from "../../state/floor-tray-slice";
-import { RootState } from "../../state/rootReducer";
-import Pos2d from "../../util/shape-math";
 import Board from "../board/Board";
-import { Icon, ICONS } from "../icons";
+import { ICONS } from "../icons";
 import SearchDialog from "../search/SearchDialog";
 import Settings from "../settings/Settings";
 import CharacterTray from "../tray/CharacterTray";
 import FloorTray from "../tray/FloorTray";
+import {
+  setActiveFloor,
+  removeIcon as removeFloorIcon
+} from "../../state/floor-tray-slice";
+import { RootState } from "../../state/rootReducer";
+import Pos2d from "../../util/shape-math";
+import { removeIcon as removeCharacterIcon } from "../../state/character-tray-slice";
 
 const useStyles = makeStyles(theme => ({
   app: {
@@ -22,7 +25,7 @@ const useStyles = makeStyles(theme => ({
   },
   characterTray: {
     position: "fixed",
-    zIndex: 2,
+    zIndex: 3,
     // Same location whether the scrollbar is visible or not
     // (Scrollbar width = 100vh - 100%)
     bottom: `calc(${theme.spacing(3)}px - (100vh - 100%))`,
@@ -84,6 +87,11 @@ const App = () => {
     [dispatch]
   );
 
+  const onFloorRemoved = useCallback(
+    (icon: Icon) => dispatch(removeFloorIcon(icon)),
+    [dispatch]
+  );
+
   const onSearchDialogClose = useCallback(() => dispatch(stopSearching()), [
     dispatch
   ]);
@@ -95,7 +103,7 @@ const App = () => {
   const onTokenDeleted = (id: string) => dispatch(removeToken(id));
 
   const onTrayIconRemoved = useCallback(
-    (icon: Icon) => dispatch(removeIcon(icon)),
+    (icon: Icon) => dispatch(removeCharacterIcon(icon)),
     [dispatch]
   );
 
@@ -125,6 +133,7 @@ const App = () => {
           icons={floorTrayIcons}
           activeFloor={activeFloor}
           onFloorSelected={onFloorSelected}
+          onFloorRemoved={onFloorRemoved}
         />
       </div>
       <Settings className={classes.settings} />

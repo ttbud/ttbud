@@ -1,21 +1,16 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DragEndAction, dragEnded } from "../drag/drag-slice";
+import { DROPPABLE_IDS } from "../ui/DroppableIds";
+import { DEFAULT_FLOOR_ICONS, Icon } from "../ui/icons";
+import { assert } from "../util/invariants";
 import getDragResult from "./getDragResult";
 import { reorderIcons } from "./reorderIcons";
-import { Icon, ICONS, IconType, WALL_ICON } from "../ui/icons";
-import { DROPPABLE_IDS } from "../ui/DroppableIds";
-import { assert } from "../util/invariants";
-
-const DEFAULT_ICONS = ICONS.filter(icon => icon.type === IconType.floor)
-  .take(4)
-  .unshift(WALL_ICON)
-  .toArray();
 
 const floorTraySlice = createSlice({
   name: "floorTrayIcons",
   initialState: {
-    icons: DEFAULT_ICONS,
-    activeFloor: WALL_ICON
+    icons: DEFAULT_FLOOR_ICONS,
+    activeFloor: DEFAULT_FLOOR_ICONS[0]
   },
   reducers: {
     setActiveFloor(state, action: PayloadAction<Icon>) {
@@ -26,7 +21,7 @@ const floorTraySlice = createSlice({
       );
       state.activeFloor = activeIcon;
     },
-    deleteIcon(state, action: PayloadAction<Icon>) {
+    removeIcon(state, action: PayloadAction<Icon>) {
       state.icons = state.icons.filter(icon => icon.id !== action.payload.id);
     }
   },
@@ -50,4 +45,5 @@ const floorTraySlice = createSlice({
 });
 
 export default floorTraySlice.reducer;
-export const { setActiveFloor } = floorTraySlice.actions;
+
+export const { setActiveFloor, removeIcon } = floorTraySlice.actions;

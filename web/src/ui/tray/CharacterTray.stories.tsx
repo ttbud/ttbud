@@ -5,7 +5,7 @@ import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
 import { Provider } from "react-redux";
 import DndContext from "../../drag/DndContext";
-import { ICONS, IconType } from "../icons";
+import { ICONS, DEFAULT_CHARACTER_ICONS } from "../icons";
 import noop from "../../util/noop";
 
 export default {
@@ -19,10 +19,6 @@ const store = configureStore({
   middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
 });
 
-const icons = ICONS.filter(icon => icon.type === IconType.token)
-  .take(5)
-  .toArray();
-
 export const Default: React.FC = () => (
   <Provider store={store}>
     <DndContext.Provider value={monitor}>
@@ -34,7 +30,7 @@ export const Default: React.FC = () => (
           top: 0
         }}
       >
-        <CharacterTray icons={icons} onIconRemoved={noop} />
+        <CharacterTray icons={DEFAULT_CHARACTER_ICONS} onIconRemoved={noop} />
       </div>
     </DndContext.Provider>
   </Provider>

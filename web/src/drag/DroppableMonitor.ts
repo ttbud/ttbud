@@ -23,6 +23,12 @@ export interface DroppableConfigApi {
    * drop location.
    */
   getLocation: LocationCollector;
+  /**
+   * Fetch the drag bounds for draggables inside this droppable. Draggables
+   * within this droppable will not be allowed to be dragged out of the drag
+   * bounds
+   */
+  getDragBounds?: () => Bounds | undefined;
 }
 
 export interface DroppableConfig extends DroppableConfigApi {
@@ -31,11 +37,11 @@ export interface DroppableConfig extends DroppableConfigApi {
    * A callback to synchronously collect measurement information
    * before a drag starts.
    */
-  onBeforeDragStart: () => void;
+  onBeforeDragStart: (draggable: DraggableDescriptor, bounds: Bounds) => void;
 }
 
 export interface DroppableMonitor {
-  onBeforeDragStart(): void;
+  onBeforeDragStart(draggable: DraggableDescriptor, bounds: Bounds): void;
   findDroppableAt(pos: Pos2d): DroppableConfigApi | undefined;
   getDroppable(id: string): DroppableConfigApi;
 }
@@ -47,9 +53,9 @@ export class DomDroppableMonitor implements DroppableMonitor {
    * Notify droppables that a drag is about to start so
    * they can collect required measurement information
    */
-  public onBeforeDragStart() {
+  public onBeforeDragStart(draggable: DraggableDescriptor, bounds: Bounds) {
     for (const droppable of this.droppables.values()) {
-      droppable.onBeforeDragStart();
+      droppable.onBeforeDragStart(draggable, bounds);
     }
   }
 

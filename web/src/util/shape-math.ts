@@ -40,10 +40,10 @@ export function boundsAreEqual(left: Bounds, right: Bounds): boolean {
 
 export function contains(bounds: Bounds, pos: Pos2d) {
   return (
-    bounds.left < pos.x &&
-    bounds.right > pos.x &&
-    bounds.top < pos.y &&
-    bounds.bottom > pos.y
+    bounds.left <= pos.x &&
+    bounds.right >= pos.x &&
+    bounds.top <= pos.y &&
+    bounds.bottom >= pos.y
   );
 }
 
@@ -51,6 +51,42 @@ export function centerOf(bounds: Bounds): Pos2d {
   const width = bounds.right - bounds.left;
   const height = bounds.bottom - bounds.top;
   return { x: bounds.left + width / 2, y: bounds.top + height / 2 };
+}
+
+export function constrainBoxTo(box: Bounds, bounds: Bounds): Bounds {
+  let top, bottom;
+  if (box.bottom > bounds.bottom) {
+    bottom = bounds.bottom;
+    top = bottom - height(box);
+  } else if (box.top < bounds.top) {
+    top = bounds.top;
+    bottom = top + height(box);
+  } else {
+    top = box.top;
+    bottom = box.bottom;
+  }
+
+  let left, right;
+  if (box.right > bounds.right) {
+    right = bounds.right;
+    left = right - width(box);
+  } else if (box.left < bounds.left) {
+    left = bounds.left;
+    right = left + width(box);
+  } else {
+    left = box.left;
+    right = box.right;
+  }
+
+  return { top, left, bottom, right };
+}
+
+export function width(bounds: Bounds) {
+  return bounds.right - bounds.left;
+}
+
+export function height(bounds: Bounds) {
+  return bounds.bottom - bounds.top;
 }
 
 function snapDimensionToGrid(dimension: number): number {
