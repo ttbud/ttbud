@@ -67,7 +67,7 @@
     "@types/uuid": "^7.0.2",
     "jest-junit": "^10.0.0",
     "prettier": "1.19.1",
-    "storybook": "^5.3.14"
+    "storybook": "^5.3.17"
   },
   "description": "Your virtual table friend",
   "main": "index.js",
