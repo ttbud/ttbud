@@ -23,16 +23,15 @@ import { TransitionGroup } from "react-transition-group";
 import Fade from "../transition/Fade";
 import NoopTransition from "../transition/NoopTransition";
 
-let BACKGROUND_COLOR = "#F5F5DC";
 let GRID_COLOR = "#947C65";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   container: {
     width: "100%",
     height: "100%",
   },
   board: {
-    backgroundColor: BACKGROUND_COLOR,
+    backgroundColor: theme.palette.background.default,
     backgroundImage: `repeating-linear-gradient(
       0deg,
       transparent,
@@ -52,7 +51,7 @@ const useStyles = makeStyles({
     width: "100%",
     zIndex: 0,
   },
-});
+}));
 
 const scrolledPos = (pixelPos: Pos2d) => {
   return {
