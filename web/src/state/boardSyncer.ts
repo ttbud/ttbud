@@ -1,14 +1,14 @@
 import {
   BoardStateApiClient,
   EventType,
-  Token
+  Token,
 } from "../network/BoardStateApiClient";
 import { Middleware } from "@reduxjs/toolkit";
 import { BoardState, replaceTokens } from "./board-slice";
 import {
   getLocalState,
   getNetworkUpdates,
-  Update
+  Update,
 } from "../network/board-state-diff";
 import { v4 as uuid } from "uuid";
 import throttle from "../util/throttle";
@@ -23,12 +23,12 @@ export function boardSyncer(apiClient: BoardStateApiClient): Middleware {
   let networkTokens: Token[] = [];
   let lastTokens: Token[] | undefined = [];
 
-  return store => {
+  return (store) => {
     const sendNetworkUpdates = (state: BoardState) => {
       const updates = getNetworkUpdates({
         networkTokens,
         uiTokens: state.tokens,
-        unackedUpdates: Array.from(unackedUpdates.values()).flat()
+        unackedUpdates: Array.from(unackedUpdates.values()).flat(),
       });
 
       if (updates.length === 0) {
@@ -45,7 +45,7 @@ export function boardSyncer(apiClient: BoardStateApiClient): Middleware {
       UPDATE_RATE_MS
     );
 
-    apiClient.setEventHandler(event => {
+    apiClient.setEventHandler((event) => {
       switch (event.type) {
         case EventType.InitialState:
           networkTokens = event.tokens;
@@ -74,7 +74,7 @@ export function boardSyncer(apiClient: BoardStateApiClient): Middleware {
       }
     });
 
-    return next => action => {
+    return (next) => (action) => {
       const result = next(action);
       const state = store.getState();
       if (lastTokens !== state.board.tokens) {

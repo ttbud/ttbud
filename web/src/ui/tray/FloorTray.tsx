@@ -5,7 +5,7 @@ import { CARD_SIZE } from "../../config";
 import {
   DraggableDescriptor,
   DraggableType,
-  IconDraggable
+  IconDraggable,
 } from "../../drag/DragStateTypes";
 import { assert } from "../../util/invariants";
 import { Bounds } from "../../util/shape-math";
@@ -23,15 +23,15 @@ interface Props {
 const useStyles = makeStyles({
   icon: {
     width: CARD_SIZE,
-    height: CARD_SIZE
-  }
+    height: CARD_SIZE,
+  },
 });
 
 const FloorTray: React.FC<Props> = memo(function FloorTray({
   icons,
   activeFloor,
   onFloorSelected,
-  onFloorRemoved
+  onFloorRemoved,
 }) {
   const classes = useStyles();
 
@@ -45,13 +45,13 @@ const FloorTray: React.FC<Props> = memo(function FloorTray({
     return refs;
   }, [icons]);
 
-  const items = icons.map(icon => ({
+  const items = icons.map((icon) => ({
     icon,
     descriptor: {
       type: DraggableType.Icon,
       id: `${DROPPABLE_IDS.FLOOR_TRAY}-${icon.id}`,
-      icon: icon
-    } as IconDraggable
+      icon: icon,
+    } as IconDraggable,
   }));
 
   const getTargets = useCallback(
@@ -78,14 +78,14 @@ const FloorTray: React.FC<Props> = memo(function FloorTray({
             top: current.top,
             left: current.left,
             bottom: current.bottom,
-            right: current.right
+            right: current.right,
           },
           destination: {
             top: current.top,
             left: current.left,
             bottom: current.bottom,
-            right: current.right
-          }
+            right: current.right,
+          },
         });
       }
 
@@ -106,14 +106,14 @@ const FloorTray: React.FC<Props> = memo(function FloorTray({
             top: dropBounds.top,
             left: dropBounds.left + childWidth / 2,
             bottom: dropBounds.bottom,
-            right: dropBounds.right + childWidth / 2
+            right: dropBounds.right + childWidth / 2,
           },
           destination: {
             top: destination.top + heightDiff / 2,
             left: destination.left + childWidth / 2 + widthDiff / 2,
             bottom: destination.bottom,
-            right: destination.right + childWidth / 2
-          }
+            right: destination.right + childWidth / 2,
+          },
         })
       );
 
@@ -124,19 +124,19 @@ const FloorTray: React.FC<Props> = memo(function FloorTray({
           top: dropBounds.top,
           left: dropBounds.left - childWidth,
           bottom: dropBounds.bottom,
-          right: dropBounds.right - childWidth
+          right: dropBounds.right - childWidth,
         },
         destination: {
           top: destination.top,
           left: destination.left - childWidth,
           bottom: destination.bottom,
-          right: destination.left
-        }
+          right: destination.left,
+        },
       });
 
       return {
         innerDrag: innerDragBounds,
-        outerDrag: outerDragBounds
+        outerDrag: outerDragBounds,
       };
     },
     [itemRefs]
@@ -151,7 +151,7 @@ const FloorTray: React.FC<Props> = memo(function FloorTray({
         constrainDragsToContainer={true}
         style={{
           display: "flex",
-          flexDirection: "row"
+          flexDirection: "row",
         }}
       >
         {(item, isDragging, attributes) => (
@@ -160,7 +160,7 @@ const FloorTray: React.FC<Props> = memo(function FloorTray({
             key={item.icon.id}
             selected={activeFloor.id === item.icon.id}
             onChange={() => onFloorSelected(item.icon)}
-            onContextMenu={e => {
+            onContextMenu={(e) => {
               if (icons.length > 2) {
                 onFloorRemoved(item.icon);
               }

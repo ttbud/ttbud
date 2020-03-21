@@ -8,17 +8,17 @@ import Character from "../token/Character";
 import { assert } from "../../util/invariants";
 import { GRID_SIZE_PX } from "../../config";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   tokenSheet: {
     backgroundColor: "#cccccc",
     padding: theme.spacing(1),
     "& div": {
-      marginBottom: theme.spacing(1)
+      marginBottom: theme.spacing(1),
     },
     "& div:last-child": {
-      marginBottom: 0
-    }
-  }
+      marginBottom: 0,
+    },
+  },
 }));
 
 const DROPPABLE_ID = DROPPABLE_IDS.CHARACTER_TRAY;
@@ -30,17 +30,17 @@ interface Props {
 
 const CharacterTray: React.FC<Props> = memo(function CharacterTray({
   icons,
-  onIconRemoved
+  onIconRemoved,
 }) {
   const classes = useStyles();
 
-  const items = icons.map(icon => ({
+  const items = icons.map((icon) => ({
     icon,
     descriptor: {
       type: DraggableType.Icon,
       id: `${DROPPABLE_ID}-${icon.id}`,
-      icon: icon
-    } as IconDraggable
+      icon: icon,
+    } as IconDraggable,
   }));
 
   const containerRef = useRef<HTMLElement>();
@@ -83,14 +83,14 @@ const CharacterTray: React.FC<Props> = memo(function CharacterTray({
           top,
           left: containerBounds.left,
           bottom,
-          right: containerBounds.right
+          right: containerBounds.right,
         },
         destination: {
           top: current.top,
           left: current.left,
           bottom: current.bottom,
-          right: current.right
-        }
+          right: current.right,
+        },
       });
     }
 
@@ -106,19 +106,19 @@ const CharacterTray: React.FC<Props> = memo(function CharacterTray({
         top: containerBounds.top - GRID_SIZE_PX,
         left: containerBounds.left,
         bottom: containerBounds.top,
-        right: containerBounds.right
+        right: containerBounds.right,
       },
       destination: {
         top: containerBounds.top - GRID_SIZE_PX,
         left: firstChildBounds.left,
         bottom: containerBounds.top,
-        right: firstChildBounds.right
-      }
+        right: firstChildBounds.right,
+      },
     });
 
     return {
       innerDrag: innerDragBounds,
-      outerDrag: outerDragBounds
+      outerDrag: outerDragBounds,
     };
   }, [itemRefs]);
 
@@ -129,7 +129,7 @@ const CharacterTray: React.FC<Props> = memo(function CharacterTray({
           <Character
             icon={item.icon}
             isDragging={isDragging}
-            onContextMenu={e => {
+            onContextMenu={(e) => {
               e.preventDefault();
               if (items.length > 2) {
                 onIconRemoved(item.icon);

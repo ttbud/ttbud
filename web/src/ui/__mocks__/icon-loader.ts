@@ -22,5 +22,5 @@ export const loadIcons = () => [
   { path: "./bandit.svg", img: bandit },
   { path: "./bear-head.svg", img: head },
   { path: "./beard.svg", img: beard },
-  { path: "./cowled.svg", img: cowled }
+  { path: "./cowled.svg", img: cowled },
 ];

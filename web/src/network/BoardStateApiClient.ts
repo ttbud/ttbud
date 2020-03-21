@@ -9,7 +9,7 @@ const PingTokenDecoder = t.type({
   id: t.string,
   type: t.literal("ping"),
   x: t.number,
-  y: t.number
+  y: t.number,
 });
 
 const IconTokenDecoder = t.type({
@@ -21,7 +21,7 @@ const IconTokenDecoder = t.type({
   start_z: t.number,
   end_x: t.number,
   end_y: t.number,
-  end_z: t.number
+  end_z: t.number,
 });
 
 const ApiTokenDecoder = t.union([IconTokenDecoder, PingTokenDecoder]);
@@ -29,24 +29,24 @@ const ApiTokenDecoder = t.union([IconTokenDecoder, PingTokenDecoder]);
 const BoardStateDecoder = t.type({
   type: t.literal("state"),
   request_id: t.string,
-  data: t.array(ApiTokenDecoder)
+  data: t.array(ApiTokenDecoder),
 });
 
 const ErrorMessageDecoder = t.type({
   type: t.literal("error"),
   request_id: t.string,
-  data: t.string
+  data: t.string,
 });
 
 const ConnectionResultDecoder = t.type({
   type: t.literal("connected"),
-  data: t.array(ApiTokenDecoder)
+  data: t.array(ApiTokenDecoder),
 });
 
 const MessageDecoder = t.union([
   BoardStateDecoder,
   ErrorMessageDecoder,
-  ConnectionResultDecoder
+  ConnectionResultDecoder,
 ]);
 
 type ApiPingToken = t.TypeOf<typeof PingTokenDecoder>;
@@ -56,7 +56,7 @@ type ApiToken = t.TypeOf<typeof ApiTokenDecoder>;
 export enum TokenType {
   Character = "character",
   Floor = "floor",
-  Ping = "ping"
+  Ping = "ping",
 }
 
 export interface PingToken {
@@ -99,7 +99,7 @@ function toApiUpdate(update: Update): ApiUpdate {
         const { id, type, pos } = update.token;
         return {
           action: "ping",
-          data: { id, type, x: pos.x, y: pos.y }
+          data: { id, type, x: pos.x, y: pos.y },
         };
       } else {
         const { id, type, iconId, pos } = update.token;
@@ -114,14 +114,14 @@ function toApiUpdate(update: Update): ApiUpdate {
             start_z: pos.z,
             end_x: pos.x + 1,
             end_y: pos.y + 1,
-            end_z: pos.z + 1
-          }
+            end_z: pos.z + 1,
+          },
         };
       }
     case UpdateType.DELETE:
       return {
         action: "delete",
-        data: update.tokenId
+        data: update.tokenId,
       };
     default:
       throw new UnreachableCaseError(update);
@@ -136,8 +136,8 @@ function toToken(apiToken: ApiToken): Token {
         id: apiToken.id,
         pos: {
           x: apiToken.x,
-          y: apiToken.y
-        }
+          y: apiToken.y,
+        },
       };
     case "character":
     case "floor":
@@ -150,8 +150,8 @@ function toToken(apiToken: ApiToken): Token {
         pos: {
           x: apiToken.start_x,
           y: apiToken.start_y,
-          z: apiToken.start_z
-        }
+          z: apiToken.start_z,
+        },
       };
     default:
       throw new UnreachableCaseError(apiToken);
@@ -163,7 +163,7 @@ export enum EventType {
   Connect = "connect",
   InitialState = "initial state",
   Error = "error",
-  Disconnect = "disconnect"
+  Disconnect = "disconnect",
 }
 
 interface BoardStateEvent {
@@ -236,7 +236,7 @@ export class BoardStateApiClient {
     this.socket?.send(
       JSON.stringify({
         request_id: requestId,
-        updates: updates.map(toApiUpdate)
+        updates: updates.map(toApiUpdate),
       })
     );
   }
@@ -260,7 +260,7 @@ export class BoardStateApiClient {
       this.eventHandler({
         type: EventType.Error,
         error: e,
-        rawMessage: event.data
+        rawMessage: event.data,
       });
       return;
     }
@@ -270,7 +270,7 @@ export class BoardStateApiClient {
         this.eventHandler({
           type: EventType.TokenUpdate,
           requestId: message.request_id,
-          tokens: message.data.map(toToken)
+          tokens: message.data.map(toToken),
         });
         break;
       case "error":
@@ -278,13 +278,13 @@ export class BoardStateApiClient {
           type: EventType.Error,
           requestId: message.request_id,
           rawMessage: event.data,
-          error: new Error(message.data)
+          error: new Error(message.data),
         });
         break;
       case "connected":
         this.eventHandler({
           type: EventType.InitialState,
-          tokens: message.data.map(toToken)
+          tokens: message.data.map(toToken),
         });
         break;
       default:

@@ -3,11 +3,11 @@ import {
   DroppableConfig,
   DroppableConfigApi,
   DroppableMonitor,
-  LocationCollector
+  LocationCollector,
 } from "./DroppableMonitor";
 import {
   FakeDroppable,
-  FakeDroppableMonitor
+  FakeDroppableMonitor,
 } from "./__test_util__/FakeDroppableMonitor";
 import { Bounds } from "../util/shape-math";
 import noop from "../util/noop";
@@ -25,7 +25,7 @@ function toFakeDroppable({
   zIndex = 0,
   bounds = { top: 0, left: 0, bottom: 50, right: 50 },
   getLocation = () => undefined,
-  onBeforeDragStart = noop
+  onBeforeDragStart = noop,
 }: FakeDroppableConfig): FakeDroppable {
   return { id, zIndex, bounds, getLocation, onBeforeDragStart };
 }
@@ -35,7 +35,7 @@ function toDomDroppable({
   zIndex = 0,
   bounds = { top: 0, left: 0, bottom: 50, right: 50 },
   getLocation = () => undefined,
-  onBeforeDragStart = noop
+  onBeforeDragStart = noop,
 }: FakeDroppableConfig): DroppableConfig {
   const el = document.createElement("div");
   document.body.append(el);
@@ -50,7 +50,7 @@ function toDomDroppable({
     id,
     ref: { current: el },
     getLocation,
-    onBeforeDragStart
+    onBeforeDragStart,
   };
 }
 
@@ -72,14 +72,19 @@ const droppableConfigs: FakeDroppableConfig[] = [
   {
     id: "middle",
     bounds: { top: 25, left: 25, bottom: 75, right: 75 },
-    zIndex: 1
+    zIndex: 1,
   },
-  { id: "bottom right", bounds: { top: 50, left: 50, bottom: 100, right: 100 } }
+  {
+    id: "bottom right",
+    bounds: { top: 50, left: 50, bottom: 100, right: 100 },
+  },
 ];
 
 const domDroppableMonitor = new DomDroppableMonitor();
 const domDroppables = droppableConfigs.map(toDomDroppable);
-domDroppables.forEach(droppable => domDroppableMonitor.addDroppable(droppable));
+domDroppables.forEach((droppable) =>
+  domDroppableMonitor.addDroppable(droppable)
+);
 
 const fakeDroppableMonitor = new FakeDroppableMonitor();
 const fakeDroppables = droppableConfigs.map(toFakeDroppable);
@@ -87,7 +92,7 @@ fakeDroppableMonitor.setDroppables(fakeDroppables);
 
 const monitors: [string, DroppableMonitor, DroppableConfigApi[]][] = [
   ["Dom", domDroppableMonitor, domDroppables],
-  ["Fake", fakeDroppableMonitor, fakeDroppables]
+  ["Fake", fakeDroppableMonitor, fakeDroppables],
 ];
 
 describe.each(monitors)("%sDroppableMonitor", (_, monitor, droppables) => {

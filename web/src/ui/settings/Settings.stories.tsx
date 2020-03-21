@@ -3,7 +3,7 @@ import React from "react";
 
 export default {
   component: Settings,
-  title: "Settings"
+  title: "Settings",
 };
 
 export const Default: React.FC = () => <Settings />;

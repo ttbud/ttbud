@@ -17,12 +17,12 @@ export class FakeDroppableMonitor implements DroppableMonitor {
 
   findDroppableAt(pos: Pos2d): DroppableConfigApi | undefined {
     return this.droppables
-      .filter(droppable => contains(droppable.bounds, pos))
+      .filter((droppable) => contains(droppable.bounds, pos))
       .sort((left, right) => right.zIndex - left.zIndex)[0];
   }
 
   getDroppable(id: string): DroppableConfigApi {
-    const droppable = this.droppables.find(droppable => droppable.id === id);
+    const droppable = this.droppables.find((droppable) => droppable.id === id);
     assert(droppable, `Droppable ${id} does not exist`);
     return droppable;
   }

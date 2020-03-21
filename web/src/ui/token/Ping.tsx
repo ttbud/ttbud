@@ -9,14 +9,14 @@ const useStyles = makeStyles({
     borderRadius: "50%",
     zIndex: 1000,
     animation: `$pulsate ${ANIM_LENGTH_MS}ms ease-out`,
-    animationIterationCount: "infinite"
+    animationIterationCount: "infinite",
   },
   "@keyframes pulsate": {
     "0%": { boxShadow: "0 0 0 0px rgba(0, 0, 0, 0.5)" },
     "100%": {
-      boxShadow: "0 0 0 35px rgba(0, 0, 0, 0)"
-    }
-  }
+      boxShadow: "0 0 0 35px rgba(0, 0, 0, 0)",
+    },
+  },
 });
 
 interface Props {
@@ -29,7 +29,7 @@ const Ping: React.FC<Props> = memo(({ x, y }) => {
   const style: CSSProperties = {
     position: "absolute",
     left: x + GRID_SIZE_PX / 2,
-    top: y + GRID_SIZE_PX / 2
+    top: y + GRID_SIZE_PX / 2,
   };
 
   return <div style={style} className={classes.ping} />;

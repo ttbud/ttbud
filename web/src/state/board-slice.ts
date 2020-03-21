@@ -14,11 +14,11 @@ export interface BoardState {
 }
 
 const INITIAL_STATE: BoardState = {
-  tokens: []
+  tokens: [],
 };
 
 function moveToken(state: BoardState, tokenId: string, dest: Pos2d) {
-  const tokenToMove = state.tokens.find(token => token.id === tokenId);
+  const tokenToMove = state.tokens.find((token) => token.id === tokenId);
   if (!tokenToMove) {
     // The token was deleted by another person while dragging, so just ignore it
     return;
@@ -29,7 +29,7 @@ function moveToken(state: BoardState, tokenId: string, dest: Pos2d) {
 }
 
 function _removeToken(state: BoardState, tokenId: string) {
-  state.tokens = state.tokens.filter(token => token.id !== tokenId);
+  state.tokens = state.tokens.filter((token) => token.id !== tokenId);
 }
 
 interface AddTokenAction {
@@ -62,14 +62,14 @@ const boardSlice = createSlice({
           type: TokenType.Floor,
           pos: {
             ...pos,
-            z: FLOOR_HEIGHT
-          }
+            z: FLOOR_HEIGHT,
+          },
         };
         state.tokens.push(token);
       },
       prepare: (iconId: string, pos: Pos2d) => ({
-        payload: { id: uuid(), iconId, pos }
-      })
+        payload: { id: uuid(), iconId, pos },
+      }),
     },
     addPing: {
       reducer: (state, action: PayloadAction<AddPingAction>) => {
@@ -77,16 +77,16 @@ const boardSlice = createSlice({
         state.tokens.push({
           type: TokenType.Ping,
           id,
-          pos
+          pos,
         });
       },
       prepare: (pos: Pos2d) => ({
-        payload: { id: uuid(), pos }
-      })
+        payload: { id: uuid(), pos },
+      }),
     },
     removeToken(state, action: PayloadAction<string>) {
       _removeToken(state, action.payload);
-    }
+    },
   },
   extraReducers: {
     [dragEnded.type]: (state, action: PayloadAction<DragEndAction>) => {
@@ -125,7 +125,7 @@ const boardSlice = createSlice({
             type: TokenType.Character,
             id: uuid(),
             iconId: draggable.icon.id,
-            pos: { x, y, z: CHARACTER_HEIGHT }
+            pos: { x, y, z: CHARACTER_HEIGHT },
           });
           break;
         case DragResult.None:
@@ -133,8 +133,8 @@ const boardSlice = createSlice({
         default:
           throw new UnreachableCaseError(dragResult);
       }
-    }
-  }
+    },
+  },
 });
 
 const { addFloor, addPing, removeToken, replaceTokens } = boardSlice.actions;

@@ -3,7 +3,7 @@ import {
   DialogContent,
   DialogTitle,
   makeStyles,
-  TextField
+  TextField,
 } from "@material-ui/core";
 import React, { memo, useCallback, useMemo, useState } from "react";
 import { List } from "immutable";
@@ -12,29 +12,29 @@ import Draggable from "../../drag/Draggable";
 import {
   DraggableType,
   DragStateType,
-  IconDraggable
+  IconDraggable,
 } from "../../drag/DragStateTypes";
 import { useSelector } from "react-redux";
 import Character from "../token/Character";
 import { assert } from "../../util/invariants";
 import { RootState } from "../../state/rootReducer";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   content: {
     width: "300px",
-    height: "300px"
+    height: "300px",
   },
   tokenList: {
     display: "flex",
-    flexWrap: "wrap"
+    flexWrap: "wrap",
   },
   token: {
-    margin: theme.spacing(1)
+    margin: theme.spacing(1),
   },
   search: {},
   icon: {
-    color: "white"
-  }
+    color: "white",
+  },
 }));
 
 interface Props {
@@ -46,14 +46,14 @@ interface Props {
 const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
   const classes = useStyles();
   const [search, setSearch] = useState("");
-  const onChange = useCallback(e => setSearch(e.target.value), [setSearch]);
+  const onChange = useCallback((e) => setSearch(e.target.value), [setSearch]);
 
   const items: List<IconDraggable> = useMemo(
     () =>
-      icons.map(icon => ({
+      icons.map((icon) => ({
         type: DraggableType.Icon,
         icon,
-        id: `search-dialog-${icon.id}`
+        id: `search-dialog-${icon.id}`,
       })),
     [icons]
   );
@@ -68,7 +68,7 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
 
   const visibleItems = useMemo(() => {
     return search
-      ? items.filter(item => item.icon.desc.indexOf(search) !== -1)
+      ? items.filter((item) => item.icon.desc.indexOf(search) !== -1)
       : items;
   }, [search, items]);
 
@@ -107,13 +107,13 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
           margin="normal"
           label="search"
           onChange={onChange}
-          onFocus={e => e.target.select()}
+          onFocus={(e) => e.target.select()}
           value={search}
         />
       </DialogTitle>
       <DialogContent className={classes.content}>
         <div className={classes.tokenList}>
-          {visibleItems.map(item => (
+          {visibleItems.map((item) => (
             <Draggable key={item.id} descriptor={item}>
               {(isDragging, attributes) => (
                 <Character

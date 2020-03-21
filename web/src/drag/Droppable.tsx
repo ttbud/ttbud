@@ -3,7 +3,7 @@ import React, {
   ReactElement,
   useContext,
   useEffect,
-  useRef
+  useRef,
 } from "react";
 import { fail } from "../util/invariants";
 import noop from "../util/noop";
@@ -31,7 +31,7 @@ const Droppable: React.FC<Props> = ({
   onBeforeDragStart = noop,
   getDragBounds = noBounds,
   getLocation,
-  children
+  children,
 }) => {
   const dndContext = useContext(DndContext) ?? fail("No DndContext found");
   const ref = useRef<HTMLElement>(null);
@@ -42,7 +42,7 @@ const Droppable: React.FC<Props> = ({
       ref,
       getLocation,
       onBeforeDragStart,
-      getDragBounds
+      getDragBounds,
     });
 
     return () => dndContext.removeDroppable(id);

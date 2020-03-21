@@ -2,7 +2,7 @@ import {
   Action,
   configureStore,
   getDefaultMiddleware,
-  ThunkAction
+  ThunkAction,
 } from "@reduxjs/toolkit";
 import {
   FLUSH,
@@ -10,7 +10,7 @@ import {
   PERSIST,
   PURGE,
   REGISTER,
-  REHYDRATE
+  REHYDRATE,
 } from "redux-persist";
 import { DroppableMonitor } from "../drag/DroppableMonitor";
 import { BoardStateApiClient } from "../network/BoardStateApiClient";
@@ -33,11 +33,11 @@ export default function createStore(
         thunk: { extraArgument: { monitor } },
         // redux-persist uses non-serializable actions, and that's core to how it works :(.
         serializableCheck: {
-          ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER]
-        }
-      })
+          ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+        },
+      }),
     ],
-    devTools: process.env.NODE_ENV === "development"
+    devTools: process.env.NODE_ENV === "development",
   });
 
   if (process.env.NODE_ENV === "development" && module.hot) {

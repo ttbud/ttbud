@@ -8,12 +8,12 @@ import { reorderIcons } from "./reorderIcons";
 const characterTraySlice = createSlice({
   name: "characterTrayIcons",
   initialState: {
-    icons: DEFAULT_CHARACTER_ICONS
+    icons: DEFAULT_CHARACTER_ICONS,
   },
   reducers: {
     removeIcon(state, action: PayloadAction<Icon>) {
-      state.icons = state.icons.filter(icon => icon.id !== action.payload.id);
-    }
+      state.icons = state.icons.filter((icon) => icon.id !== action.payload.id);
+    },
   },
   extraReducers: {
     [dragEnded.type]: (state, action: PayloadAction<DragEndAction>) => {
@@ -29,10 +29,10 @@ const characterTraySlice = createSlice({
         draggable,
         source,
         destination,
-        dragResult
+        dragResult,
       });
-    }
-  }
+    },
+  },
 });
 
 export const { removeIcon } = characterTraySlice.actions;

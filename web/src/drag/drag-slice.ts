@@ -3,19 +3,19 @@ import Pos2d, {
   Bounds,
   boundsAreEqual,
   centerOf,
-  constrainBoxTo
+  constrainBoxTo,
 } from "../util/shape-math";
 import { assert } from "../util/invariants";
 import {
   DraggableDescriptor,
   DragState,
   DragStateType,
-  DroppableLocation
+  DroppableLocation,
 } from "./DragStateTypes";
 import { AppThunk } from "../state/createStore";
 
 const INITIAL_STATE: DragState = {
-  type: DragStateType.NotDragging
+  type: DragStateType.NotDragging,
 };
 
 interface DragStartAction {
@@ -60,7 +60,7 @@ const dragSlice = createSlice({
 
       const mouseOffset = {
         x: source.bounds.left - mousePos.x,
-        y: source.bounds.top - mousePos.y
+        y: source.bounds.top - mousePos.y,
       };
 
       return {
@@ -70,7 +70,7 @@ const dragSlice = createSlice({
         bounds: source.bounds,
         mouseOffset,
         dragBounds,
-        source
+        source,
       };
     },
     portalDrag(state, action: PayloadAction<DragPortalAction>) {
@@ -120,7 +120,7 @@ const dragSlice = createSlice({
         type: DragStateType.DragEndAnimating,
         draggable: state.draggable,
         source: state.source,
-        destination: finalDestination
+        destination: finalDestination,
       };
     },
     /**
@@ -129,8 +129,8 @@ const dragSlice = createSlice({
      */
     dragEnded(state, _action: PayloadAction<DragEndAction>) {
       return { type: DragStateType.NotDragging };
-    }
-  }
+    },
+  },
 });
 
 const {
@@ -138,7 +138,7 @@ const {
   dragReleased,
   dragMoved,
   dragEnded,
-  portalDrag
+  portalDrag,
 } = dragSlice.actions;
 
 /**
@@ -175,7 +175,7 @@ function startDrag(
         draggable,
         mousePos,
         dragBounds: dragBounds,
-        source: { id: droppable?.id, bounds, ...location }
+        source: { id: droppable?.id, bounds, ...location },
       })
     );
   };
@@ -228,7 +228,7 @@ function releaseDrag(
     const destination: DroppableLocation | undefined = location
       ? {
           id: droppable?.id,
-          ...location
+          ...location,
         }
       : undefined;
     dispatch(dragReleased({ draggable, destination, bounds }));
@@ -240,7 +240,7 @@ function releaseDrag(
         dragEnded({
           destination,
           draggable,
-          source: state.drag.source
+          source: state.drag.source,
         })
       );
     }
@@ -266,7 +266,7 @@ function endDrag(draggable: DraggableDescriptor): AppThunk {
       dragEnded({
         source: state.drag.source,
         destination: state.drag.destination,
-        draggable
+        draggable,
       })
     );
   };
@@ -291,7 +291,7 @@ function updatedBounds(
     top: newMousePos.y + mouseOffset.y,
     left: newMousePos.x + mouseOffset.x,
     bottom: newMousePos.y + mouseOffset.y + height,
-    right: newMousePos.x + mouseOffset.x + width
+    right: newMousePos.x + mouseOffset.x + width,
   };
   return dragBounds ? constrainBoxTo(movedBounds, dragBounds) : movedBounds;
 }
@@ -306,7 +306,7 @@ export {
    * This shouldn't be called directly, but other slices need to
    * respond to this event to update their state, so we export it
    */
-  dragEnded
+  dragEnded,
 };
 
 export default dragSlice.reducer;

@@ -6,7 +6,7 @@ export interface AppState {
 }
 
 const initialState: AppState = {
-  searching: false
+  searching: false,
 };
 
 const appSlice = createSlice({
@@ -18,13 +18,13 @@ const appSlice = createSlice({
     },
     stopSearching(state) {
       state.searching = false;
-    }
+    },
   },
   extraReducers: {
-    [dragEnded.type]: state => {
+    [dragEnded.type]: (state) => {
       state.searching = false;
-    }
-  }
+    },
+  },
 });
 
 export const { startSearching, stopSearching } = appSlice.actions;

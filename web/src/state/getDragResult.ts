@@ -4,7 +4,7 @@ export enum DragResult {
   DraggedOutOf = "dragged out of",
   DraggedInto = "dragged into",
   MovedInside = "moved inside",
-  None = "none"
+  None = "none",
 }
 
 export default function getDragResult(

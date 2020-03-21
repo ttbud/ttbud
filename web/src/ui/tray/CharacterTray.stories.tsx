@@ -10,13 +10,13 @@ import noop from "../../util/noop";
 
 export default {
   component: CharacterTray,
-  title: "CharacterTray"
+  title: "CharacterTray",
 };
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: { drag: dragReducer },
-  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
+  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
 
 export const Default: React.FC = () => (
@@ -27,7 +27,7 @@ export const Default: React.FC = () => (
           display: "inline-block",
           position: "absolute",
           left: 0,
-          top: 0
+          top: 0,
         }}
       >
         <CharacterTray icons={DEFAULT_CHARACTER_ICONS} onIconRemoved={noop} />

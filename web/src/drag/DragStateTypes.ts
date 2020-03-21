@@ -3,7 +3,7 @@ import { Icon } from "../ui/icons";
 
 export enum DraggableType {
   Icon = "icon",
-  Token = "token"
+  Token = "token",
 }
 
 export interface IconDraggable {
@@ -23,7 +23,7 @@ export type DraggableDescriptor = IconDraggable | TokenDraggable;
 
 export enum LocationType {
   Grid = "grid",
-  List = "list"
+  List = "list",
 }
 
 export interface GridLocation {
@@ -48,7 +48,7 @@ export interface DroppableLocation {
 export enum DragStateType {
   NotDragging = "NotDragging",
   Dragging = "Dragging",
-  DragEndAnimating = "DragEndAnimating"
+  DragEndAnimating = "DragEndAnimating",
 }
 
 interface NotDragging {

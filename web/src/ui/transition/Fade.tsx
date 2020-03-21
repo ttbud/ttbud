@@ -11,8 +11,8 @@ const useStyles = makeStyles({
   exit: { opacity: 1 },
   exitActive: (lengthMs: number) => ({
     opacity: 0,
-    transition: `opacity ${lengthMs}ms`
-  })
+    transition: `opacity ${lengthMs}ms`,
+  }),
 });
 
 const Fade: React.FC<Props> = memo(
@@ -27,7 +27,7 @@ const Fade: React.FC<Props> = memo(
         unmountOnExit={true}
         classNames={{
           exit: classes.exit,
-          exitActive: classes.exitActive
+          exitActive: classes.exitActive,
         }}
       >
         {children}

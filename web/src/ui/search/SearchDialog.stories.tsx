@@ -10,19 +10,19 @@ import noop from "../../util/noop";
 
 export default {
   component: SearchDialog,
-  title: "SearchDialog"
+  title: "SearchDialog",
 };
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: {
-    drag: dragReducer
+    drag: dragReducer,
   },
   middleware: getDefaultMiddleware({
     thunk: {
-      extraArgument: { monitor }
-    }
-  })
+      extraArgument: { monitor },
+    },
+  }),
 });
 
 export const Default: React.FC = () => (

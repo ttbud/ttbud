@@ -2,7 +2,7 @@ import React, {
   MouseEventHandler,
   PointerEventHandler,
   useCallback,
-  useRef
+  useRef,
 } from "react";
 import { makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "../../config";
@@ -29,7 +29,7 @@ let GRID_COLOR = "#947C65";
 const useStyles = makeStyles({
   container: {
     width: "100%",
-    height: "100%"
+    height: "100%",
   },
   board: {
     backgroundColor: BACKGROUND_COLOR,
@@ -50,14 +50,14 @@ const useStyles = makeStyles({
     backgroundSize: `${GRID_SIZE_PX}px ${GRID_SIZE_PX}px`,
     height: "100%",
     width: "100%",
-    zIndex: 0
-  }
+    zIndex: 0,
+  },
 });
 
 const scrolledPos = (pixelPos: Pos2d) => {
   return {
     x: pixelPos.x + document.documentElement.scrollLeft,
-    y: pixelPos.y + document.documentElement.scrollTop
+    y: pixelPos.y + document.documentElement.scrollTop,
   };
 };
 
@@ -65,14 +65,14 @@ const toGridPos = (pixelPos: Pos2d) => {
   const snappedPixelPos = snapToGrid(scrolledPos(pixelPos));
   return {
     x: snappedPixelPos.x / GRID_SIZE_PX,
-    y: snappedPixelPos.y / GRID_SIZE_PX
+    y: snappedPixelPos.y / GRID_SIZE_PX,
   };
 };
 
 const LEFT_MOUSE = 1;
 const RIGHT_MOUSE = 2;
 
-const preventDefault: MouseEventHandler = e => e.preventDefault();
+const preventDefault: MouseEventHandler = (e) => e.preventDefault();
 
 interface Props {
   isDragging: boolean;
@@ -89,7 +89,7 @@ const Board: React.FC<Props> = ({
   activeFloor,
   onPingCreated,
   onFloorCreated,
-  onTokenDeleted
+  onTokenDeleted,
 }) => {
   const classes = useStyles();
   const container = useRef<HTMLDivElement>(null);
@@ -100,7 +100,7 @@ const Board: React.FC<Props> = ({
       const gridPos = toGridPos(pos);
 
       const existingTokenId = tokens.find(
-        token =>
+        (token) =>
           posAreEqual(token.pos, gridPos) && token.type === TokenType.Character
       )?.id;
       const draggedTokenId =
@@ -114,23 +114,23 @@ const Board: React.FC<Props> = ({
       return {
         logicalLocation: {
           type: LocationType.Grid,
-          ...gridPos
+          ...gridPos,
         },
         bounds: {
           top: snappedPixelPos.y + containerRect.y,
           left: snappedPixelPos.x + containerRect.x,
           bottom: snappedPixelPos.y + containerRect.y + GRID_SIZE_PX,
-          right: snappedPixelPos.x + containerRect.x + GRID_SIZE_PX
-        }
+          right: snappedPixelPos.x + containerRect.x + GRID_SIZE_PX,
+        },
       };
     },
     [tokens]
   );
 
-  const tokenIcons = tokens.map(token => {
+  const tokenIcons = tokens.map((token) => {
     const pixelPos = {
       x: token.pos.x * GRID_SIZE_PX,
-      y: token.pos.y * GRID_SIZE_PX
+      y: token.pos.y * GRID_SIZE_PX,
     };
 
     switch (token.type) {
@@ -153,7 +153,7 @@ const Board: React.FC<Props> = ({
                 id: `${DROPPABLE_IDS.BOARD}-${token.id}`,
                 type: DraggableType.Token,
                 icon: characterIcon,
-                tokenId: token.id
+                tokenId: token.id,
               }}
             >
               {(isDragging, attributes) => (
@@ -166,7 +166,7 @@ const Board: React.FC<Props> = ({
                     position: "absolute",
                     left: pixelPos.x,
                     top: pixelPos.y,
-                    zIndex: isDragging ? 10_000 : token.pos.z
+                    zIndex: isDragging ? 10_000 : token.pos.z,
                   }}
                 />
               )}
@@ -188,25 +188,25 @@ const Board: React.FC<Props> = ({
     clientX: x,
     clientY: y,
     shiftKey,
-    buttons
+    buttons,
   }) => {
     const gridPos = toGridPos({ x, y });
     if (shiftKey && buttons === LEFT_MOUSE) {
       onPingCreated(gridPos);
     } else if (
       buttons === LEFT_MOUSE &&
-      !tokens.find(token => posAreEqual(token.pos, gridPos))
+      !tokens.find((token) => posAreEqual(token.pos, gridPos))
     ) {
       onFloorCreated(activeFloor.id, gridPos);
     } else if (buttons === RIGHT_MOUSE) {
-      const id = tokens.find(token => posAreEqual(token.pos, gridPos))?.id;
+      const id = tokens.find((token) => posAreEqual(token.pos, gridPos))?.id;
       if (id) {
         onTokenDeleted(id);
       }
     }
   };
 
-  const onPointerMove: PointerEventHandler = e => {
+  const onPointerMove: PointerEventHandler = (e) => {
     if (isDragging) {
       return;
     }
@@ -228,14 +228,14 @@ const Board: React.FC<Props> = ({
       const { clientX: x, clientY: y, buttons, shiftKey } = event;
       const gridPos = toGridPos({ x, y });
       // Skip mouse events that result in the same grid position
-      if (processedPositions.some(pos => posAreEqual(pos, gridPos))) {
+      if (processedPositions.some((pos) => posAreEqual(pos, gridPos))) {
         continue;
       }
 
       if (buttons === LEFT_MOUSE && shiftKey) {
         if (
           !tokens.find(
-            token =>
+            (token) =>
               token.type === TokenType.Ping && posAreEqual(token.pos, gridPos)
           )
         ) {
@@ -244,14 +244,14 @@ const Board: React.FC<Props> = ({
       } else if (
         buttons === LEFT_MOUSE &&
         !tokens.find(
-          token =>
+          (token) =>
             token.type !== TokenType.Ping && posAreEqual(token.pos, gridPos)
         )
       ) {
         onFloorCreated(activeFloor.id, gridPos);
       } else if (buttons === RIGHT_MOUSE) {
         const toDelete = tokens.find(
-          token =>
+          (token) =>
             token.type !== TokenType.Ping && posAreEqual(token.pos, gridPos)
         );
         if (toDelete) {
@@ -272,7 +272,7 @@ const Board: React.FC<Props> = ({
       onContextMenu={preventDefault}
     >
       <Droppable id={DROPPABLE_IDS.BOARD} getLocation={getLocation}>
-        {attributes => (
+        {(attributes) => (
           <div {...attributes} className={classes.board}>
             <TransitionGroup>{tokenIcons}</TransitionGroup>
           </div>

@@ -12,16 +12,16 @@ import CharacterTray from "../tray/CharacterTray";
 import FloorTray from "../tray/FloorTray";
 import {
   setActiveFloor,
-  removeIcon as removeFloorIcon
+  removeIcon as removeFloorIcon,
 } from "../../state/floor-tray-slice";
 import { RootState } from "../../state/rootReducer";
 import Pos2d from "../../util/shape-math";
 import { removeIcon as removeCharacterIcon } from "../../state/character-tray-slice";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   app: {
     width: 4000,
-    height: 2000
+    height: 2000,
   },
   characterTray: {
     position: "fixed",
@@ -29,7 +29,7 @@ const useStyles = makeStyles(theme => ({
     // Same location whether the scrollbar is visible or not
     // (Scrollbar width = 100vh - 100%)
     bottom: `calc(${theme.spacing(3)}px - (100vh - 100%))`,
-    left: theme.spacing(1)
+    left: theme.spacing(1),
   },
   floorTray: {
     display: "inline-flex",
@@ -39,13 +39,13 @@ const useStyles = makeStyles(theme => ({
     // (Scrollbar width = 100vh - 100%)
     bottom: `calc(${theme.spacing(3)}px - (100vh - 100%))`,
     left: "calc(50% + (100vw - 100%)/2)",
-    transform: "translateX(-50%)"
+    transform: "translateX(-50%)",
   },
   settings: {
     position: "fixed",
     bottom: `calc(${theme.spacing(3)}px - (100vh - 100%))`,
-    right: `calc(${theme.spacing(3)}px - (100vw - 100%))`
-  }
+    right: `calc(${theme.spacing(3)}px - (100vw - 100%))`,
+  },
 }));
 
 const App = () => {
@@ -57,7 +57,7 @@ const App = () => {
     activeFloor,
     searching,
     floorTrayIcons,
-    characterTrayIcons
+    characterTrayIcons,
   } = useSelector(
     (state: RootState) => ({
       isDragging: state.drag.type === DragStateType.Dragging,
@@ -65,7 +65,7 @@ const App = () => {
       activeFloor: state.floorTray.activeFloor,
       searching: state.app.searching,
       floorTrayIcons: state.floorTray.icons,
-      characterTrayIcons: state.characterTray.icons
+      characterTrayIcons: state.characterTray.icons,
     }),
     shallowEqual
   );
@@ -93,7 +93,7 @@ const App = () => {
   );
 
   const onSearchDialogClose = useCallback(() => dispatch(stopSearching()), [
-    dispatch
+    dispatch,
   ]);
 
   const onFloorCreated = (iconId: string, pos: Pos2d) =>

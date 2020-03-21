@@ -11,15 +11,15 @@ import DndContext from "./DndContext";
 
 export default {
   component: Draggable,
-  title: "Draggable"
+  title: "Draggable",
 };
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: {
-    drag: dragReducer
+    drag: dragReducer,
   },
-  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
+  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
 export const Default = () => (
   <Provider store={store}>
@@ -28,7 +28,7 @@ export const Default = () => (
         descriptor={{
           type: DraggableType.Icon,
           id: "draggable",
-          icon: WALL_ICON
+          icon: WALL_ICON,
         }}
       >
         {(isDragging, attributes) => (

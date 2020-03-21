@@ -4,7 +4,7 @@ import boardReducer, {
   addPing,
   BoardState,
   removeToken,
-  replaceTokens
+  replaceTokens,
 } from "./board-slice";
 import { Token, TokenType } from "../network/BoardStateApiClient";
 import { dragEnded } from "../drag/drag-slice";
@@ -16,12 +16,12 @@ function createTestStore(initialState: BoardState) {
   return configureStore({
     reducer: { board: boardReducer },
     preloadedState: { board: initialState },
-    middleware: getDefaultMiddleware()
+    middleware: getDefaultMiddleware(),
   });
 }
 
 const EMPTY_BOARD: BoardState = {
-  tokens: []
+  tokens: [],
 };
 
 const TOKEN_1: Token = {
@@ -31,8 +31,8 @@ const TOKEN_1: Token = {
   pos: {
     x: 0,
     y: 0,
-    z: 1
-  }
+    z: 1,
+  },
 };
 
 const TOKEN_2: Token = {
@@ -42,8 +42,8 @@ const TOKEN_2: Token = {
   pos: {
     x: 1,
     y: 1,
-    z: 1
-  }
+    z: 1,
+  },
 };
 
 it("adds floors", () => {
@@ -53,8 +53,8 @@ it("adds floors", () => {
     {
       iconId: "icon-id",
       type: TokenType.Floor,
-      pos: { x: 0, y: 0, z: 0 }
-    }
+      pos: { x: 0, y: 0, z: 0 },
+    },
   ]);
 });
 
@@ -64,8 +64,8 @@ it("adds pings", () => {
   expect(store.getState().board.tokens).toMatchObject([
     {
       type: TokenType.Ping,
-      pos: { x: 1, y: 1 }
-    }
+      pos: { x: 1, y: 1 },
+    },
   ]);
 });
 
@@ -89,15 +89,15 @@ it("removes tokens from the board when they are dragged off", () => {
         id: "draggable-id",
         type: DraggableType.Token,
         icon: WALL_ICON,
-        tokenId: TOKEN_1.id
+        tokenId: TOKEN_1.id,
       },
       source: {
         id: DROPPABLE_IDS.BOARD,
-        bounds: { top: 0, left: 0, bottom: 10, right: 10 }
+        bounds: { top: 0, left: 0, bottom: 10, right: 10 },
       },
       destination: {
-        bounds: { top: 100, left: 100, bottom: 110, right: 110 }
-      }
+        bounds: { top: 100, left: 100, bottom: 110, right: 110 },
+      },
     })
   );
 
@@ -111,10 +111,10 @@ it("adds tokens to the board when they are dragged in", () => {
       draggable: {
         id: "draggable-id",
         type: DraggableType.Icon,
-        icon: WALL_ICON
+        icon: WALL_ICON,
       },
       source: {
-        bounds: { top: 100, left: 100, bottom: 110, right: 110 }
+        bounds: { top: 100, left: 100, bottom: 110, right: 110 },
       },
       destination: {
         id: DROPPABLE_IDS.BOARD,
@@ -122,9 +122,9 @@ it("adds tokens to the board when they are dragged in", () => {
         logicalLocation: {
           type: LocationType.Grid,
           x: 0,
-          y: 0
-        }
-      }
+          y: 0,
+        },
+      },
     })
   );
 
@@ -133,8 +133,8 @@ it("adds tokens to the board when they are dragged in", () => {
     {
       iconId: WALL_ICON.id,
       pos: { x: 0, y: 0 },
-      type: TokenType.Character
-    }
+      type: TokenType.Character,
+    },
   ]);
 });
 
@@ -146,18 +146,18 @@ it("moves tokens when they are dragged around inside the board", () => {
         id: "draggable-id",
         type: DraggableType.Token,
         icon: WALL_ICON,
-        tokenId: TOKEN_1.id
+        tokenId: TOKEN_1.id,
       },
       source: {
         id: DROPPABLE_IDS.BOARD,
         bounds: { top: 0, left: 0, bottom: 0, right: 0 },
-        logicalLocation: { type: LocationType.Grid, x: 0, y: 0 }
+        logicalLocation: { type: LocationType.Grid, x: 0, y: 0 },
       },
       destination: {
         id: DROPPABLE_IDS.BOARD,
         bounds: { top: 50, left: 50, bottom: 60, right: 60 },
-        logicalLocation: { type: LocationType.Grid, x: 5, y: 5 }
-      }
+        logicalLocation: { type: LocationType.Grid, x: 5, y: 5 },
+      },
     })
   );
 
@@ -167,10 +167,10 @@ it("moves tokens when they are dragged around inside the board", () => {
       pos: {
         x: 5,
         y: 5,
-        z: 1
-      }
+        z: 1,
+      },
     },
-    TOKEN_2
+    TOKEN_2,
   ]);
 });
 
@@ -181,16 +181,16 @@ it("ignores drags that don't involve the board", () => {
       draggable: {
         id: "draggable-id",
         type: DraggableType.Icon,
-        icon: WALL_ICON
+        icon: WALL_ICON,
       },
       source: {
         id: DROPPABLE_IDS.CHARACTER_TRAY,
-        bounds: { top: 0, left: 0, bottom: 10, right: 10 }
+        bounds: { top: 0, left: 0, bottom: 10, right: 10 },
       },
       destination: {
         id: DROPPABLE_IDS.CHARACTER_TRAY,
-        bounds: { top: 100, left: 100, bottom: 110, right: 110 }
-      }
+        bounds: { top: 100, left: 100, bottom: 110, right: 110 },
+      },
     })
   );
 });
@@ -206,7 +206,7 @@ it("ignores drags on deleted tokens", () => {
         id: "draggable-id",
         type: DraggableType.Token,
         icon: WALL_ICON,
-        tokenId: TOKEN_2.id
+        tokenId: TOKEN_2.id,
       },
       source: {
         id: DROPPABLE_IDS.BOARD,
@@ -214,8 +214,8 @@ it("ignores drags on deleted tokens", () => {
         logicalLocation: {
           type: LocationType.Grid,
           x: 0,
-          y: 0
-        }
+          y: 0,
+        },
       },
       destination: {
         id: DROPPABLE_IDS.BOARD,
@@ -223,8 +223,8 @@ it("ignores drags on deleted tokens", () => {
         logicalLocation: {
           type: LocationType.Grid,
           x: 5,
-          y: 5
-        }
+          y: 5,
+        },
       },
     })
   );

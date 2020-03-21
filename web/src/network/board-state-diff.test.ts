@@ -1,7 +1,7 @@
 import {
   getLocalState,
   getNetworkUpdates,
-  UpdateType
+  UpdateType,
 } from "./board-state-diff";
 import { Token, TokenType } from "./BoardStateApiClient";
 
@@ -12,8 +12,8 @@ const TOKEN_1: Token = {
   pos: {
     x: 0,
     y: 0,
-    z: 0
-  }
+    z: 0,
+  },
 };
 
 const MOVED_TOKEN_1: Token = {
@@ -23,8 +23,8 @@ const MOVED_TOKEN_1: Token = {
   pos: {
     x: 1,
     y: 1,
-    z: 1
-  }
+    z: 1,
+  },
 };
 
 const TOKEN_2: Token = {
@@ -34,8 +34,8 @@ const TOKEN_2: Token = {
   pos: {
     x: 2,
     y: 2,
-    z: 2
-  }
+    z: 2,
+  },
 };
 
 describe("getNetworkUpdates", () => {
@@ -50,13 +50,13 @@ describe("getNetworkUpdates", () => {
       getNetworkUpdates({
         networkTokens: [TOKEN_1],
         uiTokens: [],
-        unackedUpdates: []
+        unackedUpdates: [],
       })
     ).toEqual([
       {
         type: "delete",
-        tokenId: TOKEN_1.id
-      }
+        tokenId: TOKEN_1.id,
+      },
     ]);
   });
 
@@ -65,13 +65,13 @@ describe("getNetworkUpdates", () => {
       getNetworkUpdates({
         networkTokens: [],
         uiTokens: [TOKEN_1],
-        unackedUpdates: []
+        unackedUpdates: [],
       })
     ).toEqual([
       {
         type: "create",
-        token: TOKEN_1
-      }
+        token: TOKEN_1,
+      },
     ]);
   });
 
@@ -83,9 +83,9 @@ describe("getNetworkUpdates", () => {
         unackedUpdates: [
           {
             type: UpdateType.CREATE,
-            token: TOKEN_1
-          }
-        ]
+            token: TOKEN_1,
+          },
+        ],
       })
     ).toEqual([]);
   });
@@ -98,9 +98,9 @@ describe("getNetworkUpdates", () => {
         unackedUpdates: [
           {
             type: UpdateType.DELETE,
-            tokenId: TOKEN_1.id
-          }
-        ]
+            tokenId: TOKEN_1.id,
+          },
+        ],
       })
     ).toEqual([]);
   });
@@ -110,13 +110,13 @@ describe("getNetworkUpdates", () => {
       getNetworkUpdates({
         networkTokens: [TOKEN_1],
         uiTokens: [MOVED_TOKEN_1],
-        unackedUpdates: []
+        unackedUpdates: [],
       })
     ).toEqual([
       {
         type: "move",
-        token: MOVED_TOKEN_1
-      }
+        token: MOVED_TOKEN_1,
+      },
     ]);
   });
 });
