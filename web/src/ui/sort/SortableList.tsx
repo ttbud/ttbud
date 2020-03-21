@@ -3,7 +3,7 @@ import React, {
   PropsWithChildren,
   ReactElement,
   useCallback,
-  useRef
+  useRef,
 } from "react";
 import Droppable, { DroppableAttributes } from "../../drag/Droppable";
 import Draggable, { DragAttributes } from "../../drag/Draggable";
@@ -16,7 +16,7 @@ import {
   DraggableDescriptor,
   DragStateType,
   DroppableLocation,
-  LocationType
+  LocationType,
 } from "../../drag/DragStateTypes";
 import { RootState } from "../../state/rootReducer";
 
@@ -72,7 +72,7 @@ interface SortState {
 
 const NOT_SORTING: SortState = {
   isDragging: false,
-  isHovering: false
+  isHovering: false,
 };
 
 interface HoverState {
@@ -104,7 +104,7 @@ export default function SortableList<T extends DraggableItem>({
   getTargets,
   constrainDragsToContainer = false,
   children: renderChild,
-  style = {}
+  style = {},
 }: PropsWithChildren<Props<T>>): ReactElement {
   const targets = useRef<Targets>();
   const container = useRef<HTMLElement>();
@@ -112,7 +112,7 @@ export default function SortableList<T extends DraggableItem>({
   const getHoverIdx = ({
     pos,
     dragStartedHere,
-    isHovering
+    isHovering,
   }: HoverState): number | undefined => {
     if (!isHovering) {
       return;
@@ -134,7 +134,7 @@ export default function SortableList<T extends DraggableItem>({
     isDragging,
     hoverIdx,
     dragStartIdx,
-    draggableId
+    draggableId,
   } = useSelector((state: RootState): SortState => {
     const dragState = state.drag;
 
@@ -155,10 +155,10 @@ export default function SortableList<T extends DraggableItem>({
           hoverIdx: getHoverIdx({
             pos: centerOf(dragState.bounds),
             dragStartedHere: dragState.source.id === id,
-            isHovering: dragState.hoveredDroppableId === id
+            isHovering: dragState.hoveredDroppableId === id,
           }),
           dragStartIdx: getListIdx(id, dragState.source),
-          draggableId: dragState.draggable?.id
+          draggableId: dragState.draggable?.id,
         };
       case DragStateType.DragEndAnimating:
         return {
@@ -166,7 +166,7 @@ export default function SortableList<T extends DraggableItem>({
           isDragging: true,
           hoverIdx: getListIdx(id, dragState.destination),
           draggableId: dragState.draggable?.id,
-          dragStartIdx: getListIdx(id, dragState.source)
+          dragStartIdx: getListIdx(id, dragState.source),
         };
       default:
         throw new UnreachableCaseError(dragState);
@@ -182,7 +182,7 @@ export default function SortableList<T extends DraggableItem>({
   const getLocation: LocationCollector = useCallback(
     (draggable, pos) => {
       const dragStartedHere = items.some(
-        item => item.descriptor.id === draggable.id
+        (item) => item.descriptor.id === draggable.id
       );
       assert(
         targets.current,
@@ -197,14 +197,14 @@ export default function SortableList<T extends DraggableItem>({
           return {
             logicalLocation: {
               type: LocationType.List,
-              idx
+              idx,
             },
             bounds: {
               top: target.destination.top,
               left: target.destination.left,
               bottom: target.destination.bottom,
-              right: target.destination.right
-            }
+              right: target.destination.right,
+            },
           };
         }
       }
@@ -230,7 +230,7 @@ export default function SortableList<T extends DraggableItem>({
 
       if (hoverIdx === undefined) {
         return {
-          transition: SHUFFLE_TRANSITION
+          transition: SHUFFLE_TRANSITION,
         };
       }
 
@@ -258,7 +258,7 @@ export default function SortableList<T extends DraggableItem>({
 
         return {
           transform: `translate(${offsetX}px, ${offsetY}px)`,
-          transition: SHUFFLE_TRANSITION
+          transition: SHUFFLE_TRANSITION,
         };
       } else if (
         hoverIdx > eDragStartIdx &&
@@ -272,11 +272,11 @@ export default function SortableList<T extends DraggableItem>({
 
         return {
           transform: `translate(${offsetX}px, ${offsetY}px)`,
-          transition: SHUFFLE_TRANSITION
+          transition: SHUFFLE_TRANSITION,
         };
       } else {
         return {
-          transition: SHUFFLE_TRANSITION
+          transition: SHUFFLE_TRANSITION,
         };
       }
     },
@@ -299,7 +299,7 @@ export default function SortableList<T extends DraggableItem>({
       style = {
         height: firstDestination.bottom - firstDestination.top,
         width: firstDestination.right - firstDestination.left,
-        transition: SPACER_TRANSITION
+        transition: SPACER_TRANSITION,
       };
     } else {
       style = { height: 0, width: 0, transition: SPACER_TRANSITION, margin: 0 };
@@ -312,7 +312,7 @@ export default function SortableList<T extends DraggableItem>({
     (attributes: DroppableAttributes) => {
       return (
         <div
-          ref={el => {
+          ref={(el) => {
             container.current = el ?? undefined;
             attributes.ref.current = el;
           }}
@@ -330,8 +330,8 @@ export default function SortableList<T extends DraggableItem>({
                   ...attributes,
                   style: {
                     ...attributes.style,
-                    ...getChildStyle(idx, item.descriptor.id)
-                  }
+                    ...getChildStyle(idx, item.descriptor.id),
+                  },
                 })
               }
             </Draggable>

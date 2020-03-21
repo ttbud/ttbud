@@ -7,7 +7,7 @@ import React, {
   useCallback,
   useEffect,
   useLayoutEffect,
-  useRef
+  useRef,
 } from "react";
 import { createPortal } from "react-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -20,7 +20,7 @@ import {
   moveDrag,
   portalDrag,
   releaseDrag,
-  startDrag
+  startDrag,
 } from "./drag-slice";
 import { DraggableDescriptor, DragStateType } from "./DragStateTypes";
 
@@ -44,7 +44,7 @@ interface Props {
 const MODIFIER_KEYS = ["Alt", "Control", "Meta", "Shift"];
 
 const modifierKeyPressed = (e: React.MouseEvent): boolean => {
-  return MODIFIER_KEYS.some(key => e.getModifierState(key));
+  return MODIFIER_KEYS.some((key) => e.getModifierState(key));
 };
 
 interface NotDragging {
@@ -78,7 +78,7 @@ const getStyle = (
 ): CSSProperties => {
   const style: CSSProperties = {
     userSelect: "none",
-    cursor: state.type === DragStateType.Dragging ? "grabbing" : "grab"
+    cursor: state.type === DragStateType.Dragging ? "grabbing" : "grab",
   };
 
   if (
@@ -108,7 +108,7 @@ const Draggable: React.FC<Props> = ({
   descriptor,
   usePortal = false,
   droppableId,
-  children
+  children,
 }) => {
   const ref = useRef<HTMLElement>(null);
   const dispatch = useDispatch();
@@ -129,16 +129,16 @@ const Draggable: React.FC<Props> = ({
           type: DragStateType.Dragging,
           offset: {
             x: state.bounds.left - state.source.bounds.left,
-            y: state.bounds.top - state.source.bounds.top
-          }
+            y: state.bounds.top - state.source.bounds.top,
+          },
         };
       case DragStateType.DragEndAnimating:
         return {
           type: DragStateType.DragEndAnimating,
           offset: {
             x: state.destination.bounds.left - state.source.bounds.left,
-            y: state.destination.bounds.top - state.source.bounds.top
-          }
+            y: state.destination.bounds.top - state.source.bounds.top,
+          },
         };
       default:
         throw new UnreachableCaseError(state);
@@ -162,14 +162,14 @@ const Draggable: React.FC<Props> = ({
           top: bounds.top,
           left: bounds.left,
           bottom: bounds.bottom,
-          right: bounds.right
-        }
+          right: bounds.right,
+        },
       })
     );
   }, [descriptor, dispatch, dragState.type, usePortal]);
 
   const onPointerDown: PointerEventHandler = useCallback(
-    e => {
+    (e) => {
       if (e.buttons !== LEFT_MOUSE || modifierKeyPressed(e)) {
         return;
       }
@@ -184,7 +184,7 @@ const Draggable: React.FC<Props> = ({
           top: bounds.top,
           left: bounds.left,
           bottom: bounds.bottom,
-          right: bounds.right
+          right: bounds.right,
         })
       );
 
@@ -250,7 +250,7 @@ const Draggable: React.FC<Props> = ({
   const element = children(isDragging, {
     ref,
     style: getStyle(dragState, usePortal),
-    ...getHandlers(dragState)
+    ...getHandlers(dragState),
   });
 
   return usePortal && isDragging

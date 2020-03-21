@@ -4,7 +4,7 @@ import { assert } from "../util/invariants";
 import {
   DraggableDescriptor,
   DroppableLocation,
-  LocationType
+  LocationType,
 } from "../drag/DragStateTypes";
 import UnreachableCaseError from "../util/UnreachableCaseError";
 
@@ -21,11 +21,11 @@ export function reorderIcons({
   dragResult,
   source,
   destination,
-  draggable
+  draggable,
 }: ReorderIconsParams) {
   switch (dragResult) {
     case DragResult.DraggedInto:
-      if (icons.some(icon => icon.id === draggable.icon.id)) {
+      if (icons.some((icon) => icon.id === draggable.icon.id)) {
         return;
       }
       const icon = ICONS_BY_ID.get(draggable.icon.id);

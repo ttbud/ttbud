@@ -11,8 +11,8 @@ const useStyles = makeStyles({
   exit: { transform: "scale(1)" },
   exitActive: (lengthMs: number) => ({
     transform: "scale(0)",
-    transition: `transform ${lengthMs}ms cubic-bezier(0.2, 0, 0, 1)`
-  })
+    transition: `transform ${lengthMs}ms cubic-bezier(0.2, 0, 0, 1)`,
+  }),
 });
 
 const Shrink: React.FC<Props> = memo(
@@ -27,7 +27,7 @@ const Shrink: React.FC<Props> = memo(
         unmountOnExit={true}
         classNames={{
           exit: classes.exit,
-          exitActive: classes.exitActive
+          exitActive: classes.exitActive,
         }}
       >
         {children}

@@ -15,18 +15,18 @@ import { RootState } from "../state/rootReducer";
 
 export default {
   component: Droppable,
-  title: "Droppable"
+  title: "Droppable",
 };
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: { drag: dragReducer },
-  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
+  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
 
 const ColoredDroppable: React.FC<{ color: string }> = ({ color }) => (
   <Droppable id={color} getLocation={() => undefined}>
-    {attributes => <Square {...attributes} color={color} />}
+    {(attributes) => <Square {...attributes} color={color} />}
   </Droppable>
 );
 
@@ -56,7 +56,7 @@ const DropTargets: React.FC = () => {
         descriptor={{
           type: DraggableType.Icon,
           id: "draggable",
-          icon: WALL_ICON
+          icon: WALL_ICON,
         }}
       >
         {(isDragging, attributes) => (

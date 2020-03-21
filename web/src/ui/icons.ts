@@ -2,7 +2,7 @@ import { List, Map } from "immutable";
 import { loadIcons } from "./icon-loader";
 
 function byId(icons: List<Icon>): Map<string, Icon> {
-  return Map(icons.map(icon => [icon.id, icon]));
+  return Map(icons.map((icon) => [icon.id, icon]));
 }
 
 export interface Icon {
@@ -17,7 +17,7 @@ export const ICONS = List(
     return {
       id: path,
       img,
-      desc: name.replace("-", " ")
+      desc: name.replace("-", " "),
     };
   })
 );
@@ -32,7 +32,7 @@ export const DEFAULT_FLOOR_ICONS = [
   ICONS_BY_ID.get("./bed.svg")!,
   ICONS_BY_ID.get("./wooden-crate.svg")!,
   ICONS_BY_ID.get("./locked-chest.svg")!,
-  ICONS_BY_ID.get("./door.svg")!
+  ICONS_BY_ID.get("./door.svg")!,
 ];
 
 export const DEFAULT_CHARACTER_ICONS = [
@@ -40,5 +40,5 @@ export const DEFAULT_CHARACTER_ICONS = [
   ICONS_BY_ID.get("./bandit.svg")!,
   ICONS_BY_ID.get("./bear-head.svg")!,
   ICONS_BY_ID.get("./beard.svg")!,
-  ICONS_BY_ID.get("./cowled.svg")!
+  ICONS_BY_ID.get("./cowled.svg")!,
 ];

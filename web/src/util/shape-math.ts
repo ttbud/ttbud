@@ -21,7 +21,7 @@ export interface Pos3d {
 export function snapToGrid(pos: Pos2d): Pos2d {
   return {
     x: snapDimensionToGrid(pos.x),
-    y: snapDimensionToGrid(pos.y)
+    y: snapDimensionToGrid(pos.y),
   };
 }
 

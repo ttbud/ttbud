@@ -16,7 +16,7 @@ import Board from "./Board";
 export default {
   component: Board,
   title: "Board",
-  decorators: [noBorder]
+  decorators: [noBorder],
 };
 
 const toToken = (icon: Icon, i: number): IconToken => ({
@@ -24,22 +24,20 @@ const toToken = (icon: Icon, i: number): IconToken => ({
   pos: {
     x: i,
     y: i,
-    z: i % 2 ? 0 : 1
+    z: i % 2 ? 0 : 1,
   },
   id: uuid(),
-  iconId: icon.id
+  iconId: icon.id,
 });
 
-const tokens = ICONS.take(6)
-  .map(toToken)
-  .toArray();
+const tokens = ICONS.take(6).map(toToken).toArray();
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: {
-    drag: dragReducer
+    drag: dragReducer,
   },
-  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
+  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
 
 const ExampleBoard: React.FC = () => {

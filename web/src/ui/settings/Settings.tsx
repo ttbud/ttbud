@@ -7,25 +7,25 @@ import {
   makeStyles,
   Popover,
   Switch,
-  Typography
+  Typography,
 } from "@material-ui/core";
 import SettingsIcon from "@material-ui/icons/Settings";
 import React, { memo, MouseEvent, useState } from "react";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   popoverContainer: {
     display: "flex",
     flexDirection: "column",
     padding: theme.spacing(2),
-    backgroundColor: theme.palette.background.paper
+    backgroundColor: theme.palette.background.paper,
   },
   settingMainText: {
-    marginRight: theme.spacing(2)
+    marginRight: theme.spacing(2),
   },
   aboutLink: {
     margin: "auto",
-    color: "black"
-  }
+    color: "black",
+  },
 }));
 
 interface Props {

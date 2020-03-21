@@ -21,7 +21,7 @@ export default forwardRef<HTMLDivElement, Props>(function Square(
         width: "100px",
         height: "100px",
         backgroundColor: props.color,
-        ...props.style
+        ...props.style,
       }}
     >
       {props.children}

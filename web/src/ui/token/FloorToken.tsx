@@ -13,8 +13,8 @@ const useStyles = makeStyles({
   media: {
     width: GRID_SIZE_PX,
     height: GRID_SIZE_PX,
-    userSelect: "none"
-  }
+    userSelect: "none",
+  },
 });
 
 const FloorToken: React.FC<Props> = ({ icon, pos }) => {
@@ -24,7 +24,7 @@ const FloorToken: React.FC<Props> = ({ icon, pos }) => {
     top: pos.y,
     left: pos.x,
     backgroundImage: `url(${icon.img})`,
-    zIndex: 0
+    zIndex: 0,
   };
 
   // Using an actual image element here makes it so sometimes if you click and

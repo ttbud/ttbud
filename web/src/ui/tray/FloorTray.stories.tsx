@@ -10,13 +10,13 @@ import FloorTray from "./FloorTray";
 
 export default {
   component: FloorTray,
-  title: "FloorTray"
+  title: "FloorTray",
 };
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: { drag: dragReducer },
-  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
+  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
 
 export const Default: React.FC = () => (
@@ -31,7 +31,7 @@ export const Default: React.FC = () => (
           // (Scrollbar width = 100vh - 100%)
           bottom: `calc(10px - (100vh - 100%))`,
           left: "calc(50% + (100vw - 100%)/2)",
-          transform: "translateX(-50%)"
+          transform: "translateX(-50%)",
         }}
       >
         <FloorTray

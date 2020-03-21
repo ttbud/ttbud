@@ -4,14 +4,14 @@ import Character from "./Character";
 
 export default {
   component: Character,
-  title: "Character"
+  title: "Character",
 };
 
 const ICON = DEFAULT_CHARACTER_ICONS[0];
 const DEFAULT_PROPS = {
   icon: ICON,
   style: { width: 40, height: 40 },
-  isDragging: false
+  isDragging: false,
 };
 
 export const Default = () => <Character {...DEFAULT_PROPS} />;

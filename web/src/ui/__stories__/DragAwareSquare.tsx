@@ -18,7 +18,7 @@ export default forwardRef<HTMLDivElement, Props>(function DragAwareSquare(
       style={{
         zIndex: isDragging ? 1000 : "auto",
         position: isDragging ? "relative" : "static",
-        ...style
+        ...style,
       }}
       {...attributes}
     >

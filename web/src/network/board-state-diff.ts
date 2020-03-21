@@ -5,7 +5,7 @@ import { Token } from "./BoardStateApiClient";
 export enum UpdateType {
   CREATE = "create",
   MOVE = "move",
-  DELETE = "delete"
+  DELETE = "delete",
 }
 
 export interface CreateToken {
@@ -38,49 +38,49 @@ interface DiffState {
 export function getNetworkUpdates({
   networkTokens,
   uiTokens,
-  unackedUpdates
+  unackedUpdates,
 }: DiffState): Update[] {
   const createsAndMoves: Update[] = [];
 
   const unackedCreatesAndMoves = unackedUpdates.filter(isCreateOrMove);
   const unqueuedTokens = uiTokens.filter(
-    token =>
-      !unackedCreatesAndMoves.some(update => update.token.id === token.id)
+    (token) =>
+      !unackedCreatesAndMoves.some((update) => update.token.id === token.id)
   );
 
   for (const uiToken of unqueuedTokens) {
     const networkToken = networkTokens.find(
-      networkToken => networkToken.id === uiToken.id
+      (networkToken) => networkToken.id === uiToken.id
     );
 
     if (!networkToken) {
       // The network doesn't have it, so tell them to create it
       createsAndMoves.push({
         type: UpdateType.CREATE,
-        token: uiToken
+        token: uiToken,
       });
     } else if (!posAreEqual(networkToken.pos, uiToken.pos)) {
       // The network has it, but we have a new position, so send the new position
       createsAndMoves.push({
         type: UpdateType.MOVE,
-        token: uiToken
+        token: uiToken,
       });
     }
   }
 
   const existsInUi = (tokenId: string) =>
-    uiTokens.some(uiToken => tokenId === uiToken.id);
+    uiTokens.some((uiToken) => tokenId === uiToken.id);
 
   const isQueuedToDelete = (tokenId: string) =>
     unackedUpdates.some(
-      update => update.type === "delete" && update.tokenId === tokenId
+      (update) => update.type === "delete" && update.tokenId === tokenId
     );
 
   const deletes: DeleteToken[] = networkTokens
-    .filter(token => !existsInUi(token.id) && !isQueuedToDelete(token.id))
-    .map(token => ({
+    .filter((token) => !existsInUi(token.id) && !isQueuedToDelete(token.id))
+    .map((token) => ({
       type: UpdateType.DELETE,
-      tokenId: token.id
+      tokenId: token.id,
     }));
 
   return createsAndMoves.concat(deletes);
@@ -99,7 +99,7 @@ export function getLocalState(
         break;
       case UpdateType.MOVE:
         const idxToMove = localState.findIndex(
-          networkToken => networkToken.id === uiUpdate.token.id
+          (networkToken) => networkToken.id === uiUpdate.token.id
         );
         if (idxToMove > -1) {
           localState.splice(idxToMove, 1);
@@ -108,7 +108,7 @@ export function getLocalState(
         break;
       case UpdateType.DELETE:
         const idxToDelete = localState.findIndex(
-          networkToken => networkToken.id === uiUpdate.tokenId
+          (networkToken) => networkToken.id === uiUpdate.tokenId
         );
         if (idxToDelete > -1) {
           localState.splice(idxToDelete, 1);

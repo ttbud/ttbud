@@ -10,20 +10,20 @@ const floorTraySlice = createSlice({
   name: "floorTrayIcons",
   initialState: {
     icons: DEFAULT_FLOOR_ICONS,
-    activeFloor: DEFAULT_FLOOR_ICONS[0]
+    activeFloor: DEFAULT_FLOOR_ICONS[0],
   },
   reducers: {
     setActiveFloor(state, action: PayloadAction<Icon>) {
       const activeIcon = action.payload;
       assert(
-        state.icons.some(icon => icon.id === activeIcon.id),
+        state.icons.some((icon) => icon.id === activeIcon.id),
         `Icon ${activeIcon.id} cannot be the active floor because it is not in the tray`
       );
       state.activeFloor = activeIcon;
     },
     removeIcon(state, action: PayloadAction<Icon>) {
-      state.icons = state.icons.filter(icon => icon.id !== action.payload.id);
-    }
+      state.icons = state.icons.filter((icon) => icon.id !== action.payload.id);
+    },
   },
   extraReducers: {
     [dragEnded.type]: (state, action: PayloadAction<DragEndAction>) => {
@@ -38,10 +38,10 @@ const floorTraySlice = createSlice({
         draggable,
         source,
         destination,
-        dragResult
+        dragResult,
       });
-    }
-  }
+    },
+  },
 });
 
 export default floorTraySlice.reducer;

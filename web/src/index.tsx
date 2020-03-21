@@ -14,7 +14,7 @@ import { persistStore } from "redux-persist";
 const monitor = new DomDroppableMonitor();
 const apiClient = new BoardStateApiClient(
   `wss://${process.env.REACT_APP_DOMAIN}:${process.env.REACT_APP_API_WEBSOCKET_PORT}`,
-  url => new WebSocket(url)
+  (url) => new WebSocket(url)
 );
 const store = createStore(monitor, apiClient);
 

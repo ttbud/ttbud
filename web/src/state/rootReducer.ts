@@ -12,7 +12,7 @@ const reducers = combineReducers({
   floorTray: floorTrayReducer,
   app: appReducer,
   board: boardReducer,
-  drag: dragReducer
+  drag: dragReducer,
 });
 
 export type RootState = ReturnType<typeof reducers>;
@@ -20,7 +20,7 @@ export type RootState = ReturnType<typeof reducers>;
 const persistConfig = {
   key: "settings",
   storage,
-  whitelist: ["characterTray", "floorTray"]
+  whitelist: ["characterTray", "floorTray"],
 };
 
 const rootReducer = persistReducer(persistConfig, reducers);

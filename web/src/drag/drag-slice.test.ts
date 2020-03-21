@@ -3,7 +3,7 @@ import dragReducer, {
   moveDrag,
   portalDrag,
   releaseDrag,
-  startDrag
+  startDrag,
 } from "./drag-slice";
 import { WALL_ICON } from "../ui/icons";
 import {
@@ -12,7 +12,7 @@ import {
   DragStateType,
   IconDraggable,
   LocationType,
-  LogicalLocation
+  LogicalLocation,
 } from "./DragStateTypes";
 import { FakeDroppableMonitor } from "./__test_util__/FakeDroppableMonitor";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
@@ -27,22 +27,22 @@ const NO_OFFSET = { x: 0, y: 0 };
 const DRAGGABLE: IconDraggable = {
   id: "draggable-id",
   type: DraggableType.Icon,
-  icon: WALL_ICON
+  icon: WALL_ICON,
 };
 
 const INACTIVE_DRAGGABLE: IconDraggable = {
   id: "another-draggable-id",
   type: DraggableType.Icon,
-  icon: WALL_ICON
+  icon: WALL_ICON,
 };
 
 const DEFAULT_LOCATION: LogicalLocation = {
   type: LocationType.List,
-  idx: 0
+  idx: 0,
 };
 
 const NOT_DRAGGING: DragState = {
-  type: DragStateType.NotDragging
+  type: DragStateType.NotDragging,
 };
 
 const DRAGGING: DragState = {
@@ -50,14 +50,14 @@ const DRAGGING: DragState = {
   draggable: DRAGGABLE,
   source: { bounds: ORIGIN_BOUNDS },
   mouseOffset: NO_OFFSET,
-  bounds: MOVED_BOUNDS
+  bounds: MOVED_BOUNDS,
 };
 
 const DRAG_END_ANIMATING: DragState = {
   type: DragStateType.DragEndAnimating,
   draggable: DRAGGABLE,
   source: { bounds: ORIGIN_BOUNDS },
-  destination: { bounds: ORIGIN_BOUNDS }
+  destination: { bounds: ORIGIN_BOUNDS },
 };
 
 let monitor: FakeDroppableMonitor;
@@ -67,7 +67,7 @@ function createTestStore(initialState: DragState) {
   return configureStore({
     reducer: { drag: dragReducer },
     preloadedState: { drag: initialState },
-    middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } })
+    middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
   });
 }
 
@@ -92,7 +92,7 @@ it("can start a drag outside of a droppable", () => {
     draggable: DRAGGABLE,
     source: { bounds: bounds },
     mouseOffset: expectedMouseOffset,
-    bounds
+    bounds,
   });
 });
 
@@ -110,9 +110,9 @@ it("collects a source location if the draggable came from a droppable", () => {
       id: "droppable id",
       getLocation: () => ({
         bounds,
-        logicalLocation: DEFAULT_LOCATION
-      })
-    }
+        logicalLocation: DEFAULT_LOCATION,
+      }),
+    },
   ]);
 
   store.dispatch(startDrag(DRAGGABLE, "droppable id", mousePos, bounds));
@@ -123,11 +123,11 @@ it("collects a source location if the draggable came from a droppable", () => {
     source: {
       id: "droppable id",
       bounds: bounds,
-      logicalLocation: DEFAULT_LOCATION
+      logicalLocation: DEFAULT_LOCATION,
     },
     mouseOffset: expectedMouseOffset,
     hoveredDroppableId: "droppable id",
-    bounds
+    bounds,
   });
 });
 
@@ -137,7 +137,7 @@ it("refuses to portal when not dragging", () => {
     store.dispatch(
       portalDrag({
         draggable: INACTIVE_DRAGGABLE,
-        bounds: ORIGIN_BOUNDS
+        bounds: ORIGIN_BOUNDS,
       })
     )
   ).toThrow("attempted to portal while no drag was occurring");
@@ -160,7 +160,7 @@ it("updates source bounds when a draggable portals", () => {
 
   expect(store.getState().drag).toEqual({
     ...DRAGGING,
-    source: { bounds: newBounds }
+    source: { bounds: newBounds },
   });
 });
 
@@ -188,15 +188,15 @@ it("updates bounds and hovered droppable on drag move", () => {
       bounds: MOVED_BOUNDS,
       zIndex: 1,
       id: "droppable id",
-      getLocation: () => undefined
-    }
+      getLocation: () => undefined,
+    },
   ]);
 
   store.dispatch(moveDrag(DRAGGABLE, MOVED_MOUSE_POS));
   expect(store.getState().drag).toEqual({
     ...DRAGGING,
     bounds: MOVED_BOUNDS,
-    hoveredDroppableId: "droppable id"
+    hoveredDroppableId: "droppable id",
   });
 });
 
@@ -221,7 +221,7 @@ it("animates back to start when not dropped on a droppable", () => {
     type: DragStateType.DragEndAnimating,
     draggable: DRAGGABLE,
     source: DRAGGING.source,
-    destination: DRAGGING.source
+    destination: DRAGGING.source,
   });
 });
 
@@ -233,8 +233,8 @@ it("animates back to start when droppable rejects the drop", () => {
       id: "droppable",
       bounds: MOVED_BOUNDS,
       zIndex: 1,
-      getLocation: () => undefined
-    }
+      getLocation: () => undefined,
+    },
   ]);
 
   store.dispatch(releaseDrag(DRAGGABLE, MOVED_MOUSE_POS));
@@ -242,7 +242,7 @@ it("animates back to start when droppable rejects the drop", () => {
     type: DragStateType.DragEndAnimating,
     draggable: DRAGGABLE,
     source: DRAGGING.source,
-    destination: DRAGGING.source
+    destination: DRAGGING.source,
   });
 });
 
@@ -251,15 +251,15 @@ it("animates to destination if droppable provides one", () => {
 
   const destination = {
     bounds: { top: 50, left: 50, bottom: 100, right: 100 },
-    logicalLocation: DEFAULT_LOCATION
+    logicalLocation: DEFAULT_LOCATION,
   };
   monitor.setDroppables([
     {
       id: "droppable",
       bounds: MOVED_BOUNDS,
       zIndex: 1,
-      getLocation: () => destination
-    }
+      getLocation: () => destination,
+    },
   ]);
 
   store.dispatch(releaseDrag(DRAGGABLE, MOVED_MOUSE_POS));
@@ -269,8 +269,8 @@ it("animates to destination if droppable provides one", () => {
     source: DRAGGING.source,
     destination: {
       id: "droppable",
-      ...destination
-    }
+      ...destination,
+    },
   });
 });
 
@@ -278,15 +278,15 @@ it("skips animating if destination and current bounds are the same", () => {
   const store = createTestStore(DRAGGING);
   const destination = {
     bounds: DRAGGING.bounds,
-    logicalLocation: DEFAULT_LOCATION
+    logicalLocation: DEFAULT_LOCATION,
   };
   monitor.setDroppables([
     {
       id: "droppable",
       bounds: MOVED_BOUNDS,
       zIndex: 1,
-      getLocation: () => destination
-    }
+      getLocation: () => destination,
+    },
   ]);
 
   store.dispatch(releaseDrag(DRAGGABLE, MOVED_MOUSE_POS));
