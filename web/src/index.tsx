@@ -10,6 +10,7 @@ import { BoardStateApiClient } from "./network/BoardStateApiClient";
 import { v4 as uuid } from "uuid";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
+import { CssBaseline, createMuiTheme, ThemeProvider } from "@material-ui/core";
 
 const monitor = new DomDroppableMonitor();
 const apiClient = new BoardStateApiClient(
@@ -25,6 +26,14 @@ apiClient.connect(roomId);
 
 let persistor = persistStore(store);
 
+const theme = createMuiTheme({
+  palette: {
+    background: {
+      default: "#F5F5DC",
+    },
+  },
+});
+
 const render = () => {
   const App = require("./ui/app/App").default;
 
@@ -32,7 +41,10 @@ const render = () => {
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <DndContext.Provider value={monitor}>
-          <App />
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <App />
+          </ThemeProvider>
         </DndContext.Provider>
       </PersistGate>
     </Provider>,
