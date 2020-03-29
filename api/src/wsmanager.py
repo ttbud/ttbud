@@ -55,6 +55,10 @@ class WebsocketManager:
         if is_valid_uuid(room_id):
             self._client_ids[hash(client)] = client
             response = self.gss.new_connection_request(hash(client), room_id)
+            if response.contents.type == 'error':
+                await self.send_message(response)
+                # Break the connection
+                return
             await self.send_message(response)
             try:
                 async for message in client:
