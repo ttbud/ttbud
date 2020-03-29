@@ -8,12 +8,6 @@ import {
   Popover,
   Switch,
   Typography,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
 } from "@material-ui/core";
 import SettingsIcon from "@material-ui/icons/Settings";
 import React, { memo, MouseEvent, useState } from "react";
