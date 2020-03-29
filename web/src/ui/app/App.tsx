@@ -3,7 +3,12 @@ import React, { useCallback, useEffect } from "react";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { DragStateType } from "../../drag/DragStateTypes";
 import { startSearching, stopSearching } from "../../state/app-slice";
-import { addFloor, addPing, removeToken } from "../../state/board-slice";
+import {
+  addFloor,
+  addPing,
+  removeToken,
+  replaceTokens,
+} from "../../state/board-slice";
 import Board from "../board/Board";
 import { Icon, ICONS } from "../icons";
 import SearchDialog from "../search/SearchDialog";
@@ -101,6 +106,7 @@ const App = () => {
 
   const onPingCreated = (pos: Pos2d) => dispatch(addPing(pos));
   const onTokenDeleted = (id: string) => dispatch(removeToken(id));
+  const onClearMap = () => dispatch(replaceTokens([]));
 
   const onTrayIconRemoved = useCallback(
     (icon: Icon) => dispatch(removeCharacterIcon(icon)),
@@ -136,7 +142,7 @@ const App = () => {
           onFloorRemoved={onFloorRemoved}
         />
       </div>
-      <Settings className={classes.settings} />
+      <Settings className={classes.settings} onClearMap={onClearMap} />
     </div>
   );
 };

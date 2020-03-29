@@ -8,9 +8,16 @@ import {
   Popover,
   Switch,
   Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
 } from "@material-ui/core";
 import SettingsIcon from "@material-ui/icons/Settings";
 import React, { memo, MouseEvent, useState } from "react";
+import ConfirmationDialog from "../confirm/ConfirmationDialog";
 
 const useStyles = makeStyles((theme) => ({
   popoverContainer: {
@@ -30,11 +37,13 @@ const useStyles = makeStyles((theme) => ({
 
 interface Props {
   className?: string;
+  onClearMap: () => void;
 }
 
-const Settings: React.FC<Props> = memo(({ className }) => {
+const Settings: React.FC<Props> = memo(({ className, onClearMap }) => {
   const classes = useStyles();
   const [anchorEl, setAnchorEl] = useState<Element | null>(null);
+  const [isConfirming, setConfirming] = useState(false);
 
   const open = Boolean(anchorEl);
 
@@ -46,11 +55,27 @@ const Settings: React.FC<Props> = memo(({ className }) => {
     setAnchorEl(null);
   };
 
+  const openConfirmationDialog = () => setConfirming(true);
+  const closeConfirmationDialog = () => setConfirming(false);
+
+  const onClearMapClicked = () => {
+    closeConfirmationDialog();
+    onClearMap();
+  };
+
   return (
     <>
       <Fab className={className} size="small" onClick={onClick}>
         <SettingsIcon />
       </Fab>
+      <ConfirmationDialog
+        open={isConfirming}
+        title="Are you sure you want to clear the map"
+        description="This action cannot be undone"
+        confirmAction="Clear"
+        onCancel={closeConfirmationDialog}
+        onConfirm={onClearMapClicked}
+      />
       <Popover
         open={open}
         onClose={onClose}
@@ -67,6 +92,20 @@ const Settings: React.FC<Props> = memo(({ className }) => {
                 className={classes.settingMainText}
               />
               <Switch edge="end" disabled={true} />
+            </ListItem>
+          </List>
+          <List subheader={<ListSubheader>Actions</ListSubheader>}>
+            <ListItem
+              button
+              component="button"
+              dense={true}
+              className={classes.settingMainText}
+              onClick={openConfirmationDialog}
+            >
+              <ListItemText primary="Clear Map" />
+            </ListItem>
+            <ListItem button dense={true} component="a" href={"/"}>
+              <ListItemText>New Room</ListItemText>
             </ListItem>
           </List>
           <List subheader={<ListSubheader>Keyboard Shortcuts</ListSubheader>}>
