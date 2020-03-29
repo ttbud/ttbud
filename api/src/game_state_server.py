@@ -8,6 +8,9 @@ from .room_store import RoomStore
 from .game_components import Token, Ping
 
 
+MAX_USERS_PER_ROOM = 20
+
+
 @dataclass
 class MessageContents:
     type: str
@@ -39,7 +42,12 @@ class GameStateServer:
 
     def new_connection_request(self, client_id: Hashable, room_id: str) -> Message:
         if self._rooms.get(room_id, False):
-            self._rooms[room_id].clients.add(client_id)
+            if len(self._rooms[room_id].clients) < MAX_USERS_PER_ROOM:
+                self._rooms[room_id].clients.add(client_id)
+            else:
+                return Message(
+                    {client_id}, MessageContents('error', 'That room is full')
+                )
         else:
             self._rooms[room_id] = RoomData(room_id, initial_connection=client_id)
             tokens_to_load = self.room_store.read_room_data(room_id)
@@ -52,7 +60,7 @@ class GameStateServer:
                     else:
                         self._create_or_update_token(token, room_id)
         return Message(
-            [client_id], MessageContents('connected', self.get_state(room_id))
+            {client_id}, MessageContents('connected', self.get_state(room_id))
         )
 
     def connection_dropped(self, client_id: Hashable, room_id: str) -> None:
