@@ -1,7 +1,12 @@
 import pytest
 from dataclasses import asdict
 
-from src.game_state_server import GameStateServer, Message, MessageContents
+from src.game_state_server import (
+    GameStateServer,
+    Message,
+    MessageContents,
+    MAX_USERS_PER_ROOM,
+)
 from src.room_store import MemoryRoomStore
 from src.game_components import Token, Ping
 from src.async_collect import async_collect
@@ -226,8 +231,6 @@ async def test_incomplete_message(gss_with_client):
             [{'action': 'create'}], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
         )
     )
-    # FIXME: Brittle
-
     reply2 = await async_collect(
         gss_with_client.process_updates(
             [{'data': asdict(VALID_TOKEN)}],
@@ -275,3 +278,14 @@ async def test_delete_with_full_token(gss_with_client):
             {TEST_CLIENT_ID}, MessageContents('state', [VALID_TOKEN], TEST_REQUEST_ID)
         ),
     ]
+
+
+@pytest.mark.asyncio
+async def test_room_full(gss_with_client):
+    for i in range(MAX_USERS_PER_ROOM):
+        gss_with_client.new_connection_request(f'client{i}', TEST_ROOM_ID)
+    reply = gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+    # FIXME: Brittle
+    assert reply == Message(
+        {TEST_CLIENT_ID}, MessageContents('error', 'That room is full')
+    )
