@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   api:
     working_dir: /app/
@@ -13,6 +13,7 @@ services:
     build: web
     command: yarn run start
     user: ${WEB_USER:-1000}
+    tty: true
     environment:
       PORT: ${WEB_HTTP_PORT}
     volumes:
