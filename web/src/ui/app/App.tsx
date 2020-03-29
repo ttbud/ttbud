@@ -76,6 +76,14 @@ const App = () => {
   );
 
   useEffect(() => {
+    // Start in the center of the board
+    window.scrollTo(
+      document.body.scrollWidth / 2 - window.screen.width / 2,
+      document.body.scrollHeight / 2 - window.screen.height / 2
+    );
+  });
+
+  useEffect(() => {
     const onKeyPressed = (e: KeyboardEvent) => {
       if (e.getModifierState("Control") && e.key === "f") {
         dispatch(startSearching());
