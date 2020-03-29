@@ -13,8 +13,8 @@ def main():
     room_store = FileRoomStore(room_store_dir)
     gss = GameStateServer(room_store)
 
+    signal.signal(signal.SIGTERM, lambda *_: gss.save_all())
     start_websocket(websocket_port, gss)
-    signal.signal(signal.SIGTERM, gss.save_all)
 
 
 if __name__ == '__main__':

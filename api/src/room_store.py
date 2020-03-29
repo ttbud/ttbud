@@ -40,6 +40,8 @@ class FileRoomStore:
         if self._is_valid_path(full_path):
             with open(full_path, 'w') as f:
                 f.write(json.dumps(storable_data))
+        else:
+            raise ValueError(f"path {full_path} is not a valid path")
 
     def read_room_data(self, room_id: str) -> Optional[dict]:
         full_path = f'{self.path}/{room_id}'

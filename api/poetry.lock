@@ -283,6 +283,14 @@ version = "3.7.4.1"
 
 [[package]]
 category = "dev"
+description = "Simple, modern file watching and code reload in python."
+name = "watchgod"
+optional = false
+python-versions = ">=3.5"
+version = "0.6"
+
+[[package]]
+category = "dev"
 description = "Measures number of Terminal column cells of wide-character codes"
 name = "wcwidth"
 optional = false
@@ -298,7 +306,7 @@ python-versions = ">=3.6.1"
 version = "8.1"
 
 [metadata]
-content-hash = "31688c42236b04a2c18e6f1e64a15e339a4dc6ddc6de0b5efffc9df86c9c140f"
+content-hash = "d8da34ff0261dba590ee1f0de7708cfc7aff176efd1300daa92779ca793510d7"
 python-versions = "^3.8"
 
 [metadata.files]
@@ -461,6 +469,10 @@ typing-extensions = [
     {file = "typing_extensions-3.7.4.1-py2-none-any.whl", hash = "sha256:910f4656f54de5993ad9304959ce9bb903f90aadc7c67a0bef07e678014e892d"},
     {file = "typing_extensions-3.7.4.1-py3-none-any.whl", hash = "sha256:cf8b63fedea4d89bab840ecbb93e75578af28f76f66c35889bd7065f5af88575"},
     {file = "typing_extensions-3.7.4.1.tar.gz", hash = "sha256:091ecc894d5e908ac75209f10d5b4f118fbdb2eb1ede6a63544054bb1edb41f2"},
+]
+watchgod = [
+    {file = "watchgod-0.6-py35.py36.py37-none-any.whl", hash = "sha256:59700dab7445aa8e6067a5b94f37bae90fc367554549b1ed2e9d0f4f38a90d2a"},
+    {file = "watchgod-0.6.tar.gz", hash = "sha256:e9cca0ab9c63f17fc85df9fd8bd18156ff00aff04ebe5976cee473f4968c6858"},
 ]
 wcwidth = [
     {file = "wcwidth-0.1.8-py2.py3-none-any.whl", hash = "sha256:8fd29383f539be45b20bd4df0dc29c20ba48654a41e661925e612311e9f3c603"},

@@ -68,20 +68,25 @@ class GameStateServer:
             self._rooms[room_id].clients.remove(client_id)
             # Save the room if the last client leaves and there is something to save
             if not self._rooms[room_id].clients and self._rooms[room_id].game_state:
-                print('Writing room data')
-                data_to_store = []
-                for game_object in self._rooms[room_id].game_state.values():
-                    if isinstance(game_object, Token):
-                        data_to_store.append(game_object)
-                self.room_store.write_room_data(room_id, data_to_store)
+                self.save_room(room_id)
                 del self._rooms[room_id]
             else:
                 print(f'{len(self._rooms[room_id].clients)} clients remaining')
 
-    def save_all(self):
+    def save_all(self) -> None:
+        print('Saving all rooms')
         for room in self._rooms.values():
             if room.game_state:
-                self.room_store.write_room_data(room.room_id, room.game_state)
+                self.save_room(room.room_id)
+        print('Done saving all rooms')
+
+    def save_room(self, room_id: str) -> None:
+        print(f'Saving room {room_id}')
+        data_to_store = []
+        for game_object in self._rooms[room_id].game_state.values():
+            if isinstance(game_object, Token):
+                data_to_store.append(game_object)
+        self.room_store.write_room_data(room_id, data_to_store)
 
     async def process_updates(
         self,
