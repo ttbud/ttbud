@@ -22,6 +22,7 @@ import {
 import { RootState } from "../../state/rootReducer";
 import Pos2d from "../../util/shape-math";
 import { removeIcon as removeCharacterIcon } from "../../state/character-tray-slice";
+import isMac from "../../util/isMac";
 
 const useStyles = makeStyles((theme) => ({
   app: {
@@ -52,6 +53,8 @@ const useStyles = makeStyles((theme) => ({
     right: `calc(${theme.spacing(3)}px - (100vw - 100%))`,
   },
 }));
+
+const searchModifier = isMac() ? "Meta" : "Control";
 
 const App = () => {
   const classes = useStyles();
@@ -85,7 +88,7 @@ const App = () => {
 
   useEffect(() => {
     const onKeyPressed = (e: KeyboardEvent) => {
-      if (e.getModifierState("Control") && e.key === "f") {
+      if (e.getModifierState(searchModifier) && e.key === "f") {
         dispatch(startSearching());
         e.preventDefault();
       }
