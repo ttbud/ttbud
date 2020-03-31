@@ -81,7 +81,7 @@ const App = () => {
       document.body.scrollWidth / 2 - window.screen.width / 2,
       document.body.scrollHeight / 2 - window.screen.height / 2
     );
-  });
+  }, []);
 
   useEffect(() => {
     const onKeyPressed = (e: KeyboardEvent) => {
