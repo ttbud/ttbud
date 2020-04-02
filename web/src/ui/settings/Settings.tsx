@@ -12,6 +12,7 @@ import {
 import SettingsIcon from "@material-ui/icons/Settings";
 import React, { memo, MouseEvent, useState } from "react";
 import ConfirmationDialog from "../confirm/ConfirmationDialog";
+import isMac from "../../util/isMac";
 
 const useStyles = makeStyles((theme) => ({
   popoverContainer: {
@@ -33,6 +34,8 @@ interface Props {
   className?: string;
   onClearMap: () => void;
 }
+
+const searchShortcut = isMac() ? "command+f" : "control+f";
 
 const Settings: React.FC<Props> = memo(({ className, onClearMap }) => {
   const classes = useStyles();
@@ -105,7 +108,7 @@ const Settings: React.FC<Props> = memo(({ className, onClearMap }) => {
           <List subheader={<ListSubheader>Keyboard Shortcuts</ListSubheader>}>
             <ListItem dense={true}>
               <ListItemText primary="Search" />
-              <Typography color="textSecondary">(ctrl+f)</Typography>
+              <Typography color="textSecondary">({searchShortcut})</Typography>
             </ListItem>
             <ListItem dense={true}>
               <ListItemText primary="Delete Token" />
