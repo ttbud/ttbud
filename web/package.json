@@ -28,7 +28,7 @@
     "react-transition-group": "^4.3.0",
     "redux-persist": "^6.0.0",
     "typescript": "3.8.3",
-    "uuid": "^7.0.2"
+    "uuid": "^7.0.3"
   },
   "scripts": {
     "start": "react-scripts start",
