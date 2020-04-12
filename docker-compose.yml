@@ -6,7 +6,7 @@ services:
     environment:
       DOMAIN:
       API_WEBSOCKET_PORT:
-      ROOM_STORE_DIR:
+      ROOM_STORE_DIR: /var/ttbud/rooms
     volumes:
       - rooms:/var/ttbud/rooms
   web:
