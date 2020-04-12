@@ -7,7 +7,7 @@ services:
     tty: true
     volumes:
       - ./api:/app
-      - ${ROOM_STORE_DIR}:/var/ttbud/rooms
+      - ./storage:/var/ttbud/rooms
   web:
     image: tbbud-web-dev
     build: web
