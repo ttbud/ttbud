@@ -231,7 +231,7 @@ function releaseDrag(
           ...location,
         }
       : undefined;
-    dispatch(dragReleased({ draggable, destination, bounds }));
+    dispatch(dragReleased({ draggable, destination }));
 
     // If we don't need to animate into position (because we're already there),
     // immediately dispatch the dragEnded action
