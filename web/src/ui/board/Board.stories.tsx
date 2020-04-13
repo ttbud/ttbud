@@ -7,11 +7,11 @@ import dragReducer from "../../drag/drag-slice";
 import { DragStateType } from "../../drag/DragStateTypes";
 import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
 import { IconToken, TokenType } from "../../network/BoardStateApiClient";
-import { RootState } from "../../state/rootReducer";
+import { RootState } from "../../store/rootReducer";
 import noop from "../../util/noop";
 import { Icon, ICONS, WALL_ICON } from "../icons";
 import noBorder from "../__stories__/no-border";
-import Board from "./Board";
+import { PureBoard as Board } from "./Board";
 
 export default {
   component: Board,

@@ -1,15 +1,7 @@
-import {
-  BoardStateApiClient,
-  EventType,
-  Token,
-} from "../network/BoardStateApiClient";
+import { BoardStateApiClient, EventType, Token } from "./BoardStateApiClient";
 import { Middleware } from "@reduxjs/toolkit";
-import { BoardState, replaceTokens } from "./board-slice";
-import {
-  getLocalState,
-  getNetworkUpdates,
-  Update,
-} from "../network/board-state-diff";
+import { BoardState, replaceTokens } from "../ui/board/board-slice";
+import { getLocalState, getNetworkUpdates, Update } from "./board-state-diff";
 import { v4 as uuid } from "uuid";
 import throttle from "../util/throttle";
 

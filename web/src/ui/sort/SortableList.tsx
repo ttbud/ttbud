@@ -18,7 +18,7 @@ import {
   DroppableLocation,
   LocationType,
 } from "../../drag/DragStateTypes";
-import { RootState } from "../../state/rootReducer";
+import { RootState } from "../../store/rootReducer";
 
 export interface DraggableItem {
   descriptor: DraggableDescriptor;

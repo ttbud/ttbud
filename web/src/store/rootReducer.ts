@@ -1,7 +1,7 @@
-import characterTrayReducer from "./character-tray-slice";
-import floorTrayReducer from "./floor-tray-slice";
-import appReducer from "./app-slice";
-import boardReducer from "./board-slice";
+import characterTrayReducer from "../ui/tray/character-tray-slice";
+import floorTrayReducer from "../ui/tray/floor-tray-slice";
+import appReducer from "../ui/app/app-slice";
+import boardReducer from "../ui/board/board-slice";
 import dragReducer from "../drag/drag-slice";
 import { combineReducers } from "@reduxjs/toolkit";
 import { persistReducer } from "redux-persist";

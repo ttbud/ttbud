@@ -12,7 +12,7 @@ import {
   DragStateType,
   DroppableLocation,
 } from "./DragStateTypes";
-import { AppThunk } from "../state/createStore";
+import { AppThunk } from "../store/createStore";
 
 const INITIAL_STATE: DragState = {
   type: DragStateType.NotDragging,
