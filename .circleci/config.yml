@@ -64,6 +64,9 @@ jobs:
           name: Typecheck
           command: yarn run typecheck
       - run:
+          name: Lint
+          command: yarn run lint
+      - run:
           name: Run Tests
           environment:
             - JEST_JUNIT_OUTPUT_DIR: test-results
