@@ -16,6 +16,8 @@ import { DroppableMonitor } from "../drag/DroppableMonitor";
 import { BoardStateApiClient } from "../network/BoardStateApiClient";
 import { boardSyncer } from "./boardSyncer";
 import rootReducer, { RootState } from "./rootReducer";
+import debugLog from "./debugLog";
+
 interface ThunkExtras {
   monitor: DroppableMonitor;
 }
@@ -28,6 +30,7 @@ export default function createStore(
     reducer: rootReducer,
     preloadedState: {},
     middleware: [
+      debugLog,
       boardSyncer(apiClient),
       ...getDefaultMiddleware({
         thunk: { extraArgument: { monitor } },
