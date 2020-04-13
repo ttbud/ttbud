@@ -1,9 +1,9 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DragEndAction, dragEnded } from "../drag/drag-slice";
-import { DROPPABLE_IDS } from "../ui/DroppableIds";
-import { DEFAULT_FLOOR_ICONS, Icon } from "../ui/icons";
-import { assert } from "../util/invariants";
-import getDragResult from "./getDragResult";
+import { DragEndAction, dragEnded } from "../../drag/drag-slice";
+import { DROPPABLE_IDS } from "../DroppableIds";
+import { DEFAULT_FLOOR_ICONS, Icon } from "../icons";
+import { assert } from "../../util/invariants";
+import getDragResult from "../../drag/getDragResult";
 import { reorderIcons } from "./reorderIcons";
 
 const floorTraySlice = createSlice({

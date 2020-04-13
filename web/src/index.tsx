@@ -5,7 +5,7 @@ import * as serviceWorker from "./serviceWorker";
 import { DomDroppableMonitor } from "./drag/DroppableMonitor";
 import { Provider } from "react-redux";
 import DndContext from "./drag/DndContext";
-import createStore from "./state/createStore";
+import createStore from "./store/createStore";
 import { BoardStateApiClient } from "./network/BoardStateApiClient";
 import { v4 as uuid } from "uuid";
 import { PersistGate } from "redux-persist/integration/react";

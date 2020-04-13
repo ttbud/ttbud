@@ -6,11 +6,11 @@ import boardReducer, {
   removeToken,
   replaceTokens,
 } from "./board-slice";
-import { Token, TokenType } from "../network/BoardStateApiClient";
-import { dragEnded } from "../drag/drag-slice";
-import { DraggableType, LocationType } from "../drag/DragStateTypes";
-import { WALL_ICON } from "../ui/icons";
-import { DROPPABLE_IDS } from "../ui/DroppableIds";
+import { Token, TokenType } from "../../network/BoardStateApiClient";
+import { dragEnded } from "../../drag/drag-slice";
+import { DraggableType, LocationType } from "../../drag/DragStateTypes";
+import { WALL_ICON } from "../icons";
+import { DROPPABLE_IDS } from "../DroppableIds";
 
 function createTestStore(initialState: BoardState) {
   return configureStore({

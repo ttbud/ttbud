@@ -7,6 +7,9 @@ import SortableList, { Targets, Target } from "../sort/SortableList";
 import Character from "../token/Character";
 import { assert } from "../../util/invariants";
 import { GRID_SIZE_PX } from "../../config";
+import { RootState } from "../../store/rootReducer";
+import { removeIcon } from "./character-tray-slice";
+import { connect } from "react-redux";
 
 const useStyles = makeStyles((theme) => ({
   tokenSheet: {
@@ -28,7 +31,13 @@ interface Props {
   onIconRemoved: (icon: Icon) => void;
 }
 
-const CharacterTray: React.FC<Props> = memo(function CharacterTray({
+const mapStateToProps = (state: RootState) => ({
+  icons: state.characterTray.icons,
+});
+
+const dispatchProps = { onIconRemoved: removeIcon };
+
+const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
   icons,
   onIconRemoved,
 }) {
@@ -147,4 +156,10 @@ const CharacterTray: React.FC<Props> = memo(function CharacterTray({
   );
 });
 
+const CharacterTray = connect(
+  mapStateToProps,
+  dispatchProps
+)(PureCharacterTray);
+
 export default CharacterTray;
+export { PureCharacterTray };

@@ -1,8 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DragEndAction, dragEnded } from "../drag/drag-slice";
-import { DROPPABLE_IDS } from "../ui/DroppableIds";
-import { DEFAULT_CHARACTER_ICONS, Icon } from "../ui/icons";
-import getDragResult from "./getDragResult";
+import { DragEndAction, dragEnded } from "../../drag/drag-slice";
+import { DROPPABLE_IDS } from "../DroppableIds";
+import { DEFAULT_CHARACTER_ICONS, Icon } from "../icons";
+import getDragResult from "../../drag/getDragResult";
 import { reorderIcons } from "./reorderIcons";
 
 const characterTraySlice = createSlice({

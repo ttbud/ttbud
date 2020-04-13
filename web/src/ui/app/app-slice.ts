@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { dragEnded } from "../drag/drag-slice";
+import { dragEnded } from "../../drag/drag-slice";
 
 export interface AppState {
   searching: boolean;
