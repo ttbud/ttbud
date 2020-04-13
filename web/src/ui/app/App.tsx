@@ -2,7 +2,11 @@ import { makeStyles } from "@material-ui/core";
 import React, { useCallback, useEffect } from "react";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { DragStateType } from "../../drag/DragStateTypes";
-import { startSearching, stopSearching } from "../../state/app-slice";
+import {
+  startSearching,
+  stopSearching,
+  toggleDebug,
+} from "../../state/app-slice";
 import {
   addFloor,
   addPing,
@@ -60,6 +64,7 @@ const App = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
   const {
+    debugEnabled,
     isDragging,
     tokens,
     activeFloor,
@@ -68,6 +73,7 @@ const App = () => {
     characterTrayIcons,
   } = useSelector(
     (state: RootState) => ({
+      debugEnabled: state.app.debug,
       isDragging: state.drag.type === DragStateType.Dragging,
       tokens: state.board.tokens,
       activeFloor: state.floorTray.activeFloor,
@@ -124,6 +130,8 @@ const App = () => {
     [dispatch]
   );
 
+  const onDebugToggled = useCallback(() => dispatch(toggleDebug()), [dispatch]);
+
   return (
     <div className={classes.app}>
       <Board
@@ -153,7 +161,12 @@ const App = () => {
           onFloorRemoved={onFloorRemoved}
         />
       </div>
-      <Settings className={classes.settings} onClearMap={onClearMap} />
+      <Settings
+        className={classes.settings}
+        onClearMap={onClearMap}
+        debugEnabled={debugEnabled}
+        onDebugToggled={onDebugToggled}
+      />
     </div>
   );
 };

@@ -3,10 +3,12 @@ import { dragEnded } from "../drag/drag-slice";
 
 export interface AppState {
   searching: boolean;
+  debug: boolean;
 }
 
 const initialState: AppState = {
   searching: false,
+  debug: false,
 };
 
 const appSlice = createSlice({
@@ -19,6 +21,9 @@ const appSlice = createSlice({
     stopSearching(state) {
       state.searching = false;
     },
+    toggleDebug(state) {
+      state.debug = !state.debug;
+    },
   },
   extraReducers: {
     [dragEnded.type]: (state) => {
@@ -27,5 +32,5 @@ const appSlice = createSlice({
   },
 });
 
-export const { startSearching, stopSearching } = appSlice.actions;
+export const { startSearching, stopSearching, toggleDebug } = appSlice.actions;
 export default appSlice.reducer;

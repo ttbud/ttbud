@@ -7,4 +7,6 @@ export default {
   title: "Settings",
 };
 
-export const Default: React.FC = () => <Settings onClearMap={noop} />;
+export const Default: React.FC = () => (
+  <Settings debugEnabled={false} onDebugToggled={noop} onClearMap={noop} />
+);
