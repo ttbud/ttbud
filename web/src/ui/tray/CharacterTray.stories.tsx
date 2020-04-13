@@ -5,7 +5,7 @@ import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
 import { Provider } from "react-redux";
 import DndContext from "../../drag/DndContext";
-import { ICONS, DEFAULT_CHARACTER_ICONS } from "../icons";
+import { DEFAULT_CHARACTER_ICONS } from "../icons";
 import noop from "../../util/noop";
 
 export default {
