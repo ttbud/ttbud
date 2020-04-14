@@ -17,7 +17,7 @@ import {
 import { useSelector } from "react-redux";
 import Character from "../token/Character";
 import { assert } from "../../util/invariants";
-import { RootState } from "../../state/rootReducer";
+import { RootState } from "../../store/rootReducer";
 
 const useStyles = makeStyles((theme) => ({
   content: {

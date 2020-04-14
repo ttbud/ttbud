@@ -11,7 +11,7 @@ import UnreachableCaseError from "../util/UnreachableCaseError";
 import { DraggableType, DragStateType } from "./DragStateTypes";
 import { WALL_ICON } from "../ui/icons";
 import DndContext from "./DndContext";
-import { RootState } from "../state/rootReducer";
+import { RootState } from "../store/rootReducer";
 
 export default {
   component: Droppable,

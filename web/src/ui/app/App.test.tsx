@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import App from "./App";
 import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
-import createStore from "../../state/createStore";
+import createStore from "../../store/createStore";
 import { Provider } from "react-redux";
 import DndContext from "../../drag/DndContext";
 import { BoardStateApiClient } from "../../network/BoardStateApiClient";

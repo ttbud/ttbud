@@ -12,6 +12,9 @@ import { Bounds } from "../../util/shape-math";
 import { DROPPABLE_IDS } from "../DroppableIds";
 import { Icon } from "../icons";
 import SortableList, { Target, Targets } from "../sort/SortableList";
+import { RootState } from "../../store/rootReducer";
+import { removeIcon, setActiveFloor } from "./floor-tray-slice";
+import { connect } from "react-redux";
 
 interface Props {
   icons: Icon[];
@@ -20,6 +23,16 @@ interface Props {
   onFloorRemoved: (icon: Icon) => void;
 }
 
+const mapStateToProps = (state: RootState) => ({
+  icons: state.floorTray.icons,
+  activeFloor: state.floorTray.activeFloor,
+});
+
+const dispatchProps = {
+  onFloorSelected: setActiveFloor,
+  onFloorRemoved: removeIcon,
+};
+
 const useStyles = makeStyles({
   icon: {
     width: CARD_SIZE,
@@ -27,7 +40,7 @@ const useStyles = makeStyles({
   },
 });
 
-const FloorTray: React.FC<Props> = memo(function FloorTray({
+const PureFloorTray: React.FC<Props> = memo(function FloorTray({
   icons,
   activeFloor,
   onFloorSelected,
@@ -185,4 +198,7 @@ const FloorTray: React.FC<Props> = memo(function FloorTray({
   );
 });
 
+const FloorTray = connect(mapStateToProps, dispatchProps)(PureFloorTray);
+
 export default FloorTray;
+export { PureFloorTray };

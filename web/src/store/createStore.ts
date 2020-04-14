@@ -14,7 +14,7 @@ import {
 } from "redux-persist";
 import { DroppableMonitor } from "../drag/DroppableMonitor";
 import { BoardStateApiClient } from "../network/BoardStateApiClient";
-import { boardSyncer } from "./boardSyncer";
+import { boardSyncer } from "../network/boardSyncer";
 import rootReducer, { RootState } from "./rootReducer";
 import debugLog from "./debugLog";
 

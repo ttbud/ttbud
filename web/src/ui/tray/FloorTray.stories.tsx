@@ -6,7 +6,7 @@ import dragReducer from "../../drag/drag-slice";
 import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
 import noop from "../../util/noop";
 import { DEFAULT_FLOOR_ICONS, WALL_ICON } from "../icons";
-import FloorTray from "./FloorTray";
+import { PureFloorTray as FloorTray } from "./FloorTray";
 
 export default {
   component: FloorTray,

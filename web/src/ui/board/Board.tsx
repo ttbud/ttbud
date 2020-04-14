@@ -16,12 +16,19 @@ import Droppable from "../../drag/Droppable";
 import Pos2d, { posAreEqual, snapToGrid } from "../../util/shape-math";
 import { assert } from "../../util/invariants";
 import { LocationCollector, TargetLocation } from "../../drag/DroppableMonitor";
-import { DraggableType, LocationType } from "../../drag/DragStateTypes";
+import {
+  DraggableType,
+  LocationType,
+  DragStateType,
+} from "../../drag/DragStateTypes";
 import { DROPPABLE_IDS } from "../DroppableIds";
 import { Token, TokenType } from "../../network/BoardStateApiClient";
 import { TransitionGroup } from "react-transition-group";
 import Fade from "../transition/Fade";
 import NoopTransition from "../transition/NoopTransition";
+import { RootState } from "../../store/rootReducer";
+import { addPing, addFloor, removeToken } from "./board-slice";
+import { connect } from "react-redux";
 
 let GRID_COLOR = "#947C65";
 
@@ -82,7 +89,19 @@ interface Props {
   onTokenDeleted: (id: string) => void;
 }
 
-const Board: React.FC<Props> = ({
+const mapStateToProps = (state: RootState) => ({
+  isDragging: state.drag.type === DragStateType.Dragging,
+  tokens: state.board.tokens,
+  activeFloor: state.floorTray.activeFloor,
+});
+
+const dispatchProps = {
+  onPingCreated: addPing,
+  onFloorCreated: addFloor,
+  onTokenDeleted: removeToken,
+};
+
+const PureBoard: React.FC<Props> = ({
   isDragging,
   tokens,
   activeFloor,
@@ -281,4 +300,16 @@ const Board: React.FC<Props> = ({
   );
 };
 
+interface Props {
+  isDragging: boolean;
+  tokens: Token[];
+  activeFloor: Icon;
+  onPingCreated: (pos: Pos2d) => void;
+  onFloorCreated: (iconId: string, pos: Pos2d) => void;
+  onTokenDeleted: (id: string) => void;
+}
+
+const Board = connect(mapStateToProps, dispatchProps)(PureBoard);
+
+export { PureBoard };
 export default Board;

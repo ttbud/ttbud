@@ -11,7 +11,7 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "../state/rootReducer";
+import { RootState } from "../store/rootReducer";
 import { assert } from "../util/invariants";
 import Pos2d, { posAreEqual } from "../util/shape-math";
 import UnreachableCaseError from "../util/UnreachableCaseError";
