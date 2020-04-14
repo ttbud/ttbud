@@ -49,6 +49,7 @@
     "eject": "react-scripts eject",
     "checkstyle": "prettier src public package.json tsconfig.json --check",
     "fixstyle": "prettier src public package.json tsconfig.json --write",
+    "lint": "eslint 'src/**/*.ts' 'src/**/*.tsx'",
     "storybook": "start-storybook -p 9009 -s public",
     "build-storybook": "build-storybook -s public"
   },
