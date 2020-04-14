@@ -1,8 +1,7 @@
-import { List, Map } from "immutable";
 import { loadIcons } from "./icon-loader";
 
-function byId(icons: List<Icon>): Map<string, Icon> {
-  return Map(icons.map((icon) => [icon.id, icon]));
+function byId(icons: Icon[]): Map<string, Icon> {
+  return new Map(icons.map((icon) => [icon.id, icon]));
 }
 
 export interface Icon {
@@ -11,16 +10,14 @@ export interface Icon {
   desc: string;
 }
 
-export const ICONS = List(
-  loadIcons().map(({ path, img }) => {
-    const [, name] = path.match(/\/(.*)\.svg/);
-    return {
-      id: path,
-      img,
-      desc: name.replace("-", " "),
-    };
-  })
-);
+export const ICONS = loadIcons().map(({ path, img }) => {
+  const [, name] = path.match(/\/(.*)\.svg/);
+  return {
+    id: path,
+    img,
+    desc: name.replace("-", " "),
+  };
+});
 
 export const ICONS_BY_ID = byId(ICONS);
 

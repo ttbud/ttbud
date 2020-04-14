@@ -6,7 +6,6 @@ import {
   TextField,
 } from "@material-ui/core";
 import React, { memo, useCallback, useMemo, useState } from "react";
-import { List } from "immutable";
 import { Icon } from "../icons";
 import Draggable from "../../drag/Draggable";
 import {
@@ -39,7 +38,7 @@ const useStyles = makeStyles((theme) => ({
 
 interface Props {
   open: boolean;
-  icons: List<Icon>;
+  icons: Icon[];
   onClose: () => void;
 }
 
@@ -48,7 +47,7 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
   const [search, setSearch] = useState("");
   const onChange = useCallback((e) => setSearch(e.target.value), [setSearch]);
 
-  const items: List<IconDraggable> = useMemo(
+  const items: IconDraggable[] = useMemo(
     () =>
       icons.map((icon) => ({
         type: DraggableType.Icon,
