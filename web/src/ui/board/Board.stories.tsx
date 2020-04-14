@@ -30,7 +30,7 @@ const toToken = (icon: Icon, i: number): IconToken => ({
   iconId: icon.id,
 });
 
-const tokens = ICONS.take(6).map(toToken).toArray();
+const tokens = ICONS.slice(0, 5).map(toToken);
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({

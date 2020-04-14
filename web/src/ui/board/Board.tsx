@@ -153,14 +153,14 @@ const PureBoard: React.FC<Props> = ({
 
     switch (token.type) {
       case TokenType.Floor:
-        const floorIcon = ICONS_BY_ID.get(token.iconId, WALL_ICON);
+        const floorIcon = ICONS_BY_ID.get(token.iconId) ?? WALL_ICON;
         return (
           <Fade lengthMs={50} key={token.id}>
             <FloorToken key={token.id} icon={floorIcon} pos={pixelPos} />
           </Fade>
         );
       case TokenType.Character:
-        const characterIcon = ICONS_BY_ID.get(token.iconId, WALL_ICON);
+        const characterIcon = ICONS_BY_ID.get(token.iconId) ?? WALL_ICON;
         return (
           // Need to have some sort of transition otherwise the element will
           // never be removed from the dom :(
