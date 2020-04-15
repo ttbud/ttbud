@@ -53,6 +53,8 @@ const useStyles = makeStyles((theme) => ({
       ${GRID_COLOR} ${GRID_SIZE_PX - 1}px,
       ${GRID_COLOR} ${GRID_SIZE_PX}px
     )`,
+    borderBottom: `1px solid ${GRID_COLOR}`,
+    borderRight: `1px solid ${GRID_COLOR}`,
     backgroundSize: `${GRID_SIZE_PX}px ${GRID_SIZE_PX}px`,
     height: "100%",
     width: "100%",
