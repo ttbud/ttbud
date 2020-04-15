@@ -11,6 +11,7 @@ import FloorTray from "../tray/FloorTray";
 import { RootState } from "../../store/rootReducer";
 import isMac from "../../util/isMac";
 import { startSearching, stopSearching, toggleDebug } from "./app-slice";
+import ConnectionNotifier from "../connection-state/ConnectionNotifier";
 
 const useStyles = makeStyles((theme) => ({
   app: {
@@ -33,6 +34,12 @@ const useStyles = makeStyles((theme) => ({
     // (Scrollbar width = 100vh - 100%)
     bottom: `calc(${theme.spacing(3)}px - (100vh - 100%))`,
     left: "calc(50% + (100vw - 100%)/2)",
+    transform: "translateX(-50%)",
+  },
+  connectionNotifier: {
+    position: "fixed",
+    top: theme.spacing(1),
+    left: "50%",
     transform: "translateX(-50%)",
   },
   settings: {
@@ -100,6 +107,9 @@ const App = () => {
         debugEnabled={debugEnabled}
         onDebugToggled={onDebugToggled}
       />
+      <div className={classes.connectionNotifier}>
+        <ConnectionNotifier />
+      </div>
     </div>
   );
 };

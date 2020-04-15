@@ -14,7 +14,7 @@ import {
 } from "redux-persist";
 import { DroppableMonitor } from "../drag/DroppableMonitor";
 import { BoardStateApiClient } from "../network/BoardStateApiClient";
-import { boardSyncer } from "../network/boardSyncer";
+import { networkSyncer } from "../network/networkSyncer";
 import rootReducer, { RootState } from "./rootReducer";
 import debugLog from "./debugLog";
 
@@ -31,7 +31,7 @@ export default function createStore(
     preloadedState: {},
     middleware: [
       debugLog,
-      boardSyncer(apiClient),
+      networkSyncer(apiClient),
       ...getDefaultMiddleware({
         thunk: { extraArgument: { monitor } },
         // redux-persist uses non-serializable actions, and that's core to how it works :(.

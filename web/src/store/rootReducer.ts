@@ -3,6 +3,7 @@ import floorTrayReducer from "../ui/tray/floor-tray-slice";
 import appReducer from "../ui/app/app-slice";
 import boardReducer from "../ui/board/board-slice";
 import dragReducer from "../drag/drag-slice";
+import connectionStateReducer from "../ui/connection-state/connection-state-slice";
 import { combineReducers } from "@reduxjs/toolkit";
 import { persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
@@ -13,6 +14,7 @@ const reducers = combineReducers({
   app: appReducer,
   board: boardReducer,
   drag: dragReducer,
+  connectionState: connectionStateReducer,
 });
 
 export type RootState = ReturnType<typeof reducers>;
