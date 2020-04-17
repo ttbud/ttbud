@@ -1,9 +1,9 @@
 import * as t from "io-ts";
 import decode from "../util/decode";
-import noop from "../util/noop";
 import { Update, UpdateType } from "./board-state-diff";
 import UnreachableCaseError from "../util/UnreachableCaseError";
 import Pos2d, { Pos3d } from "../util/shape-math";
+import noop from "../util/noop";
 
 const PingTokenDecoder = t.type({
   id: t.string,
@@ -160,10 +160,11 @@ function toToken(apiToken: ApiToken): Token {
 
 export enum EventType {
   TokenUpdate = "tokens",
-  Connect = "connect",
+  Connecting = "connecting",
+  Connected = "connected",
   InitialState = "initial state",
   Error = "error",
-  Disconnect = "disconnect",
+  Disconnected = "disconnected",
 }
 
 interface BoardStateEvent {
@@ -173,7 +174,7 @@ interface BoardStateEvent {
 }
 
 interface ConnectionStatusEvent {
-  type: EventType.Disconnect | EventType.Connect;
+  type: EventType.Disconnected | EventType.Connected | EventType.Connecting;
 }
 
 interface InitialStateEvent {
@@ -199,17 +200,20 @@ export type Event =
 
 export type ApiEventHandler = (event: Event) => void;
 
+const CONNECTION_TIMEOUT_MS = 5000;
+
 export class BoardStateApiClient {
   private eventHandler: ApiEventHandler = noop;
   private socket: WebSocket | undefined;
+  private connectionTimeoutListenerId: number | null = null;
 
   public constructor(
     private readonly hostBaseUrl: string,
     private readonly websocketFactory: (url: string) => WebSocket
   ) {}
 
-  public setEventHandler(listener: ApiEventHandler) {
-    this.eventHandler = listener;
+  public setEventHandler(handler: ApiEventHandler) {
+    this.eventHandler = handler;
   }
 
   public connect(roomId: string) {
@@ -220,7 +224,12 @@ export class BoardStateApiClient {
       this.socket.close();
     }
 
+    this.eventHandler({ type: EventType.Connected });
     this.socket = this.websocketFactory(`${this.hostBaseUrl}/${encodedRoomId}`);
+    this.connectionTimeoutListenerId = window.setTimeout(
+      () => this.close(),
+      CONNECTION_TIMEOUT_MS
+    );
     this.socket.addEventListener("open", this.onConnect.bind(this));
     this.socket.addEventListener("message", this.onMessage.bind(this));
     //TODO: Handle errors
@@ -230,6 +239,7 @@ export class BoardStateApiClient {
 
   public close() {
     this.socket?.close();
+    this.eventHandler({ type: EventType.Disconnected });
   }
 
   public send(requestId: string, updates: Update[]) {
@@ -243,12 +253,15 @@ export class BoardStateApiClient {
 
   private onConnect() {
     console.log("connected");
-    this.eventHandler({ type: EventType.Connect });
+    if (this.connectionTimeoutListenerId) {
+      window.clearTimeout(this.connectionTimeoutListenerId);
+    }
+    this.eventHandler({ type: EventType.Connected });
   }
 
   private onClose() {
     console.log("disconnected");
-    this.eventHandler({ type: EventType.Disconnect });
+    this.eventHandler({ type: EventType.Disconnected });
   }
 
   private onMessage(event: MessageEvent) {
