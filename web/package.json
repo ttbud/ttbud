@@ -45,7 +45,7 @@
     "storybook": "^5.3.18",
     "typescript": "3.8.3",
     "uuid": "^7.0.3",
-    "webpack": "4.41.5"
+    "webpack": "4.41.6"
   },
   "scripts": {
     "start": "react-scripts start",
