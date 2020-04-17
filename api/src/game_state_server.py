@@ -6,6 +6,7 @@ import asyncio
 
 from .room_store import RoomStore
 from .game_components import Token, Ping
+from .ws_close_codes import ERR_ROOM_FULL
 
 
 MAX_USERS_PER_ROOM = 20
@@ -22,6 +23,15 @@ class MessageContents:
 class Message:
     targets: Iterable[Hashable]
     contents: MessageContents
+
+
+class InvalidConnectionException(Exception):
+    close_code: int
+    reason: str
+
+    def __init__(self, close_code: int, reason: str):
+        self.close_code = close_code
+        self.reason = reason
 
 
 class RoomData:
@@ -41,12 +51,22 @@ class GameStateServer:
         self.room_store = room_store
 
     def new_connection_request(self, client_id: Hashable, room_id: str) -> Message:
+        """Register a new client
+
+        :param client_id Unique identifier for the client requesting a
+        connection
+
+        :param room_id The UUID that identifies the room the client
+        is trying to connect to
+
+        :raise InvalidConnectionException If the client connection should be rejected
+        """
         if self._rooms.get(room_id, False):
-            if len(self._rooms[room_id].clients) < MAX_USERS_PER_ROOM:
+            if len(self._rooms[room_id].clients) <= MAX_USERS_PER_ROOM:
                 self._rooms[room_id].clients.add(client_id)
             else:
-                return Message(
-                    {client_id}, MessageContents('error', 'That room is full')
+                raise InvalidConnectionException(
+                    ERR_ROOM_FULL, f'The room ${room_id} is full'
                 )
         else:
             self._rooms[room_id] = RoomData(room_id, initial_connection=client_id)

@@ -143,9 +143,7 @@ function toToken(apiToken: ApiToken): Token {
     case "floor":
       return {
         id: apiToken.id,
-        //TODO: Figure out why typescript doesn't like this
-        // @ts-ignore
-        type: apiToken.type,
+        type: apiToken.type as TokenType.Character | TokenType.Floor,
         iconId: apiToken.icon_id,
         pos: {
           x: apiToken.start_x,
@@ -173,9 +171,25 @@ interface BoardStateEvent {
   tokens: Token[];
 }
 
-interface ConnectionStatusEvent {
-  type: EventType.Disconnected | EventType.Connected | EventType.Connecting;
+enum DisconnectErrorCode {
+  InvalidUuid = 4001,
+  RoomFull = 4002,
 }
+
+export enum ConnectionError {
+  ROOM_FULL = "room full",
+  INVALID_ROOM_ID = "invalid room id",
+  UNKNOWN = "unknown",
+}
+
+interface ConnectionStatusDisconnected {
+  type: EventType.Disconnected;
+  error: ConnectionError;
+}
+
+type ConnectionStatusEvent =
+  | { type: EventType.Connected | EventType.Connecting }
+  | ConnectionStatusDisconnected;
 
 interface InitialStateEvent {
   type: EventType.InitialState;
@@ -200,6 +214,8 @@ export type Event =
 
 export type ApiEventHandler = (event: Event) => void;
 
+// See https://tools.ietf.org/html/rfc6455#section-7.4.1
+const WS_CODE_GOING_AWAY = 1001;
 const CONNECTION_TIMEOUT_MS = 5000;
 
 export class BoardStateApiClient {
@@ -220,8 +236,7 @@ export class BoardStateApiClient {
     const encodedRoomId = encodeURIComponent(roomId);
 
     if (this.socket) {
-      //TODO: Real number and reason
-      this.socket.close();
+      this.socket.close(WS_CODE_GOING_AWAY, "Going away");
     }
 
     this.eventHandler({ type: EventType.Connected });
@@ -239,16 +254,23 @@ export class BoardStateApiClient {
 
   public close() {
     this.socket?.close();
-    this.eventHandler({ type: EventType.Disconnected });
+    this.eventHandler({
+      type: EventType.Disconnected,
+      error: ConnectionError.UNKNOWN,
+    });
   }
 
   public send(requestId: string, updates: Update[]) {
-    this.socket?.send(
-      JSON.stringify({
-        request_id: requestId,
-        updates: updates.map(toApiUpdate),
-      })
-    );
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.socket.send(
+        JSON.stringify({
+          request_id: requestId,
+          updates: updates.map(toApiUpdate),
+        })
+      );
+    } else {
+      console.warn("dropping message to disconnected host");
+    }
   }
 
   private onConnect() {
@@ -258,10 +280,12 @@ export class BoardStateApiClient {
     }
     this.eventHandler({ type: EventType.Connected });
   }
-
-  private onClose() {
-    console.log("disconnected");
-    this.eventHandler({ type: EventType.Disconnected });
+  private onClose(e: CloseEvent) {
+    console.log("disconnected", e);
+    this.eventHandler({
+      type: EventType.Disconnected,
+      error: this.disconnectReason(e.code),
+    });
   }
 
   private onMessage(event: MessageEvent) {
@@ -302,6 +326,17 @@ export class BoardStateApiClient {
         break;
       default:
         throw new UnreachableCaseError(message);
+    }
+  }
+
+  private disconnectReason(disconnectCode: number): ConnectionError {
+    switch (disconnectCode) {
+      case DisconnectErrorCode.InvalidUuid:
+        return ConnectionError.INVALID_ROOM_ID;
+      case DisconnectErrorCode.RoomFull:
+        return ConnectionError.ROOM_FULL;
+      default:
+        return ConnectionError.UNKNOWN;
     }
   }
 }

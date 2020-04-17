@@ -1,4 +1,9 @@
-import { ConnectionState } from "./connection-state-slice";
+import {
+  ConnectionStateType,
+  ConnectionState,
+  Disconnected,
+  ConnectionError,
+} from "./connection-state-slice";
 import React from "react";
 import Alert from "@material-ui/lab/Alert";
 import { connect } from "react-redux";
@@ -16,22 +21,35 @@ const useStyle = makeStyles(() => ({
   },
 }));
 
+function disconnectMessage(state: Disconnected) {
+  switch (state.error) {
+    case ConnectionError.INVALID_ROOM_ID:
+      return "Room link is invalid, try creating a new room";
+    case ConnectionError.ROOM_FULL:
+      return "This room is full";
+    case ConnectionError.UNKNOWN:
+      return "An unknown error has ocurred";
+    default:
+      throw new UnreachableCaseError(state.error);
+  }
+}
+
 const PureConnectionNotifier: React.FC<Props> = ({ connectionState }) => {
   const classes = useStyle();
 
-  switch (connectionState) {
-    case ConnectionState.Connected:
+  switch (connectionState.type) {
+    case ConnectionStateType.Connected:
       return null;
-    case ConnectionState.Connecting:
+    case ConnectionStateType.Connecting:
       return (
         <Alert className={classes.alert} variant="filled" severity="warning">
           Connecting
         </Alert>
       );
-    case ConnectionState.Disconnected:
+    case ConnectionStateType.Disconnected:
       return (
         <Alert className={classes.alert} variant="filled" severity="error">
-          Disconnected
+          Disconnected: {disconnectMessage(connectionState)}
         </Alert>
       );
     default:
