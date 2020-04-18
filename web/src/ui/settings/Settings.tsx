@@ -61,7 +61,12 @@ const Settings: React.FC<Props> = memo(
 
     return (
       <>
-        <Fab className={className} size="small" onClick={onClick}>
+        <Fab
+          className={className}
+          size="small"
+          onClick={onClick}
+          aria-label={"Settings"}
+        >
           <SettingsIcon />
         </Fab>
         <ConfirmationDialog
@@ -91,11 +96,15 @@ const Settings: React.FC<Props> = memo(
               </ListItem>
               <ListItem dense={true}>
                 <ListItemText
+                  id="settings-debug-logs-label"
                   primary="Enable Debug Logs"
                   className={classes.settingMainText}
                 />
                 <Switch
                   edge="end"
+                  inputProps={{
+                    "aria-labelledby": "settings-debug-logs-label",
+                  }}
                   checked={debugEnabled}
                   onChange={onDebugToggled}
                 />
