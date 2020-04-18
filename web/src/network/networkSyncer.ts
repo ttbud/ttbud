@@ -3,7 +3,7 @@ import { Middleware } from "@reduxjs/toolkit";
 import BoardSyncer from "./BoardSyncer";
 import {
   setConnectionState,
-  ConnectionState,
+  ConnectionStateType,
 } from "../ui/connection-state/connection-state-slice";
 
 /**
@@ -16,13 +16,22 @@ export function networkSyncer(apiClient: BoardStateApiClient): Middleware {
     apiClient.setEventHandler((event) => {
       switch (event.type) {
         case EventType.Connected:
-          store.dispatch(setConnectionState(ConnectionState.Connected));
+          store.dispatch(
+            setConnectionState({ type: ConnectionStateType.Connected })
+          );
           break;
         case EventType.Disconnected:
-          store.dispatch(setConnectionState(ConnectionState.Disconnected));
+          store.dispatch(
+            setConnectionState({
+              type: ConnectionStateType.Disconnected,
+              error: event.error,
+            })
+          );
           break;
         case EventType.Connecting:
-          store.dispatch(setConnectionState(ConnectionState.Connecting));
+          store.dispatch(
+            setConnectionState({ type: ConnectionStateType.Connecting })
+          );
           break;
         case EventType.InitialState:
           boardSyncer.onNetworkTokenUpdate(event.tokens);

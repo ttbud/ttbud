@@ -3,12 +3,11 @@ import json
 from dataclasses import asdict
 from typing import Union
 from uuid import UUID
-from http import HTTPStatus
 
 import websockets
-from websockets.http import Headers
 
-from .game_state_server import Message, MessageContents
+from .game_state_server import Message, MessageContents, InvalidConnectionException
+from .ws_close_codes import ERR_INVALID_UUID
 
 
 def is_valid_uuid(uuid_string):
@@ -27,21 +26,9 @@ class WebsocketManager:
         self.gss = gss
         self._client_ids = {}
 
-    @staticmethod
-    async def process_request(path, request_headers):
-        if is_valid_uuid(path.lstrip('/')):
-            return None
-        else:
-            return HTTPStatus.BAD_REQUEST, Headers(), b''
-
     def start_server(self) -> None:
         try:
-            ws_server = websockets.serve(
-                self.consumer_handler,
-                '0.0.0.0',
-                self.port,
-                process_request=self.process_request,
-            )
+            ws_server = websockets.serve(self.consumer_handler, "0.0.0.0", self.port,)
             self._loop.run_until_complete(ws_server)
         except OSError as e:
             print(e)
@@ -51,22 +38,27 @@ class WebsocketManager:
     async def consumer_handler(
         self, client: websockets.WebSocketServerProtocol, room_id: str
     ) -> None:
-        room_id = room_id.lstrip('/')
-        if is_valid_uuid(room_id):
-            self._client_ids[hash(client)] = client
+        room_id = room_id.lstrip("/")
+        if not is_valid_uuid(room_id):
+            print(f"Invalid room UUID: {room_id}")
+            await client.close(
+                code=ERR_INVALID_UUID, reason=f"Invalid room UUID: {room_id}"
+            )
+            return
+
+        self._client_ids[hash(client)] = client
+        try:
             response = self.gss.new_connection_request(hash(client), room_id)
-            if response.contents.type == 'error':
-                await self.send_message(response)
-                # Break the connection
-                return
-            await self.send_message(response)
-            try:
-                async for message in client:
-                    asyncio.ensure_future(self.consume(message, room_id, client))
-            finally:
-                self.gss.connection_dropped(hash(client), room_id)
-        else:
-            print(f'Invalid uuid: {room_id}')
+        except InvalidConnectionException as e:
+            await client.close(e.close_code, e.reason)
+            return
+
+        await self.send_message(response)
+        try:
+            async for message in client:
+                asyncio.ensure_future(self.consume(message, room_id, client))
+        finally:
+            self.gss.connection_dropped(hash(client), room_id)
 
     async def send_message(self, message: Message) -> None:
         for target in message.targets:

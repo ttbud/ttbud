@@ -6,6 +6,7 @@ from src.game_state_server import (
     Message,
     MessageContents,
     MAX_USERS_PER_ROOM,
+    InvalidConnectionException,
 )
 from src.room_store import MemoryRoomStore
 from src.game_components import Token, Ping
@@ -284,8 +285,6 @@ async def test_delete_with_full_token(gss_with_client):
 async def test_room_full(gss_with_client):
     for i in range(MAX_USERS_PER_ROOM):
         gss_with_client.new_connection_request(f'client{i}', TEST_ROOM_ID)
-    reply = gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
-    # FIXME: Brittle
-    assert reply == Message(
-        {TEST_CLIENT_ID}, MessageContents('error', 'That room is full')
-    )
+
+    with pytest.raises(InvalidConnectionException):
+        gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)

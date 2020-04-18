@@ -1,7 +1,7 @@
 import ConnectionNotifier, {
   PureConnectionNotifier,
 } from "./ConnectionNotifier";
-import { ConnectionState } from "./connection-state-slice";
+import { ConnectionStateType, ConnectionError } from "./connection-state-slice";
 import React from "react";
 
 export default {
@@ -9,9 +9,26 @@ export default {
   title: "ConnectionNotifier",
 };
 
-export const Connecting: React.FC = () => (
-  <PureConnectionNotifier connectionState={ConnectionState.Connecting} />
+const Disconnected: React.FC<{ error: ConnectionError }> = ({ error }) => (
+  <PureConnectionNotifier
+    connectionState={{ type: ConnectionStateType.Disconnected, error: error }}
+  />
 );
-export const Disconnected: React.FC = () => (
-  <PureConnectionNotifier connectionState={ConnectionState.Disconnected} />
+
+export const Connecting: React.FC = () => (
+  <PureConnectionNotifier
+    connectionState={{ type: ConnectionStateType.Connecting }}
+  />
+);
+
+export const RoomFull: React.FC = () => (
+  <Disconnected error={ConnectionError.ROOM_FULL} />
+);
+
+export const InvalidRoomId: React.FC = () => (
+  <Disconnected error={ConnectionError.INVALID_ROOM_ID} />
+);
+
+export const Unknown: React.FC = () => (
+  <Disconnected error={ConnectionError.UNKNOWN} />
 );
