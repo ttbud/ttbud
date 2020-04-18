@@ -217,9 +217,18 @@ export default function SortableList<T extends DraggableItem>({
       container.current,
       "SortableList container ref not set up correctly"
     );
-    return constrainDragsToContainer
-      ? container.current.getBoundingClientRect()
-      : undefined;
+
+    if (constrainDragsToContainer) {
+      const containerBounds = container.current.getBoundingClientRect();
+      return {
+        top: containerBounds.top,
+        left: containerBounds.left,
+        bottom: containerBounds.bottom,
+        right: containerBounds.right,
+      };
+    } else {
+      return undefined;
+    }
   }, [constrainDragsToContainer]);
 
   const getChildStyle = useCallback(
