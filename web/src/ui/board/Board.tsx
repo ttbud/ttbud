@@ -302,15 +302,6 @@ const PureBoard: React.FC<Props> = ({
   );
 };
 
-interface Props {
-  isDragging: boolean;
-  tokens: Token[];
-  activeFloor: Icon;
-  onPingCreated: (pos: Pos2d) => void;
-  onFloorCreated: (iconId: string, pos: Pos2d) => void;
-  onTokenDeleted: (id: string) => void;
-}
-
 const Board = connect(mapStateToProps, dispatchProps)(PureBoard);
 
 export { PureBoard };
