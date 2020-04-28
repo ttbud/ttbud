@@ -7,7 +7,7 @@ from src.game_state_server import GameStateServer
 
 
 def main():
-    websocket_port = int(os.environ['API_WEBSOCKET_PORT'])
+    websocket_port = int(os.environ['PORT'])
     room_store_dir = os.environ['ROOM_STORE_DIR']
 
     room_store = FileRoomStore(room_store_dir)
