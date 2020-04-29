@@ -13,3 +13,6 @@ storage
 .vscode/
 .history/
 *.code-workspace
+
+# Local Netlify folder
+.netlify
