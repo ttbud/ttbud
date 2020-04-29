@@ -5,7 +5,7 @@ services:
     build: api
     environment:
       DOMAIN:
-      API_WEBSOCKET_PORT:
+      PORT: ${API_WEBSOCKET_PORT}
       ROOM_STORE_DIR: /var/ttbud/rooms
     volumes:
       - rooms:/var/ttbud/rooms
@@ -21,7 +21,7 @@ services:
   ingress:
     image: abiosoft/caddy
     environment:
-      DOMAIN:
+      DOMAIN: 
       CERT_CONFIG:
       API_WEBSOCKET_PORT:
       ACME_AGREE: 'true'

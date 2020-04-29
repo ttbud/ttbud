@@ -24,6 +24,21 @@ docker-compose run --rm web yarn install
 docker-compose up -d
 ```
 
+## Initial Deploy Setup
+
+```bash
+heroku apps:create
+heroku stack:set container
+heroku config:set API_WEBSOCKET_PORT=1234
+heroku config:set ROOM_STORE_DIR=/var/ttbud/rooms
+```
+
+## Deploy
+
+```bash
+git push heroku master
+```
+
 ## Licenses
 
 - icons in web/src/icon - Licensed from [game-icons.net](https://game-icons.net) under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)
