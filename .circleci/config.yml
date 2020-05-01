@@ -1,4 +1,42 @@
-version: 2
+version: 2.1
+executors:
+  web-executor:
+    docker:
+      - image: node:12
+commands:
+  install_web_deps:
+    description: "Install all web dependencies"
+    steps:
+      - restore_cache:
+          keys:
+            # Restore the cache with the exact dependencies,
+            - web-deps-v1-{{ checksum "yarn.lock" }}
+            # or, failing that, just the most recent cache entry
+            - web-deps-v1
+      - run:
+          name: Install Deps
+          command: yarn install
+      - save_cache:
+          key: web-deps-v1-{{ checksum "yarn.lock" }}
+          paths:
+            - node_modules
+  release_web:
+    parameters:
+      target_name:
+        type: string
+      site_id:
+        type: env_var_name
+    steps:
+      - checkout:
+          path: ~/repo
+      - install_web_deps
+      - run:
+          name: Build Bundle
+          command: yarn build
+      - run:
+          name: Release to << parameters.target_name >>
+          command: web/node_modules/.bin/netlify deploy --site $<< parameters.site_id >> --auth $NETLIFY_AUTH_TOKEN --prod
+          working_directory: ~/repo
 jobs:
   api:
     docker:
@@ -38,25 +76,12 @@ jobs:
       - store_test_results:
           path: test-results
   web:
-    docker:
-      - image: node:12
+    executor: web-executor
     working_directory: ~/repo/web
     steps:
       - checkout:
           path: ~/repo
-      - restore_cache:
-          keys:
-            # Restore the cache with the exact dependencies,
-            - web-deps-v1-{{ checksum "yarn.lock" }}
-            # or, failing that, just the most recent cache entry
-            - web-deps-v1
-      - run:
-          name: Install Deps
-          command: yarn install
-      - save_cache:
-          key: web-deps-v1-{{ checksum "yarn.lock" }}
-          paths:
-            - node_modules
+      - install_web_deps
       - run:
           name: Check Style
           command: yarn run checkstyle
@@ -75,9 +100,42 @@ jobs:
           command: yarn run test -- --reporters=default --reporters=jest-junit
       - store_test_results:
           path: test-results
+  release-staging-web:
+    executor: web-executor
+    working_directory: ~/repo/web
+    environment:
+      REACT_APP_DOMAIN: whispering-sea-50524.herokuapp.com
+      REACT_APP_API_WEBSOCKET_PORT: 443
+    steps:
+      - release_web:
+          target_name: Staging
+          site_id: NETLIFY_STAGING_SITE_ID
+  release-prod-web:
+    executor: web-executor
+    working_directory: ~/repo/web
+    environment:
+      REACT_APP_DOMAIN: whispering-sea-50524.herokuapp.com
+      REACT_APP_API_WEBSOCKET_PORT: 443
+    steps:
+     - release_web:
+        target_name: Prod
+        site_id: NETLIFY_PROD_SITE_ID
 workflows:
   version: 2
   all:
     jobs:
       - api
       - web
+      - release-staging-web:
+          requires:
+            - web
+          filters:
+            branches:
+              only: master
+      - await-approval:
+          type: approval
+          requires:
+            - release-staging-web
+      - release-prod-web:
+          requires:
+            - await-approval
