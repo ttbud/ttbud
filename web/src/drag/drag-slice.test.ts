@@ -15,7 +15,11 @@ import {
   LogicalLocation,
 } from "./DragStateTypes";
 import { FakeDroppableMonitor } from "./__test_util__/FakeDroppableMonitor";
-import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
+import {
+  configureStore,
+  EnhancedStore,
+  getDefaultMiddleware,
+} from "@reduxjs/toolkit";
 
 const ORIGIN_BOUNDS = { top: 0, left: 0, bottom: 50, right: 50 };
 const MOVED_MOUSE_POS = { x: 100, y: 100 };
@@ -63,7 +67,7 @@ const DRAG_END_ANIMATING: DragState = {
 let monitor: FakeDroppableMonitor;
 beforeEach(() => (monitor = new FakeDroppableMonitor()));
 
-function createTestStore(initialState: DragState) {
+function createTestStore(initialState: DragState): EnhancedStore<any, any> {
   return configureStore({
     reducer: { drag: dragReducer },
     preloadedState: { drag: initialState },
