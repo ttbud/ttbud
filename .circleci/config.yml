@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  heroku: circleci/heroku@1.0.1
 executors:
   web-executor:
     docker:
@@ -30,6 +32,8 @@ commands:
       - checkout:
           path: ~/repo
       - install_web_deps
+      # Build the bundle each time we release instead of sharing the results across jobs via a workspace because job
+      # may be paused for 15 days awaiting approval and then workspace would be cleared and build would fail
       - run:
           name: Build Bundle
           command: yarn build
@@ -37,6 +41,15 @@ commands:
           name: Release to << parameters.target_name >>
           command: web/node_modules/.bin/netlify deploy --site $<< parameters.site_id >> --auth $NETLIFY_AUTH_TOKEN --prod
           working_directory: ~/repo
+  release_api:
+    parameters:
+      app_name:
+        type: string
+    steps:
+      - checkout
+      - heroku/install
+      - heroku/deploy-via-git:
+          app-name: << parameters.app_name >>
 jobs:
   api:
     docker:
@@ -120,6 +133,16 @@ jobs:
      - release_web:
         target_name: Prod
         site_id: NETLIFY_PROD_SITE_ID
+  release-staging-api:
+    executor: heroku/default
+    steps:
+      - release_api:
+          app_name: ttbud-staging
+  release-prod-api:
+    executor: heroku/default
+    steps:
+      - release_api:
+          app_name: ttbud
 workflows:
   version: 2
   all:
@@ -132,10 +155,17 @@ workflows:
           filters:
             branches:
               only: master
+      - release-staging-api:
+          filters:
+            branches:
+              only: master
       - await-approval:
           type: approval
           requires:
             - release-staging-web
       - release-prod-web:
+          requires:
+            - await-approval
+      - release-prod-api:
           requires:
             - await-approval
