@@ -117,7 +117,7 @@ jobs:
     executor: web-executor
     working_directory: ~/repo/web
     environment:
-      REACT_APP_DOMAIN: whispering-sea-50524.herokuapp.com
+      REACT_APP_DOMAIN: ttbud-staging.herokuapp.com
       REACT_APP_API_WEBSOCKET_PORT: 443
     steps:
       - release_web:
@@ -127,7 +127,7 @@ jobs:
     executor: web-executor
     working_directory: ~/repo/web
     environment:
-      REACT_APP_DOMAIN: whispering-sea-50524.herokuapp.com
+      REACT_APP_DOMAIN: ttbud.herokuapp.com
       REACT_APP_API_WEBSOCKET_PORT: 443
     steps:
      - release_web:
