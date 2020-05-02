@@ -27,7 +27,7 @@ docker-compose up -d
 ## Infrastructure setup
 
 ### Requirements
-- [heroku cli](https://devcenter.heroku.com/articles/heroku-cli#download-and-install) (Only f)
+- [heroku cli](https://devcenter.heroku.com/articles/heroku-cli#download-and-install)
 - [netlify cli](https://docs.netlify.com/cli/get-started/#installation)
 
 ### API
