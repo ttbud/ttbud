@@ -156,6 +156,8 @@ workflows:
             branches:
               only: master
       - release-staging-api:
+          requires:
+            - api
           filters:
             branches:
               only: master
