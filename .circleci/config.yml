@@ -50,6 +50,9 @@ commands:
       - heroku/install
       - heroku/deploy-via-git:
           app-name: << parameters.app_name >>
+          # Not that we should ever be rebasing the master branch, but it doesn't make any sense to fail the build if
+          # we do.
+          force: true
 jobs:
   api:
     docker:
