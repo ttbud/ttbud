@@ -27,10 +27,11 @@ docker-compose up -d
 ## Initial Deploy Setup
 
 ```bash
-heroku apps:create
-heroku stack:set container
-heroku config:set API_WEBSOCKET_PORT=1234
-heroku config:set ROOM_STORE_DIR=/var/ttbud/rooms
+heroku update beta
+heroku plugins:istall @heroku-cli/plugin-manifest
+
+heroku apps:create ttbud-prod --manifest
+heroku apps:create ttbud-staging --manifest --remote staging
 ```
 
 ## Deploy
