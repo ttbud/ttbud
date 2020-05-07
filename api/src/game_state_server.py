@@ -1,19 +1,49 @@
 from dataclasses import dataclass
 from typing import Union, Hashable, AsyncIterator, Iterable, Optional, Dict, Tuple, List
+from copy import deepcopy
 
 # It's important to import the whole module here because we mock sleep in tests
 import asyncio
-import dacite
+from dacite import (
+    Config,
+    from_dict,
+    WrongTypeError,
+    MissingValueError,
+    UnexpectedDataError,
+)
 
 from .room_store import RoomStore
 from .game_components import Token, Ping
 from .ws_close_codes import ERR_ROOM_FULL
+from .colors import colors
 
 
 MAX_USERS_PER_ROOM = 20
 
 # Enforce that tokens do not have extra fields
-dacite.Config.strict = True
+Config.strict = True
+
+
+def assign_colors(tokens: List[Token]) -> None:
+    available_colors = deepcopy(colors)
+    for token in tokens:
+        if token.color_rgb:
+            if token.color_rgb in available_colors:
+                del available_colors[available_colors.index(token.color_rgb)]
+            else:
+                print(f'Token has an unknown color: {token.color_rgb}')
+    for token in tokens:
+        if not token.color_rgb:
+            try:
+                token.color_rgb = available_colors[0]
+                print(
+                    f'Assigning color {token.color_rgb} to token with icon {token.icon_id}'
+                )
+                del available_colors[0]
+            except IndexError:
+                print(f'Max colors reached for icon {token.icon_id}')
+                return
+
 
 @dataclass
 class MessageContents:
@@ -43,9 +73,17 @@ class RoomData:
         self.game_state: Dict[str, Union[Ping, Token]] = {}
         self.id_to_positions: Dict[str, List[Tuple[int, int, int]]] = {}
         self.positions_to_ids: Dict[Tuple[int, int, int], str] = {}
+        self.tokens_by_icon_id: Dict[str, List[Token]] = {}
         self.clients = set()
         if initial_connection:
             self.clients.add(initial_connection)
+
+    def pop_token(self, token_id: str) -> Token:
+        token = self.game_state[token_id]
+        del self.game_state[token_id]
+        if type(token) != Token:
+            raise TypeError(f'{token_id} is not a token ID')
+        return token
 
 
 class GameStateServer:
@@ -140,8 +178,8 @@ class GameStateServer:
 
             elif action == 'create' or action == 'update':
                 try:
-                    token = dacite.from_dict(data_class=Token, data=data)
-                except (dacite.WrongTypeError, dacite.MissingValueError, dacite.UnexpectedDataError):
+                    token = from_dict(data_class=Token, data=data)
+                except (WrongTypeError, MissingValueError, UnexpectedDataError):
                     yield Message(
                         {client_id},
                         MessageContents(
@@ -237,6 +275,12 @@ class GameStateServer:
         print(f'New token: {token}')
         if self._rooms[room_id].game_state.get(token.id):
             self._remove_positions(token.id, room_id)
+        else:
+            if self._rooms[room_id].tokens_by_icon_id.get(token.icon_id):
+                self._rooms[room_id].tokens_by_icon_id[token.icon_id].append(token)
+                assign_colors(self._rooms[room_id].tokens_by_icon_id[token.icon_id])
+            else:
+                self._rooms[room_id].tokens_by_icon_id[token.icon_id] = [token]
 
         # Update state for new or existing token
         blocks = self._get_unit_blocks(token)
@@ -255,7 +299,15 @@ class GameStateServer:
             del self._rooms[room_id].id_to_positions[token_id]
         # Remove the token from the state
         if self._rooms[room_id].game_state.get(token_id, False):
-            del self._rooms[room_id].game_state[token_id]
+            removed_token = self._rooms[room_id].pop_token(token_id)
+            # Remove token from icon_id table
+            if self._rooms[room_id].tokens_by_icon_id.get(removed_token.icon_id, False):
+                idx = (
+                    self._rooms[room_id]
+                    .tokens_by_icon_id[removed_token.icon_id]
+                    .index(removed_token)
+                )
+                del self._rooms[room_id].tokens_by_icon_id[removed_token.icon_id][idx]
 
     def _remove_positions(self, token_id: str, room_id: str) -> None:
         positions = self._rooms[room_id].id_to_positions[token_id]

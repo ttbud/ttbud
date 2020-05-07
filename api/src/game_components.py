@@ -7,13 +7,13 @@ class Token:
     id: str
     type: str
     icon_id: str
-    color_rgb: Optional[Tuple[int, int, int]]
     start_x: int
     start_y: int
     start_z: int
     end_x: int
     end_y: int
     end_z: int
+    color_rgb: Optional[Tuple[int, int, int]] = None
 
 
 @dataclass
