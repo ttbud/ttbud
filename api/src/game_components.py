@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional, Tuple
 
 
 @dataclass
@@ -6,6 +7,7 @@ class Token:
     id: str
     type: str
     icon_id: str
+    color_rgb: Optional[Tuple[int, int, int]]
     start_x: int
     start_y: int
     start_z: int

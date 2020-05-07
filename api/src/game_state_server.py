@@ -3,6 +3,7 @@ from typing import Union, Hashable, AsyncIterator, Iterable, Optional, Dict, Tup
 
 # It's important to import the whole module here because we mock sleep in tests
 import asyncio
+import dacite
 
 from .room_store import RoomStore
 from .game_components import Token, Ping
@@ -11,6 +12,8 @@ from .ws_close_codes import ERR_ROOM_FULL
 
 MAX_USERS_PER_ROOM = 20
 
+# Enforce that tokens do not have extra fields
+dacite.Config.strict = True
 
 @dataclass
 class MessageContents:
@@ -53,13 +56,13 @@ class GameStateServer:
     def new_connection_request(self, client_id: Hashable, room_id: str) -> Message:
         """Register a new client
 
-        :param client_id Unique identifier for the client requesting a
+        :param client_id: Unique identifier for the client requesting a
         connection
 
-        :param room_id The UUID that identifies the room the client
+        :param room_id: The UUID that identifies the room the client
         is trying to connect to
 
-        :raise InvalidConnectionException If the client connection should be rejected
+        :raise InvalidConnectionException: If the client connection should be rejected
         """
         if self._rooms.get(room_id, False):
             if len(self._rooms[room_id].clients) <= MAX_USERS_PER_ROOM:
@@ -137,8 +140,8 @@ class GameStateServer:
 
             elif action == 'create' or action == 'update':
                 try:
-                    token = Token(**data)
-                except TypeError:
+                    token = dacite.from_dict(data_class=Token, data=data)
+                except (dacite.WrongTypeError, dacite.MissingValueError, dacite.UnexpectedDataError):
                     yield Message(
                         {client_id},
                         MessageContents(
