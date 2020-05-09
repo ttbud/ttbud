@@ -30,9 +30,6 @@ def assign_colors(tokens: List[Token]) -> None:
     for token in tokens:
         if not token.color_rgb:
             token.color_rgb = available_colors.pop(0)
-            print(
-                f'Assigning color {token.color_rgb} to token with icon {token.icon_id}'
-            )
             if not available_colors:
                 print(f'Max colors reached for icon {token.icon_id}')
                 return
