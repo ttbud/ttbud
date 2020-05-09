@@ -29,6 +29,7 @@ def assign_colors(tokens: List[Token]) -> None:
                 print(f'Token has an unknown color: {token.color_rgb}')
     for token in tokens:
         if not token.color_rgb:
+            print(f'Add color {available_colors[0]} to token {token.id}')
             token.color_rgb = available_colors.pop(0)
             if not available_colors:
                 print(f'Max colors reached for icon {token.icon_id}')
@@ -63,10 +64,13 @@ class RoomData:
         self.game_state: Dict[str, Union[Ping, Token]] = {}
         self.id_to_positions: Dict[str, List[Tuple[int, int, int]]] = {}
         self.positions_to_ids: Dict[Tuple[int, int, int], str] = {}
-        self.tokens_by_icon_id: Dict[str, List[Token]] = {}
+        self.tokens_by_icon_id: Dict[str, List[str]] = {}
         self.clients = set()
         if initial_connection:
             self.clients.add(initial_connection)
+
+    def get_token(self, token_id: str) -> Token:
+        return self.game_state[token_id]
 
 
 class GameStateServer:
@@ -261,10 +265,14 @@ class GameStateServer:
             self._remove_positions(token.id, room_id)
         else:
             if self._rooms[room_id].tokens_by_icon_id.get(token.icon_id):
-                self._rooms[room_id].tokens_by_icon_id[token.icon_id].append(token)
-                assign_colors(self._rooms[room_id].tokens_by_icon_id[token.icon_id])
+                token_ids = self._rooms[room_id].tokens_by_icon_id[token.icon_id]
+                tokens_with_icon = [token]
+                for t_id in token_ids:
+                    tokens_with_icon.append(self._rooms[room_id].game_state[t_id])
+                token_ids.append(token.id)
+                assign_colors(tokens_with_icon)
             else:
-                self._rooms[room_id].tokens_by_icon_id[token.icon_id] = [token]
+                self._rooms[room_id].tokens_by_icon_id[token.icon_id] = [token.id]
 
         # Update state for new or existing token
         blocks = self._get_unit_blocks(token)
@@ -285,7 +293,7 @@ class GameStateServer:
         # Remove token from icon_id table
         if isinstance(removed_token, Token):
             self._rooms[room_id].tokens_by_icon_id[removed_token.icon_id].remove(
-                removed_token
+                removed_token.id
             )
 
     def _remove_positions(self, token_id: str, room_id: str) -> None:

@@ -12,6 +12,12 @@ const PingTokenDecoder = t.type({
   y: t.number,
 });
 
+const ColorDecoder = t.type({
+  red: t.number,
+  green: t.number,
+  blue: t.number,
+});
+
 const IconTokenDecoder = t.type({
   id: t.string,
   type: t.union([t.literal("character"), t.literal("floor")]),
@@ -22,6 +28,7 @@ const IconTokenDecoder = t.type({
   end_x: t.number,
   end_y: t.number,
   end_z: t.number,
+  color_rgb: t.union([ColorDecoder, t.undefined]),
 });
 
 const ApiTokenDecoder = t.union([IconTokenDecoder, PingTokenDecoder]);
@@ -65,11 +72,19 @@ export interface PingToken {
   pos: Pos2d;
 }
 
+export interface Color {
+  red: number;
+  green: number;
+  blue: number;
+}
+
+// TODO: Split into character and floor tokens
 export interface IconToken {
   type: TokenType.Character | TokenType.Floor;
   id: string;
   pos: Pos3d;
   iconId: string;
+  color?: Color;
 }
 
 export type Token = PingToken | IconToken;
@@ -102,7 +117,7 @@ function toApiUpdate(update: Update): ApiUpdate {
           data: { id, type, x: pos.x, y: pos.y },
         };
       } else {
-        const { id, type, iconId, pos } = update.token;
+        const { id, type, iconId, pos, color } = update.token;
         return {
           action: "update",
           data: {
@@ -115,6 +130,7 @@ function toApiUpdate(update: Update): ApiUpdate {
             end_x: pos.x + 1,
             end_y: pos.y + 1,
             end_z: pos.z + 1,
+            color_rgb: color,
           },
         };
       }
@@ -140,10 +156,21 @@ function toToken(apiToken: ApiToken): Token {
         },
       };
     case "character":
+      return {
+        id: apiToken.id,
+        type: apiToken.type as TokenType.Character,
+        iconId: apiToken.icon_id,
+        pos: {
+          x: apiToken.start_x,
+          y: apiToken.start_y,
+          z: apiToken.start_z,
+        },
+        color: apiToken.color_rgb,
+      };
     case "floor":
       return {
         id: apiToken.id,
-        type: apiToken.type as TokenType.Character | TokenType.Floor,
+        type: apiToken.type as TokenType.Floor,
         iconId: apiToken.icon_id,
         pos: {
           x: apiToken.start_x,
