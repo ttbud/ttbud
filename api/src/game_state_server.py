@@ -5,7 +5,6 @@ from copy import deepcopy
 # It's important to import the whole module here because we mock sleep in tests
 import asyncio
 from dacite import (
-    Config,
     from_dict,
     WrongTypeError,
     MissingValueError,
@@ -20,9 +19,6 @@ from .colors import colors
 
 MAX_USERS_PER_ROOM = 20
 
-# Enforce that tokens do not have extra fields
-Config.strict = True
-
 
 def assign_colors(tokens: List[Token]) -> None:
     available_colors = deepcopy(colors)
@@ -34,13 +30,11 @@ def assign_colors(tokens: List[Token]) -> None:
                 print(f'Token has an unknown color: {token.color_rgb}')
     for token in tokens:
         if not token.color_rgb:
-            try:
-                token.color_rgb = available_colors[0]
-                print(
-                    f'Assigning color {token.color_rgb} to token with icon {token.icon_id}'
-                )
-                del available_colors[0]
-            except IndexError:
+            token.color_rgb = available_colors.pop()
+            print(
+                f'Assigning color {token.color_rgb} to token with icon {token.icon_id}'
+            )
+            if not available_colors:
                 print(f'Max colors reached for icon {token.icon_id}')
                 return
 
@@ -77,13 +71,6 @@ class RoomData:
         self.clients = set()
         if initial_connection:
             self.clients.add(initial_connection)
-
-    def pop_token(self, token_id: str) -> Token:
-        token = self.game_state[token_id]
-        del self.game_state[token_id]
-        if type(token) != Token:
-            raise TypeError(f'{token_id} is not a token ID')
-        return token
 
 
 class GameStateServer:
@@ -299,7 +286,7 @@ class GameStateServer:
             del self._rooms[room_id].id_to_positions[token_id]
         # Remove the token from the state
         if self._rooms[room_id].game_state.get(token_id, False):
-            removed_token = self._rooms[room_id].pop_token(token_id)
+            removed_token = self._rooms[room_id].game_state.pop(token_id)
             # Remove token from icon_id table
             if self._rooms[room_id].tokens_by_icon_id.get(removed_token.icon_id, False):
                 idx = (
