@@ -41,8 +41,8 @@ heroku apps:create ttbud-staging --manifest --remote staging
 
 ### Web
 ```bash
-netlify sites:create ttbud
-netlify sites:create ttbud-staging
+netlify sites:create -n ttbud
+netlify sites:create -n ttbud-staging
 ```
 
 ### CI
