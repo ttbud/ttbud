@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional
+
+from .colors import Color
 
 
 @dataclass
@@ -13,7 +15,7 @@ class Token:
     end_x: int
     end_y: int
     end_z: int
-    color_rgb: Optional[Tuple[int, int, int]] = None
+    color_rgb: Optional[Color] = None
 
 
 @dataclass
