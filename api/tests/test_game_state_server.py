@@ -11,12 +11,13 @@ from src.game_state_server import (
 from src.room_store import MemoryRoomStore
 from src.game_components import Token, Ping
 from src.async_collect import async_collect
+from src.colors import colors
 
 
 TEST_ROOM_ID = 'test_room'
 TEST_CLIENT_ID = 'test_client'
 TEST_REQUEST_ID = 'test_request'
-VALID_TOKEN = Token('some_id', 'character', 'some_icon_id', 0, 0, 0, 1, 1, 1)
+VALID_TOKEN = Token('some_id', 'character', 'some_icon_id', 0, 0, 0, 1, 1, 1, colors[0])
 UPDATED_TOKEN = Token(
     VALID_TOKEN.id, VALID_TOKEN.type, VALID_TOKEN.icon_id, 7, 8, 9, 8, 9, 10
 )
