@@ -8,9 +8,7 @@ class Color:
     blue: int
 
     def __init__(self, red, green, blue):
-        if not (0 <= red <= 255 and
-                0 <= green <= 255 and
-                0 <= blue <= 255):
+        if not (0 <= red <= 255 and 0 <= green <= 255 and 0 <= blue <= 255):
             raise ValueError('RGB values must be between 0 and 255')
         self.red = red
         self.green = green
