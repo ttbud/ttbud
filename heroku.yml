@@ -1,0 +1,5 @@
+build:
+  docker:
+    web: api/Dockerfile
+  config:
+    ROOM_STORE_DIR: /var/ttbud/rooms

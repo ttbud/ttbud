@@ -1,4 +1,58 @@
-version: 2
+version: 2.1
+orbs:
+  heroku: circleci/heroku@1.0.1
+executors:
+  web-executor:
+    docker:
+      - image: node:12
+commands:
+  install_web_deps:
+    description: "Install all web dependencies"
+    steps:
+      - restore_cache:
+          keys:
+            # Restore the cache with the exact dependencies,
+            - web-deps-v1-{{ checksum "yarn.lock" }}
+            # or, failing that, just the most recent cache entry
+            - web-deps-v1
+      - run:
+          name: Install Deps
+          command: yarn install
+      - save_cache:
+          key: web-deps-v1-{{ checksum "yarn.lock" }}
+          paths:
+            - node_modules
+  release_web:
+    parameters:
+      target_name:
+        type: string
+      site_id:
+        type: env_var_name
+    steps:
+      - checkout:
+          path: ~/repo
+      - install_web_deps
+      # Build the bundle each time we release instead of sharing the results across jobs via a workspace because job
+      # may be paused for 15 days awaiting approval and then workspace would be cleared and build would fail
+      - run:
+          name: Build Bundle
+          command: yarn build
+      - run:
+          name: Release to << parameters.target_name >>
+          command: web/node_modules/.bin/netlify deploy --site $<< parameters.site_id >> --auth $NETLIFY_AUTH_TOKEN --prod
+          working_directory: ~/repo
+  release_api:
+    parameters:
+      app_name:
+        type: string
+    steps:
+      - checkout
+      - heroku/install
+      - heroku/deploy-via-git:
+          app-name: << parameters.app_name >>
+          # Not that we should ever be rebasing the master branch, but it doesn't make any sense to fail the build if
+          # we do.
+          force: true
 jobs:
   api:
     docker:
@@ -38,25 +92,12 @@ jobs:
       - store_test_results:
           path: test-results
   web:
-    docker:
-      - image: node:12
+    executor: web-executor
     working_directory: ~/repo/web
     steps:
       - checkout:
           path: ~/repo
-      - restore_cache:
-          keys:
-            # Restore the cache with the exact dependencies,
-            - web-deps-v1-{{ checksum "yarn.lock" }}
-            # or, failing that, just the most recent cache entry
-            - web-deps-v1
-      - run:
-          name: Install Deps
-          command: yarn install
-      - save_cache:
-          key: web-deps-v1-{{ checksum "yarn.lock" }}
-          paths:
-            - node_modules
+      - install_web_deps
       - run:
           name: Check Style
           command: yarn run checkstyle
@@ -75,9 +116,61 @@ jobs:
           command: yarn run test -- --reporters=default --reporters=jest-junit
       - store_test_results:
           path: test-results
+  release-staging-web:
+    executor: web-executor
+    working_directory: ~/repo/web
+    environment:
+      REACT_APP_DOMAIN: ttbud-staging.herokuapp.com
+      REACT_APP_API_WEBSOCKET_PORT: 443
+    steps:
+      - release_web:
+          target_name: Staging
+          site_id: NETLIFY_STAGING_SITE_ID
+  release-prod-web:
+    executor: web-executor
+    working_directory: ~/repo/web
+    environment:
+      REACT_APP_DOMAIN: ttbud.herokuapp.com
+      REACT_APP_API_WEBSOCKET_PORT: 443
+    steps:
+     - release_web:
+        target_name: Prod
+        site_id: NETLIFY_PROD_SITE_ID
+  release-staging-api:
+    executor: heroku/default
+    steps:
+      - release_api:
+          app_name: ttbud-staging
+  release-prod-api:
+    executor: heroku/default
+    steps:
+      - release_api:
+          app_name: ttbud
 workflows:
   version: 2
   all:
     jobs:
       - api
       - web
+      - release-staging-web:
+          requires:
+            - web
+          filters:
+            branches:
+              only: master
+      - release-staging-api:
+          requires:
+            - api
+          filters:
+            branches:
+              only: master
+      - await-approval:
+          type: approval
+          requires:
+            - release-staging-web
+      - release-prod-web:
+          requires:
+            - await-approval
+      - release-prod-api:
+          requires:
+            - await-approval
