@@ -288,13 +288,14 @@ class GameStateServer:
         if self._rooms[room_id].game_state.get(token_id, False):
             removed_token = self._rooms[room_id].game_state.pop(token_id)
             # Remove token from icon_id table
-            if self._rooms[room_id].tokens_by_icon_id.get(removed_token.icon_id, False):
-                idx = (
-                    self._rooms[room_id]
-                    .tokens_by_icon_id[removed_token.icon_id]
-                    .index(removed_token)
-                )
-                del self._rooms[room_id].tokens_by_icon_id[removed_token.icon_id][idx]
+            if isinstance(removed_token, Token):
+                if self._rooms[room_id].tokens_by_icon_id.get(removed_token.icon_id, False):
+                    idx = (
+                        self._rooms[room_id]
+                        .tokens_by_icon_id[removed_token.icon_id]
+                        .index(removed_token)
+                    )
+                    del self._rooms[room_id].tokens_by_icon_id[removed_token.icon_id][idx]
 
     def _remove_positions(self, token_id: str, room_id: str) -> None:
         positions = self._rooms[room_id].id_to_positions[token_id]
