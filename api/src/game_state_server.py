@@ -8,7 +8,6 @@ from dacite import (
     from_dict,
     WrongTypeError,
     MissingValueError,
-    UnexpectedDataError,
 )
 
 from .room_store import RoomStore
@@ -30,7 +29,7 @@ def assign_colors(tokens: List[Token]) -> None:
                 print(f'Token has an unknown color: {token.color_rgb}')
     for token in tokens:
         if not token.color_rgb:
-            token.color_rgb = available_colors.pop()
+            token.color_rgb = available_colors.pop(0)
             print(
                 f'Assigning color {token.color_rgb} to token with icon {token.icon_id}'
             )
@@ -166,7 +165,8 @@ class GameStateServer:
             elif action == 'create' or action == 'update':
                 try:
                     token = from_dict(data_class=Token, data=data)
-                except (WrongTypeError, MissingValueError, UnexpectedDataError):
+                except (WrongTypeError, MissingValueError, TypeError) as e:
+                    print(e)
                     yield Message(
                         {client_id},
                         MessageContents(
@@ -282,31 +282,22 @@ class GameStateServer:
     def _delete_token(self, token_id: str, room_id: str) -> None:
         # Remove token data from position dictionaries
         self._remove_positions(token_id, room_id)
-        if self._rooms[room_id].id_to_positions.get(token_id, False):
-            del self._rooms[room_id].id_to_positions[token_id]
+        self._rooms[room_id].id_to_positions.pop(token_id, None)
         # Remove the token from the state
-        if self._rooms[room_id].game_state.get(token_id, False):
-            removed_token = self._rooms[room_id].game_state.pop(token_id)
-            # Remove token from icon_id table
-            if isinstance(removed_token, Token):
-                if self._rooms[room_id].tokens_by_icon_id.get(removed_token.icon_id, False):
-                    idx = (
-                        self._rooms[room_id]
-                        .tokens_by_icon_id[removed_token.icon_id]
-                        .index(removed_token)
-                    )
-                    del self._rooms[room_id].tokens_by_icon_id[removed_token.icon_id][idx]
+        removed_token = self._rooms[room_id].game_state.pop(token_id, None)
+        # Remove token from icon_id table
+        if isinstance(removed_token, Token):
+            self._rooms[room_id].tokens_by_icon_id[removed_token.icon_id].remove(
+                removed_token
+            )
 
     def _remove_positions(self, token_id: str, room_id: str) -> None:
         positions = self._rooms[room_id].id_to_positions[token_id]
         for pos in positions:
-            if self._rooms[room_id].positions_to_ids.get(pos, False):
-                del self._rooms[room_id].positions_to_ids[pos]
+            self._rooms[room_id].positions_to_ids.pop(pos, None)
 
     def _remove_ping_from_state(self, ping_id: str, room_id: str) -> None:
-        ping_to_remove = self._rooms[room_id].game_state.get(ping_id)
-        if ping_to_remove:
-            del self._rooms[room_id].game_state[ping_id]
+        self._rooms[room_id].game_state.pop(ping_id, None)
 
     @staticmethod
     def _get_unit_blocks(token: Token) -> List[Tuple[int, int, int]]:
