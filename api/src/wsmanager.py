@@ -1,8 +1,9 @@
 import asyncio
 import json
 from dataclasses import asdict
-from typing import Union
+from typing import Union, List, Tuple
 from uuid import UUID
+from traceback import print_exc
 
 import websockets
 
@@ -16,6 +17,10 @@ def is_valid_uuid(uuid_string):
     except ValueError:
         return False
     return val.hex == uuid_string.replace('-', '')
+
+
+def ignore_none(items: List[Tuple[str, any]]) -> dict:
+    return dict(filter(lambda entry: entry[1] is not None, items))
 
 
 class WebsocketManager:
@@ -64,7 +69,7 @@ class WebsocketManager:
         for target in message.targets:
             client = self._client_ids.get(target)
             if client:
-                await client.send(json.dumps(asdict(message.contents)))
+                await client.send(json.dumps(asdict(message.contents, dict_factory=ignore_none)))
             else:
                 print(
                     f'Cannot send message to target: {target} because it does not exist'
@@ -90,6 +95,7 @@ class WebsocketManager:
                 await self.send_message(reply)
         except Exception as err:
             print(f'Error: {err}')
+            print_exc()
             await self.send_message(
                 Message(
                     [hash(client)],
