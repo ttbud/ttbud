@@ -306,8 +306,10 @@ async def test_more_icons_than_colors(gss_with_client):
                 'end_x': i + 1,
                 'end_y': i + 1,
                 'end_z': 2,
-            }
+            },
         }
-        await async_collect(gss_with_client.process_updates(
-            [update], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
-        ))
+        await async_collect(
+            gss_with_client.process_updates(
+                [update], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
+            )
+        )
