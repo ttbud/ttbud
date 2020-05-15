@@ -2,13 +2,13 @@ import React, { forwardRef, memo } from "react";
 import { Card, CardMedia, CardProps, makeStyles } from "@material-ui/core";
 import { Icon } from "../icons";
 import { GRID_SIZE_PX } from "../../config";
-import {Color} from "../../network/BoardStateApiClient";
+import { Color } from "../../network/BoardStateApiClient";
 
 const useStyles = makeStyles({
   media: {
-    margin: "20%",
-    width: "60%",
-    height: "60%",
+    margin: "10%",
+    width: "80%",
+    height: "80%",
   },
 });
 
@@ -25,11 +25,16 @@ interface CharacterProps {
 
 type Props = CharacterProps & CardProps;
 
+function toCssColor(color: Color | undefined) {
+  return color
+    ? `rgb(${color.red}, ${color.green}, ${color.blue})`
+    : "rgba(0, 0, 0, 0)";
+}
+
 const Character: React.FC<Props> = memo(
   forwardRef(({ icon, isDragging, characterColor, ...cardProps }, ref) => {
     const classes = useStyles();
 
-    const borderStyles = characterColor ? {border: `4px solid rgb(${characterColor.red}, ${characterColor.green}, ${characterColor.blue})`} : {};
     return (
       <Card
         {...cardProps}
@@ -40,7 +45,7 @@ const Character: React.FC<Props> = memo(
           height: GRID_SIZE_PX,
           zIndex: isDragging ? 1000 : "auto",
           position: isDragging ? "relative" : "static",
-          ...borderStyles,
+          border: `3px solid ${toCssColor(characterColor)}`,
           ...cardProps.style,
         }}
       >
