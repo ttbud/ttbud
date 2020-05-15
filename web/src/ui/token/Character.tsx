@@ -2,6 +2,7 @@ import React, { forwardRef, memo } from "react";
 import { Card, CardMedia, CardProps, makeStyles } from "@material-ui/core";
 import { Icon } from "../icons";
 import { GRID_SIZE_PX } from "../../config";
+import {Color} from "../../network/BoardStateApiClient";
 
 const useStyles = makeStyles({
   media: {
@@ -16,17 +17,19 @@ export interface Size {
   width: number;
 }
 
-interface TokenProps {
+interface CharacterProps {
   isDragging: boolean;
   icon: Icon;
+  characterColor?: Color;
 }
 
-type Props = TokenProps & CardProps;
+type Props = CharacterProps & CardProps;
 
 const Character: React.FC<Props> = memo(
-  forwardRef(({ icon, isDragging, ...cardProps }, ref) => {
+  forwardRef(({ icon, isDragging, characterColor, ...cardProps }, ref) => {
     const classes = useStyles();
 
+    const borderStyles = characterColor ? {border: `4px solid rgb(${characterColor.red}, ${characterColor.green}, ${characterColor.blue})`} : {};
     return (
       <Card
         {...cardProps}
@@ -37,6 +40,7 @@ const Character: React.FC<Props> = memo(
           height: GRID_SIZE_PX,
           zIndex: isDragging ? 1000 : "auto",
           position: isDragging ? "relative" : "static",
+          ...borderStyles,
           ...cardProps.style,
         }}
       >
