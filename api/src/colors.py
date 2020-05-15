@@ -16,17 +16,12 @@ class Color:
 
 
 colors = [
-    Color(255, 0, 0),
-    Color(0, 255, 0),
-    Color(0, 0, 255),
-    Color(255, 255, 0),
-    Color(0, 255, 255),
-    Color(255, 0, 255),
-    Color(128, 0, 0),
-    Color(0, 128, 0),
-    Color(0, 0, 128),
-    Color(128, 128, 0),
-    Color(0, 128, 128),
-    Color(128, 0, 128),
-    Color(128, 128, 128),
+    Color(255, 0, 0), # Red
+    Color(0, 228, 10), # Green
+    Color(0, 0, 255), # Blue
+    Color(253, 216, 53), # Yellow
+    Color(2, 213, 247), # Cyan
+    Color(255, 0, 255), # Pink
+    Color(94, 53, 177), # Purple
+    Color(0, 0, 0), # Black
 ]
