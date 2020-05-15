@@ -29,11 +29,11 @@ def assign_colors(tokens: List[Token]) -> None:
                 print(f'Token has an unknown color: {token.color_rgb}')
     for token in tokens:
         if not token.color_rgb:
-            print(f'Add color {available_colors[0]} to token {token.id}')
-            token.color_rgb = available_colors.pop(0)
             if not available_colors:
                 print(f'Max colors reached for icon {token.icon_id}')
                 return
+            print(f'Add color {available_colors[0]} to token {token.id}')
+            token.color_rgb = available_colors.pop(0)
 
 
 @dataclass
