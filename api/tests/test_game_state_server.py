@@ -289,3 +289,25 @@ async def test_room_full(gss_with_client):
 
     with pytest.raises(InvalidConnectionException):
         gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+
+
+@pytest.mark.asyncio
+async def test_more_icons_than_colors(gss_with_client):
+    for i in range(len(colors) + 1):
+        update = {
+            'action': 'create',
+            'data': {
+                'id': f'token{i}',
+                'type': 'character',
+                'icon_id': 'some_icon',
+                'start_x': i,
+                'start_y': i,
+                'start_z': 0,
+                'end_x': i + 1,
+                'end_y': i + 1,
+                'end_z': 1,
+            }
+        }
+        gss_with_client.process_updates(
+            [update], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
+        )

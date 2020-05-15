@@ -181,6 +181,7 @@ const PureBoard: React.FC<Props> = ({
                   {...attributes}
                   icon={characterIcon}
                   isDragging={isDragging}
+                  characterColor={token.color}
                   style={{
                     ...attributes.style,
                     position: "absolute",
