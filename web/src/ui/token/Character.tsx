@@ -43,6 +43,7 @@ const Character: React.FC<Props> = memo(
         <CardMedia
           className={classes.media}
           image={icon.img}
+          aria-label={`Character: ${icon.desc}`}
           draggable={false}
         />
       </Card>

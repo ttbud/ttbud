@@ -132,7 +132,11 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
   }, [itemRefs]);
 
   return (
-    <Paper className={classes.tokenSheet} ref={containerRef}>
+    <Paper
+      className={classes.tokenSheet}
+      ref={containerRef}
+      aria-label={"Character Tray"}
+    >
       <SortableList id={DROPPABLE_ID} items={items} getTargets={getTargets}>
         {(item, isDragging, attributes) => (
           <Character
