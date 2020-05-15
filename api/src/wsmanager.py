@@ -69,7 +69,9 @@ class WebsocketManager:
         for target in message.targets:
             client = self._client_ids.get(target)
             if client:
-                await client.send(json.dumps(asdict(message.contents, dict_factory=ignore_none)))
+                await client.send(
+                    json.dumps(asdict(message.contents, dict_factory=ignore_none))
+                )
             else:
                 print(
                     f'Cannot send message to target: {target} because it does not exist'
