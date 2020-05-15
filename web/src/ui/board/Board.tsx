@@ -290,6 +290,7 @@ const PureBoard: React.FC<Props> = ({
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onContextMenu={preventDefault}
+      aria-label={"Board"}
     >
       <Droppable id={DROPPABLE_IDS.BOARD} getLocation={getLocation}>
         {(attributes) => (

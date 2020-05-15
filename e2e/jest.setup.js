@@ -1,0 +1,2 @@
+const THIRTY_SECONDS_MS = 30_000;
+jest.setTimeout(THIRTY_SECONDS_MS);
