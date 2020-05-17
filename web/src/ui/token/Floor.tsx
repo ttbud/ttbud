@@ -17,7 +17,7 @@ const useStyles = makeStyles({
   },
 });
 
-const FloorToken: React.FC<Props> = ({ icon, pos }) => {
+const Floor: React.FC<Props> = ({ icon, pos }) => {
   const classes = useStyles();
   const style: CSSProperties = {
     position: "absolute",
@@ -34,4 +34,4 @@ const FloorToken: React.FC<Props> = ({ icon, pos }) => {
   return <div style={style} className={classes.media} />;
 };
 
-export default FloorToken;
+export default Floor;
