@@ -86,4 +86,24 @@ describe("Settings", () => {
 
     expect(onClearMap).not.toBeCalled();
   });
+
+  it("copies url to clipboard", async () => {
+    const { getByLabelText, getByText, findByText } = render(
+      <Settings debugEnabled={false} onDebugToggled={noop} onClearMap={noop} />
+    );
+
+    const clipboardWriteFn = jest.fn();
+
+    // jsdom doesn't support navigator.clipboard
+    // @ts-ignore
+    // noinspection JSConstantReassignment
+    window.navigator.clipboard = {
+      writeText: clipboardWriteFn,
+    };
+
+    getByLabelText("Settings").click();
+    getByText("Share Room").click();
+    expect(clipboardWriteFn).toBeCalledWith(window.location.href);
+    expect(await findByText("URL copied to clipboard")).toBeVisible();
+  });
 });
