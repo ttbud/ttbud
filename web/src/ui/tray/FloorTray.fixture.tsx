@@ -8,18 +8,13 @@ import noop from "../../util/noop";
 import { DEFAULT_FLOOR_ICONS, WALL_ICON } from "../icons";
 import { PureFloorTray as FloorTray } from "./FloorTray";
 
-export default {
-  component: FloorTray,
-  title: "FloorTray",
-};
-
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: { drag: dragReducer },
   middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
 
-export const Default: React.FC = () => (
+export default (
   <Provider store={store}>
     <DndContext.Provider value={monitor}>
       <div

@@ -7,7 +7,7 @@ import React, {
 import { makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "../../config";
 import { Icon, ICONS_BY_ID, WALL_ICON } from "../icons";
-import FloorToken from "../token/FloorToken";
+import Floor from "../token/Floor";
 import Character from "../token/Character";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import Ping from "../token/Ping";
@@ -158,7 +158,7 @@ const PureBoard: React.FC<Props> = ({
         const floorIcon = ICONS_BY_ID.get(token.iconId) ?? WALL_ICON;
         return (
           <Fade lengthMs={50} key={token.id}>
-            <FloorToken key={token.id} icon={floorIcon} pos={pixelPos} />
+            <Floor key={token.id} icon={floorIcon} pos={pixelPos} />
           </Fade>
         );
       case TokenType.Character:

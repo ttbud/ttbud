@@ -13,11 +13,6 @@ import { WALL_ICON } from "../ui/icons";
 import DndContext from "./DndContext";
 import { RootState } from "../store/rootReducer";
 
-export default {
-  component: Droppable,
-  title: "Droppable",
-};
-
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: { drag: dragReducer },
@@ -71,7 +66,7 @@ const DropTargets: React.FC = () => {
   );
 };
 
-export const Default = () => (
+export default () => (
   <Provider store={store}>
     <DndContext.Provider value={monitor}>
       <DropTargets />

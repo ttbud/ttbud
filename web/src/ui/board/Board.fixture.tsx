@@ -10,14 +10,7 @@ import { IconToken, TokenType } from "../../network/BoardStateApiClient";
 import { RootState } from "../../store/rootReducer";
 import noop from "../../util/noop";
 import { Icon, ICONS, WALL_ICON } from "../icons";
-import noBorder from "../__stories__/no-border";
 import { PureBoard as Board } from "./Board";
-
-export default {
-  component: Board,
-  title: "Board",
-  decorators: [noBorder],
-};
 
 const toToken = (icon: Icon, i: number): IconToken => ({
   type: i % 2 ? TokenType.Floor : TokenType.Character,
@@ -46,7 +39,8 @@ const ExampleBoard: React.FC = () => {
   );
 
   return (
-    <div style={{ width: "100vw", height: "100vh" }}>
+    // Negative margin to cancel out the body margin because board cannot handle that :(
+    <div style={{ width: "100vw", height: "100vh", margin: "-8px" }}>
       <Board
         isDragging={isDragging}
         tokens={tokens}
@@ -59,12 +53,10 @@ const ExampleBoard: React.FC = () => {
   );
 };
 
-export const Default = () => {
-  return (
-    <Provider store={store}>
-      <DndContext.Provider value={monitor}>
-        <ExampleBoard />
-      </DndContext.Provider>
-    </Provider>
-  );
-};
+export default (
+  <Provider store={store}>
+    <DndContext.Provider value={monitor}>
+      <ExampleBoard />
+    </DndContext.Provider>
+  </Provider>
+);

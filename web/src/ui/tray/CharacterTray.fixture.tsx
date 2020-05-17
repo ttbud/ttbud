@@ -8,18 +8,13 @@ import { DEFAULT_CHARACTER_ICONS } from "../icons";
 import noop from "../../util/noop";
 import { PureCharacterTray as CharacterTray } from "./CharacterTray";
 
-export default {
-  component: CharacterTray,
-  title: "CharacterTray",
-};
-
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: { drag: dragReducer },
   middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
 
-export const Default: React.FC = () => (
+export default (
   <Provider store={store}>
     <DndContext.Provider value={monitor}>
       <div
