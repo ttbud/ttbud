@@ -6,6 +6,7 @@ import {
   ListSubheader,
   makeStyles,
   Popover,
+  Snackbar,
   Switch,
   Typography,
 } from "@material-ui/core";
@@ -13,6 +14,8 @@ import SettingsIcon from "@material-ui/icons/Settings";
 import React, { memo, MouseEvent, useState } from "react";
 import ConfirmationDialog from "../confirm/ConfirmationDialog";
 import isMac from "../../util/isMac";
+
+const FIVE_SECONDS_MS = 5000;
 
 const useStyles = makeStyles((theme) => ({
   popoverContainer: {
@@ -44,6 +47,9 @@ const Settings: React.FC<Props> = memo(
     const classes = useStyles();
     const [anchorEl, setAnchorEl] = useState<Element | null>(null);
     const [isConfirming, setConfirming] = useState(false);
+    const [isShowingCopyNotification, setShowingCopyNotification] = useState(
+      false
+    );
 
     const open = Boolean(anchorEl);
 
@@ -58,6 +64,16 @@ const Settings: React.FC<Props> = memo(
       closeConfirmationDialog();
       onClearMap();
     };
+
+    const onShareRoom = async () => {
+      const url = window.location.href;
+      setAnchorEl(null);
+
+      await navigator.clipboard.writeText(url);
+      setShowingCopyNotification(true);
+    };
+
+    const onHideCopyNotification = () => setShowingCopyNotification(false);
 
     return (
       <>
@@ -76,6 +92,16 @@ const Settings: React.FC<Props> = memo(
           confirmAction="Clear"
           onCancel={closeConfirmationDialog}
           onConfirm={onClearMapClicked}
+        />
+        <Snackbar
+          open={isShowingCopyNotification}
+          onClose={onHideCopyNotification}
+          message={"URL copied to clipboard"}
+          autoHideDuration={FIVE_SECONDS_MS}
+          anchorOrigin={{
+            vertical: "top",
+            horizontal: "center",
+          }}
         />
         <Popover
           open={open}
@@ -122,6 +148,14 @@ const Settings: React.FC<Props> = memo(
               </ListItem>
               <ListItem button dense={true} component="a" href={"/"}>
                 <ListItemText>New Room</ListItemText>
+              </ListItem>
+              <ListItem
+                button
+                dense={true}
+                component="button"
+                onClick={onShareRoom}
+              >
+                <ListItemText>Share Room</ListItemText>
               </ListItem>
             </List>
             <List subheader={<ListSubheader>Keyboard Shortcuts</ListSubheader>}>
