@@ -26,7 +26,7 @@ def assign_colors(tokens: List[Token]) -> None:
             if token.color_rgb in available_colors:
                 del available_colors[available_colors.index(token.color_rgb)]
             else:
-                print(f'Token has an unknown color: {token.color_rgb}')
+                raise TypeError(f'Unknown color: {token.color_rgb}')
     for token in tokens:
         if not token.color_rgb:
             if not available_colors:
@@ -69,9 +69,6 @@ class RoomData:
         if initial_connection:
             self.clients.add(initial_connection)
 
-    def get_token(self, token_id: str) -> Token:
-        return self.game_state[token_id]
-
 
 class GameStateServer:
     def __init__(self, room_store: RoomStore):
@@ -102,9 +99,9 @@ class GameStateServer:
             if tokens_to_load:
                 for token_data in tokens_to_load:
                     try:
-                        token = Token(**token_data)
-                    except TypeError:
-                        raise
+                        token = from_dict(data_class=Token, data=token_data)
+                    except (WrongTypeError, MissingValueError, TypeError) as e:
+                        print(e)
                     else:
                         self._create_or_update_token(token, room_id)
         return Message(
@@ -268,7 +265,9 @@ class GameStateServer:
                 token_ids = self._rooms[room_id].tokens_by_icon_id[token.icon_id]
                 tokens_with_icon = [token]
                 for t_id in token_ids:
-                    tokens_with_icon.append(self._rooms[room_id].game_state[t_id])
+                    token_with_icon = self._rooms[room_id].game_state[t_id]
+                    if isinstance(token_with_icon, Token):
+                        tokens_with_icon.append(token_with_icon)
                 token_ids.append(token.id)
                 assign_colors(tokens_with_icon)
             else:
