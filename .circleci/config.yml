@@ -179,7 +179,7 @@ jobs:
       - run:
           name: Run Integration Tests
           environment:
-            DOMAIN: ttbud-staging.netlify.app
+            DOMAIN: https://ttbud-staging.netlify.app
           command: yarn test
 workflows:
   version: 2
