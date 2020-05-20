@@ -9,11 +9,6 @@ import { DraggableType } from "./DragStateTypes";
 import { WALL_ICON } from "../ui/icons";
 import DndContext from "./DndContext";
 
-export default {
-  component: Draggable,
-  title: "Draggable",
-};
-
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: {
@@ -21,7 +16,8 @@ const store = configureStore({
   },
   middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
-export const Default = () => (
+
+export default () => (
   <Provider store={store}>
     <DndContext.Provider value={monitor}>
       <Draggable
