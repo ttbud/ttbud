@@ -318,6 +318,6 @@ async def test_more_tokens_than_colors(gss_with_client):
     )
     tokens_without_color = []
     for token in reply[0].contents.data:
-        if not token['color']:
+        if not token.color_rgb:
             tokens_without_color.append(token)
     assert len(tokens_without_color) == 1
