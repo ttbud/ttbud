@@ -1,7 +1,7 @@
 import asyncio
 import json
 from dataclasses import asdict
-from typing import Union, List, Tuple, Dict, Hashable, TypeVar
+from typing import Union, List, Tuple, Dict, Any
 from uuid import UUID
 from traceback import print_exc
 
@@ -11,11 +11,7 @@ from .game_state_server import Message, MessageContents, InvalidConnectionExcept
 from .ws_close_codes import ERR_INVALID_UUID
 
 
-KT = TypeVar('KT', bound=Hashable)
-VT = TypeVar('VT')
-
-
-def ignore_none(items: List[Tuple[KT, VT]]) -> Dict[KT, VT]:
+def ignore_none(items: List[Tuple[str, Any]]) -> Dict[str, Any]:
     return dict(filter(lambda entry: entry[1] is not None, items))
 
 
