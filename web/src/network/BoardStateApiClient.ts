@@ -1,129 +1,39 @@
-import * as t from "io-ts";
 import decode from "../util/decode";
 import { Update, UpdateType } from "./board-state-diff";
 import UnreachableCaseError from "../util/UnreachableCaseError";
-import Pos2d, { Pos3d } from "../util/shape-math";
 import noop from "../util/noop";
-
-const PingTokenDecoder = t.type({
-  id: t.string,
-  type: t.literal("ping"),
-  x: t.number,
-  y: t.number,
-});
-
-const ColorDecoder = t.type({
-  red: t.number,
-  green: t.number,
-  blue: t.number,
-});
-
-const IconTokenDecoder = t.type({
-  id: t.string,
-  type: t.union([t.literal("character"), t.literal("floor")]),
-  icon_id: t.string,
-  start_x: t.number,
-  start_y: t.number,
-  start_z: t.number,
-  end_x: t.number,
-  end_y: t.number,
-  end_z: t.number,
-  color_rgb: t.union([ColorDecoder, t.undefined]),
-});
-
-const ApiTokenDecoder = t.union([IconTokenDecoder, PingTokenDecoder]);
-
-const BoardStateDecoder = t.type({
-  type: t.literal("state"),
-  request_id: t.string,
-  data: t.array(ApiTokenDecoder),
-});
-
-const ErrorMessageDecoder = t.type({
-  type: t.literal("error"),
-  request_id: t.string,
-  data: t.string,
-});
-
-const ConnectionResultDecoder = t.type({
-  type: t.literal("connected"),
-  data: t.array(ApiTokenDecoder),
-});
-
-const MessageDecoder = t.union([
-  BoardStateDecoder,
-  ErrorMessageDecoder,
-  ConnectionResultDecoder,
-]);
-
-type ApiPingToken = t.TypeOf<typeof PingTokenDecoder>;
-type ApiIconToken = t.TypeOf<typeof IconTokenDecoder>;
-type ApiToken = t.TypeOf<typeof ApiTokenDecoder>;
-
-export enum TokenType {
-  Character = "character",
-  Floor = "floor",
-  Ping = "ping",
-}
-
-export interface PingToken {
-  type: TokenType.Ping;
-  id: string;
-  pos: Pos2d;
-}
-
-export interface Color {
-  red: number;
-  green: number;
-  blue: number;
-}
-
-// TODO: Split into character and floor tokens
-export interface IconToken {
-  type: TokenType.Character | TokenType.Floor;
-  id: string;
-  pos: Pos3d;
-  iconId: string;
-  color?: Color;
-}
-
-export type Token = PingToken | IconToken;
-
-interface PingApiUpdate {
-  action: "ping";
-  data: ApiPingToken;
-}
-
-interface IconApiUpdate {
-  action: "update";
-  data: ApiIconToken;
-}
-
-interface TokenDelete {
-  action: "delete";
-  data: string;
-}
-
-type ApiUpdate = PingApiUpdate | IconApiUpdate | TokenDelete;
+import {
+  ApiEntity,
+  ApiTokenContents,
+  ApiUpdate,
+  isTextContents,
+  MessageDecoder,
+} from "./api-types";
+import { ContentType, Entity, EntityType, TokenContents } from "../types";
 
 function toApiUpdate(update: Update): ApiUpdate {
   switch (update.type) {
     case UpdateType.CREATE:
     case UpdateType.MOVE:
-      if (update.token.type === TokenType.Ping) {
+      if (update.token.type === EntityType.Ping) {
         const { id, type, pos } = update.token;
         return {
           action: "ping",
           data: { id, type, x: pos.x, y: pos.y },
         };
       } else {
-        const { id, type, iconId, pos, color } = update.token;
+        const { id, type, contents, pos, color } = update.token;
+        const apiContents =
+          contents.type === ContentType.Text
+            ? { text: contents.text }
+            : { icon_id: contents.iconId };
+
         return {
           action: "update",
           data: {
             id,
             type,
-            icon_id: iconId,
+            contents: apiContents,
             start_x: pos.x,
             start_y: pos.y,
             start_z: pos.z,
@@ -144,42 +54,56 @@ function toApiUpdate(update: Update): ApiUpdate {
   }
 }
 
-function toToken(apiToken: ApiToken): Token {
-  switch (apiToken.type) {
+function toContents(contents: ApiTokenContents): TokenContents {
+  if (isTextContents(contents)) {
+    return {
+      type: ContentType.Text,
+      text: contents.text,
+    };
+  } else {
+    return {
+      type: ContentType.Icon,
+      iconId: contents.icon_id,
+    };
+  }
+}
+
+function toEntity(apiEntity: ApiEntity): Entity {
+  switch (apiEntity.type) {
     case "ping":
       return {
-        type: TokenType.Ping,
-        id: apiToken.id,
+        type: EntityType.Ping,
+        id: apiEntity.id,
         pos: {
-          x: apiToken.x,
-          y: apiToken.y,
+          x: apiEntity.x,
+          y: apiEntity.y,
         },
       };
     case "character":
       return {
-        id: apiToken.id,
-        type: apiToken.type as TokenType.Character,
-        iconId: apiToken.icon_id,
+        id: apiEntity.id,
+        type: apiEntity.type as EntityType.Character,
+        contents: toContents(apiEntity.contents),
         pos: {
-          x: apiToken.start_x,
-          y: apiToken.start_y,
-          z: apiToken.start_z,
+          x: apiEntity.start_x,
+          y: apiEntity.start_y,
+          z: apiEntity.start_z,
         },
-        color: apiToken.color_rgb,
+        color: apiEntity.color_rgb,
       };
     case "floor":
       return {
-        id: apiToken.id,
-        type: apiToken.type as TokenType.Floor,
-        iconId: apiToken.icon_id,
+        id: apiEntity.id,
+        type: apiEntity.type as EntityType.Floor,
+        contents: toContents(apiEntity.contents),
         pos: {
-          x: apiToken.start_x,
-          y: apiToken.start_y,
-          z: apiToken.start_z,
+          x: apiEntity.start_x,
+          y: apiEntity.start_y,
+          z: apiEntity.start_z,
         },
       };
     default:
-      throw new UnreachableCaseError(apiToken);
+      throw new UnreachableCaseError(apiEntity);
   }
 }
 
@@ -195,7 +119,7 @@ export enum EventType {
 interface BoardStateEvent {
   type: EventType.TokenUpdate;
   requestId: string;
-  tokens: Token[];
+  tokens: Entity[];
 }
 
 enum DisconnectErrorCode {
@@ -220,7 +144,7 @@ type ConnectionStatusEvent =
 
 interface InitialStateEvent {
   type: EventType.InitialState;
-  tokens: Token[];
+  tokens: Entity[];
 }
 
 interface ErrorEvent {
@@ -240,6 +164,17 @@ export type Event =
   | InitialStateEvent;
 
 export type ApiEventHandler = (event: Event) => void;
+
+function disconnectReason(disconnectCode: number): ConnectionError {
+  switch (disconnectCode) {
+    case DisconnectErrorCode.InvalidUuid:
+      return ConnectionError.INVALID_ROOM_ID;
+    case DisconnectErrorCode.RoomFull:
+      return ConnectionError.ROOM_FULL;
+    default:
+      return ConnectionError.UNKNOWN;
+  }
+}
 
 // See https://tools.ietf.org/html/rfc6455#section-7.4.1
 const WS_CODE_GOING_AWAY = 1001;
@@ -311,7 +246,7 @@ export class BoardStateApiClient {
     console.log("disconnected", e);
     this.eventHandler({
       type: EventType.Disconnected,
-      error: this.disconnectReason(e.code),
+      error: disconnectReason(e.code),
     });
   }
 
@@ -334,7 +269,7 @@ export class BoardStateApiClient {
         this.eventHandler({
           type: EventType.TokenUpdate,
           requestId: message.request_id,
-          tokens: message.data.map(toToken),
+          tokens: message.data.map(toEntity),
         });
         break;
       case "error":
@@ -348,22 +283,11 @@ export class BoardStateApiClient {
       case "connected":
         this.eventHandler({
           type: EventType.InitialState,
-          tokens: message.data.map(toToken),
+          tokens: message.data.map(toEntity),
         });
         break;
       default:
         throw new UnreachableCaseError(message);
-    }
-  }
-
-  private disconnectReason(disconnectCode: number): ConnectionError {
-    switch (disconnectCode) {
-      case DisconnectErrorCode.InvalidUuid:
-        return ConnectionError.INVALID_ROOM_ID;
-      case DisconnectErrorCode.RoomFull:
-        return ConnectionError.ROOM_FULL;
-      default:
-        return ConnectionError.UNKNOWN;
     }
   }
 }

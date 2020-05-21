@@ -1,28 +1,39 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DragEndAction, dragEnded } from "../../drag/drag-slice";
 import { DROPPABLE_IDS } from "../DroppableIds";
-import { DEFAULT_FLOOR_ICONS, Icon } from "../icons";
+import { DEFAULT_FLOOR_ICONS } from "../icons";
 import { assert } from "../../util/invariants";
 import getDragResult from "../../drag/getDragResult";
-import { reorderIcons } from "./reorderIcons";
+import { reorderTokenSources } from "./reorderTokenSources";
+import { contentId, ContentType, TokenContents } from "../../types";
+
+const DEFAULT_FLOOR_SOURCES: TokenContents[] = DEFAULT_FLOOR_ICONS.map(
+  (icon) => ({ type: ContentType.Icon, iconId: icon.id })
+);
 
 const floorTraySlice = createSlice({
   name: "floorTrayIcons",
   initialState: {
-    icons: DEFAULT_FLOOR_ICONS,
-    activeFloor: DEFAULT_FLOOR_ICONS[0],
+    floorSources: DEFAULT_FLOOR_SOURCES,
+    activeFloor: DEFAULT_FLOOR_SOURCES[0],
   },
   reducers: {
-    setActiveFloor(state, action: PayloadAction<Icon>) {
-      const activeIcon = action.payload;
+    setActiveFloor(state, action: PayloadAction<TokenContents>) {
+      const activeContents = action.payload;
+      const activeFloorId = contentId(activeContents);
       assert(
-        state.icons.some((icon) => icon.id === activeIcon.id),
-        `Icon ${activeIcon.id} cannot be the active floor because it is not in the tray`
+        state.floorSources.some(
+          (source) => contentId(source) === activeFloorId
+        ),
+        `Contents ${activeContents} cannot be the active floor because it is not in the tray`
       );
-      state.activeFloor = activeIcon;
+      state.activeFloor = activeContents;
     },
-    removeIcon(state, action: PayloadAction<Icon>) {
-      state.icons = state.icons.filter((icon) => icon.id !== action.payload.id);
+    removeIcon(state, action: PayloadAction<TokenContents>) {
+      const removedFloorId = contentId(action.payload);
+      state.floorSources = state.floorSources.filter(
+        (source) => contentId(source) !== removedFloorId
+      );
     },
   },
   extraReducers: {
@@ -33,8 +44,8 @@ const floorTraySlice = createSlice({
         action.payload
       );
 
-      reorderIcons({
-        icons: state.icons,
+      reorderTokenSources({
+        sources: state.floorSources,
         draggable,
         source,
         destination,

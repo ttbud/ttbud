@@ -1,6 +1,6 @@
 import { posAreEqual } from "../util/shape-math";
 import UnreachableCaseError from "../util/UnreachableCaseError";
-import { Token } from "./BoardStateApiClient";
+import { Entity } from "../types";
 
 export enum UpdateType {
   CREATE = "create",
@@ -10,12 +10,12 @@ export enum UpdateType {
 
 export interface CreateToken {
   type: UpdateType.CREATE;
-  token: Token;
+  token: Entity;
 }
 
 export interface MoveToken {
   type: UpdateType.MOVE;
-  token: Token;
+  token: Entity;
 }
 
 export interface DeleteToken {
@@ -30,8 +30,8 @@ function isCreateOrMove(update: Update): update is CreateToken | MoveToken {
 }
 
 interface DiffState {
-  networkTokens: Token[];
-  uiTokens: Token[];
+  networkTokens: Entity[];
+  uiTokens: Entity[];
   unackedUpdates: Update[];
 }
 
@@ -87,9 +87,9 @@ export function getNetworkUpdates({
 }
 
 export function getLocalState(
-  networkTokens: Token[],
+  networkTokens: Entity[],
   unackedUpdates: Update[]
-): Token[] {
+): Entity[] {
   const localState = Array.from(networkTokens);
   // Apply updates to the network state
   for (const uiUpdate of unackedUpdates) {

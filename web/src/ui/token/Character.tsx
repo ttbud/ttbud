@@ -1,14 +1,15 @@
 import React, { forwardRef, memo } from "react";
 import { Card, CardMedia, CardProps, makeStyles } from "@material-ui/core";
-import { Icon } from "../icons";
+import { ICONS_BY_ID } from "../icons";
 import { GRID_SIZE_PX } from "../../config";
-import { Color } from "../../network/BoardStateApiClient";
+import { ContentType, TokenContents } from "../../types";
+import { assert } from "../../util/invariants";
+import { Color } from "../../types";
 
 const useStyles = makeStyles({
   media: {
-    margin: "10%",
-    width: "80%",
-    height: "80%",
+    width: "70%",
+    height: "70%",
   },
 });
 
@@ -19,7 +20,7 @@ export interface Size {
 
 interface CharacterProps {
   isDragging: boolean;
-  icon: Icon;
+  contents: TokenContents;
   characterColor?: Color;
 }
 
@@ -32,8 +33,22 @@ function toCssColor(color: Color | undefined) {
 }
 
 const Character: React.FC<Props> = memo(
-  forwardRef(({ icon, isDragging, characterColor, ...cardProps }, ref) => {
+  forwardRef(({ contents, isDragging, characterColor, ...cardProps }, ref) => {
     const classes = useStyles();
+
+    const renderIcon = (iconId: string) => {
+      const icon = ICONS_BY_ID.get(iconId);
+      assert(icon, `Invalid icon id ${iconId}`);
+
+      return (
+        <CardMedia
+          className={classes.media}
+          image={icon.img}
+          aria-label={`Character: ${icon.desc}`}
+          draggable={false}
+        />
+      );
+    };
 
     return (
       <Card
@@ -41,6 +56,9 @@ const Character: React.FC<Props> = memo(
         ref={ref}
         raised={isDragging}
         style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           width: GRID_SIZE_PX,
           height: GRID_SIZE_PX,
           zIndex: isDragging ? 1000 : "auto",
@@ -49,12 +67,9 @@ const Character: React.FC<Props> = memo(
           ...cardProps.style,
         }}
       >
-        <CardMedia
-          className={classes.media}
-          image={icon.img}
-          aria-label={`Character: ${icon.desc}`}
-          draggable={false}
-        />
+        {contents.type === ContentType.Text
+          ? contents.text.toLocaleUpperCase()
+          : renderIcon(contents.iconId)}
       </Card>
     );
   })

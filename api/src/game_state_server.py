@@ -11,7 +11,7 @@ from dacite import (
 )
 
 from .room_store import RoomStore
-from .game_components import Token, Ping
+from .game_components import Token, Ping, content_id
 from .ws_close_codes import ERR_ROOM_FULL
 from .colors import colors
 
@@ -30,7 +30,7 @@ def assign_colors(tokens: List[Token]) -> None:
     for token in tokens:
         if not token.color_rgb:
             if not available_colors:
-                print(f'Max colors reached for icon {token.icon_id}')
+                print(f'Max colors reached for icon ' f'{content_id(token.contents)}')
                 return
             print(f'Add color {available_colors[0]} to token {token.id}')
             token.color_rgb = available_colors.pop(0)
@@ -263,8 +263,9 @@ class GameStateServer:
         if self._rooms[room_id].game_state.get(token.id):
             self._remove_positions(token.id, room_id)
         elif token.type.lower() == 'character':
-            if self._rooms[room_id].icon_to_token_ids.get(token.icon_id):
-                token_ids = self._rooms[room_id].icon_to_token_ids[token.icon_id]
+            new_content_id = content_id(token.contents)
+            if self._rooms[room_id].icon_to_token_ids.get(new_content_id):
+                token_ids = self._rooms[room_id].icon_to_token_ids[new_content_id]
                 tokens_with_icon = [token]
                 for t_id in token_ids:
                     token_with_icon = self._rooms[room_id].game_state[t_id]
@@ -273,7 +274,7 @@ class GameStateServer:
                 token_ids.append(token.id)
                 assign_colors(tokens_with_icon)
             else:
-                self._rooms[room_id].icon_to_token_ids[token.icon_id] = [token.id]
+                self._rooms[room_id].icon_to_token_ids[new_content_id] = [token.id]
 
         # Update state for new or existing token
         blocks = self._get_unit_blocks(token)
@@ -296,9 +297,9 @@ class GameStateServer:
             isinstance(removed_token, Token)
             and removed_token.type.lower() == 'character'
         ):
-            self._rooms[room_id].icon_to_token_ids[removed_token.icon_id].remove(
-                removed_token.id
-            )
+            self._rooms[room_id].icon_to_token_ids[
+                content_id(removed_token.contents)
+            ].remove(removed_token.id)
 
     def _remove_positions(self, token_id: str, room_id: str) -> None:
         positions = self._rooms[room_id].id_to_positions[token_id]

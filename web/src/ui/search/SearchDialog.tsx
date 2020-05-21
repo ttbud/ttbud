@@ -6,17 +6,19 @@ import {
   TextField,
 } from "@material-ui/core";
 import React, { memo, useCallback, useMemo, useState } from "react";
-import { Icon } from "../icons";
+import { Icon, ICONS_BY_ID } from "../icons";
 import Draggable from "../../drag/Draggable";
 import {
+  DraggableDescriptor,
   DraggableType,
   DragStateType,
-  IconDraggable,
+  TokenSourceDraggable,
 } from "../../drag/DragStateTypes";
 import { useSelector } from "react-redux";
 import Character from "../token/Character";
 import { assert } from "../../util/invariants";
 import { RootState } from "../../store/rootReducer";
+import { contentId, ContentType, TokenContents } from "../../types";
 
 const useStyles = makeStyles((theme) => ({
   content: {
@@ -47,11 +49,11 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
   const [search, setSearch] = useState("");
   const onChange = useCallback((e) => setSearch(e.target.value), [setSearch]);
 
-  const items: IconDraggable[] = useMemo(
+  const items: TokenSourceDraggable[] = useMemo(
     () =>
       icons.map((icon) => ({
-        type: DraggableType.Icon,
-        icon,
+        type: DraggableType.TokenSource,
+        contents: { type: ContentType.Icon, iconId: icon.id },
         id: `search-dialog-${icon.id}`,
       })),
     [icons]
@@ -65,11 +67,26 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
     return state.drag.draggable;
   });
 
-  const visibleItems = useMemo(() => {
+  const visibleIconItems = useMemo(() => {
     return search
-      ? items.filter((item) => item.icon.desc.indexOf(search) !== -1)
+      ? items.filter(
+          (item) =>
+            item.contents.type === ContentType.Icon &&
+            ICONS_BY_ID.get(item.contents.iconId)!.desc.indexOf(search) !== -1
+        )
       : items;
   }, [search, items]);
+
+  const textContents: TokenContents | undefined =
+    search.length <= 2 ? { type: ContentType.Text, text: search } : undefined;
+
+  const textItem: DraggableDescriptor | undefined = !textContents
+    ? undefined
+    : {
+        type: DraggableType.TokenSource,
+        contents: textContents,
+        id: `search-dialog-${contentId(textContents)}`,
+      };
 
   const renderDraggable = () => {
     assert(
@@ -79,7 +96,7 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
 
     return (
       <Draggable
-        key={`search-dialog-${activeDraggable.icon}`}
+        key={`search-dialog-${contentId(activeDraggable.contents)}`}
         descriptor={activeDraggable}
         usePortal={true}
       >
@@ -87,7 +104,7 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
           <Character
             {...attributes}
             className={classes.token}
-            icon={activeDraggable.icon}
+            contents={activeDraggable.contents}
             isDragging={isDragging}
           />
         )}
@@ -112,13 +129,25 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
       </DialogTitle>
       <DialogContent className={classes.content}>
         <div className={classes.tokenList}>
-          {visibleItems.map((item) => (
+          {textItem && (
+            <Draggable key={textItem.id} descriptor={textItem}>
+              {(isDragging, attributes) => (
+                <Character
+                  {...attributes}
+                  className={classes.token}
+                  contents={textItem.contents}
+                  isDragging={isDragging}
+                />
+              )}
+            </Draggable>
+          )}
+          {visibleIconItems.map((item) => (
             <Draggable key={item.id} descriptor={item}>
               {(isDragging, attributes) => (
                 <Character
                   {...attributes}
                   className={classes.token}
-                  icon={item.icon}
+                  contents={item.contents}
                   isDragging={isDragging}
                 />
               )}

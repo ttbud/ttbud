@@ -6,8 +6,9 @@ import dragReducer from "./drag-slice";
 import { Provider } from "react-redux";
 import { DomDroppableMonitor } from "./DroppableMonitor";
 import { DraggableType } from "./DragStateTypes";
-import { WALL_ICON } from "../ui/icons";
 import DndContext from "./DndContext";
+import { ContentType } from "../types";
+import { WALL_ICON } from "../ui/icons";
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
@@ -22,9 +23,9 @@ export default () => (
     <DndContext.Provider value={monitor}>
       <Draggable
         descriptor={{
-          type: DraggableType.Icon,
+          type: DraggableType.TokenSource,
           id: "draggable",
-          icon: WALL_ICON,
+          contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
         }}
       >
         {(isDragging, attributes) => (

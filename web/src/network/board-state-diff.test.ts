@@ -3,12 +3,12 @@ import {
   getNetworkUpdates,
   UpdateType,
 } from "./board-state-diff";
-import { Token, TokenType } from "./BoardStateApiClient";
+import { ContentType, Entity, EntityType } from "../types";
 
-const TOKEN_1: Token = {
+const TOKEN_1: Entity = {
   id: "token-1",
-  type: TokenType.Character,
-  iconId: "icon-id",
+  type: EntityType.Character,
+  contents: { type: ContentType.Icon, iconId: "icon-id" },
   pos: {
     x: 0,
     y: 0,
@@ -16,10 +16,10 @@ const TOKEN_1: Token = {
   },
 };
 
-const MOVED_TOKEN_1: Token = {
+const MOVED_TOKEN_1: Entity = {
   id: "token-1",
-  type: TokenType.Character,
-  iconId: "icon-id",
+  type: EntityType.Character,
+  contents: { type: ContentType.Icon, iconId: "icon-id" },
   pos: {
     x: 1,
     y: 1,
@@ -27,10 +27,10 @@ const MOVED_TOKEN_1: Token = {
   },
 };
 
-const TOKEN_2: Token = {
+const TOKEN_2: Entity = {
   id: "token-2",
-  type: TokenType.Character,
-  iconId: "icon-id",
+  type: EntityType.Character,
+  contents: { type: ContentType.Icon, iconId: "icon-id" },
   pos: {
     x: 2,
     y: 2,

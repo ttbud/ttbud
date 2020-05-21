@@ -5,26 +5,28 @@ import { CARD_SIZE } from "../../config";
 import {
   DraggableDescriptor,
   DraggableType,
-  IconDraggable,
+  TokenSourceDraggable,
 } from "../../drag/DragStateTypes";
 import { assert } from "../../util/invariants";
 import { Bounds } from "../../util/shape-math";
 import { DROPPABLE_IDS } from "../DroppableIds";
-import { Icon } from "../icons";
+import { ICONS_BY_ID } from "../icons";
 import SortableList, { Target, Targets } from "../sort/SortableList";
 import { RootState } from "../../store/rootReducer";
 import { removeIcon, setActiveFloor } from "./floor-tray-slice";
 import { connect } from "react-redux";
+import { contentId, ContentType, TokenContents } from "../../types";
+import UnreachableCaseError from "../../util/UnreachableCaseError";
 
 interface Props {
-  icons: Icon[];
-  activeFloor: Icon;
-  onFloorSelected: (icon: Icon) => void;
-  onFloorRemoved: (icon: Icon) => void;
+  sources: TokenContents[];
+  activeFloor: TokenContents;
+  onFloorSelected: (source: TokenContents) => void;
+  onFloorRemoved: (source: TokenContents) => void;
 }
 
 const mapStateToProps = (state: RootState) => ({
-  icons: state.floorTray.icons,
+  sources: state.floorTray.floorSources,
   activeFloor: state.floorTray.activeFloor,
 });
 
@@ -34,14 +36,14 @@ const dispatchProps = {
 };
 
 const useStyles = makeStyles({
-  icon: {
+  contents: {
     width: CARD_SIZE,
     height: CARD_SIZE,
   },
 });
 
 const PureFloorTray: React.FC<Props> = memo(function FloorTray({
-  icons,
+  sources,
   activeFloor,
   onFloorSelected,
   onFloorRemoved,
@@ -50,27 +52,27 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
 
   const containerRef = useRef<HTMLElement>();
 
-  const itemRefs = useMemo(() => {
+  const sourceRefs = useMemo(() => {
     const refs = new Map<string, React.MutableRefObject<HTMLElement | null>>();
-    for (const icon of icons) {
-      refs.set(icon.id, createRef<HTMLElement>());
+    for (const source of sources) {
+      refs.set(contentId(source), createRef<HTMLElement>());
     }
     return refs;
-  }, [icons]);
+  }, [sources]);
 
-  const items = icons.map((icon) => ({
-    icon,
+  const items = sources.map((source) => ({
+    source,
     descriptor: {
-      type: DraggableType.Icon,
-      id: `${DROPPABLE_IDS.FLOOR_TRAY}-${icon.id}`,
-      icon: icon,
-    } as IconDraggable,
+      type: DraggableType.TokenSource,
+      id: `${DROPPABLE_IDS.FLOOR_TRAY}-${contentId(source)}`,
+      contents: source,
+    } as TokenSourceDraggable,
   }));
 
   const getTargets = useCallback(
     (draggable: DraggableDescriptor, bounds: Bounds): Targets => {
       const existingElementsBounds = [];
-      for (const itemRef of itemRefs.values()) {
+      for (const itemRef of sourceRefs.values()) {
         assert(
           itemRef.current,
           "Floor tray item refs not set up correctly before drag"
@@ -152,8 +154,28 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
         outerDrag: outerDragBounds,
       };
     },
-    [itemRefs]
+    [sourceRefs]
   );
+
+  const renderButtonContents = (contents: TokenContents) => {
+    switch (contents.type) {
+      case ContentType.Icon:
+        const icon = ICONS_BY_ID.get(contents.iconId);
+        assert(icon, `Icon id ${contents.iconId} is invalid`);
+        return (
+          <img
+            src={icon.img}
+            className={classes.contents}
+            alt={icon.img}
+            draggable={false}
+          />
+        );
+      case ContentType.Text:
+        return <div className={classes.contents}>{contents.text}</div>;
+      default:
+        throw new UnreachableCaseError(contents);
+    }
+  };
 
   return (
     <Paper ref={containerRef}>
@@ -169,28 +191,23 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
       >
         {(item, isDragging, attributes) => (
           <ToggleButton
-            value={item.icon}
-            key={item.icon.id}
-            selected={activeFloor.id === item.icon.id}
-            onChange={() => onFloorSelected(item.icon)}
+            value={item.source}
+            key={contentId(item.source)}
+            selected={contentId(activeFloor) === contentId(item.source)}
+            onChange={() => onFloorSelected(item.source)}
             onContextMenu={(e) => {
-              if (icons.length > 2) {
-                onFloorRemoved(item.icon);
+              if (sources.length > 2) {
+                onFloorRemoved(item.source);
               }
               e.preventDefault();
             }}
             {...attributes}
             ref={(el: HTMLElement | null) => {
-              itemRefs.get(item.icon.id)!.current = el;
+              sourceRefs.get(contentId(item.source))!.current = el;
               attributes.ref.current = el;
             }}
           >
-            <img
-              src={item.icon.img}
-              className={classes.icon}
-              alt={item.icon.desc}
-              draggable={false}
-            />
+            {renderButtonContents(item.source)}
           </ToggleButton>
         )}
       </SortableList>

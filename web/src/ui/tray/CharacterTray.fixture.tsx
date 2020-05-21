@@ -7,12 +7,18 @@ import DndContext from "../../drag/DndContext";
 import { DEFAULT_CHARACTER_ICONS } from "../icons";
 import noop from "../../util/noop";
 import { PureCharacterTray as CharacterTray } from "./CharacterTray";
+import { ContentType, TokenContents } from "../../types";
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: { drag: dragReducer },
   middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
+
+const sources: TokenContents[] = DEFAULT_CHARACTER_ICONS.map((icon) => ({
+  type: ContentType.Icon,
+  iconId: icon.id,
+}));
 
 export default (
   <Provider store={store}>
@@ -25,7 +31,7 @@ export default (
           top: 0,
         }}
       >
-        <CharacterTray icons={DEFAULT_CHARACTER_ICONS} onIconRemoved={noop} />
+        <CharacterTray sources={sources} onSourceRemoved={noop} />
       </div>
     </DndContext.Provider>
   </Provider>
