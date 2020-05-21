@@ -10,9 +10,9 @@ import {
   DraggableType,
   DragState,
   DragStateType,
-  IconDraggable,
   LocationType,
   LogicalLocation,
+  TokenSourceDraggable,
 } from "./DragStateTypes";
 import { FakeDroppableMonitor } from "./__test_util__/FakeDroppableMonitor";
 import {
@@ -20,6 +20,7 @@ import {
   EnhancedStore,
   getDefaultMiddleware,
 } from "@reduxjs/toolkit";
+import { ContentType } from "../types";
 
 const ORIGIN_BOUNDS = { top: 0, left: 0, bottom: 50, right: 50 };
 const MOVED_MOUSE_POS = { x: 100, y: 100 };
@@ -28,16 +29,16 @@ const MOVED_BOUNDS = { top: 100, left: 100, bottom: 150, right: 150 };
 const ORIGIN_POS = { x: 0, y: 0 };
 const NO_OFFSET = { x: 0, y: 0 };
 
-const DRAGGABLE: IconDraggable = {
+const DRAGGABLE: TokenSourceDraggable = {
   id: "draggable-id",
-  type: DraggableType.Icon,
-  icon: WALL_ICON,
+  type: DraggableType.TokenSource,
+  contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
 };
 
-const INACTIVE_DRAGGABLE: IconDraggable = {
+const INACTIVE_DRAGGABLE: TokenSourceDraggable = {
   id: "another-draggable-id",
-  type: DraggableType.Icon,
-  icon: WALL_ICON,
+  type: DraggableType.TokenSource,
+  contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
 };
 
 const DEFAULT_LOCATION: LogicalLocation = {

@@ -6,11 +6,11 @@ import boardReducer, {
   removeToken,
   replaceTokens,
 } from "./board-slice";
-import { Token, TokenType } from "../../network/BoardStateApiClient";
 import { dragEnded } from "../../drag/drag-slice";
 import { DraggableType, LocationType } from "../../drag/DragStateTypes";
 import { WALL_ICON } from "../icons";
 import { DROPPABLE_IDS } from "../DroppableIds";
+import { ContentType, Entity, EntityType } from "../../types";
 
 function createTestStore(initialState: BoardState) {
   return configureStore({
@@ -24,10 +24,10 @@ const EMPTY_BOARD: BoardState = {
   tokens: [],
 };
 
-const TOKEN_1: Token = {
+const TOKEN_1: Entity = {
   id: "token-1",
-  type: TokenType.Character,
-  iconId: "icon-id",
+  type: EntityType.Character,
+  contents: { type: ContentType.Icon, iconId: "icon-id" },
   pos: {
     x: 0,
     y: 0,
@@ -35,10 +35,10 @@ const TOKEN_1: Token = {
   },
 };
 
-const TOKEN_2: Token = {
+const TOKEN_2: Entity = {
   id: "token-2",
-  type: TokenType.Character,
-  iconId: "icon-id",
+  type: EntityType.Character,
+  contents: { type: ContentType.Icon, iconId: "icon-id" },
   pos: {
     x: 1,
     y: 1,
@@ -48,11 +48,13 @@ const TOKEN_2: Token = {
 
 it("adds floors", () => {
   const store = createTestStore(EMPTY_BOARD);
-  store.dispatch(addFloor("icon-id", { x: 0, y: 0 }));
+  store.dispatch(
+    addFloor({ type: ContentType.Icon, iconId: "icon-id" }, { x: 0, y: 0 })
+  );
   expect(store.getState().board.tokens).toMatchObject([
     {
       iconId: "icon-id",
-      type: TokenType.Floor,
+      type: EntityType.Floor,
       pos: { x: 0, y: 0, z: 0 },
     },
   ]);
@@ -63,7 +65,7 @@ it("adds pings", () => {
   store.dispatch(addPing({ x: 1, y: 1 }));
   expect(store.getState().board.tokens).toMatchObject([
     {
-      type: TokenType.Ping,
+      type: EntityType.Ping,
       pos: { x: 1, y: 1 },
     },
   ]);
@@ -88,7 +90,7 @@ it("removes tokens from the board when they are dragged off", () => {
       draggable: {
         id: "draggable-id",
         type: DraggableType.Token,
-        icon: WALL_ICON,
+        contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
         tokenId: TOKEN_1.id,
       },
       source: {
@@ -110,8 +112,8 @@ it("adds tokens to the board when they are dragged in", () => {
     dragEnded({
       draggable: {
         id: "draggable-id",
-        type: DraggableType.Icon,
-        icon: WALL_ICON,
+        type: DraggableType.TokenSource,
+        contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
       },
       source: {
         bounds: { top: 100, left: 100, bottom: 110, right: 110 },
@@ -133,7 +135,7 @@ it("adds tokens to the board when they are dragged in", () => {
     {
       iconId: WALL_ICON.id,
       pos: { x: 0, y: 0 },
-      type: TokenType.Character,
+      type: EntityType.Character,
     },
   ]);
 });
@@ -145,7 +147,7 @@ it("moves tokens when they are dragged around inside the board", () => {
       draggable: {
         id: "draggable-id",
         type: DraggableType.Token,
-        icon: WALL_ICON,
+        contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
         tokenId: TOKEN_1.id,
       },
       source: {
@@ -180,8 +182,8 @@ it("ignores drags that don't involve the board", () => {
     dragEnded({
       draggable: {
         id: "draggable-id",
-        type: DraggableType.Icon,
-        icon: WALL_ICON,
+        type: DraggableType.TokenSource,
+        contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
       },
       source: {
         id: DROPPABLE_IDS.CHARACTER_TRAY,
@@ -205,7 +207,7 @@ it("ignores drags on deleted tokens", () => {
       draggable: {
         id: "draggable-id",
         type: DraggableType.Token,
-        icon: WALL_ICON,
+        contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
         tokenId: TOKEN_2.id,
       },
       source: {

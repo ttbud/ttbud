@@ -5,14 +5,20 @@ import DndContext from "../../drag/DndContext";
 import dragReducer from "../../drag/drag-slice";
 import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
 import noop from "../../util/noop";
-import { DEFAULT_FLOOR_ICONS, WALL_ICON } from "../icons";
+import { DEFAULT_FLOOR_ICONS } from "../icons";
 import { PureFloorTray as FloorTray } from "./FloorTray";
+import { ContentType, TokenContents } from "../../types";
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: { drag: dragReducer },
   middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
+
+const sources: TokenContents[] = DEFAULT_FLOOR_ICONS.map((icon) => ({
+  type: ContentType.Icon,
+  iconId: icon.id,
+}));
 
 export default (
   <Provider store={store}>
@@ -30,8 +36,8 @@ export default (
         }}
       >
         <FloorTray
-          icons={DEFAULT_FLOOR_ICONS}
-          activeFloor={WALL_ICON}
+          sources={sources}
+          activeFloor={sources[0]}
           onFloorSelected={noop}
           onFloorRemoved={noop}
         />

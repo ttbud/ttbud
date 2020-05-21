@@ -1,25 +1,25 @@
 import Pos2d, { Bounds } from "../util/shape-math";
-import { Icon } from "../ui/icons";
+import { TokenContents } from "../types";
 
 export enum DraggableType {
-  Icon = "icon",
+  TokenSource = "token source",
   Token = "token",
 }
 
-export interface IconDraggable {
-  type: DraggableType.Icon;
+export interface TokenSourceDraggable {
+  type: DraggableType.TokenSource;
   id: string;
-  icon: Icon;
+  contents: TokenContents;
 }
 
 export interface TokenDraggable {
   type: DraggableType.Token;
   id: string;
   tokenId: string;
-  icon: Icon;
+  contents: TokenContents;
 }
 
-export type DraggableDescriptor = IconDraggable | TokenDraggable;
+export type DraggableDescriptor = TokenSourceDraggable | TokenDraggable;
 
 export enum LocationType {
   Grid = "grid",

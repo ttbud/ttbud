@@ -1,5 +1,4 @@
 import { DragResult } from "../../drag/getDragResult";
-import { Icon, ICONS_BY_ID } from "../icons";
 import { assert } from "../../util/invariants";
 import {
   DraggableDescriptor,
@@ -7,34 +6,36 @@ import {
   LocationType,
 } from "../../drag/DragStateTypes";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
+import { contentId, TokenContents } from "../../types";
 
-interface ReorderIconsParams {
-  icons: Icon[];
+interface ReorderTokenSourcesParams {
+  sources: TokenContents[];
   dragResult: DragResult;
   source: DroppableLocation;
   destination: DroppableLocation;
   draggable: DraggableDescriptor;
 }
 
-export function reorderIcons({
-  icons,
+export function reorderTokenSources({
+  sources,
   dragResult,
   source,
   destination,
   draggable,
-}: ReorderIconsParams) {
+}: ReorderTokenSourcesParams) {
   switch (dragResult) {
     case DragResult.DraggedInto:
-      if (icons.some((icon) => icon.id === draggable.icon.id)) {
+      const draggableContentsId = contentId(draggable.contents);
+      if (
+        sources.some((content) => contentId(content) === draggableContentsId)
+      ) {
         return;
       }
-      const icon = ICONS_BY_ID.get(draggable.icon.id);
-      assert(icon, `Icon ID ${draggable.icon.id} is invalid`);
       assert(
         destination.logicalLocation?.type === LocationType.List,
         `Dragged into character tray but destination type is not list`
       );
-      icons.splice(destination.logicalLocation.idx, 0, icon);
+      sources.splice(destination.logicalLocation.idx, 0, draggable.contents);
       break;
     case DragResult.MovedInside:
       assert(
@@ -45,8 +46,8 @@ export function reorderIcons({
         source.logicalLocation?.type === LocationType.List,
         `Dragged from character tray but source type is not list`
       );
-      const [removed] = icons.splice(source.logicalLocation.idx, 1);
-      icons.splice(destination.logicalLocation.idx, 0, removed);
+      const [removed] = sources.splice(source.logicalLocation.idx, 1);
+      sources.splice(destination.logicalLocation.idx, 0, removed);
       break;
     case DragResult.DraggedOutOf:
     case DragResult.None:

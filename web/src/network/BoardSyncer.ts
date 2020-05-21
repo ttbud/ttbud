@@ -1,17 +1,18 @@
-import { Token, BoardStateApiClient } from "./BoardStateApiClient";
+import { BoardStateApiClient } from "./BoardStateApiClient";
 import { Update, getNetworkUpdates, getLocalState } from "./board-state-diff";
 import { MiddlewareAPI } from "@reduxjs/toolkit";
 import { v4 as uuid } from "uuid";
 import { replaceTokens } from "../ui/board/board-slice";
 import throttle from "../util/throttle";
 import { RootState } from "../store/rootReducer";
+import { Entity } from "../types";
 
 const UPDATE_RATE_MS = 60;
 
 export default class BoardSyncer {
   private readonly unackedUpdates = new Map<string, Update[]>();
-  private networkTokens: Token[] = [];
-  private lastUiTokens: Token[] | undefined = [];
+  private networkTokens: Entity[] = [];
+  private lastUiTokens: Entity[] | undefined = [];
   private sendNetworkUpdatesThrottled: () => void;
 
   constructor(
@@ -24,7 +25,7 @@ export default class BoardSyncer {
     );
   }
 
-  onNetworkTokenUpdate(tokens: Token[], requestId?: string) {
+  onNetworkTokenUpdate(tokens: Entity[], requestId?: string) {
     const state: RootState = this.store.getState();
     this.sendNetworkUpdates();
     this.lastUiTokens = state.board.tokens;
@@ -45,7 +46,7 @@ export default class BoardSyncer {
     this.unackedUpdates.delete(requestId);
   }
 
-  onUiTokenUpdate(tokens: Token[]) {
+  onUiTokenUpdate(tokens: Entity[]) {
     if (tokens !== this.lastUiTokens) {
       this.sendNetworkUpdatesThrottled();
     }

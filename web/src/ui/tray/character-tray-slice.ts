@@ -1,18 +1,26 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DragEndAction, dragEnded } from "../../drag/drag-slice";
 import { DROPPABLE_IDS } from "../DroppableIds";
-import { DEFAULT_CHARACTER_ICONS, Icon } from "../icons";
+import { DEFAULT_CHARACTER_ICONS } from "../icons";
 import getDragResult from "../../drag/getDragResult";
-import { reorderIcons } from "./reorderIcons";
+import { reorderTokenSources } from "./reorderTokenSources";
+import { contentId, ContentType, TokenContents } from "../../types";
+
+const DEFAULT_CONTENTS: TokenContents[] = DEFAULT_CHARACTER_ICONS.map(
+  (icon) => ({ type: ContentType.Icon, iconId: icon.id })
+);
 
 const characterTraySlice = createSlice({
   name: "characterTrayIcons",
   initialState: {
-    icons: DEFAULT_CHARACTER_ICONS,
+    characterSources: DEFAULT_CONTENTS,
   },
   reducers: {
-    removeIcon(state, action: PayloadAction<Icon>) {
-      state.icons = state.icons.filter((icon) => icon.id !== action.payload.id);
+    removeTokenSource(state, action: PayloadAction<TokenContents>) {
+      const removedContentId = contentId(action.payload);
+      state.characterSources = state.characterSources.filter(
+        (contents) => contentId(contents) !== removedContentId
+      );
     },
   },
   extraReducers: {
@@ -24,8 +32,8 @@ const characterTraySlice = createSlice({
         action.payload
       );
 
-      reorderIcons({
-        icons: state.icons,
+      reorderTokenSources({
+        sources: state.characterSources,
         draggable,
         source,
         destination,
@@ -35,5 +43,5 @@ const characterTraySlice = createSlice({
   },
 });
 
-export const { removeIcon } = characterTraySlice.actions;
+export const { removeTokenSource } = characterTraySlice.actions;
 export default characterTraySlice.reducer;

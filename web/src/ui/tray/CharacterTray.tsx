@@ -1,15 +1,15 @@
 import { makeStyles, Paper } from "@material-ui/core";
 import React, { createRef, memo, useMemo, useRef, useCallback } from "react";
-import { DraggableType, IconDraggable } from "../../drag/DragStateTypes";
+import { DraggableType, TokenSourceDraggable } from "../../drag/DragStateTypes";
 import { DROPPABLE_IDS } from "../DroppableIds";
-import { Icon } from "../icons";
 import SortableList, { Targets, Target } from "../sort/SortableList";
 import Character from "../token/Character";
 import { assert } from "../../util/invariants";
 import { GRID_SIZE_PX } from "../../config";
 import { RootState } from "../../store/rootReducer";
-import { removeIcon } from "./character-tray-slice";
+import { removeTokenSource } from "./character-tray-slice";
 import { connect } from "react-redux";
+import { contentId, TokenContents } from "../../types";
 
 const useStyles = makeStyles((theme) => ({
   tokenSheet: {
@@ -27,44 +27,44 @@ const useStyles = makeStyles((theme) => ({
 const DROPPABLE_ID = DROPPABLE_IDS.CHARACTER_TRAY;
 
 interface Props {
-  icons: Icon[];
-  onIconRemoved: (icon: Icon) => void;
+  sources: TokenContents[];
+  onSourceRemoved: (source: TokenContents) => void;
 }
 
 const mapStateToProps = (state: RootState) => ({
-  icons: state.characterTray.icons,
+  sources: state.characterTray.characterSources,
 });
 
-const dispatchProps = { onIconRemoved: removeIcon };
+const dispatchProps = { onSourceRemoved: removeTokenSource };
 
 const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
-  icons,
-  onIconRemoved,
+  sources,
+  onSourceRemoved,
 }) {
   const classes = useStyles();
 
-  const items = icons.map((icon) => ({
-    icon,
+  const items = sources.map((source) => ({
+    source,
     descriptor: {
-      type: DraggableType.Icon,
-      id: `${DROPPABLE_ID}-${icon.id}`,
-      icon: icon,
-    } as IconDraggable,
+      type: DraggableType.TokenSource,
+      id: `${DROPPABLE_ID}-${contentId(source)}`,
+      contents: source,
+    } as TokenSourceDraggable,
   }));
 
   const containerRef = useRef<HTMLElement>();
 
-  const itemRefs = useMemo(() => {
+  const sourceRefs = useMemo(() => {
     const refs = new Map<string, React.MutableRefObject<HTMLElement | null>>();
-    for (const icon of icons) {
-      refs.set(icon.id, createRef<HTMLElement>());
+    for (const source of sources) {
+      refs.set(contentId(source), createRef<HTMLElement>());
     }
     return refs;
-  }, [icons]);
+  }, [sources]);
 
   const getTargets = useCallback((): Targets => {
     const existingElementsBounds = [];
-    for (const itemRef of itemRefs.values()) {
+    for (const itemRef of sourceRefs.values()) {
       assert(
         itemRef.current,
         "Character tray item refs not set up correctly before drag"
@@ -129,7 +129,7 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
       innerDrag: innerDragBounds,
       outerDrag: outerDragBounds,
     };
-  }, [itemRefs]);
+  }, [sourceRefs]);
 
   return (
     <Paper
@@ -140,17 +140,17 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
       <SortableList id={DROPPABLE_ID} items={items} getTargets={getTargets}>
         {(item, isDragging, attributes) => (
           <Character
-            icon={item.icon}
+            contents={item.source}
             isDragging={isDragging}
             onContextMenu={(e) => {
               e.preventDefault();
               if (items.length > 2) {
-                onIconRemoved(item.icon);
+                onSourceRemoved(item.source);
               }
             }}
             {...attributes}
             ref={(el: HTMLElement) => {
-              itemRefs.get(item.icon.id)!.current = el;
+              sourceRefs.get(contentId(item.source))!.current = el;
               attributes.ref.current = el;
             }}
           />

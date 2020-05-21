@@ -7,10 +7,10 @@ import { v4 as uuid } from "uuid";
 import getDragResult, { DragResult } from "../../drag/getDragResult";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import Pos2d from "../../util/shape-math";
-import { Token, TokenType } from "../../network/BoardStateApiClient";
+import { Entity, EntityType, TokenContents } from "../../types";
 
 export interface BoardState {
-  tokens: Token[];
+  tokens: Entity[];
 }
 
 const INITIAL_STATE: BoardState = {
@@ -34,7 +34,7 @@ function _removeToken(state: BoardState, tokenId: string) {
 
 interface AddTokenAction {
   id: string;
-  iconId: string;
+  contents: TokenContents;
   pos: Pos2d;
 }
 
@@ -50,16 +50,16 @@ const boardSlice = createSlice({
   name: "board",
   initialState: INITIAL_STATE,
   reducers: {
-    replaceTokens(state, action: PayloadAction<Token[]>) {
+    replaceTokens(state, action: PayloadAction<Entity[]>) {
       state.tokens = action.payload;
     },
     addFloor: {
       reducer: (state, action: PayloadAction<AddTokenAction>) => {
-        const { id, iconId, pos } = action.payload;
+        const { id, contents, pos } = action.payload;
         const token = {
           id,
-          iconId,
-          type: TokenType.Floor,
+          contents,
+          type: EntityType.Floor,
           pos: {
             ...pos,
             z: FLOOR_HEIGHT,
@@ -67,15 +67,15 @@ const boardSlice = createSlice({
         };
         state.tokens.push(token);
       },
-      prepare: (iconId: string, pos: Pos2d) => ({
-        payload: { id: uuid(), iconId, pos },
+      prepare: (contents: TokenContents, pos: Pos2d) => ({
+        payload: { id: uuid(), contents, pos },
       }),
     },
     addPing: {
       reducer: (state, action: PayloadAction<AddPingAction>) => {
         const { id, pos } = action.payload;
         state.tokens.push({
-          type: TokenType.Ping,
+          type: EntityType.Ping,
           id,
           pos,
         });
@@ -122,9 +122,9 @@ const boardSlice = createSlice({
 
           const { x, y } = destination.logicalLocation;
           state.tokens.push({
-            type: TokenType.Character,
+            type: EntityType.Character,
             id: uuid(),
-            iconId: draggable.icon.id,
+            contents: draggable.contents,
             pos: { x, y, z: CHARACTER_HEIGHT },
           });
           break;

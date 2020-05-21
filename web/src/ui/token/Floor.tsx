@@ -1,37 +1,24 @@
-import { Icon } from "../icons";
-import React, { CSSProperties } from "react";
-import { makeStyles } from "@material-ui/core";
-import { GRID_SIZE_PX } from "../../config";
+import React from "react";
 import Pos2d from "../../util/shape-math";
+import { ContentType, TokenContents } from "../../types";
+import FloorIcon from "./FloorIcon";
+import FloorText from "./FloorText";
+import UnreachableCaseError from "../../util/UnreachableCaseError";
 
 interface Props {
-  icon: Icon;
+  contents: TokenContents;
   pos: Pos2d;
 }
 
-const useStyles = makeStyles({
-  media: {
-    width: GRID_SIZE_PX,
-    height: GRID_SIZE_PX,
-    userSelect: "none",
-  },
-});
-
-const Floor: React.FC<Props> = ({ icon, pos }) => {
-  const classes = useStyles();
-  const style: CSSProperties = {
-    position: "absolute",
-    top: pos.y,
-    left: pos.x,
-    backgroundImage: `url(${icon.img})`,
-    zIndex: 0,
-  };
-
-  // Using an actual image element here makes it so sometimes if you click and
-  // drag over the icon you get the "image dragging" ui that browsers provide.
-  // Setting draggable to false or user-drag to none on this or its parent
-  // does not prevent this from happening, so instead we use a background image.
-  return <div style={style} className={classes.media} />;
+const Floor: React.FC<Props> = ({ contents, pos }) => {
+  switch (contents.type) {
+    case ContentType.Icon:
+      return <FloorIcon iconId={contents.iconId} pos={pos} />;
+    case ContentType.Text:
+      return <FloorText text={contents.text} pos={pos} />;
+    default:
+      throw new UnreachableCaseError(contents);
+  }
 };
 
 export default Floor;

@@ -9,9 +9,10 @@ import { Provider, useSelector } from "react-redux";
 import { DomDroppableMonitor } from "./DroppableMonitor";
 import UnreachableCaseError from "../util/UnreachableCaseError";
 import { DraggableType, DragStateType } from "./DragStateTypes";
-import { WALL_ICON } from "../ui/icons";
 import DndContext from "./DndContext";
 import { RootState } from "../store/rootReducer";
+import { ContentType } from "../types";
+import { WALL_ICON } from "../ui/icons";
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
@@ -49,9 +50,9 @@ const DropTargets: React.FC = () => {
       <ColoredDroppable color="green" />
       <Draggable
         descriptor={{
-          type: DraggableType.Icon,
+          type: DraggableType.TokenSource,
           id: "draggable",
-          icon: WALL_ICON,
+          contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
         }}
       >
         {(isDragging, attributes) => (

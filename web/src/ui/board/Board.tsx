@@ -6,7 +6,6 @@ import React, {
 } from "react";
 import { makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "../../config";
-import { Icon, ICONS_BY_ID, WALL_ICON } from "../icons";
 import Floor from "../token/Floor";
 import Character from "../token/Character";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
@@ -22,13 +21,13 @@ import {
   DragStateType,
 } from "../../drag/DragStateTypes";
 import { DROPPABLE_IDS } from "../DroppableIds";
-import { Token, TokenType } from "../../network/BoardStateApiClient";
 import { TransitionGroup } from "react-transition-group";
 import Fade from "../transition/Fade";
 import NoopTransition from "../transition/NoopTransition";
 import { RootState } from "../../store/rootReducer";
 import { addPing, addFloor, removeToken } from "./board-slice";
 import { connect } from "react-redux";
+import { Entity, EntityType, TokenContents } from "../../types";
 
 let GRID_COLOR = "#947C65";
 
@@ -84,10 +83,10 @@ const preventDefault: MouseEventHandler = (e) => e.preventDefault();
 
 interface Props {
   isDragging: boolean;
-  tokens: Token[];
-  activeFloor: Icon;
+  tokens: Entity[];
+  activeFloor: TokenContents;
   onPingCreated: (pos: Pos2d) => void;
-  onFloorCreated: (iconId: string, pos: Pos2d) => void;
+  onFloorCreated: (contents: TokenContents, pos: Pos2d) => void;
   onTokenDeleted: (id: string) => void;
 }
 
@@ -121,7 +120,7 @@ const PureBoard: React.FC<Props> = ({
 
       const existingTokenId = tokens.find(
         (token) =>
-          posAreEqual(token.pos, gridPos) && token.type === TokenType.Character
+          posAreEqual(token.pos, gridPos) && token.type === EntityType.Character
       )?.id;
       const draggedTokenId =
         draggable.type === DraggableType.Token ? draggable.tokenId : undefined;
@@ -154,15 +153,13 @@ const PureBoard: React.FC<Props> = ({
     };
 
     switch (token.type) {
-      case TokenType.Floor:
-        const floorIcon = ICONS_BY_ID.get(token.iconId) ?? WALL_ICON;
+      case EntityType.Floor:
         return (
           <Fade lengthMs={50} key={token.id}>
-            <Floor key={token.id} icon={floorIcon} pos={pixelPos} />
+            <Floor key={token.id} contents={token.contents} pos={pixelPos} />
           </Fade>
         );
-      case TokenType.Character:
-        const characterIcon = ICONS_BY_ID.get(token.iconId) ?? WALL_ICON;
+      case EntityType.Character:
         return (
           // Need to have some sort of transition otherwise the element will
           // never be removed from the dom :(
@@ -172,14 +169,14 @@ const PureBoard: React.FC<Props> = ({
               descriptor={{
                 id: `${DROPPABLE_IDS.BOARD}-${token.id}`,
                 type: DraggableType.Token,
-                icon: characterIcon,
+                contents: token.contents,
                 tokenId: token.id,
               }}
             >
               {(isDragging, attributes) => (
                 <Character
                   {...attributes}
-                  icon={characterIcon}
+                  contents={token.contents}
                   isDragging={isDragging}
                   characterColor={token.color}
                   style={{
@@ -194,7 +191,7 @@ const PureBoard: React.FC<Props> = ({
             </Draggable>
           </NoopTransition>
         );
-      case TokenType.Ping:
+      case EntityType.Ping:
         return (
           <Fade key={token.id} lengthMs={1000}>
             <Ping x={pixelPos.x} y={pixelPos.y} />
@@ -218,7 +215,7 @@ const PureBoard: React.FC<Props> = ({
       buttons === LEFT_MOUSE &&
       !tokens.find((token) => posAreEqual(token.pos, gridPos))
     ) {
-      onFloorCreated(activeFloor.id, gridPos);
+      onFloorCreated(activeFloor, gridPos);
     } else if (buttons === RIGHT_MOUSE) {
       const id = tokens.find((token) => posAreEqual(token.pos, gridPos))?.id;
       if (id) {
@@ -257,7 +254,7 @@ const PureBoard: React.FC<Props> = ({
         if (
           !tokens.find(
             (token) =>
-              token.type === TokenType.Ping && posAreEqual(token.pos, gridPos)
+              token.type === EntityType.Ping && posAreEqual(token.pos, gridPos)
           )
         ) {
           onPingCreated(gridPos);
@@ -266,14 +263,14 @@ const PureBoard: React.FC<Props> = ({
         buttons === LEFT_MOUSE &&
         !tokens.find(
           (token) =>
-            token.type !== TokenType.Ping && posAreEqual(token.pos, gridPos)
+            token.type !== EntityType.Ping && posAreEqual(token.pos, gridPos)
         )
       ) {
-        onFloorCreated(activeFloor.id, gridPos);
+        onFloorCreated(activeFloor, gridPos);
       } else if (buttons === RIGHT_MOUSE) {
         const toDelete = tokens.find(
           (token) =>
-            token.type !== TokenType.Ping && posAreEqual(token.pos, gridPos)
+            token.type !== EntityType.Ping && posAreEqual(token.pos, gridPos)
         );
         if (toDelete) {
           onTokenDeleted(toDelete.id);

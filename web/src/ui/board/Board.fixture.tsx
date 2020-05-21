@@ -6,21 +6,24 @@ import DndContext from "../../drag/DndContext";
 import dragReducer from "../../drag/drag-slice";
 import { DragStateType } from "../../drag/DragStateTypes";
 import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
-import { IconToken, TokenType } from "../../network/BoardStateApiClient";
 import { RootState } from "../../store/rootReducer";
 import noop from "../../util/noop";
 import { Icon, ICONS, WALL_ICON } from "../icons";
 import { PureBoard as Board } from "./Board";
+import { ContentType, EntityType, Token } from "../../types";
 
-const toToken = (icon: Icon, i: number): IconToken => ({
-  type: i % 2 ? TokenType.Floor : TokenType.Character,
+const toToken = (icon: Icon, i: number): Token => ({
+  type: i % 2 ? EntityType.Floor : EntityType.Character,
   pos: {
     x: i,
     y: i,
     z: i % 2 ? 0 : 1,
   },
   id: uuid(),
-  iconId: icon.id,
+  contents: {
+    type: ContentType.Icon,
+    iconId: icon.id,
+  },
 });
 
 const tokens = ICONS.slice(0, 5).map(toToken);
@@ -44,7 +47,7 @@ const ExampleBoard: React.FC = () => {
       <Board
         isDragging={isDragging}
         tokens={tokens}
-        activeFloor={WALL_ICON}
+        activeFloor={{ type: ContentType.Icon, iconId: WALL_ICON.id }}
         onFloorCreated={noop}
         onTokenDeleted={noop}
         onPingCreated={noop}
