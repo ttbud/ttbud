@@ -64,7 +64,7 @@ class RoomData:
         self.game_state: Dict[str, Union[Ping, Token]] = {}
         self.id_to_positions: Dict[str, List[Tuple[int, int, int]]] = {}
         self.positions_to_ids: Dict[Tuple[int, int, int], str] = {}
-        self.tokens_by_icon_id: Dict[str, List[str]] = {}
+        self.icon_to_token_ids: Dict[str, List[str]] = {}
         self.clients = set()
         if initial_connection:
             self.clients.add(initial_connection)
@@ -101,6 +101,8 @@ class GameStateServer:
                     try:
                         token = from_dict(data_class=Token, data=token_data)
                     except (WrongTypeError, MissingValueError, TypeError) as e:
+                        # Don't raise here. Loading a room minus any tokens that have
+                        # been corrupted is still valuable.
                         print(e)
                     else:
                         self._create_or_update_token(token, room_id)
@@ -261,8 +263,8 @@ class GameStateServer:
         if self._rooms[room_id].game_state.get(token.id):
             self._remove_positions(token.id, room_id)
         elif token.type.lower() == 'character':
-            if self._rooms[room_id].tokens_by_icon_id.get(token.icon_id):
-                token_ids = self._rooms[room_id].tokens_by_icon_id[token.icon_id]
+            if self._rooms[room_id].icon_to_token_ids.get(token.icon_id):
+                token_ids = self._rooms[room_id].icon_to_token_ids[token.icon_id]
                 tokens_with_icon = [token]
                 for t_id in token_ids:
                     token_with_icon = self._rooms[room_id].game_state[t_id]
@@ -271,7 +273,7 @@ class GameStateServer:
                 token_ids.append(token.id)
                 assign_colors(tokens_with_icon)
             else:
-                self._rooms[room_id].tokens_by_icon_id[token.icon_id] = [token.id]
+                self._rooms[room_id].icon_to_token_ids[token.icon_id] = [token.id]
 
         # Update state for new or existing token
         blocks = self._get_unit_blocks(token)
@@ -294,7 +296,7 @@ class GameStateServer:
             isinstance(removed_token, Token)
             and removed_token.type.lower() == 'character'
         ):
-            self._rooms[room_id].tokens_by_icon_id[removed_token.icon_id].remove(
+            self._rooms[room_id].icon_to_token_ids[removed_token.icon_id].remove(
                 removed_token.id
             )
 
