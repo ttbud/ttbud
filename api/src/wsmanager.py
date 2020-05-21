@@ -1,7 +1,7 @@
 import asyncio
 import json
 from dataclasses import asdict
-from typing import Union, List, Tuple, Any
+from typing import Union, List, Tuple, Dict, Hashable, TypeVar
 from uuid import UUID
 from traceback import print_exc
 
@@ -11,16 +11,20 @@ from .game_state_server import Message, MessageContents, InvalidConnectionExcept
 from .ws_close_codes import ERR_INVALID_UUID
 
 
+KT = TypeVar('KT', bound=Hashable)
+VT = TypeVar('VT')
+
+
+def ignore_none(items: List[Tuple[KT, VT]]) -> Dict[KT, VT]:
+    return dict(filter(lambda entry: entry[1] is not None, items))
+
+
 def is_valid_uuid(uuid_string):
     try:
         val = UUID(uuid_string, version=4)
     except ValueError:
         return False
     return val.hex == uuid_string.replace('-', '')
-
-
-def ignore_none(items: List[Tuple[str, Any]]) -> dict:
-    return dict(filter(lambda entry: entry[1] is not None, items))
 
 
 class WebsocketManager:
