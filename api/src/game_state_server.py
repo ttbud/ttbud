@@ -260,7 +260,7 @@ class GameStateServer:
         print(f'New token: {token}')
         if self._rooms[room_id].game_state.get(token.id):
             self._remove_positions(token.id, room_id)
-        else:
+        elif token.type.lower() == 'character':
             if self._rooms[room_id].tokens_by_icon_id.get(token.icon_id):
                 token_ids = self._rooms[room_id].tokens_by_icon_id[token.icon_id]
                 tokens_with_icon = [token]
@@ -290,7 +290,10 @@ class GameStateServer:
         # Remove the token from the state
         removed_token = self._rooms[room_id].game_state.pop(token_id, None)
         # Remove token from icon_id table
-        if isinstance(removed_token, Token):
+        if (
+            isinstance(removed_token, Token)
+            and removed_token.type.lower() == 'character'
+        ):
             self._rooms[room_id].tokens_by_icon_id[removed_token.icon_id].remove(
                 removed_token.id
             )
