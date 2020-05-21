@@ -292,24 +292,32 @@ async def test_room_full(gss_with_client):
 
 
 @pytest.mark.asyncio
-async def test_more_icons_than_colors(gss_with_client):
+async def test_more_tokens_than_colors(gss_with_client):
+    updates = []
     for i in range(len(colors) + 1):
-        update = {
-            'action': 'create',
-            'data': {
-                'id': f'token{i}',
-                'type': 'character',
-                'icon_id': 'some_icon',
-                'start_x': i,
-                'start_y': i,
-                'start_z': 1,
-                'end_x': i + 1,
-                'end_y': i + 1,
-                'end_z': 2,
-            },
-        }
-        await async_collect(
-            gss_with_client.process_updates(
-                [update], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
-            )
+        updates.append(
+            {
+                'action': 'create',
+                'data': {
+                    'id': f'token{i}',
+                    'type': 'character',
+                    'icon_id': 'some_icon',
+                    'start_x': i,
+                    'start_y': i,
+                    'start_z': 1,
+                    'end_x': i + 1,
+                    'end_y': i + 1,
+                    'end_z': 2,
+                },
+            }
         )
+    reply = await async_collect(
+        gss_with_client.process_updates(
+            updates, TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
+        )
+    )
+    tokens_without_color = []
+    for token in reply[0].contents.data:
+        if not token['color']:
+            tokens_without_color.append(token)
+    assert len(tokens_without_color) == 1
