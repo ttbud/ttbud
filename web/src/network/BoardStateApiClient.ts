@@ -202,6 +202,10 @@ export class BoardStateApiClient {
     this.connectToUrl(this.socket.url);
   }
 
+  public connected(): boolean {
+    return this.socket?.readyState === WebSocket.OPEN;
+  }
+
   public close() {
     this.socket?.close();
     this.eventHandler({
@@ -219,7 +223,7 @@ export class BoardStateApiClient {
         })
       );
     } else {
-      console.warn("dropping message to disconnected host");
+      throw new Error("Cannot send message to disconnected host");
     }
   }
 
