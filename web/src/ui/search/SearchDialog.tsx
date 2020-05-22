@@ -78,7 +78,9 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
   }, [search, items]);
 
   const textContents: TokenContents | undefined =
-    search.length > 0 && search.length <= 2 ? { type: ContentType.Text, text: search } : undefined;
+    search.length > 0 && search.length <= 2
+      ? { type: ContentType.Text, text: search }
+      : undefined;
 
   const textItem: DraggableDescriptor | undefined = !textContents
     ? undefined
