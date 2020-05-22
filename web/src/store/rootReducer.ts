@@ -6,7 +6,7 @@ import dragReducer from "../drag/drag-slice";
 import connectionStateReducer from "../ui/connection-state/connection-state-slice";
 import { combineReducers } from "@reduxjs/toolkit";
 import { persistReducer } from "redux-persist";
-import storage from "redux-persist/lib/storage";
+import { persistConfig } from "./persistConfig";
 
 const reducers = combineReducers({
   characterTray: characterTrayReducer,
@@ -18,12 +18,6 @@ const reducers = combineReducers({
 });
 
 export type RootState = ReturnType<typeof reducers>;
-
-const persistConfig = {
-  key: "settings",
-  storage,
-  whitelist: ["characterTray", "floorTray"],
-};
 
 const rootReducer = persistReducer(persistConfig, reducers);
 export default rootReducer;
