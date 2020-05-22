@@ -312,9 +312,7 @@ async def test_more_tokens_than_colors(gss_with_client):
                 'data': {
                     'id': f'token{i}',
                     'type': 'character',
-                    'contents': {
-                        'icon_id': 'some_icon'
-                    },
+                    'contents': {'icon_id': 'some_icon'},
                     'start_x': i,
                     'start_y': i,
                     'start_z': 1,
