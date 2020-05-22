@@ -1,2 +1,6 @@
+const config = require("./config");
+
 const THIRTY_SECONDS_MS = 30_000;
-jest.setTimeout(THIRTY_SECONDS_MS);
+const ONE_DAY_MS = 8_670_000_000;
+
+jest.setTimeout(config.debugMode ? ONE_DAY_MS : THIRTY_SECONDS_MS);

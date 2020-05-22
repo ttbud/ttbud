@@ -1,6 +1,7 @@
 import "expect-puppeteer";
+import { setDefaultOptions } from "expect-puppeteer";
 import dragTo from "./dragTo";
-import config from "./config";
+import config from "../config";
 
 function trayCharSelector(character: string) {
   return `[aria-label="Character Tray"] [aria-label="Character: ${character}"]`;
@@ -9,6 +10,8 @@ function trayCharSelector(character: string) {
 function boardCharSelector(character: string) {
   return `[aria-label="Board"] [aria-label="Character: ${character}"]`;
 }
+
+setDefaultOptions({ timeout: 5000 });
 
 describe("TTBud", () => {
   it("Synchronizes actions between pages", async () => {
