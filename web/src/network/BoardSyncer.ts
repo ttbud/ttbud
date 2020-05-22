@@ -10,8 +10,19 @@ import { Entity } from "../types";
 const UPDATE_RATE_MS = 60;
 
 export default class BoardSyncer {
+  /**
+   * Updates that we've sent to the server but haven't heard back about yet
+   */
   private readonly unackedUpdates = new Map<string, Update[]>();
+
+  /**
+   * The most recent network state we've received
+   */
   private networkTokens: Entity[] = [];
+
+  /**
+   * The last UI tokens we processed, used to quickly bail if we get an update that changes nothing
+   */
   private lastUiTokens: Entity[] | undefined = [];
   private sendNetworkUpdatesThrottled: () => void;
 
@@ -53,6 +64,10 @@ export default class BoardSyncer {
   }
 
   private sendNetworkUpdates() {
+    if (!this.apiClient.connected()) {
+      return;
+    }
+
     const updates = getNetworkUpdates({
       networkTokens: this.networkTokens,
       uiTokens: this.store.getState().board.tokens,
