@@ -53,7 +53,7 @@ it("adds floors", () => {
   );
   expect(store.getState().board.tokens).toMatchObject([
     {
-      iconId: "icon-id",
+      contents: { type: ContentType.Icon, iconId: "icon-id" },
       type: EntityType.Floor,
       pos: { x: 0, y: 0, z: 0 },
     },
@@ -133,7 +133,7 @@ it("adds tokens to the board when they are dragged in", () => {
   expect(store.getState().board.tokens).toMatchObject([
     TOKEN_1,
     {
-      iconId: WALL_ICON.id,
+      contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
       pos: { x: 0, y: 0 },
       type: EntityType.Character,
     },
