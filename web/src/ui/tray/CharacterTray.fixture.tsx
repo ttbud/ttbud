@@ -15,7 +15,7 @@ const store = configureStore({
   middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
 
-const sources: TokenContents[] = DEFAULT_CHARACTER_ICONS.map((icon) => ({
+const blueprints: TokenContents[] = DEFAULT_CHARACTER_ICONS.map((icon) => ({
   type: ContentType.Icon,
   iconId: icon.id,
 }));
@@ -31,7 +31,7 @@ export default (
           top: 0,
         }}
       >
-        <CharacterTray sources={sources} onSourceRemoved={noop} />
+        <CharacterTray blueprints={blueprints} onCharacterRemoved={noop} />
       </div>
     </DndContext.Provider>
   </Provider>

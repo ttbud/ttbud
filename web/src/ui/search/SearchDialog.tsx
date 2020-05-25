@@ -12,7 +12,7 @@ import {
   DraggableDescriptor,
   DraggableType,
   DragStateType,
-  TokenSourceDraggable,
+  TokenBlueprintDraggable,
 } from "../../drag/DragStateTypes";
 import { useSelector } from "react-redux";
 import Character from "../token/Character";
@@ -49,10 +49,10 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
   const [search, setSearch] = useState("");
   const onChange = useCallback((e) => setSearch(e.target.value), [setSearch]);
 
-  const items: TokenSourceDraggable[] = useMemo(
+  const items: TokenBlueprintDraggable[] = useMemo(
     () =>
       icons.map((icon) => ({
-        type: DraggableType.TokenSource,
+        type: DraggableType.TokenBlueprint,
         contents: { type: ContentType.Icon, iconId: icon.id },
         id: `search-dialog-${icon.id}`,
       })),
@@ -85,7 +85,7 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
   const textItem: DraggableDescriptor | undefined = !textContents
     ? undefined
     : {
-        type: DraggableType.TokenSource,
+        type: DraggableType.TokenBlueprint,
         contents: textContents,
         id: `search-dialog-${contentId(textContents)}`,
       };

@@ -12,7 +12,7 @@ import {
   DragStateType,
   LocationType,
   LogicalLocation,
-  TokenSourceDraggable,
+  TokenBlueprintDraggable,
 } from "./DragStateTypes";
 import { FakeDroppableMonitor } from "./__test_util__/FakeDroppableMonitor";
 import {
@@ -29,15 +29,15 @@ const MOVED_BOUNDS = { top: 100, left: 100, bottom: 150, right: 150 };
 const ORIGIN_POS = { x: 0, y: 0 };
 const NO_OFFSET = { x: 0, y: 0 };
 
-const DRAGGABLE: TokenSourceDraggable = {
+const DRAGGABLE: TokenBlueprintDraggable = {
   id: "draggable-id",
-  type: DraggableType.TokenSource,
+  type: DraggableType.TokenBlueprint,
   contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
 };
 
-const INACTIVE_DRAGGABLE: TokenSourceDraggable = {
+const INACTIVE_DRAGGABLE: TokenBlueprintDraggable = {
   id: "another-draggable-id",
-  type: DraggableType.TokenSource,
+  type: DraggableType.TokenBlueprint,
   contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
 };
 

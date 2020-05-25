@@ -23,7 +23,7 @@ export default () => (
     <DndContext.Provider value={monitor}>
       <Draggable
         descriptor={{
-          type: DraggableType.TokenSource,
+          type: DraggableType.TokenBlueprint,
           id: "draggable",
           contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
         }}

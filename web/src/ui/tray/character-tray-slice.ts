@@ -3,7 +3,7 @@ import { DragEndAction, dragEnded } from "../../drag/drag-slice";
 import { DROPPABLE_IDS } from "../DroppableIds";
 import { DEFAULT_CHARACTER_ICONS } from "../icons";
 import getDragResult from "../../drag/getDragResult";
-import { reorderTokenSources } from "./reorderTokenSources";
+import { reorderTokenBlueprints } from "./reorderTokenBlueprints";
 import { contentId, ContentType, TokenContents } from "../../types";
 
 const DEFAULT_CONTENTS: TokenContents[] = DEFAULT_CHARACTER_ICONS.map(
@@ -13,12 +13,12 @@ const DEFAULT_CONTENTS: TokenContents[] = DEFAULT_CHARACTER_ICONS.map(
 const characterTraySlice = createSlice({
   name: "characterTrayIcons",
   initialState: {
-    characterSources: DEFAULT_CONTENTS,
+    characterBlueprints: DEFAULT_CONTENTS,
   },
   reducers: {
-    removeTokenSource(state, action: PayloadAction<TokenContents>) {
+    removeCharacter(state, action: PayloadAction<TokenContents>) {
       const removedContentId = contentId(action.payload);
-      state.characterSources = state.characterSources.filter(
+      state.characterBlueprints = state.characterBlueprints.filter(
         (contents) => contentId(contents) !== removedContentId
       );
     },
@@ -32,8 +32,8 @@ const characterTraySlice = createSlice({
         action.payload
       );
 
-      reorderTokenSources({
-        sources: state.characterSources,
+      reorderTokenBlueprints({
+        blueprints: state.characterBlueprints,
         draggable,
         source,
         destination,
@@ -43,5 +43,5 @@ const characterTraySlice = createSlice({
   },
 });
 
-export const { removeTokenSource } = characterTraySlice.actions;
+export const { removeCharacter } = characterTraySlice.actions;
 export default characterTraySlice.reducer;
