@@ -41,8 +41,8 @@ class Ping:
 
 def content_id(contents: TokenContents) -> str:
     if isinstance(contents, TextTokenContents):
-        return f"text-${contents.text}"
+        return f"text-{contents.text}"
     elif isinstance(contents, IconTokenContents):
-        return f"icon-${contents.icon_id}"
+        return f"icon-{contents.icon_id}"
     else:
-        raise ValueError(f"Unknown contents class type ${type(contents)}")
+        raise ValueError(f"Unknown contents class type {type(contents)}")
