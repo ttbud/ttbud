@@ -52,7 +52,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jest-environment-jsdom-sixteen",
-    "typecheck": "tsc",
+    "typecheck": "tsc --noEmit",
     "eject": "react-scripts eject",
     "checkstyle": "prettier src public package.json tsconfig.json --check",
     "fixstyle": "prettier src public package.json tsconfig.json --write",

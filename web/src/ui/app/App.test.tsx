@@ -9,9 +9,7 @@ import { BoardStateApiClient } from "../../network/BoardStateApiClient";
 
 it("renders without crashing", () => {
   const monitor = new DomDroppableMonitor();
-  const apiClient = new BoardStateApiClient("invalid", () => {
-    throw new Error("No connecting to servers in tests");
-  });
+  const apiClient = new BoardStateApiClient("invalid");
   const store = createStore(monitor, apiClient);
 
   const div = document.createElement("div");
