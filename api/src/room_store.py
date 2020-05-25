@@ -1,6 +1,6 @@
 import os
 import json
-from typing import Protocol, Iterable, Optional
+from typing import Protocol, Iterable, Optional, List
 from abc import abstractmethod
 from dataclasses import asdict
 
@@ -43,7 +43,7 @@ class FileRoomStore:
         else:
             raise ValueError(f"path {full_path} is not a valid path")
 
-    def read_room_data(self, room_id: str) -> Optional[dict]:
+    def read_room_data(self, room_id: str) -> Optional[List[dict]]:
         full_path = f'{self.path}/{room_id}'
         if self._is_valid_path(full_path) and os.path.exists(full_path):
             with open(full_path, 'r') as f:
