@@ -5,7 +5,7 @@ import { CARD_SIZE } from "../../config";
 import {
   DraggableDescriptor,
   DraggableType,
-  TokenSourceDraggable,
+  TokenBlueprintDraggable,
 } from "../../drag/DragStateTypes";
 import { assert } from "../../util/invariants";
 import { Bounds } from "../../util/shape-math";
@@ -19,14 +19,14 @@ import { contentId, ContentType, TokenContents } from "../../types";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 
 interface Props {
-  sources: TokenContents[];
+  blueprints: TokenContents[];
   activeFloor: TokenContents;
-  onFloorSelected: (source: TokenContents) => void;
-  onFloorRemoved: (source: TokenContents) => void;
+  onFloorSelected: (blueprint: TokenContents) => void;
+  onFloorRemoved: (blueprint: TokenContents) => void;
 }
 
 const mapStateToProps = (state: RootState) => ({
-  sources: state.floorTray.floorSources,
+  blueprints: state.floorTray.floorBlueprints,
   activeFloor: state.floorTray.activeFloor,
 });
 
@@ -43,7 +43,7 @@ const useStyles = makeStyles({
 });
 
 const PureFloorTray: React.FC<Props> = memo(function FloorTray({
-  sources,
+  blueprints,
   activeFloor,
   onFloorSelected,
   onFloorRemoved,
@@ -52,27 +52,27 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
 
   const containerRef = useRef<HTMLElement>();
 
-  const sourceRefs = useMemo(() => {
+  const blueprintRefs = useMemo(() => {
     const refs = new Map<string, React.MutableRefObject<HTMLElement | null>>();
-    for (const source of sources) {
-      refs.set(contentId(source), createRef<HTMLElement>());
+    for (const blueprint of blueprints) {
+      refs.set(contentId(blueprint), createRef<HTMLElement>());
     }
     return refs;
-  }, [sources]);
+  }, [blueprints]);
 
-  const items = sources.map((source) => ({
-    source,
+  const items = blueprints.map((blueprint) => ({
+    blueprint,
     descriptor: {
-      type: DraggableType.TokenSource,
-      id: `${DROPPABLE_IDS.FLOOR_TRAY}-${contentId(source)}`,
-      contents: source,
-    } as TokenSourceDraggable,
+      type: DraggableType.TokenBlueprint,
+      id: `${DROPPABLE_IDS.FLOOR_TRAY}-${contentId(blueprint)}`,
+      contents: blueprint,
+    } as TokenBlueprintDraggable,
   }));
 
   const getTargets = useCallback(
     (draggable: DraggableDescriptor, bounds: Bounds): Targets => {
       const existingElementsBounds = [];
-      for (const itemRef of sourceRefs.values()) {
+      for (const itemRef of blueprintRefs.values()) {
         assert(
           itemRef.current,
           "Floor tray item refs not set up correctly before drag"
@@ -154,7 +154,7 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
         outerDrag: outerDragBounds,
       };
     },
-    [sourceRefs]
+    [blueprintRefs]
   );
 
   const renderButtonContents = (contents: TokenContents) => {
@@ -191,23 +191,23 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
       >
         {(item, isDragging, attributes) => (
           <ToggleButton
-            value={item.source}
-            key={contentId(item.source)}
-            selected={contentId(activeFloor) === contentId(item.source)}
-            onChange={() => onFloorSelected(item.source)}
+            value={item.blueprint}
+            key={contentId(item.blueprint)}
+            selected={contentId(activeFloor) === contentId(item.blueprint)}
+            onChange={() => onFloorSelected(item.blueprint)}
             onContextMenu={(e) => {
-              if (sources.length > 2) {
-                onFloorRemoved(item.source);
+              if (blueprints.length > 2) {
+                onFloorRemoved(item.blueprint);
               }
               e.preventDefault();
             }}
             {...attributes}
             ref={(el: HTMLElement | null) => {
-              sourceRefs.get(contentId(item.source))!.current = el;
+              blueprintRefs.get(contentId(item.blueprint))!.current = el;
               attributes.ref.current = el;
             }}
           >
-            {renderButtonContents(item.source)}
+            {renderButtonContents(item.blueprint)}
           </ToggleButton>
         )}
       </SortableList>

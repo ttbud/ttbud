@@ -2,12 +2,12 @@ import Pos2d, { Bounds } from "../util/shape-math";
 import { TokenContents } from "../types";
 
 export enum DraggableType {
-  TokenSource = "token source",
+  TokenBlueprint = "token blueprint",
   Token = "token",
 }
 
-export interface TokenSourceDraggable {
-  type: DraggableType.TokenSource;
+export interface TokenBlueprintDraggable {
+  type: DraggableType.TokenBlueprint;
   id: string;
   contents: TokenContents;
 }
@@ -19,7 +19,7 @@ export interface TokenDraggable {
   contents: TokenContents;
 }
 
-export type DraggableDescriptor = TokenSourceDraggable | TokenDraggable;
+export type DraggableDescriptor = TokenBlueprintDraggable | TokenDraggable;
 
 export enum LocationType {
   Grid = "grid",

@@ -15,7 +15,7 @@ const store = configureStore({
   middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
 
-const sources: TokenContents[] = DEFAULT_FLOOR_ICONS.map((icon) => ({
+const blueprints: TokenContents[] = DEFAULT_FLOOR_ICONS.map((icon) => ({
   type: ContentType.Icon,
   iconId: icon.id,
 }));
@@ -36,8 +36,8 @@ export default (
         }}
       >
         <FloorTray
-          sources={sources}
-          activeFloor={sources[0]}
+          blueprints={blueprints}
+          activeFloor={blueprints[0]}
           onFloorSelected={noop}
           onFloorRemoved={noop}
         />

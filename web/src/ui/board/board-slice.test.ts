@@ -112,7 +112,7 @@ it("adds tokens to the board when they are dragged in", () => {
     dragEnded({
       draggable: {
         id: "draggable-id",
-        type: DraggableType.TokenSource,
+        type: DraggableType.TokenBlueprint,
         contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
       },
       source: {
@@ -182,7 +182,7 @@ it("ignores drags that don't involve the board", () => {
     dragEnded({
       draggable: {
         id: "draggable-id",
-        type: DraggableType.TokenSource,
+        type: DraggableType.TokenBlueprint,
         contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
       },
       source: {

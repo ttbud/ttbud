@@ -4,26 +4,26 @@ import { DROPPABLE_IDS } from "../DroppableIds";
 import { DEFAULT_FLOOR_ICONS } from "../icons";
 import { assert } from "../../util/invariants";
 import getDragResult from "../../drag/getDragResult";
-import { reorderTokenSources } from "./reorderTokenSources";
+import { reorderTokenBlueprints } from "./reorderTokenBlueprints";
 import { contentId, ContentType, TokenContents } from "../../types";
 
-const DEFAULT_FLOOR_SOURCES: TokenContents[] = DEFAULT_FLOOR_ICONS.map(
+const DEFAULT_FLOOR_BLUEPRINTS: TokenContents[] = DEFAULT_FLOOR_ICONS.map(
   (icon) => ({ type: ContentType.Icon, iconId: icon.id })
 );
 
 const floorTraySlice = createSlice({
   name: "floorTrayIcons",
   initialState: {
-    floorSources: DEFAULT_FLOOR_SOURCES,
-    activeFloor: DEFAULT_FLOOR_SOURCES[0],
+    floorBlueprints: DEFAULT_FLOOR_BLUEPRINTS,
+    activeFloor: DEFAULT_FLOOR_BLUEPRINTS[0],
   },
   reducers: {
     setActiveFloor(state, action: PayloadAction<TokenContents>) {
       const activeContents = action.payload;
       const activeFloorId = contentId(activeContents);
       assert(
-        state.floorSources.some(
-          (source) => contentId(source) === activeFloorId
+        state.floorBlueprints.some(
+          (blueprint) => contentId(blueprint) === activeFloorId
         ),
         `Contents ${activeContents} cannot be the active floor because it is not in the tray`
       );
@@ -31,8 +31,8 @@ const floorTraySlice = createSlice({
     },
     removeIcon(state, action: PayloadAction<TokenContents>) {
       const removedFloorId = contentId(action.payload);
-      state.floorSources = state.floorSources.filter(
-        (source) => contentId(source) !== removedFloorId
+      state.floorBlueprints = state.floorBlueprints.filter(
+        (blueprint) => contentId(blueprint) !== removedFloorId
       );
     },
   },
@@ -44,8 +44,8 @@ const floorTraySlice = createSlice({
         action.payload
       );
 
-      reorderTokenSources({
-        sources: state.floorSources,
+      reorderTokenBlueprints({
+        blueprints: state.floorBlueprints,
         draggable,
         source,
         destination,

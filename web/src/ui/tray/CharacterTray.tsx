@@ -1,13 +1,16 @@
 import { makeStyles, Paper } from "@material-ui/core";
 import React, { createRef, memo, useMemo, useRef, useCallback } from "react";
-import { DraggableType, TokenSourceDraggable } from "../../drag/DragStateTypes";
+import {
+  DraggableType,
+  TokenBlueprintDraggable,
+} from "../../drag/DragStateTypes";
 import { DROPPABLE_IDS } from "../DroppableIds";
 import SortableList, { Targets, Target } from "../sort/SortableList";
 import Character from "../token/Character";
 import { assert } from "../../util/invariants";
 import { GRID_SIZE_PX } from "../../config";
 import { RootState } from "../../store/rootReducer";
-import { removeTokenSource } from "./character-tray-slice";
+import { removeCharacter } from "./character-tray-slice";
 import { connect } from "react-redux";
 import { contentId, TokenContents } from "../../types";
 
@@ -27,44 +30,44 @@ const useStyles = makeStyles((theme) => ({
 const DROPPABLE_ID = DROPPABLE_IDS.CHARACTER_TRAY;
 
 interface Props {
-  sources: TokenContents[];
-  onSourceRemoved: (source: TokenContents) => void;
+  blueprints: TokenContents[];
+  onCharacterRemoved: (character: TokenContents) => void;
 }
 
 const mapStateToProps = (state: RootState) => ({
-  sources: state.characterTray.characterSources,
+  blueprints: state.characterTray.characterBlueprints,
 });
 
-const dispatchProps = { onSourceRemoved: removeTokenSource };
+const dispatchProps = { onCharacterRemoved: removeCharacter };
 
 const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
-  sources,
-  onSourceRemoved,
+  blueprints,
+  onCharacterRemoved,
 }) {
   const classes = useStyles();
 
-  const items = sources.map((source) => ({
-    source,
+  const items = blueprints.map((blueprint) => ({
+    blueprint,
     descriptor: {
-      type: DraggableType.TokenSource,
-      id: `${DROPPABLE_ID}-${contentId(source)}`,
-      contents: source,
-    } as TokenSourceDraggable,
+      type: DraggableType.TokenBlueprint,
+      id: `${DROPPABLE_ID}-${contentId(blueprint)}`,
+      contents: blueprint,
+    } as TokenBlueprintDraggable,
   }));
 
   const containerRef = useRef<HTMLElement>();
 
-  const sourceRefs = useMemo(() => {
+  const blueprintRefs = useMemo(() => {
     const refs = new Map<string, React.MutableRefObject<HTMLElement | null>>();
-    for (const source of sources) {
-      refs.set(contentId(source), createRef<HTMLElement>());
+    for (const blueprint of blueprints) {
+      refs.set(contentId(blueprint), createRef<HTMLElement>());
     }
     return refs;
-  }, [sources]);
+  }, [blueprints]);
 
   const getTargets = useCallback((): Targets => {
     const existingElementsBounds = [];
-    for (const itemRef of sourceRefs.values()) {
+    for (const itemRef of blueprintRefs.values()) {
       assert(
         itemRef.current,
         "Character tray item refs not set up correctly before drag"
@@ -129,7 +132,7 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
       innerDrag: innerDragBounds,
       outerDrag: outerDragBounds,
     };
-  }, [sourceRefs]);
+  }, [blueprintRefs]);
 
   return (
     <Paper
@@ -140,17 +143,17 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
       <SortableList id={DROPPABLE_ID} items={items} getTargets={getTargets}>
         {(item, isDragging, attributes) => (
           <Character
-            contents={item.source}
+            contents={item.blueprint}
             isDragging={isDragging}
             onContextMenu={(e) => {
               e.preventDefault();
               if (items.length > 2) {
-                onSourceRemoved(item.source);
+                onCharacterRemoved(item.blueprint);
               }
             }}
             {...attributes}
             ref={(el: HTMLElement) => {
-              sourceRefs.get(contentId(item.source))!.current = el;
+              blueprintRefs.get(contentId(item.blueprint))!.current = el;
               attributes.ref.current = el;
             }}
           />

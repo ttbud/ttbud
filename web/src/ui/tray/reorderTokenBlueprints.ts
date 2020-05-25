@@ -8,26 +8,26 @@ import {
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import { contentId, TokenContents } from "../../types";
 
-interface ReorderTokenSourcesParams {
-  sources: TokenContents[];
+interface ReorderTokenBlueprintsParams {
+  blueprints: TokenContents[];
   dragResult: DragResult;
   source: DroppableLocation;
   destination: DroppableLocation;
   draggable: DraggableDescriptor;
 }
 
-export function reorderTokenSources({
-  sources,
+export function reorderTokenBlueprints({
+  blueprints,
   dragResult,
   source,
   destination,
   draggable,
-}: ReorderTokenSourcesParams) {
+}: ReorderTokenBlueprintsParams) {
   switch (dragResult) {
     case DragResult.DraggedInto:
       const draggableContentsId = contentId(draggable.contents);
       if (
-        sources.some((content) => contentId(content) === draggableContentsId)
+        blueprints.some((content) => contentId(content) === draggableContentsId)
       ) {
         return;
       }
@@ -35,7 +35,7 @@ export function reorderTokenSources({
         destination.logicalLocation?.type === LocationType.List,
         `Dragged into character tray but destination type is not list`
       );
-      sources.splice(destination.logicalLocation.idx, 0, draggable.contents);
+      blueprints.splice(destination.logicalLocation.idx, 0, draggable.contents);
       break;
     case DragResult.MovedInside:
       assert(
@@ -46,8 +46,8 @@ export function reorderTokenSources({
         source.logicalLocation?.type === LocationType.List,
         `Dragged from character tray but source type is not list`
       );
-      const [removed] = sources.splice(source.logicalLocation.idx, 1);
-      sources.splice(destination.logicalLocation.idx, 0, removed);
+      const [removed] = blueprints.splice(source.logicalLocation.idx, 1);
+      blueprints.splice(destination.logicalLocation.idx, 0, removed);
       break;
     case DragResult.DraggedOutOf:
     case DragResult.None:
