@@ -1,15 +1,12 @@
-import os
 import signal
 
+from src.config import room_store_dir, websocket_port
 from src.wsmanager import start_websocket
 from src.room_store import FileRoomStore
 from src.game_state_server import GameStateServer
 
 
 def main():
-    websocket_port = int(os.environ['PORT'])
-    room_store_dir = os.environ['ROOM_STORE_DIR']
-
     room_store = FileRoomStore(room_store_dir)
     gss = GameStateServer(room_store)
 

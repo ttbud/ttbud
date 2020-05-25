@@ -86,13 +86,13 @@ jobs:
             - .venv
       - run:
           name: Check Code Format
-          command: poetry run black -S src tests main.py --check
+          command: poetry run black -S src tests bin main.py --check
       - run:
           name: Typecheck
-          command: poetry run mypy src tests main.py
+          command: poetry run mypy src tests bin main.py
       - run:
           name: Lint
-          command: poetry run flake8 src tests main.py
+          command: poetry run flake8 src tests bin main.py
       - run:
           name: Run Tests
           command: poetry run pytest tests --junitxml=test-results/junit.xml
