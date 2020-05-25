@@ -177,7 +177,7 @@ function disconnectReason(disconnectCode: number): ConnectionError {
 }
 
 // See https://tools.ietf.org/html/rfc6455#section-7.4.1
-const WS_CODE_GOING_AWAY = 1001;
+const WS_CODE_CLOSE_NORMAL = 1000;
 const CONNECTION_TIMEOUT_MS = 5000;
 
 export class BoardStateApiClient {
@@ -185,10 +185,7 @@ export class BoardStateApiClient {
   private socket: WebSocket | undefined;
   private connectionTimeoutListenerId: number | null = null;
 
-  public constructor(
-    private readonly hostBaseUrl: string,
-    private readonly websocketFactory: (url: string) => WebSocket
-  ) {}
+  public constructor(private readonly hostBaseUrl: string) {}
 
   public setEventHandler(handler: ApiEventHandler) {
     this.eventHandler = handler;
@@ -198,11 +195,10 @@ export class BoardStateApiClient {
     const encodedRoomId = encodeURIComponent(roomId);
 
     if (this.socket) {
-      this.socket.close(WS_CODE_GOING_AWAY, "Going away");
+      this.socket.close(WS_CODE_CLOSE_NORMAL, "Connecting to another room");
     }
 
-    this.eventHandler({ type: EventType.Connected });
-    this.socket = this.websocketFactory(`${this.hostBaseUrl}/${encodedRoomId}`);
+    this.socket = new WebSocket(`${this.hostBaseUrl}/${encodedRoomId}`);
     this.connectionTimeoutListenerId = window.setTimeout(
       () => this.close(),
       CONNECTION_TIMEOUT_MS
