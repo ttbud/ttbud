@@ -60,7 +60,7 @@ export const MessageDecoder = t.union([
   ConnectionResultDecoder,
 ]);
 
-type ApiPingToken = t.TypeOf<typeof PingDecoder>;
+export type ApiPingToken = t.TypeOf<typeof PingDecoder>;
 type ApiToken = t.TypeOf<typeof TokenDecoder>;
 
 interface PingApiUpdate {

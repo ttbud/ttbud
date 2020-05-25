@@ -1,3 +1,6 @@
+import "pepjs";
+import "@testing-library/jest-dom/extend-expect";
+
 jest.mock("./ui/icon-loader.ts");
 
 // Mock out scrollTo since jsdom doesn't support it
