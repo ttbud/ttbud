@@ -1,6 +1,5 @@
 import { render } from "@testing-library/react";
 import React from "react";
-import "@testing-library/jest-dom/extend-expect";
 import Settings from "./Settings";
 import noop from "../../util/noop";
 

@@ -1,4 +1,4 @@
-import { constrainBoxTo, contains } from "./shape-math";
+import { constrainBoxTo, contains, snapToGrid } from "./shape-math";
 
 describe("contains", () => {
   it("returns true for points inside the box", () => {
@@ -73,5 +73,11 @@ describe("constrainBoxTo", () => {
     );
 
     expect(constrained).toEqual({ top: 10, left: 0, bottom: 20, right: 10 });
+  });
+});
+
+describe("snapToGrid", () => {
+  it("snaps to grid", () => {
+    expect(snapToGrid({ x: 41, y: 41 })).toEqual({ x: 40, y: 40 });
   });
 });

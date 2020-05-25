@@ -9,7 +9,9 @@ import {
 /**
  * Sync network state and ui state
  */
-export function networkSyncer(apiClient: BoardStateApiClient): Middleware {
+export function networkSyncMiddleware(
+  apiClient: BoardStateApiClient
+): Middleware {
   return (store) => {
     const boardSyncer = new BoardSyncer(apiClient, store);
 
