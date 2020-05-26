@@ -7,7 +7,6 @@ import { Provider } from "react-redux";
 import DndContext from "./drag/DndContext";
 import createStore from "./store/createStore";
 import { BoardStateApiClient } from "./network/BoardStateApiClient";
-import { v4 as uuid } from "uuid";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import { CssBaseline, createMuiTheme, ThemeProvider } from "@material-ui/core";
@@ -17,11 +16,6 @@ const apiClient = new BoardStateApiClient(
   `wss://${process.env.REACT_APP_DOMAIN}:${process.env.REACT_APP_API_WEBSOCKET_PORT}`
 );
 const store = createStore(monitor, apiClient);
-
-const path = window.location.pathname.split("/room/")[1];
-const roomId = path ? atob(path) : uuid();
-window.history.replaceState({}, "Your special room", `/room/${btoa(roomId)}`);
-apiClient.connect(roomId);
 
 let persistor = persistStore(store);
 
@@ -42,7 +36,7 @@ const render = () => {
         <DndContext.Provider value={monitor}>
           <ThemeProvider theme={theme}>
             <CssBaseline />
-            <App />
+            <App apiClient={apiClient} />
           </ThemeProvider>
         </DndContext.Provider>
       </PersistGate>
