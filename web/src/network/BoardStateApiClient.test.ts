@@ -78,7 +78,10 @@ describe("BoardStateApiClient", () => {
     client.connect("roomId");
     await api.connected;
 
-    expect(eventHandler).toHaveBeenCalledWith({ type: EventType.Connected });
+    expect(eventHandler.mock.calls.flat()).toEqual([
+      { type: EventType.Connecting },
+      { type: EventType.Connected },
+    ]);
   });
 
   it("disconnects after a connection timeout", async () => {

@@ -10,6 +10,7 @@ import {
   MessageDecoder,
 } from "./api-types";
 import { ContentType, Entity, EntityType, TokenContents } from "../types";
+import { assert } from "../util/invariants";
 
 function toApiUpdate(update: Update): ApiUpdate {
   switch (update.type) {
@@ -138,7 +139,7 @@ interface ConnectionStatusDisconnected {
   error: ConnectionError;
 }
 
-type ConnectionStatusEvent =
+export type ConnectionStatusEvent =
   | { type: EventType.Connected | EventType.Connecting }
   | ConnectionStatusDisconnected;
 
@@ -193,21 +194,12 @@ export class BoardStateApiClient {
 
   public connect(roomId: string) {
     const encodedRoomId = encodeURIComponent(roomId);
+    this.connectToUrl(`${this.hostBaseUrl}/${encodedRoomId}`);
+  }
 
-    if (this.socket) {
-      this.socket.close(WS_CODE_CLOSE_NORMAL, "Connecting to another room");
-    }
-
-    this.socket = new WebSocket(`${this.hostBaseUrl}/${encodedRoomId}`);
-    this.connectionTimeoutListenerId = window.setTimeout(
-      () => this.close(),
-      CONNECTION_TIMEOUT_MS
-    );
-    this.socket.addEventListener("open", this.onConnect.bind(this));
-    this.socket.addEventListener("message", this.onMessage.bind(this));
-    //TODO: Handle errors
-    this.socket.addEventListener("error", console.log.bind(console));
-    this.socket.addEventListener("close", this.onClose.bind(this));
+  public reconnect() {
+    assert(this.socket, "Cannot reconnect when no connection has been made");
+    this.connectToUrl(this.socket.url);
   }
 
   public close() {
@@ -231,6 +223,25 @@ export class BoardStateApiClient {
     }
   }
 
+  private connectToUrl(url: string) {
+    if (this.socket) {
+      this.socket.close(WS_CODE_CLOSE_NORMAL, "Connecting to another room");
+    }
+
+    this.socket = new WebSocket(url);
+    this.eventHandler({ type: EventType.Connecting });
+
+    this.connectionTimeoutListenerId = window.setTimeout(
+      () => this.close(),
+      CONNECTION_TIMEOUT_MS
+    );
+    this.socket.addEventListener("open", this.onConnect.bind(this));
+    this.socket.addEventListener("message", this.onMessage.bind(this));
+    //TODO: Handle errors
+    this.socket.addEventListener("error", console.log.bind(console));
+    this.socket.addEventListener("close", this.onClose.bind(this));
+  }
+
   private onConnect() {
     console.log("connected");
     if (this.connectionTimeoutListenerId) {
@@ -238,6 +249,7 @@ export class BoardStateApiClient {
     }
     this.eventHandler({ type: EventType.Connected });
   }
+
   private onClose(e: CloseEvent) {
     console.log("disconnected", e);
     this.eventHandler({

@@ -12,6 +12,8 @@ import { RootState } from "../../store/rootReducer";
 import isMac from "../../util/isMac";
 import { startSearching, stopSearching, toggleDebug } from "./app-slice";
 import ConnectionNotifier from "../connection-state/ConnectionNotifier";
+import { v4 as uuid } from "uuid";
+import { BoardStateApiClient } from "../../network/BoardStateApiClient";
 
 const useStyles = makeStyles((theme) => ({
   app: {
@@ -51,13 +53,29 @@ const useStyles = makeStyles((theme) => ({
 
 const searchModifier = isMac() ? "Meta" : "Control";
 
-const App = () => {
+interface Props {
+  apiClient: BoardStateApiClient;
+}
+
+const App: React.FC<Props> = ({ apiClient }) => {
   const classes = useStyles();
   const dispatch = useDispatch();
   const { debugEnabled, searching } = useSelector((state: RootState) => ({
     debugEnabled: state.app.debug,
     searching: state.app.searching,
   }));
+
+  useEffect(() => {
+    const path = window.location.pathname.split("/room/")[1];
+    const roomId = path ? atob(path) : uuid();
+    window.history.replaceState(
+      {},
+      "Your special room",
+      `/room/${btoa(roomId)}`
+    );
+
+    apiClient.connect(roomId);
+  }, [apiClient]);
 
   useEffect(() => {
     // Start in the center of the board
@@ -86,6 +104,7 @@ const App = () => {
   const onClearMap = () => dispatch(replaceTokens([]));
 
   const onDebugToggled = useCallback(() => dispatch(toggleDebug()), [dispatch]);
+  const reconnect = () => apiClient.reconnect();
 
   return (
     <div className={classes.app}>
@@ -108,7 +127,7 @@ const App = () => {
         onDebugToggled={onDebugToggled}
       />
       <div className={classes.connectionNotifier}>
-        <ConnectionNotifier />
+        <ConnectionNotifier onReconnectClick={reconnect} />
       </div>
     </div>
   );

@@ -7,6 +7,8 @@ import { Provider } from "react-redux";
 import DndContext from "../../drag/DndContext";
 import { BoardStateApiClient } from "../../network/BoardStateApiClient";
 
+jest.mock("../../network/BoardStateApiClient");
+
 it("renders without crashing", () => {
   const monitor = new DomDroppableMonitor();
   const apiClient = new BoardStateApiClient("invalid");
@@ -17,7 +19,7 @@ it("renders without crashing", () => {
   ReactDOM.render(
     <Provider store={store}>
       <DndContext.Provider value={monitor}>
-        <App />
+        <App apiClient={apiClient} />
       </DndContext.Provider>
     </Provider>,
     div

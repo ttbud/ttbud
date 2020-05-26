@@ -6,13 +6,15 @@ import {
 } from "./connection-state-slice";
 import React from "react";
 import Alert from "@material-ui/lab/Alert";
+import RefreshIcon from "@material-ui/icons/Cached";
 import { connect } from "react-redux";
 import { RootState } from "../../store/rootReducer";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
-import { makeStyles } from "@material-ui/core";
+import { makeStyles, IconButton } from "@material-ui/core";
 
 interface Props {
   connectionState: ConnectionState;
+  onReconnectClick: () => void;
 }
 
 const useStyle = makeStyles(() => ({
@@ -28,13 +30,16 @@ function disconnectMessage(state: Disconnected) {
     case ConnectionError.ROOM_FULL:
       return "This room is full";
     case ConnectionError.UNKNOWN:
-      return "An unknown error has ocurred";
+      return "An unknown error has occurred";
     default:
       throw new UnreachableCaseError(state.error);
   }
 }
 
-const PureConnectionNotifier: React.FC<Props> = ({ connectionState }) => {
+const PureConnectionNotifier: React.FC<Props> = ({
+  connectionState,
+  onReconnectClick,
+}) => {
   const classes = useStyle();
 
   switch (connectionState.type) {
@@ -48,7 +53,21 @@ const PureConnectionNotifier: React.FC<Props> = ({ connectionState }) => {
       );
     case ConnectionStateType.Disconnected:
       return (
-        <Alert className={classes.alert} variant="filled" severity="error">
+        <Alert
+          className={classes.alert}
+          variant="filled"
+          severity="error"
+          action={
+            <IconButton
+              onClick={onReconnectClick}
+              color={"inherit"}
+              aria-label={"reconnect"}
+              size={"small"}
+            >
+              <RefreshIcon />
+            </IconButton>
+          }
+        >
           Disconnected: {disconnectMessage(connectionState)}
         </Alert>
       );
