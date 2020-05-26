@@ -53,7 +53,7 @@ def gss_with_client():
 def test_new_connection(gss):
     reply = gss.new_connection_request('test_client', 'room1')
     assert reply.contents.type == 'connected'
-    assert len(reply.contents.room_data) == 0
+    assert len(reply.contents.data) == 0
 
 
 @pytest.mark.asyncio
@@ -92,7 +92,7 @@ async def test_duplicate_update_rejected(gss_with_client):
     )
     assert reply[0].contents.type == 'error'
     assert reply[1].contents.type == 'state'
-    assert len(reply[1].contents.room_data) == 1
+    assert len(reply[1].contents.data) == 1
 
 
 @pytest.mark.asyncio
@@ -105,8 +105,8 @@ async def test_duplicate_update_in_different_room(gss):
     reply2 = await async_collect(
         gss.process_updates([VALID_UPDATE], 'room2', 'client2', 'request2')
     )
-    assert reply1[0].contents.room_data[0] == VALID_TOKEN
-    assert reply2[0].contents.room_data[0] == VALID_TOKEN
+    assert reply1[0].contents.data[0] == VALID_TOKEN
+    assert reply2[0].contents.data[0] == VALID_TOKEN
 
 
 @pytest.mark.asyncio
@@ -124,7 +124,7 @@ async def test_delete_token(gss_with_client):
             TEST_REQUEST_ID,
         )
     )
-    assert len(reply[0].contents.room_data) == 0
+    assert len(reply[0].contents.data) == 0
 
 
 @pytest.mark.asyncio
@@ -157,7 +157,7 @@ async def test_delete_after_load(gss_with_client):
             TEST_REQUEST_ID,
         )
     )
-    assert len(reply[0].contents.room_data) == 0
+    assert len(reply[0].contents.data) == 0
 
 
 @pytest.mark.asyncio
@@ -175,7 +175,7 @@ async def test_move_existing_token(gss_with_client):
             TEST_REQUEST_ID,
         )
     )
-    assert reply[0].contents.room_data == [UPDATED_TOKEN]
+    assert reply[0].contents.data == [UPDATED_TOKEN]
 
 
 @pytest.mark.asyncio
@@ -190,7 +190,7 @@ async def test_ping(gss_with_client, mocker):
         )
     )
     assert reply[0].contents.type == 'state'
-    assert reply[0].contents.room_data == [VALID_PING]
+    assert reply[0].contents.data == [VALID_PING]
 
 
 @pytest.mark.asyncio
@@ -328,7 +328,7 @@ async def test_more_tokens_than_colors(gss_with_client):
         )
     )
     tokens_without_color = []
-    for token in reply[0].contents.room_data:
+    for token in reply[0].contents.data:
         if not token.color_rgb:
             tokens_without_color.append(token)
     assert len(tokens_without_color) == 1
