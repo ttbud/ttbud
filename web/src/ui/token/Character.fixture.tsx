@@ -6,7 +6,6 @@ import { ContentType, IconContents } from "../../types";
 const ICON = DEFAULT_CHARACTER_ICONS[0];
 const DEFAULT_PROPS = {
   contents: { type: ContentType.Icon, iconId: ICON.id } as IconContents,
-  style: { width: 40, height: 40 },
   isDragging: false,
 };
 
@@ -18,5 +17,7 @@ export default {
       contents={{ type: ContentType.Text, text: "LP" }}
     />
   ),
-  Dragging: <Character {...DEFAULT_PROPS} isDragging={true} />,
+  Colored: (
+    <Character {...DEFAULT_PROPS} color={{ red: 255, green: 0, blue: 0 }} />
+  ),
 };

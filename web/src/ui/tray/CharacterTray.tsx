@@ -13,6 +13,7 @@ import { RootState } from "../../store/rootReducer";
 import { removeCharacter } from "./character-tray-slice";
 import { connect } from "react-redux";
 import { contentId, TokenContents } from "../../types";
+import assignRef from "../../util/assignRef";
 
 const useStyles = makeStyles((theme) => ({
   tokenSheet: {
@@ -145,16 +146,17 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
           <Character
             contents={item.blueprint}
             isDragging={isDragging}
-            onContextMenu={(e) => {
-              e.preventDefault();
+            dragAttributes={{
+              ...attributes,
+              ref: (el: HTMLElement) => {
+                blueprintRefs.get(contentId(item.blueprint))!.current = el;
+                assignRef(attributes?.ref, el);
+              },
+            }}
+            onDelete={() => {
               if (items.length > 2) {
                 onCharacterRemoved(item.blueprint);
               }
-            }}
-            {...attributes}
-            ref={(el: HTMLElement) => {
-              blueprintRefs.get(contentId(item.blueprint))!.current = el;
-              attributes.ref.current = el;
             }}
           />
         )}

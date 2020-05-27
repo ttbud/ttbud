@@ -1,6 +1,5 @@
 import React, {
   CSSProperties,
-  MutableRefObject,
   PointerEventHandler,
   ReactElement,
   TransitionEventHandler,
@@ -25,7 +24,7 @@ import {
 import { DraggableDescriptor, DragStateType } from "./DragStateTypes";
 
 export interface DragAttributes {
-  ref: MutableRefObject<any>;
+  ref: React.Ref<any>;
   style: CSSProperties;
   onPointerDown?: PointerEventHandler;
   onTransitionEnd?: TransitionEventHandler;
@@ -88,6 +87,7 @@ const getStyle = (
     style.transform = `translate(${state.offset.x}px, ${state.offset.y}px)`;
     style.zIndex = 10_000;
   }
+
   if (state.type === DragStateType.DragEndAnimating) {
     style.transition = "transform 0.2s cubic-bezier(0.2, 0, 0, 1)";
   }

@@ -17,6 +17,7 @@ import { removeIcon, setActiveFloor } from "./floor-tray-slice";
 import { connect } from "react-redux";
 import { contentId, ContentType, TokenContents } from "../../types";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
+import assignRef from "../../util/assignRef";
 
 interface Props {
   blueprints: TokenContents[];
@@ -82,7 +83,7 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
 
       assert(
         containerRef.current,
-        "Character tray container ref not set up correctly before drag"
+        "Floor tray container ref not set up correctly before drag"
       );
       const innerDragBounds: Target[] = [];
       for (let i = 0; i < existingElementsBounds.length; i++) {
@@ -204,7 +205,7 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
             {...attributes}
             ref={(el: HTMLElement | null) => {
               blueprintRefs.get(contentId(item.blueprint))!.current = el;
-              attributes.ref.current = el;
+              assignRef(attributes?.ref, el);
             }}
           >
             {renderButtonContents(item.blueprint)}

@@ -175,16 +175,14 @@ const PureBoard: React.FC<Props> = ({
             >
               {(isDragging, attributes) => (
                 <Character
-                  {...attributes}
+                  dragAttributes={attributes}
                   contents={token.contents}
                   isDragging={isDragging}
-                  characterColor={token.color}
-                  style={{
-                    ...attributes.style,
-                    position: "absolute",
-                    left: pixelPos.x,
-                    top: pixelPos.y,
-                    zIndex: isDragging ? 10_000 : token.pos.z,
+                  color={token.color}
+                  pos={{
+                    x: pixelPos.x,
+                    y: pixelPos.y,
+                    z: token.pos.z,
                   }}
                 />
               )}
