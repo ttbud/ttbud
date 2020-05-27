@@ -104,7 +104,7 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
       >
         {(isDragging, attributes) => (
           <Character
-            {...attributes}
+            dragAttributes={attributes}
             className={classes.token}
             contents={activeDraggable.contents}
             isDragging={isDragging}
@@ -135,7 +135,7 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
             <Draggable key={textItem.id} descriptor={textItem}>
               {(isDragging, attributes) => (
                 <Character
-                  {...attributes}
+                  dragAttributes={attributes}
                   className={classes.token}
                   contents={textItem.contents}
                   isDragging={isDragging}
@@ -143,11 +143,12 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
               )}
             </Draggable>
           )}
+
           {visibleIconItems.map((item) => (
             <Draggable key={item.id} descriptor={item}>
               {(isDragging, attributes) => (
                 <Character
-                  {...attributes}
+                  dragAttributes={attributes}
                   className={classes.token}
                   contents={item.contents}
                   isDragging={isDragging}
