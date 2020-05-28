@@ -26,15 +26,16 @@ interface StyleProps {
 }
 
 const useStyles = makeStyles<Theme, StyleProps>((theme) => ({
-  character: ({ color, expanded }) => ({
+  character: ({ pos, color, expanded }) => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     boxSizing: "border-box",
     width: expanded ? GRID_SIZE_PX + 84 : GRID_SIZE_PX,
     height: GRID_SIZE_PX,
+    zIndex: expanded ? 10_000 : pos?.z,
     border: `3px solid ${toCssColor(color)}`,
-    transition: theme.transitions.create("width", {
+    transition: theme.transitions.create(["width", "box-shadow"], {
       duration: theme.transitions.duration.short,
     }),
   }),
@@ -72,7 +73,7 @@ function toCssColor(color: Color | undefined) {
     : "rgba(0, 0, 0, 0)";
 }
 
-const HOVER_EXPAND_DELAY_MS = 350;
+const HOVER_EXPAND_DELAY_MS = 600;
 
 const Character: React.FC<Props> = memo(
   ({
@@ -88,7 +89,7 @@ const Character: React.FC<Props> = memo(
     const [expanded, setExpanded] = useState(false);
     const [hovering, setHovering] = useState(false);
 
-    const classes = useStyles({ color, expanded });
+    const classes = useStyles({ pos, color, expanded });
 
     useEffect(() => {
       if (expandable && hovering && !isDragging) {
@@ -104,7 +105,7 @@ const Character: React.FC<Props> = memo(
 
     const renderContents = (
       contents: TokenContents,
-      dragAttributes: Pick<DragAttributes, "onPointerDown" | "style">
+      dragAttributes: Pick<DragAttributes, "onPointerDown" | "style" | "ref">
     ) => {
       switch (contents.type) {
         case ContentType.Icon:
@@ -124,7 +125,7 @@ const Character: React.FC<Props> = memo(
 
     const renderIcon = (
       icon: Icon,
-      dragAttributes: Pick<DragAttributes, "onPointerDown" | "style">
+      dragAttributes: Pick<DragAttributes, "onPointerDown" | "style" | "ref">
     ) => {
       return (
         <div {...dragAttributes}>
@@ -150,7 +151,7 @@ const Character: React.FC<Props> = memo(
     return (
       <Card
         onContextMenu={onContextMenu}
-        raised={isDragging}
+        raised={isDragging || hovering}
         className={clsx(classes.character, className)}
         onPointerEnter={() => setHovering(true)}
         onPointerLeave={() => setHovering(false)}
@@ -167,6 +168,7 @@ const Character: React.FC<Props> = memo(
         }}
       >
         {renderContents(contents, {
+          ref: dragAttributes?.handleRef ?? null,
           onPointerDown: dragAttributes?.onPointerDown,
           style: { cursor: dragAttributes?.style?.cursor },
         })}

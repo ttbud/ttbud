@@ -25,6 +25,7 @@ import { DraggableDescriptor, DragStateType } from "./DragStateTypes";
 
 export interface DragAttributes {
   ref: React.Ref<any>;
+  handleRef: React.Ref<any>;
   style: DragStyles;
   onPointerDown?: PointerEventHandler;
   onTransitionEnd?: TransitionEventHandler;
@@ -71,12 +72,12 @@ const dragStatesAreEqual = (
   return left.type === right.type && posAreEqual(left.offset, right.offset);
 };
 
-type DragStyles = Pick<CSSProperties, 'userSelect' | 'cursor' | 'transform' | 'zIndex' | 'transition' | 'position'>;
+type DragStyles = Pick<
+  CSSProperties,
+  "userSelect" | "cursor" | "transform" | "zIndex" | "transition" | "position"
+>;
 
-const getStyle = (
-  state: InternalDragState,
-  usePortal: boolean
-): DragStyles => {
+const getStyle = (state: InternalDragState, usePortal: boolean): DragStyles => {
   const style: DragStyles = {
     userSelect: "none",
     cursor: state.type === DragStateType.Dragging ? "grabbing" : "grab",
@@ -113,6 +114,7 @@ const Draggable: React.FC<Props> = ({
   children,
 }) => {
   const ref = useRef<HTMLElement>(null);
+  const handleRef = useRef<HTMLElement>(null);
   const dispatch = useDispatch();
 
   const dragState = useSelector((appState: RootState): InternalDragState => {
@@ -175,9 +177,9 @@ const Draggable: React.FC<Props> = ({
       if (e.buttons !== LEFT_MOUSE || modifierKeyPressed(e)) {
         return;
       }
-      assert(ref.current, `Draggable ${descriptor} did not assign its ref`);
+      assert(handleRef.current, `Draggable ${descriptor} did not assign its ref`);
 
-      const bounds = ref.current.getBoundingClientRect();
+      const bounds = handleRef.current.getBoundingClientRect();
       const mousePos = { x: e.clientX, y: e.clientY };
 
       dispatch(
@@ -251,6 +253,7 @@ const Draggable: React.FC<Props> = ({
 
   const element = children(isDragging, {
     ref,
+    handleRef,
     style: getStyle(dragState, usePortal),
     ...getHandlers(dragState),
   });
