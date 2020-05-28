@@ -178,6 +178,7 @@ const PureBoard: React.FC<Props> = ({
                   dragAttributes={attributes}
                   contents={token.contents}
                   isDragging={isDragging}
+                  expandable={true}
                   color={token.color}
                   pos={{
                     x: pixelPos.x,

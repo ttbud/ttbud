@@ -25,7 +25,7 @@ import { DraggableDescriptor, DragStateType } from "./DragStateTypes";
 
 export interface DragAttributes {
   ref: React.Ref<any>;
-  style: CSSProperties;
+  style: DragStyles;
   onPointerDown?: PointerEventHandler;
   onTransitionEnd?: TransitionEventHandler;
 }
@@ -71,11 +71,13 @@ const dragStatesAreEqual = (
   return left.type === right.type && posAreEqual(left.offset, right.offset);
 };
 
+type DragStyles = Pick<CSSProperties, 'userSelect' | 'cursor' | 'transform' | 'zIndex' | 'transition' | 'position'>;
+
 const getStyle = (
   state: InternalDragState,
   usePortal: boolean
-): CSSProperties => {
-  const style: CSSProperties = {
+): DragStyles => {
+  const style: DragStyles = {
     userSelect: "none",
     cursor: state.type === DragStateType.Dragging ? "grabbing" : "grab",
   };

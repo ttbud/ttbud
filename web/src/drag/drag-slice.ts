@@ -38,7 +38,7 @@ interface DragMoveAction {
 
 interface DragReleaseAction {
   draggable: DraggableDescriptor;
-  destination?: DroppableLocation;
+  destination: DroppableLocation;
 }
 
 export interface DragEndAction {
@@ -113,14 +113,11 @@ const dragSlice = createSlice({
         `Draggable ${draggable.id} attempted to release a drag while another draggable is dragging`
       );
 
-      // If we don't have a destination, animate back to where we started
-      const finalDestination = destination ?? state.source;
-
       return {
         type: DragStateType.DragEndAnimating,
         draggable: state.draggable,
         source: state.source,
-        destination: finalDestination,
+        destination,
       };
     },
     /**
@@ -230,7 +227,8 @@ function releaseDrag(
           id: droppable?.id,
           ...location,
         }
-      : undefined;
+      : state.drag.source;
+
     dispatch(dragReleased({ draggable, destination }));
 
     // If we don't need to animate into position (because we're already there),

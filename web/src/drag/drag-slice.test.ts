@@ -299,6 +299,15 @@ it("skips animating if destination and current bounds are the same", () => {
   expect(store.getState().drag).toEqual(NOT_DRAGGING);
 });
 
+it("skips animating if destination is unset and original and current bounds are the same", () => {
+  const store = createTestStore({
+    ...DRAGGING,
+    bounds: ORIGIN_BOUNDS,
+  });
+  store.dispatch(releaseDrag(DRAGGABLE, ORIGIN_POS));
+  expect(store.getState().drag).toEqual(NOT_DRAGGING);
+});
+
 it("refuses to end drags that haven't started", () => {
   const store = createTestStore(NOT_DRAGGING);
   expect(() => store.dispatch(endDrag(DRAGGABLE))).toThrow(
