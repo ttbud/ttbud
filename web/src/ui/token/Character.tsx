@@ -1,4 +1,4 @@
-import React, { memo, MouseEvent } from "react";
+import React, { memo, MouseEvent, useLayoutEffect } from "react";
 import { Card, CardMedia, makeStyles, Theme } from "@material-ui/core";
 import clsx from "clsx";
 import { ICONS_BY_ID } from "../icons";
@@ -10,14 +10,11 @@ import { DragAttributes } from "../../drag/Draggable";
 import { Pos3d } from "../../util/shape-math";
 
 const useStyles = makeStyles<Theme, Props>({
-  character: ({ pos, color }) => ({
+  character: ({ color }) => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     boxSizing: "border-box",
-    position: pos ? "absolute" : "static",
-    top: pos?.y,
-    left: pos?.x,
     width: GRID_SIZE_PX,
     height: GRID_SIZE_PX,
     border: `3px solid ${toCssColor(color)}`,
@@ -46,7 +43,14 @@ function toCssColor(color: Color | undefined) {
 
 const Character: React.FC<Props> = memo((props) => {
   const classes = useStyles(props);
-  const { isDragging, contents, className, dragAttributes, onDelete } = props;
+  const {
+    isDragging,
+    contents,
+    className,
+    dragAttributes,
+    onDelete,
+    pos,
+  } = props;
 
   const renderContents = (contents: TokenContents) => {
     switch (contents.type) {
@@ -86,6 +90,12 @@ const Character: React.FC<Props> = memo((props) => {
       raised={isDragging}
       className={clsx(classes.character, className)}
       {...dragAttributes}
+      style={{
+        position: pos ? "absolute" : "static",
+        top: pos?.y,
+        left: pos?.x,
+        ...dragAttributes?.style,
+      }}
     >
       {renderContents(contents)}
     </Card>
