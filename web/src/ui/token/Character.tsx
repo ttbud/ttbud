@@ -1,4 +1,4 @@
-import React, { memo, MouseEvent, useLayoutEffect } from "react";
+import React, { memo, MouseEvent } from "react";
 import { Card, CardMedia, makeStyles, Theme } from "@material-ui/core";
 import clsx from "clsx";
 import { ICONS_BY_ID } from "../icons";
