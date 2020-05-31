@@ -209,6 +209,7 @@ const PureBoard: React.FC<Props> = ({
     shiftKey,
     buttons,
   }) => {
+    console.log("Got pointer down");
     if (isDragging) {
       return;
     }

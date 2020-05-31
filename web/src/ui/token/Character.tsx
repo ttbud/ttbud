@@ -146,6 +146,10 @@ const Character: React.FC<Props> = memo(
       }
     };
 
+    const dropEvent = (e: MouseEvent) => {
+      e.stopPropagation();
+    };
+
     const style = dragAttributes?.style;
 
     return (
@@ -157,6 +161,8 @@ const Character: React.FC<Props> = memo(
         onPointerLeave={() => setHovering(false)}
         onTransitionEnd={dragAttributes?.onTransitionEnd}
         ref={dragAttributes?.ref}
+        onPointerMove={dropEvent}
+        onPointerDown={dropEvent}
         style={{
           position: style?.position ?? pos ? "absolute" : "static",
           top: pos?.y,
