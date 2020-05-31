@@ -91,7 +91,9 @@ interface Props {
 }
 
 const mapStateToProps = (state: RootState) => ({
-  isDragging: state.drag.type === DragStateType.Dragging,
+  isDragging:
+    state.drag.type === DragStateType.Dragging ||
+    state.drag.type === DragStateType.DragEndAnimating,
   tokens: state.board.tokens,
   activeFloor: state.floorTray.activeFloor,
 });
@@ -207,6 +209,10 @@ const PureBoard: React.FC<Props> = ({
     shiftKey,
     buttons,
   }) => {
+    if (isDragging) {
+      return;
+    }
+
     const gridPos = toGridPos({ x, y });
     if (shiftKey && buttons === LEFT_MOUSE) {
       onPingCreated(gridPos);
