@@ -65,6 +65,7 @@ export default class BoardSyncer {
 
   private sendNetworkUpdates() {
     if (!this.apiClient.connected()) {
+      this.unackedUpdates.clear();
       return;
     }
 
