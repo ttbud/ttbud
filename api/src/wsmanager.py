@@ -1,9 +1,9 @@
+import logging
 import asyncio
 import json
 from dataclasses import asdict
 from typing import Union, List, Tuple, Dict, Any
 from uuid import UUID
-from traceback import print_exc
 
 import websockets
 
@@ -23,6 +23,9 @@ def is_valid_uuid(uuid_string):
     return val.hex == uuid_string.replace('-', '')
 
 
+logger = logging.getLogger(__name__)
+
+
 class WebsocketManager:
     def __init__(self, port, gss):
         self._loop = asyncio.new_event_loop()
@@ -33,21 +36,21 @@ class WebsocketManager:
 
     def start_server(self) -> None:
         try:
-            ws_server = websockets.serve(self.consumer_handler, "0.0.0.0", self.port,)
+            ws_server = websockets.serve(self.consumer_handler, '0.0.0.0', self.port,)
             self._loop.run_until_complete(ws_server)
         except OSError as e:
-            print(e)
+            logger.exception('Failed to start websocket server', exc_info=e)
         else:
             self._loop.run_forever()
 
     async def consumer_handler(
         self, client: websockets.WebSocketServerProtocol, room_id: str
     ) -> None:
-        room_id = room_id.lstrip("/")
+        room_id = room_id.lstrip('/')
         if not is_valid_uuid(room_id):
-            print(f"Invalid room UUID: {room_id}")
+            logger.info(f'Invalid room UUID: {room_id}')
             await client.close(
-                code=ERR_INVALID_UUID, reason=f"Invalid room UUID: {room_id}"
+                code=ERR_INVALID_UUID, reason=f'Invalid room UUID: {room_id}'
             )
             return
 
@@ -73,7 +76,7 @@ class WebsocketManager:
                     json.dumps(asdict(message.contents, dict_factory=ignore_none))
                 )
             else:
-                print(
+                logger.info(
                     f'Cannot send message to target: {target} because it does not exist'
                 )
 
@@ -86,7 +89,7 @@ class WebsocketManager:
         try:
             message = json.loads(json_message)
         except json.JSONDecodeError as e:
-            print(e)
+            logger.info('invalid json received from client', exc_info=e)
             return
         updates = message['updates']
 
@@ -96,8 +99,7 @@ class WebsocketManager:
             ):
                 await self.send_message(reply)
         except Exception as err:
-            print(f'Error: {err}')
-            print_exc()
+            logger.exception('Failed to process updates', exc_info=err)
             await self.send_message(
                 Message(
                     [hash(client)],
