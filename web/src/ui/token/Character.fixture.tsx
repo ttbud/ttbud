@@ -7,17 +7,20 @@ const ICON = DEFAULT_CHARACTER_ICONS[0];
 const DEFAULT_PROPS = {
   contents: { type: ContentType.Icon, iconId: ICON.id } as IconContents,
   isDragging: false,
+  expandable: true,
 };
 
 export default {
-  Default: <Character {...DEFAULT_PROPS} />,
+  Icon: <Character {...DEFAULT_PROPS}
+    contents={{ type: ContentType.Icon, iconId: ICON.id }}
+  />,
   Text: (
     <Character
       {...DEFAULT_PROPS}
       contents={{ type: ContentType.Text, text: "LP" }}
     />
   ),
-  Colored: (
+  Color: (
     <Character {...DEFAULT_PROPS} color={{ red: 255, green: 0, blue: 0 }} />
   ),
 };

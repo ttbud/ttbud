@@ -156,9 +156,10 @@ const Draggable: React.FC<Props> = ({
     if (dragState.type !== DragStateType.Dragging || !usePortal) {
       return;
     }
-    assert(ref.current, `Draggable ${descriptor.id} ref not set`);
+    const dragEl = handleRef.current ?? ref.current;
+    assert(dragEl, `Draggable ${descriptor} did not assign its ref`);
 
-    const bounds = ref.current.getBoundingClientRect();
+    const bounds = dragEl.getBoundingClientRect();
     dispatch(
       portalDrag({
         draggable: descriptor,
@@ -177,9 +178,10 @@ const Draggable: React.FC<Props> = ({
       if (e.buttons !== LEFT_MOUSE || modifierKeyPressed(e)) {
         return;
       }
-      assert(handleRef.current, `Draggable ${descriptor} did not assign its ref`);
+      const dragEl = handleRef.current ?? ref.current;
+      assert(dragEl, `Draggable ${descriptor} did not assign its ref`);
 
-      const bounds = handleRef.current.getBoundingClientRect();
+      const bounds = dragEl.getBoundingClientRect();
       const mousePos = { x: e.clientX, y: e.clientY };
 
       dispatch(

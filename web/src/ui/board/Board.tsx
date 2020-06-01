@@ -204,6 +204,7 @@ const PureBoard: React.FC<Props> = ({
   });
 
   const onPointerDown: PointerEventHandler = ({
+    target,
     clientX: x,
     clientY: y,
     shiftKey,
@@ -218,6 +219,8 @@ const PureBoard: React.FC<Props> = ({
       onPingCreated(gridPos);
     } else if (
       buttons === LEFT_MOUSE &&
+      // Only draw if they're actually clicking on the board
+      target === container.current &&
       !tokens.find((token) => posAreEqual(token.pos, gridPos))
     ) {
       onFloorCreated(activeFloor, gridPos);

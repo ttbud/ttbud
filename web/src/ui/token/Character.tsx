@@ -20,20 +20,20 @@ import PaletteIcon from "@material-ui/icons/Palette";
 import ResizeIcon from "@material-ui/icons/Crop";
 
 interface StyleProps {
+  resizing: boolean;
   expanded: boolean;
-  pos?: Pos3d;
   color?: Color;
 }
 
 const useStyles = makeStyles<Theme, StyleProps>((theme) => ({
-  character: ({ pos, color, expanded }) => ({
+  character: ({ color, expanded, resizing }) => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     boxSizing: "border-box",
+    cursor: resizing ? "nwse-resize" : undefined,
     width: expanded ? GRID_SIZE_PX + 84 : GRID_SIZE_PX,
     height: GRID_SIZE_PX,
-    zIndex: expanded ? 10_000 : pos?.z,
     border: `3px solid ${toCssColor(color)}`,
     transition: theme.transitions.create(["width", "box-shadow"], {
       duration: theme.transitions.duration.short,
@@ -54,6 +54,18 @@ const useStyles = makeStyles<Theme, StyleProps>((theme) => ({
     }),
     width: expanded ? 84 : 0,
   }),
+  resizeIndicator: {
+    position: "absolute",
+    bottom: -4,
+    right: -1,
+    // Makes a triangle facing to down and right
+    width: 0,
+    height: 0,
+    borderTop: "6px solid transparent",
+    borderBottom: "6px solid transparent",
+    borderLeft: "6px solid gray",
+    transform: "rotate(45deg)",
+  },
 }));
 
 interface Props {
@@ -88,11 +100,13 @@ const Character: React.FC<Props> = memo(
   }) => {
     const [expanded, setExpanded] = useState(false);
     const [hovering, setHovering] = useState(false);
+    const [resizing, setResizing] = useState(false);
 
-    const classes = useStyles({ pos, color, expanded });
+    const classes = useStyles({ color, expanded, resizing });
+    console.log({ expanded, hovering, resizing, dragging: isDragging });
 
     useEffect(() => {
-      if (expandable && hovering && !isDragging) {
+      if (expandable && hovering && !isDragging && !resizing) {
         const timeoutId = setTimeout(
           () => setExpanded(true),
           HOVER_EXPAND_DELAY_MS
@@ -102,6 +116,17 @@ const Character: React.FC<Props> = memo(
         setExpanded(false);
       }
     }, [hovering, isDragging, expandable]);
+
+    useEffect(() => {
+      if (expanded && !isDragging) {
+        const listener = () => {
+          console.log("called");
+          setResizing(false);
+        };
+        window.addEventListener("click", listener);
+        return () => window.removeEventListener("click", listener);
+      }
+    }, [resizing, isDragging]);
 
     const renderContents = (
       contents: TokenContents,
@@ -123,6 +148,18 @@ const Character: React.FC<Props> = memo(
       }
     };
 
+    const onContextMenu = (e: MouseEvent) => {
+      if (onDelete) {
+        e.preventDefault();
+        onDelete();
+      }
+    };
+
+    const onResizeClicked = () => {
+      setExpanded(false);
+      setResizing(true);
+    };
+
     const renderIcon = (
       icon: Icon,
       dragAttributes: Pick<DragAttributes, "onPointerDown" | "style" | "ref">
@@ -139,38 +176,24 @@ const Character: React.FC<Props> = memo(
       );
     };
 
-    const onContextMenu = (e: MouseEvent) => {
-      if (onDelete) {
-        e.preventDefault();
-        onDelete();
-      }
-    };
-
-    const dropEvent = (e: MouseEvent) => {
-      e.stopPropagation();
-    };
-
     const style = dragAttributes?.style;
-
-    return (
+    const renderCharacter = () => (
       <Card
         onContextMenu={onContextMenu}
-        raised={isDragging || hovering}
+        raised={isDragging || hovering || resizing}
         className={clsx(classes.character, className)}
         onPointerEnter={() => setHovering(true)}
         onPointerLeave={() => setHovering(false)}
         onTransitionEnd={dragAttributes?.onTransitionEnd}
         ref={dragAttributes?.ref}
-        onPointerMove={dropEvent}
-        onPointerDown={dropEvent}
         style={{
-          position: style?.position ?? pos ? "absolute" : "static",
+          position: style?.position ?? pos ? "absolute" : "relative",
           top: pos?.y,
           left: pos?.x,
+          zIndex: style?.zIndex ?? expanded ? 10_000 : pos?.z,
           userSelect: style?.userSelect,
           transform: style?.transform,
           transition: style?.transition,
-          zIndex: style?.zIndex,
         }}
       >
         {renderContents(contents, {
@@ -187,19 +210,28 @@ const Character: React.FC<Props> = memo(
         </Fade>
         <div
           className={classes.actions}
-          style={{ width: !isDragging && expanded ? 84 : 0 }}
+          style={{ width: isDragging || !expanded ? 0 : 84 }}
         >
           <CardActions>
             <IconButton aria-label="choose character color" size={"small"}>
               <PaletteIcon />
             </IconButton>
-            <IconButton aria-label="resize" size={"small"}>
+            <IconButton
+              aria-label="resize"
+              size={"small"}
+              onClick={onResizeClicked}
+            >
               <ResizeIcon />
             </IconButton>
           </CardActions>
         </div>
+        <Fade in={resizing && !isDragging}>
+          <div className={classes.resizeIndicator} />
+        </Fade>
       </Card>
     );
+
+    return renderCharacter();
   }
 );
 
