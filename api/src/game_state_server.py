@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import logging
 from typing import Union, Hashable, AsyncIterator, Iterable, Optional, Dict, Tuple, List
 from copy import deepcopy
 
@@ -16,6 +17,9 @@ from .ws_close_codes import ERR_ROOM_FULL
 from .colors import colors
 
 
+logger = logging.getLogger(__name__)
+
+
 MAX_USERS_PER_ROOM = 20
 
 
@@ -30,9 +34,9 @@ def assign_colors(tokens: List[Token]) -> None:
     for token in tokens:
         if not token.color_rgb:
             if not available_colors:
-                print(f'Max colors reached for icon ' f'{content_id(token.contents)}')
+                logger.info(f'Max colors reached for icon {content_id(token.contents)}')
                 return
-            print(f'Add color {available_colors[0]} to token {token.id}')
+            logger.info(f'Add color {available_colors[0]} to token {token.id}')
             token.color_rgb = available_colors.pop(0)
 
 
@@ -103,7 +107,9 @@ class GameStateServer:
                     except (WrongTypeError, MissingValueError, TypeError) as e:
                         # Don't raise here. Loading a room minus any tokens that have
                         # been corrupted is still valuable.
-                        print(e)
+                        logger.exception(
+                            f'Corrupted room {room_id}', stack_info=True, exc_info=e
+                        )
                     else:
                         self._create_or_update_token(token, room_id)
         return Message(
@@ -118,17 +124,18 @@ class GameStateServer:
                 self.save_room(room_id)
                 del self._rooms[room_id]
             else:
-                print(f'{len(self._rooms[room_id].clients)} clients remaining')
+                logger.info(
+                    f'{len(self._rooms[room_id].clients)} clients ' f'remaining'
+                )
 
     def save_all(self) -> None:
-        print('Saving all rooms')
         for room in self._rooms.values():
             if room.game_state:
                 self.save_room(room.room_id)
-        print('Done saving all rooms')
+        logger.info('All rooms saved')
 
     def save_room(self, room_id: str) -> None:
-        print(f'Saving room {room_id}')
+        logger.info(f'Saving room {room_id}')
         data_to_store = []
         for game_object in self._rooms[room_id].game_state.values():
             if isinstance(game_object, Token):
@@ -166,7 +173,7 @@ class GameStateServer:
                 try:
                     token = from_dict(data_class=Token, data=data)
                 except (WrongTypeError, MissingValueError, TypeError) as e:
-                    print(e)
+                    logger.info(f'Invalid request format {data}', exc_info=e)
                     yield Message(
                         {client_id},
                         MessageContents(
@@ -175,6 +182,7 @@ class GameStateServer:
                     )
                 else:
                     if not self._is_valid_token(token):
+                        logger.info(f'Invalid token data {token}')
                         yield Message(
                             {client_id},
                             MessageContents(
@@ -182,6 +190,9 @@ class GameStateServer:
                             ),
                         )
                     if not self._is_valid_position(token, room_id):
+                        logger.info(
+                            f'Token {token.id} cannot move to occupied position'
+                        )
                         yield Message(
                             {client_id},
                             MessageContents(
@@ -224,7 +235,7 @@ class GameStateServer:
                     self._create_ping(ping, room_id)
                     pings_created.append(ping.id)
             else:
-                print(f'Invalid action: {action}')
+                logger.info(f'Invalid action: {action}')
                 yield Message(
                     {client_id},
                     MessageContents('error', f'Invalid action: {action}', request_id),
@@ -259,7 +270,7 @@ class GameStateServer:
         return True
 
     def _create_or_update_token(self, token: Token, room_id: str) -> None:
-        print(f'New token: {token}')
+        logger.info(f'New token: {token}')
         if self._rooms[room_id].game_state.get(token.id):
             self._remove_positions(token.id, room_id)
         elif token.type.lower() == 'character':
