@@ -17,10 +17,11 @@ from src.colors import colors
 TEST_ROOM_ID = 'test_room'
 TEST_CLIENT_ID = 'test_client'
 TEST_REQUEST_ID = 'test_request'
+OTHER_REQUEST_ID = 'other_request'
 VALID_TOKEN = Token(
     'some_id',
     'character',
-    IconTokenContents("some_icon_id"),
+    IconTokenContents('some_icon_id'),
     0,
     0,
     0,
@@ -107,6 +108,47 @@ async def test_duplicate_update_in_different_room(gss):
     )
     assert reply1[0].contents.data[0] == VALID_TOKEN
     assert reply2[0].contents.data[0] == VALID_TOKEN
+
+
+@pytest.mark.asyncio
+async def test_update_in_occupied_position(gss_with_client):
+    await async_collect(
+        gss_with_client.process_updates(
+            [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
+        )
+    )
+    other_valid_token = Token(
+        'some_other_id',
+        'character',
+        IconTokenContents('some_other_icon_id'),
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        colors[0],
+    )
+    reply = await async_collect(
+        gss_with_client.process_updates(
+            [{'action': 'create', 'data': asdict(other_valid_token)}],
+            TEST_ROOM_ID,
+            TEST_CLIENT_ID,
+            OTHER_REQUEST_ID,
+        )
+    )
+    # FIXME: Brittle
+    assert reply == [
+        Message(
+            {TEST_CLIENT_ID},
+            MessageContents(
+                'error', 'That position is occupied, bucko', OTHER_REQUEST_ID
+            ),
+        ),
+        Message(
+            {TEST_CLIENT_ID}, MessageContents('state', [VALID_TOKEN], OTHER_REQUEST_ID)
+        ),
+    ]
 
 
 @pytest.mark.asyncio

@@ -189,17 +189,21 @@ class GameStateServer:
                                 'error', f'Received a bad token: {data}', request_id
                             ),
                         )
-                    if not self._is_valid_position(token, room_id):
-                        logger.info(
-                            f'Token {token.id} cannot move to occupied position'
-                        )
-                        yield Message(
-                            {client_id},
-                            MessageContents(
-                                'error', 'That position is occupied, bucko', request_id
-                            ),
-                        )
-                    self._create_or_update_token(token, room_id)
+                    else:
+                        if self._is_valid_position(token, room_id):
+                            self._create_or_update_token(token, room_id)
+                        else:
+                            logger.info(
+                                f'Token {token.id} cannot move to occupied position'
+                            )
+                            yield Message(
+                                {client_id},
+                                MessageContents(
+                                    'error',
+                                    'That position is occupied, bucko',
+                                    request_id,
+                                ),
+                            )
             elif action == 'delete':
                 if type(data) != str:
                     yield Message(
