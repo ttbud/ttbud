@@ -8,6 +8,8 @@ from uuid import UUID
 import timber
 import websockets
 
+from websockets import ConnectionClosedError
+
 from .game_state_server import Message, MessageContents, InvalidConnectionException
 from .ws_close_codes import ERR_INVALID_UUID
 
@@ -66,6 +68,10 @@ class WebsocketManager:
         try:
             async for message in client:
                 asyncio.ensure_future(self.consume(message, room_id, client))
+        except ConnectionClosedError:
+            # Disconnecting is a perfectly normal thing to happen, so just
+            # continue cleaning up connection state
+            pass
         finally:
             self.gss.connection_dropped(hash(client), room_id)
 

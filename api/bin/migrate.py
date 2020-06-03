@@ -3,12 +3,12 @@ from typing import Optional
 
 from dacite import from_dict
 
-from src.config import room_store_dir
+from src.config import config
 from src.colors import Color
 from src.game_components import Token as V2Token, IconTokenContents
 from src.room_store import FileRoomStore
 
-store = FileRoomStore(room_store_dir)
+store = FileRoomStore(config.room_store_dir)
 
 
 @dataclass
