@@ -12,7 +12,7 @@ from src.room_store import MemoryRoomStore
 from src.game_components import Token, Ping, IconTokenContents
 from src.async_collect import async_collect
 from src.colors import colors
-
+from tests.fake_apm import fake_transaction
 
 TEST_ROOM_ID = 'test_room'
 TEST_CLIENT_ID = 'test_client'
@@ -40,13 +40,11 @@ VALID_PING = Ping('ping_id', 'ping', 0, 0)
 @pytest.fixture
 def gss():
     rs = MemoryRoomStore('/my/path/to/room/storage/')
-    return GameStateServer(rs)
+    return GameStateServer(rs, fake_transaction)
 
 
 @pytest.fixture
-def gss_with_client():
-    rs = MemoryRoomStore('/my/path/to/room/storage/')
-    gss = GameStateServer(rs)
+def gss_with_client(gss):
     gss.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
     return gss
 

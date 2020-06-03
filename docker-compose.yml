@@ -1,11 +1,14 @@
-version: '3'
+version: "3"
 services:
   api:
     image: ttbud-api
     build: api
     environment:
+      ENVIRONMENT:
       JSON_LOGS:
       DOMAIN:
+      SCOUT_KEY:
+      SCOUT_MONITOR:
       PORT: ${API_WEBSOCKET_PORT}
       ROOM_STORE_DIR: /var/ttbud/rooms
     volumes:
@@ -22,10 +25,10 @@ services:
   ingress:
     image: abiosoft/caddy
     environment:
-      DOMAIN: 
+      DOMAIN:
       CERT_CONFIG:
       API_WEBSOCKET_PORT:
-      ACME_AGREE: 'true'
+      ACME_AGREE: "true"
     volumes:
       - static-assets:/var/www/ttbud/web
       - ./infra/ingress/Caddyfile:/etc/Caddyfile
