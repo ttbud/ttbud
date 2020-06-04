@@ -23,7 +23,7 @@ const dropOldStateMigrator = (
 export const persistConfig = {
   key: "settings",
   storage,
-  whitelist: ["characterTray", "floorTray"],
+  whitelist: ["characterTray", "floorTray", "settings"],
   version: CURRENT_VERSION,
   migrate: dropOldStateMigrator,
 };

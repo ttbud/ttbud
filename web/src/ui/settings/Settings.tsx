@@ -1,5 +1,6 @@
 import {
   Fab,
+  IconButton,
   List,
   ListItem,
   ListItemText,
@@ -8,12 +9,17 @@ import {
   Popover,
   Snackbar,
   Switch,
+  Tooltip,
   Typography,
 } from "@material-ui/core";
-import SettingsIcon from "@material-ui/icons/Settings";
+import CloseIcon from "@material-ui/icons/Close";
+import MoreVertIcon from "@material-ui/icons/MoreVert";
 import React, { memo, MouseEvent, useState } from "react";
 import ConfirmationDialog from "../confirm/ConfirmationDialog";
 import isMac from "../../util/isMac";
+import { connect } from "react-redux";
+import { RootState } from "../../store/rootReducer";
+import { toggleDebug, dismissTourPrompt } from "./settings-slice";
 
 const FIVE_SECONDS_MS = 5000;
 
@@ -31,19 +37,40 @@ const useStyles = makeStyles((theme) => ({
     margin: "auto",
     color: "black",
   },
+  tourPrompt: {
+    display: "flex",
+    alignItems: "center",
+  },
+  tourPromptText: {
+    marginLeft: "5px",
+  },
+  tourPromptCloseBtn: {
+    marginLeft: "5px",
+  },
 }));
 
 interface Props {
   className?: string;
   debugEnabled: boolean;
+  showTourPrompt: boolean;
   onDebugToggled: () => void;
   onClearMap: () => void;
+  onTourClicked: () => void;
+  onTourPromptDismissed: () => void;
 }
 
 const searchShortcut = isMac() ? "command+f" : "control+f";
 
-const Settings: React.FC<Props> = memo(
-  ({ className, debugEnabled, onClearMap, onDebugToggled }) => {
+const PureSettings: React.FC<Props> = memo(
+  ({
+    className,
+    showTourPrompt,
+    debugEnabled,
+    onClearMap,
+    onDebugToggled,
+    onTourClicked,
+    onTourPromptDismissed,
+  }) => {
     const classes = useStyles();
     const [anchorEl, setAnchorEl] = useState<Element | null>(null);
     const [isConfirming, setConfirming] = useState(false);
@@ -52,8 +79,10 @@ const Settings: React.FC<Props> = memo(
     );
 
     const open = Boolean(anchorEl);
-
-    const onClick = (e: MouseEvent) => setAnchorEl(e.currentTarget);
+    const onClick = (e: MouseEvent) => {
+      onTourPromptDismissed();
+      setAnchorEl(e.currentTarget);
+    };
 
     const onClose = () => setAnchorEl(null);
 
@@ -75,16 +104,50 @@ const Settings: React.FC<Props> = memo(
 
     const onHideCopyNotification = () => setShowingCopyNotification(false);
 
+    const onStartTour = () => {
+      setAnchorEl(null);
+      onTourClicked();
+    };
+
     return (
       <>
-        <Fab
-          className={className}
-          size="small"
-          onClick={onClick}
-          aria-label={"Settings"}
+        <Tooltip
+          open={showTourPrompt}
+          title={
+            <div className={classes.tourPrompt}>
+              <Typography
+                className={classes.tourPromptText}
+                color="inherit"
+                variant="body1"
+              >
+                Click here for a tour
+              </Typography>
+              <IconButton
+                className={classes.tourPromptCloseBtn}
+                onClick={onTourPromptDismissed}
+                color={"inherit"}
+                size={"small"}
+                aria-label={"dismiss"}
+              >
+                <CloseIcon />
+              </IconButton>
+            </div>
+          }
+          arrow
+          interactive
+          placement={"top-end"}
         >
-          <SettingsIcon />
-        </Fab>
+          <Fab
+            data-tour={"settings"}
+            className={className}
+            size="small"
+            onClick={onClick}
+            aria-label={"Settings"}
+            color={"primary"}
+          >
+            <MoreVertIcon />
+          </Fab>
+        </Tooltip>
         <ConfirmationDialog
           open={isConfirming}
           title="Are you sure you want to clear the map"
@@ -127,6 +190,7 @@ const Settings: React.FC<Props> = memo(
                   className={classes.settingMainText}
                 />
                 <Switch
+                  color={"primary"}
                   edge="end"
                   inputProps={{
                     "aria-labelledby": "settings-debug-logs-label",
@@ -136,7 +200,17 @@ const Settings: React.FC<Props> = memo(
                 />
               </ListItem>
             </List>
-            <List subheader={<ListSubheader>Actions</ListSubheader>}>
+            <List subheader={<ListSubheader>Tour</ListSubheader>}>
+              <ListItem
+                button
+                dense={true}
+                component="button"
+                onClick={onStartTour}
+              >
+                <ListItemText>Start Tour</ListItemText>
+              </ListItem>
+            </List>
+            <List subheader={<ListSubheader>Room Actions</ListSubheader>}>
               <ListItem
                 button
                 component="button"
@@ -144,7 +218,7 @@ const Settings: React.FC<Props> = memo(
                 className={classes.settingMainText}
                 onClick={openConfirmationDialog}
               >
-                <ListItemText primary="Clear Map" />
+                <ListItemText primary="Clear Room" />
               </ListItem>
               <ListItem button dense={true} component="a" href={"/"}>
                 <ListItemText>New Room</ListItemText>
@@ -158,7 +232,7 @@ const Settings: React.FC<Props> = memo(
                 <ListItemText>Share Room</ListItemText>
               </ListItem>
             </List>
-            <List subheader={<ListSubheader>Keyboard Shortcuts</ListSubheader>}>
+            <List subheader={<ListSubheader>Commands</ListSubheader>}>
               <ListItem dense={true}>
                 <ListItemText primary="Search" />
                 <Typography color="textSecondary">
@@ -189,4 +263,16 @@ const Settings: React.FC<Props> = memo(
   }
 );
 
+const mapStateToProps = (state: RootState) => ({
+  showTourPrompt: state.settings.showTourPrompt,
+  debugEnabled: state.settings.debug,
+});
+
+const dispatchProps = {
+  onDebugToggled: toggleDebug,
+  onTourPromptDismissed: dismissTourPrompt,
+};
+
+const Settings = connect(mapStateToProps, dispatchProps)(PureSettings);
 export default Settings;
+export { PureSettings };

@@ -1,5 +1,5 @@
 import { makeStyles } from "@material-ui/core";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { replaceTokens } from "../board/board-slice";
 import Board from "../board/Board";
@@ -10,10 +10,11 @@ import CharacterTray from "../tray/CharacterTray";
 import FloorTray from "../tray/FloorTray";
 import { RootState } from "../../store/rootReducer";
 import isMac from "../../util/isMac";
-import { startSearching, stopSearching, toggleDebug } from "./app-slice";
+import { startSearching, stopSearching } from "./app-slice";
 import ConnectionNotifier from "../connection-state/ConnectionNotifier";
 import { v4 as uuid } from "uuid";
 import { BoardStateApiClient } from "../../network/BoardStateApiClient";
+import Tour from "../tour/Tour";
 
 const useStyles = makeStyles((theme) => ({
   app: {
@@ -60,10 +61,10 @@ interface Props {
 const App: React.FC<Props> = ({ apiClient }) => {
   const classes = useStyles();
   const dispatch = useDispatch();
-  const { debugEnabled, searching } = useSelector((state: RootState) => ({
-    debugEnabled: state.app.debug,
+  const { searching } = useSelector((state: RootState) => ({
     searching: state.app.searching,
   }));
+  const [touring, setTouring] = useState(false);
 
   useEffect(() => {
     const path = window.location.pathname.split("/room/")[1];
@@ -103,33 +104,34 @@ const App: React.FC<Props> = ({ apiClient }) => {
 
   const onClearMap = () => dispatch(replaceTokens([]));
 
-  const onDebugToggled = useCallback(() => dispatch(toggleDebug()), [dispatch]);
   const reconnect = () => apiClient.reconnect();
 
   return (
-    <div className={classes.app}>
-      <Board />
-      <SearchDialog
-        open={searching}
-        icons={ICONS}
-        onClose={onSearchDialogClose}
-      />
-      <div className={classes.characterTray}>
-        <CharacterTray />
+    <>
+      <Tour isOpen={touring} onCloseClicked={() => setTouring(false)} />
+      <div className={classes.app}>
+        <Board />
+        <SearchDialog
+          open={searching}
+          icons={ICONS}
+          onClose={onSearchDialogClose}
+        />
+        <div className={classes.characterTray}>
+          <CharacterTray />
+        </div>
+        <div className={classes.floorTray}>
+          <FloorTray />
+        </div>
+        <Settings
+          className={classes.settings}
+          onClearMap={onClearMap}
+          onTourClicked={() => setTouring(true)}
+        />
+        <div className={classes.connectionNotifier}>
+          <ConnectionNotifier onReconnectClick={reconnect} />
+        </div>
       </div>
-      <div className={classes.floorTray}>
-        <FloorTray />
-      </div>
-      <Settings
-        className={classes.settings}
-        onClearMap={onClearMap}
-        debugEnabled={debugEnabled}
-        onDebugToggled={onDebugToggled}
-      />
-      <div className={classes.connectionNotifier}>
-        <ConnectionNotifier onReconnectClick={reconnect} />
-      </div>
-    </div>
+    </>
   );
 };
 

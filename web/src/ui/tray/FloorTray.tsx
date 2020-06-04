@@ -167,7 +167,7 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
   };
 
   return (
-    <Paper ref={containerRef}>
+    <Paper ref={containerRef} data-tour="floor-tray">
       <SortableList
         id={DROPPABLE_IDS.FLOOR_TRAY}
         items={items}

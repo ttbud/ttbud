@@ -1,12 +1,24 @@
 import { render } from "@testing-library/react";
 import React from "react";
-import Settings from "./Settings";
+import { PureSettings } from "./Settings";
 import noop from "../../util/noop";
+import { fireEvent } from "@testing-library/dom";
+
+const DEFAULT_PROPS = {
+  showTourPrompt: false,
+  debugEnabled: false,
+  tutorialPrompt: false,
+  onTutorialDismissed: noop,
+  onDebugToggled: noop,
+  onClearMap: noop,
+  onTourClicked: noop,
+  onTourPromptDismissed: noop,
+};
 
 describe("Settings", () => {
   it("opens the settings menu when the fab is clicked", () => {
     const { getByText, getByLabelText } = render(
-      <Settings debugEnabled={false} onDebugToggled={noop} onClearMap={noop} />
+      <PureSettings {...DEFAULT_PROPS} />
     );
 
     getByLabelText("Settings").click();
@@ -15,7 +27,7 @@ describe("Settings", () => {
 
   it("shows the debug toggle switched to off when debugEnabled is false", () => {
     const { getByLabelText, getByRole } = render(
-      <Settings debugEnabled={false} onDebugToggled={noop} onClearMap={noop} />
+      <PureSettings {...DEFAULT_PROPS} debugEnabled={false} />
     );
 
     getByLabelText("Settings").click();
@@ -26,7 +38,7 @@ describe("Settings", () => {
 
   it("shows the debug toggle switched to on when debugEnabled is true", () => {
     const { getByLabelText, getByRole } = render(
-      <Settings debugEnabled={true} onDebugToggled={noop} onClearMap={noop} />
+      <PureSettings {...DEFAULT_PROPS} debugEnabled={true} />
     );
 
     getByLabelText("Settings").click();
@@ -37,11 +49,7 @@ describe("Settings", () => {
     const onDebugToggled = jest.fn();
 
     const { getByLabelText, getByRole } = render(
-      <Settings
-        debugEnabled={true}
-        onDebugToggled={onDebugToggled}
-        onClearMap={noop}
-      />
+      <PureSettings {...DEFAULT_PROPS} onDebugToggled={onDebugToggled} />
     );
 
     getByLabelText("Settings").click();
@@ -54,15 +62,11 @@ describe("Settings", () => {
     const onClearMap = jest.fn();
 
     const { getByLabelText, getByText } = render(
-      <Settings
-        debugEnabled={true}
-        onDebugToggled={noop}
-        onClearMap={onClearMap}
-      />
+      <PureSettings {...DEFAULT_PROPS} onClearMap={onClearMap} />
     );
 
     getByLabelText("Settings").click();
-    getByText("Clear Map").click();
+    getByText("Clear Room").click();
     getByText("Clear").click();
 
     expect(onClearMap).toBeCalledTimes(1);
@@ -72,15 +76,11 @@ describe("Settings", () => {
     const onClearMap = jest.fn();
 
     const { getByLabelText, getByText } = render(
-      <Settings
-        debugEnabled={true}
-        onDebugToggled={noop}
-        onClearMap={onClearMap}
-      />
+      <PureSettings {...DEFAULT_PROPS} onClearMap={onClearMap} />
     );
 
     getByLabelText("Settings").click();
-    getByText("Clear Map").click();
+    getByText("Clear Room").click();
     getByText("Cancel").click();
 
     expect(onClearMap).not.toBeCalled();
@@ -88,7 +88,7 @@ describe("Settings", () => {
 
   it("copies url to clipboard", async () => {
     const { getByLabelText, getByText, findByText } = render(
-      <Settings debugEnabled={false} onDebugToggled={noop} onClearMap={noop} />
+      <PureSettings {...DEFAULT_PROPS} />
     );
 
     const clipboardWriteFn = jest.fn();
@@ -104,5 +104,55 @@ describe("Settings", () => {
     getByText("Share Room").click();
     expect(clipboardWriteFn).toBeCalledWith(window.location.href);
     expect(await findByText("URL copied to clipboard")).toBeVisible();
+  });
+
+  it("shows tour prompt when enabled", async () => {
+    const { getByText } = render(
+      <PureSettings {...DEFAULT_PROPS} showTourPrompt={true} />
+    );
+
+    expect(getByText("Click here for a tour")).toBeVisible();
+  });
+
+  it("calls onTourPromptDismissed when prompt close button is clicked", async () => {
+    const onTourPromptDismissed = jest.fn();
+    const { getByLabelText } = render(
+      <PureSettings
+        {...DEFAULT_PROPS}
+        showTourPrompt={true}
+        onTourPromptDismissed={onTourPromptDismissed}
+      />
+    );
+
+    fireEvent.click(getByLabelText("dismiss"));
+    expect(onTourPromptDismissed).toBeCalled();
+  });
+
+  it("dismisses tour prompt when settings are opened", async () => {
+    const onTourPromptDismissed = jest.fn();
+    const { getByLabelText } = render(
+      <PureSettings
+        {...DEFAULT_PROPS}
+        showTourPrompt={true}
+        onTourPromptDismissed={onTourPromptDismissed}
+      />
+    );
+
+    fireEvent.click(getByLabelText("Settings"));
+    expect(onTourPromptDismissed).toBeCalled();
+  });
+
+  it("dismisses settings when start tour is clicked", async () => {
+    const onTourClicked = jest.fn();
+
+    const { getByLabelText, getByText, queryByText } = render(
+      <PureSettings {...DEFAULT_PROPS} onTourClicked={onTourClicked} />
+    );
+
+    fireEvent.click(getByLabelText("Settings"));
+    fireEvent.click(getByText("Start Tour"));
+
+    expect(onTourClicked).toBeCalledTimes(1);
+    expect(queryByText("Start Tour")).not.toBeVisible();
   });
 });
