@@ -1,12 +1,8 @@
 import { makeStyles, Paper } from "@material-ui/core";
 import ToggleButton from "@material-ui/lab/ToggleButton";
-import React, { createRef, memo, useCallback, useMemo, useRef } from "react";
+import React, { memo, useCallback, useRef, MouseEvent } from "react";
 import { CARD_SIZE } from "../../config";
-import {
-  DraggableDescriptor,
-  DraggableType,
-  TokenBlueprintDraggable,
-} from "../../drag/DragStateTypes";
+import { DraggableDescriptor } from "../../drag/DragStateTypes";
 import { assert } from "../../util/invariants";
 import { Bounds } from "../../util/shape-math";
 import { DROPPABLE_IDS } from "../DroppableIds";
@@ -17,7 +13,7 @@ import { removeIcon, setActiveFloor } from "./floor-tray-slice";
 import { connect } from "react-redux";
 import { contentId, ContentType, TokenContents } from "../../types";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
-import assignRef from "../../util/assignRef";
+import useTrayItems from "./useTrayItems";
 
 interface Props {
   blueprints: TokenContents[];
@@ -53,32 +49,17 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
 
   const containerRef = useRef<HTMLElement>();
 
-  const blueprintRefs = useMemo(() => {
-    const refs = new Map<string, React.MutableRefObject<HTMLElement | null>>();
-    for (const blueprint of blueprints) {
-      refs.set(contentId(blueprint), createRef<HTMLElement>());
-    }
-    return refs;
-  }, [blueprints]);
-
-  const items = blueprints.map((blueprint) => ({
-    blueprint,
-    descriptor: {
-      type: DraggableType.TokenBlueprint,
-      id: `${DROPPABLE_IDS.FLOOR_TRAY}-${contentId(blueprint)}`,
-      contents: blueprint,
-    } as TokenBlueprintDraggable,
-  }));
+  const items = useTrayItems(DROPPABLE_IDS.FLOOR_TRAY, blueprints);
 
   const getTargets = useCallback(
     (draggable: DraggableDescriptor, bounds: Bounds): Targets => {
       const existingElementsBounds = [];
-      for (const itemRef of blueprintRefs.values()) {
+      for (const item of items) {
         assert(
-          itemRef.current,
+          item.ref?.current,
           "Floor tray item refs not set up correctly before drag"
         );
-        existingElementsBounds.push(itemRef.current.getBoundingClientRect());
+        existingElementsBounds.push(item.ref.current.getBoundingClientRect());
       }
 
       assert(
@@ -155,7 +136,7 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
         outerDrag: outerDragBounds,
       };
     },
-    [blueprintRefs]
+    [items]
   );
 
   const renderButtonContents = (contents: TokenContents) => {
@@ -178,6 +159,13 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
     }
   };
 
+  const onContextMenu = (blueprint: TokenContents) => (e: MouseEvent) => {
+    if (blueprints.length > 2) {
+      onFloorRemoved(blueprint);
+    }
+    e.preventDefault();
+  };
+
   return (
     <Paper ref={containerRef}>
       <SortableList
@@ -196,17 +184,9 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
             key={contentId(item.blueprint)}
             selected={contentId(activeFloor) === contentId(item.blueprint)}
             onChange={() => onFloorSelected(item.blueprint)}
-            onContextMenu={(e) => {
-              if (blueprints.length > 2) {
-                onFloorRemoved(item.blueprint);
-              }
-              e.preventDefault();
-            }}
+            onContextMenu={onContextMenu(item.blueprint)}
             {...attributes}
-            ref={(el: HTMLElement | null) => {
-              blueprintRefs.get(contentId(item.blueprint))!.current = el;
-              assignRef(attributes?.ref, el);
-            }}
+            ref={item.makeRef(attributes.ref)}
           >
             {renderButtonContents(item.blueprint)}
           </ToggleButton>

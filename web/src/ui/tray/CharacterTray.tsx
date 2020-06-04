@@ -1,9 +1,5 @@
 import { makeStyles, Paper } from "@material-ui/core";
-import React, { createRef, memo, useMemo, useRef, useCallback } from "react";
-import {
-  DraggableType,
-  TokenBlueprintDraggable,
-} from "../../drag/DragStateTypes";
+import React, { memo, useRef, useCallback } from "react";
 import { DROPPABLE_IDS } from "../DroppableIds";
 import SortableList, { Targets, Target } from "../sort/SortableList";
 import Character from "../token/Character";
@@ -12,8 +8,8 @@ import { GRID_SIZE_PX } from "../../config";
 import { RootState } from "../../store/rootReducer";
 import { removeCharacter } from "./character-tray-slice";
 import { connect } from "react-redux";
-import { contentId, TokenContents } from "../../types";
-import assignRef from "../../util/assignRef";
+import { TokenContents } from "../../types";
+import useTrayItems from "./useTrayItems";
 
 const useStyles = makeStyles((theme) => ({
   tokenSheet: {
@@ -47,33 +43,17 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
 }) {
   const classes = useStyles();
 
-  const items = blueprints.map((blueprint) => ({
-    blueprint,
-    descriptor: {
-      type: DraggableType.TokenBlueprint,
-      id: `${DROPPABLE_ID}-${contentId(blueprint)}`,
-      contents: blueprint,
-    } as TokenBlueprintDraggable,
-  }));
-
   const containerRef = useRef<HTMLElement>();
-
-  const blueprintRefs = useMemo(() => {
-    const refs = new Map<string, React.MutableRefObject<HTMLElement | null>>();
-    for (const blueprint of blueprints) {
-      refs.set(contentId(blueprint), createRef<HTMLElement>());
-    }
-    return refs;
-  }, [blueprints]);
+  const items = useTrayItems(DROPPABLE_ID, blueprints);
 
   const getTargets = useCallback((): Targets => {
     const existingElementsBounds = [];
-    for (const itemRef of blueprintRefs.values()) {
+    for (const item of items) {
       assert(
-        itemRef.current,
+        item.ref?.current,
         "Character tray item refs not set up correctly before drag"
       );
-      existingElementsBounds.push(itemRef.current.getBoundingClientRect());
+      existingElementsBounds.push(item.ref.current.getBoundingClientRect());
     }
 
     assert(
@@ -133,7 +113,7 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
       innerDrag: innerDragBounds,
       outerDrag: outerDragBounds,
     };
-  }, [blueprintRefs]);
+  }, [items]);
 
   return (
     <Paper
@@ -148,10 +128,7 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
             isDragging={isDragging}
             dragAttributes={{
               ...attributes,
-              ref: (el: HTMLElement) => {
-                blueprintRefs.get(contentId(item.blueprint))!.current = el;
-                assignRef(attributes?.ref, el);
-              },
+              ref: item.makeRef(attributes.ref),
             }}
             onDelete={() => {
               if (items.length > 2) {
