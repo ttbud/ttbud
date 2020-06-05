@@ -37,6 +37,11 @@ services:
       - 80:80
       - 443:443
       - 1234:1234
+  db:
+    image: redis:5.0
+    command: redis-server --appendonly yes
+    ports:
+      - 6379:6379
 volumes:
   static-assets:
   certs:

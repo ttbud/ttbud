@@ -14,6 +14,7 @@ from src.async_collect import async_collect
 from src.colors import colors
 from tests.fake_apm import fake_transaction
 
+
 TEST_ROOM_ID = 'test_room'
 TEST_CLIENT_ID = 'test_client'
 TEST_REQUEST_ID = 'test_request'
@@ -38,19 +39,20 @@ VALID_PING = Ping('ping_id', 'ping', 0, 0)
 
 
 @pytest.fixture
-def gss():
+def gss() -> GameStateServer:
     rs = MemoryRoomStore('/my/path/to/room/storage/')
     return GameStateServer(rs, fake_transaction)
 
 
 @pytest.fixture
-def gss_with_client(gss):
-    gss.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+async def gss_with_client(gss) -> GameStateServer:
+    await gss.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
     return gss
 
 
-def test_new_connection(gss):
-    reply = gss.new_connection_request('test_client', 'room1')
+@pytest.mark.asyncio
+async def test_new_connection(gss: GameStateServer):
+    reply = await gss.new_connection_request('test_client', 'room1')
     assert reply.contents.type == 'connected'
     assert len(reply.contents.data) == 0
 
@@ -72,8 +74,8 @@ async def test_room_data_is_stored(gss_with_client):
             [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
         )
     )
-    gss_with_client.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
-    stored_data = gss_with_client.room_store.read_room_data(TEST_ROOM_ID)
+    await gss_with_client.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
+    stored_data = await gss_with_client.room_store.read_room_data(TEST_ROOM_ID)
     assert asdict(VALID_TOKEN) in stored_data
 
 
@@ -96,8 +98,8 @@ async def test_duplicate_update_rejected(gss_with_client):
 
 @pytest.mark.asyncio
 async def test_duplicate_update_in_different_room(gss):
-    gss.new_connection_request('client1', 'room1')
-    gss.new_connection_request('client2', 'room2')
+    await gss.new_connection_request('client1', 'room1')
+    await gss.new_connection_request('client2', 'room2')
     reply1 = await async_collect(
         gss.process_updates([VALID_UPDATE], 'room1', 'client1', 'request1')
     )
@@ -187,8 +189,8 @@ async def test_delete_after_load(gss_with_client):
             [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
         )
     )
-    gss_with_client.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
-    gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+    await gss_with_client.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
+    await gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
     reply = await async_collect(
         gss_with_client.process_updates(
             [{'action': 'delete', 'data': VALID_TOKEN.id}],
@@ -336,10 +338,10 @@ async def test_delete_with_full_token(gss_with_client):
 @pytest.mark.asyncio
 async def test_room_full(gss_with_client):
     for i in range(MAX_USERS_PER_ROOM):
-        gss_with_client.new_connection_request(f'client{i}', TEST_ROOM_ID)
+        await gss_with_client.new_connection_request(f'client{i}', TEST_ROOM_ID)
 
     with pytest.raises(InvalidConnectionException):
-        gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+        await gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
 
 
 @pytest.mark.asyncio
@@ -369,6 +371,7 @@ async def test_more_tokens_than_colors(gss_with_client):
     )
     tokens_without_color = []
     for token in reply[0].contents.data:
+        assert isinstance(token, Token)
         if not token.color_rgb:
             tokens_without_color.append(token)
     assert len(tokens_without_color) == 1

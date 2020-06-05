@@ -7,7 +7,6 @@ from uuid import UUID
 
 import timber
 import websockets
-
 from websockets import ConnectionClosedError
 
 from .game_state_server import Message, MessageContents, InvalidConnectionException
@@ -31,20 +30,17 @@ logger = logging.getLogger(__name__)
 
 class WebsocketManager:
     def __init__(self, port, gss):
-        self._loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self._loop)
         self.port = port
         self.gss = gss
         self._client_ids = {}
 
-    def start_server(self) -> None:
+    async def start_server(self) -> None:
         try:
-            ws_server = websockets.serve(self.consumer_handler, '0.0.0.0', self.port,)
-            self._loop.run_until_complete(ws_server)
+            await websockets.serve(
+                self.consumer_handler, '0.0.0.0', self.port,
+            )
         except OSError:
             logger.exception('Failed to start websocket server', exc_info=True)
-        else:
-            self._loop.run_forever()
 
     async def consumer_handler(
         self, client: websockets.WebSocketServerProtocol, room_id: str
@@ -59,7 +55,7 @@ class WebsocketManager:
 
         self._client_ids[hash(client)] = client
         try:
-            response = self.gss.new_connection_request(hash(client), room_id)
+            response = await self.gss.new_connection_request(hash(client), room_id)
         except InvalidConnectionException as e:
             await client.close(e.close_code, e.reason)
             return
@@ -73,7 +69,7 @@ class WebsocketManager:
             # continue cleaning up connection state
             pass
         finally:
-            self.gss.connection_dropped(hash(client), room_id)
+            await self.gss.connection_dropped(hash(client), room_id)
 
     async def send_message(self, message: Message) -> None:
         for target in message.targets:
@@ -126,8 +122,3 @@ class WebsocketManager:
                         MessageContents('error', 'Something went wrong', request_id),
                     )
                 )
-
-
-def start_websocket(host_port, room_store_dir):
-    ws = WebsocketManager(host_port, room_store_dir)
-    ws.start_server()

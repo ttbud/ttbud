@@ -4,6 +4,8 @@ from typing import Protocol, Iterable, Optional, List
 from abc import abstractmethod
 from dataclasses import asdict
 
+import aioredis
+
 from .game_components import Token
 
 
@@ -15,11 +17,11 @@ class RoomStore(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
+    async def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def read_room_data(self, room_id: str) -> Optional[dict]:
+    async def read_room_data(self, room_id: str) -> Optional[dict]:
         raise NotImplementedError
 
 
@@ -60,9 +62,29 @@ class MemoryRoomStore:
     def get_all_room_ids(self) -> list:
         return list(self.stored_data.keys())
 
-    def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
+    async def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
         storable_data = list(map(asdict, data))
         self.stored_data[room_id] = storable_data
 
-    def read_room_data(self, room_id: str) -> Optional[dict]:
+    async def read_room_data(self, room_id: str) -> Optional[dict]:
         return self.stored_data.get(room_id)
+
+
+class DatabaseRoomStore:
+    def __init__(self, path):
+        self.path = path
+        self.db = None
+
+    @staticmethod
+    async def obtain(path):
+        dbrs = DatabaseRoomStore(path)
+        dbrs.db = await aioredis.create_redis_pool('redis://db')
+        return dbrs
+
+    async def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
+        await self.db.set(room_id, json.dumps(list(map(asdict, data))))
+
+    async def read_room_data(self, room_id: str) -> Optional[dict]:
+        data = await self.db.get(room_id, encoding='utf-8')
+        if data:
+            return json.loads(data)

@@ -93,7 +93,9 @@ class GameStateServer:
         self.room_store = room_store
         self.apm_transaction = apm_transaction
 
-    def new_connection_request(self, client_id: Hashable, room_id: str) -> Message:
+    async def new_connection_request(
+        self, client_id: Hashable, room_id: str
+    ) -> Message:
         """Register a new client
 
         :param client_id: Unique identifier for the client requesting a
@@ -114,7 +116,7 @@ class GameStateServer:
                     )
             else:
                 self._rooms[room_id] = RoomData(room_id, initial_connection=client_id)
-                tokens_to_load = self.room_store.read_room_data(room_id)
+                tokens_to_load = await self.room_store.read_room_data(room_id)
                 if tokens_to_load:
                     for token_data in tokens_to_load:
                         try:
@@ -133,31 +135,29 @@ class GameStateServer:
                 {client_id}, MessageContents('connected', self.get_state(room_id))
             )
 
-    def connection_dropped(self, client_id: Hashable, room_id: str) -> None:
+    async def connection_dropped(self, client_id: Hashable, room_id: str) -> None:
         if self._rooms.get(room_id, False):
             self._rooms[room_id].clients.remove(client_id)
             # Save the room if the last client leaves and there is something to save
             if not self._rooms[room_id].clients and self._rooms[room_id].game_state:
-                self.save_room(room_id)
+                await self.save_room(room_id)
                 del self._rooms[room_id]
             else:
-                logger.info(
-                    f'{len(self._rooms[room_id].clients)} clients ' f'remaining'
-                )
+                logger.info(f'{len(self._rooms[room_id].clients)} clients remaining')
 
-    def save_all(self) -> None:
+    async def save_all(self) -> None:
         for room in self._rooms.values():
             if room.game_state:
-                self.save_room(room.room_id)
+                await self.save_room(room.room_id)
         logger.info('All rooms saved')
 
-    def save_room(self, room_id: str) -> None:
+    async def save_room(self, room_id: str) -> None:
         logger.info(f'Saving room {room_id}')
         data_to_store = []
         for game_object in self._rooms[room_id].game_state.values():
             if isinstance(game_object, Token):
                 data_to_store.append(game_object)
-        self.room_store.write_room_data(room_id, data_to_store)
+        await self.room_store.write_room_data(room_id, data_to_store)
 
     async def process_updates(
         self,
