@@ -27,33 +27,44 @@ docker-compose up -d
 ## Infrastructure setup
 
 ### Requirements
+
 - [heroku cli](https://devcenter.heroku.com/articles/heroku-cli#download-and-install)
 - [netlify cli](https://docs.netlify.com/cli/get-started/#installation)
 
 ### API
+
 ```bash
 heroku update beta
 heroku plugins:install @heroku-cli/plugin-manifest
 
-heroku apps:create ttbud --manifest
+# Create staging environment
 heroku apps:create ttbud-staging --manifest --remote staging
+heroku config:set ROOM_STORE_DIR=/var/ttbud/rooms --remote staging
+heroku config:set JSON_LOGS=true --remote staging
+
+# Create prod environment
+heroku apps:create ttbud --manifest --remote prod
+heroku config:set ROOM_STORE_DIR=/var/ttbud/rooms --remote prod
+heroku config:set JSON_LOGS=true --remote prod
 ```
 
 ### Web
+
 ```bash
 netlify sites:create -n ttbud
 netlify sites:create -n ttbud-staging
 ```
 
 ### CI
+
 Connect circleci to the github repository
 
 Set up the following API keys:
 
-* `HEROKU_API_KEY`: An API key that has access to your heroku apps
-* `NETLIFY_AUTH_TOKEN`: An API key that has access to your Netlify sites
-* `NETLIFY_STAGING_SITE_ID`: The site id returned when creating the staging Netlify site above
-* `NETLIFY_PROD_SITE_ID`: The site id returned when creating the prod Netlify site above
+- `HEROKU_API_KEY`: An API key that has access to your heroku apps
+- `NETLIFY_AUTH_TOKEN`: An API key that has access to your Netlify sites
+- `NETLIFY_STAGING_SITE_ID`: The site id returned when creating the staging Netlify site above
+- `NETLIFY_PROD_SITE_ID`: The site id returned when creating the prod Netlify site above
 
 ## Deploy
 

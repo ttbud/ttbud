@@ -1,15 +1,14 @@
 import signal
-import logging
-import sys
+import logging.config
 
-from src.config import room_store_dir, websocket_port
+from src.config import room_store_dir, websocket_port, log_config
 from src.wsmanager import start_websocket
 from src.room_store import FileRoomStore
 from src.game_state_server import GameStateServer
 
 
 def main():
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    logging.config.dictConfig(log_config)
 
     room_store = FileRoomStore(room_store_dir)
     gss = GameStateServer(room_store)

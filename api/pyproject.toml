@@ -8,6 +8,7 @@ authors = ["Stephen Johnson <github@sjoh.net>"]
 python = "^3.8"
 websockets = "^8.1"
 dacite = "^1.5.0"
+timber = "^2.1.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.4"
