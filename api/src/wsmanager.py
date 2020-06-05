@@ -38,8 +38,8 @@ class WebsocketManager:
         try:
             ws_server = websockets.serve(self.consumer_handler, '0.0.0.0', self.port,)
             self._loop.run_until_complete(ws_server)
-        except OSError as e:
-            logger.exception('Failed to start websocket server', exc_info=e)
+        except OSError:
+            logger.exception('Failed to start websocket server', exc_info=True)
         else:
             self._loop.run_forever()
 
@@ -88,8 +88,12 @@ class WebsocketManager:
     ) -> None:
         try:
             message = json.loads(json_message)
-        except json.JSONDecodeError as e:
-            logger.info('invalid json received from client', exc_info=e)
+        except json.JSONDecodeError:
+            logger.info(
+                'invalid json received from client',
+                extra={"json": json_message},
+                exc_info=True,
+            )
             return
         updates = message['updates']
 
@@ -98,8 +102,8 @@ class WebsocketManager:
                 updates, room_id, hash(client), message['request_id']
             ):
                 await self.send_message(reply)
-        except Exception as err:
-            logger.exception('Failed to process updates', exc_info=err)
+        except Exception:
+            logger.exception('Failed to process updates', exc_info=True)
             await self.send_message(
                 Message(
                     [hash(client)],
