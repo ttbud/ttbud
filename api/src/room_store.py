@@ -88,3 +88,4 @@ class DatabaseRoomStore:
         data = await self.db.get(room_id, encoding='utf-8')
         if data:
             return json.loads(data)
+        return None
