@@ -1,5 +1,6 @@
+setup:
+  addons:
+    - plan: timber-logging:free
 build:
   docker:
     web: api/Dockerfile
-  config:
-    ROOM_STORE_DIR: /var/ttbud/rooms

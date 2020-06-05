@@ -5,6 +5,7 @@ from dataclasses import asdict
 from typing import Union, List, Tuple, Dict, Any
 from uuid import UUID
 
+import timber
 import websockets
 
 from .game_state_server import Message, MessageContents, InvalidConnectionException
@@ -95,23 +96,30 @@ class WebsocketManager:
                 exc_info=True,
             )
             return
-        updates = message['updates']
 
-        try:
-            async for reply in self.gss.process_updates(
-                updates, room_id, hash(client), message['request_id']
-            ):
-                await self.send_message(reply)
-        except Exception:
-            logger.exception('Failed to process updates', exc_info=True)
-            await self.send_message(
-                Message(
-                    [hash(client)],
-                    MessageContents(
-                        'error', 'Something went wrong', message['request_id']
-                    ),
+        updates = message['updates']
+        request_id = message['request_id']
+        client_id = hash(client)
+        with timber.context(
+            request={
+                'room_id': room_id,
+                'request_id': request_id,
+                'client_id': client_id,
+            }
+        ):
+            try:
+                async for reply in self.gss.process_updates(
+                    updates, room_id, client_id, request_id
+                ):
+                    await self.send_message(reply)
+            except Exception:
+                logger.exception('Failed to process updates', exc_info=True)
+                await self.send_message(
+                    Message(
+                        [hash(client)],
+                        MessageContents('error', 'Something went wrong', request_id),
+                    )
                 )
-            )
 
 
 def start_websocket(host_port, room_store_dir):

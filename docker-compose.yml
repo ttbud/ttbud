@@ -4,6 +4,7 @@ services:
     image: ttbud-api
     build: api
     environment:
+      JSON_LOGS:
       DOMAIN:
       PORT: ${API_WEBSOCKET_PORT}
       ROOM_STORE_DIR: /var/ttbud/rooms
