@@ -104,11 +104,13 @@ class GameStateServer:
                 for token_data in tokens_to_load:
                     try:
                         token = from_dict(data_class=Token, data=token_data)
-                    except (WrongTypeError, MissingValueError, TypeError) as e:
+                    except (WrongTypeError, MissingValueError, TypeError):
                         # Don't raise here. Loading a room minus any tokens that have
                         # been corrupted is still valuable.
                         logger.exception(
-                            f'Corrupted room {room_id}', stack_info=True, exc_info=e
+                            f'Corrupted room {room_id}',
+                            extra={"invalid_token": token_data},
+                            exc_info=True,
                         )
                     else:
                         self._create_or_update_token(token, room_id)
@@ -172,8 +174,8 @@ class GameStateServer:
             elif action == 'create' or action == 'update':
                 try:
                     token = from_dict(data_class=Token, data=data)
-                except (WrongTypeError, MissingValueError, TypeError) as e:
-                    logger.info(f'Invalid request format {data}', exc_info=e)
+                except (WrongTypeError, MissingValueError, TypeError):
+                    logger.info(f'Invalid request format {data}', exc_info=True)
                     yield Message(
                         {client_id},
                         MessageContents(
