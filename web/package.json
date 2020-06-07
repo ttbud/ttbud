@@ -43,7 +43,8 @@
     "redux-logger": "^3.0.6",
     "redux-persist": "^6.0.0",
     "typescript": "3.9.3",
-    "uuid": "^7.0.3"
+    "uuid": "^7.0.3",
+    "snyk": "^1.336.0"
   },
   "resolutions": {
     "@types/testing-library__react/@types/testing-library__dom": "7.0.1"
@@ -56,7 +57,9 @@
     "eject": "react-scripts eject",
     "checkstyle": "prettier src public package.json tsconfig.json --check",
     "fixstyle": "prettier src public package.json tsconfig.json --write",
-    "lint": "eslint 'src/**/*.ts' 'src/**/*.tsx'"
+    "lint": "eslint 'src/**/*.ts' 'src/**/*.tsx'",
+    "snyk-protect": "snyk protect",
+    "prepare": "yarn run snyk-protect"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -77,5 +80,6 @@
   "main": "index.js",
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "snyk": true
 }
