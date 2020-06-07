@@ -30,6 +30,14 @@ class Token:
     end_z: int
     color_rgb: Optional[Color] = None
 
+    def __post_init__(self):
+        if (
+            self.start_x >= self.end_x
+            or self.start_y >= self.end_y
+            or self.start_z >= self.end_z
+        ):
+            raise ValueError("Start coordinates must be less than end positions")
+
 
 @dataclass
 class Ping:

@@ -5,11 +5,17 @@ from dataclasses import asdict
 from typing import Union, List, Tuple, Dict, Any
 from uuid import UUID
 
+import dacite
+from dacite.exceptions import WrongTypeError, MissingValueError
 import timber
 import websockets
 from websockets import ConnectionClosedError
 
-from .game_state_server import Message, MessageContents, InvalidConnectionException
+from .game_state_server import (
+    InvalidConnectionException,
+    Message,
+)
+from .api_structures import Response, Request
 from .ws_close_codes import ERR_INVALID_UUID
 
 
@@ -91,27 +97,29 @@ class WebsocketManager:
     ) -> None:
         try:
             message = json.loads(json_message)
-        except json.JSONDecodeError:
+            request = dacite.from_dict(Request, message)
+        except (json.JSONDecodeError, WrongTypeError, MissingValueError):
             logger.info(
                 'invalid json received from client',
                 extra={"json": json_message},
                 exc_info=True,
             )
+            await self.send_message(
+                Message([hash(client)], Response('error', 'Invalid message format'))
+            )
             return
 
-        updates = message['updates']
-        request_id = message['request_id']
         client_id = hash(client)
         with timber.context(
             request={
                 'room_id': room_id,
-                'request_id': request_id,
+                'request_id': request.request_id,
                 'client_id': client_id,
             }
         ):
             try:
                 async for reply in self.gss.process_updates(
-                    updates, room_id, client_id, request_id
+                    request.updates, room_id, client_id, request.request_id
                 ):
                     await self.send_message(reply)
             except Exception:
@@ -119,6 +127,6 @@ class WebsocketManager:
                 await self.send_message(
                     Message(
                         [hash(client)],
-                        MessageContents('error', 'Something went wrong', request_id),
+                        Response('error', 'Something went wrong', request.request_id),
                     )
                 )

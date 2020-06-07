@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 from typing import (
     Union,
     Hashable,
@@ -21,6 +21,8 @@ from dacite import (
     MissingValueError,
 )
 
+from .api_structures import Response, CreateOrUpdateAction, DeleteAction, PingAction
+from .assert_never import assert_never
 from .apm import ApmTransaction
 from .room_store import RoomStore
 from .game_components import Token, Ping, content_id
@@ -52,16 +54,9 @@ def assign_colors(tokens: List[Token]) -> None:
 
 
 @dataclass
-class MessageContents:
-    type: str
-    data: Union[str, Iterable[Union[Ping, Token]]]
-    request_id: Optional[str] = None
-
-
-@dataclass
 class Message:
     targets: Iterable[Hashable]
-    contents: MessageContents
+    contents: Response
 
 
 class InvalidConnectionException(Exception):
@@ -123,17 +118,16 @@ class GameStateServer:
                             token = from_dict(data_class=Token, data=token_data)
                         except (WrongTypeError, MissingValueError, TypeError):
                             # Don't raise here. Loading a room minus any tokens that
-                            # have been corrupted is still valuable.
+                            # havebeen corrupted is still valuable.
                             logger.exception(
                                 f'Corrupted room {room_id}',
                                 extra={"invalid_token": token_data},
                                 exc_info=True,
                             )
-                        else:
-                            self._create_or_update_token(token, room_id)
-            return Message(
-                {client_id}, MessageContents('connected', self.get_state(room_id))
-            )
+                    else:
+                        self._create_or_update_token(token, room_id)
+
+        return Message({client_id}, Response('connected', self.get_state(room_id)))
 
     async def connection_dropped(self, client_id: Hashable, room_id: str) -> None:
         if self._rooms.get(room_id, False):
@@ -161,7 +155,7 @@ class GameStateServer:
 
     async def process_updates(
         self,
-        updates: Iterable[dict],
+        updates: Iterable[Union[CreateOrUpdateAction, DeleteAction, PingAction]],
         room_id: str,
         client_id: Hashable,
         request_id: str,
@@ -174,119 +168,55 @@ class GameStateServer:
             if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
                 yield Message(
                     {client_id},
-                    MessageContents(
-                        'error', 'Your room does not exist, somehow', request_id
-                    ),
-                )
+                    Response('error', 'Your room does not exist, somehow', request_id),
+            )
                 return
-            for update in updates:
-                action = update.get('action', None)
-                data = update.get('data', None)
-                if not action or not data:
-                    yield Message(
-                        {client_id},
-                        MessageContents(
-                            'error', 'Did not receive a full update', request_id
-                        ),
-                    )
 
-                elif action == 'create' or action == 'update':
-                    try:
-                        token = from_dict(data_class=Token, data=data)
-                    except (WrongTypeError, MissingValueError, TypeError):
-                        logger.info(f'Invalid request format {data}', exc_info=True)
+            for update in updates:
+                if update.action == 'create' or update.action == 'update':
+                    token = update.data
+                    if self._is_valid_position(token, room_id):
+                        self._create_or_update_token(token, room_id)
+                    else:
+                        logger.info(f'Token {token.id} cannot move to occupied position')
                         yield Message(
                             {client_id},
-                            MessageContents(
-                                'error', f'Received bad token: {data}', request_id
+                            Response(
+                                'error', 'That position is occupied, bucko', request_id,
                             ),
                         )
-                    else:
-                        if not self._is_valid_token(token):
-                            logger.info(f'Invalid token data {token}')
+                elif update.action == 'delete':
+                        if self._rooms[room_id].game_state.get(update.data, False):
+                            self._delete_token(update.data, room_id)
+                        else:
                             yield Message(
                                 {client_id},
-                                MessageContents(
-                                    'error', f'Received a bad token: {data}', request_id
-                                ),
-                            )
-                        elif not self._is_valid_position(token, room_id):
-                            logger.info(
-                                f'Token {token.id} cannot move to occupied position'
-                            )
-                            yield Message(
-                                {client_id},
-                                MessageContents(
+                                Response(
                                     'error',
-                                    'That position is occupied, bucko',
+                                    'Cannot delete token because it does not exist',
                                     request_id,
                                 ),
                             )
-                        else:
-                            self._create_or_update_token(token, room_id)
-                elif action == 'delete':
-                    if type(data) != str:
-                        yield Message(
-                            {client_id},
-                            MessageContents(
-                                'error',
-                                'Data for delete actions must be a token ID',
-                                request_id,
-                            ),
-                        )
-                    elif self._rooms[room_id].game_state.get(data, False):
-                        self._delete_token(data, room_id)
-                    else:
-                        yield Message(
-                            {client_id},
-                            MessageContents(
-                                'error',
-                                'Cannot delete token because it does not exist',
-                                request_id,
-                            ),
-                        )
-                elif action == 'ping':
-                    try:
-                        ping = Ping(**data)
-                    except TypeError:
-                        yield Message(
-                            [client_id],
-                            MessageContents(
-                                'error', f'Received bad ping: {data}', request_id
-                            ),
-                        )
-                    else:
-                        self._create_ping(ping, room_id)
-                        pings_created.append(ping.id)
+                elif update.action == 'ping':
+                    self._create_ping(update.data, room_id)
+                    pings_created.append(update.data.id)
                 else:
-                    logger.info(f'Invalid action: {action}')
-                    yield Message(
-                        {client_id},
-                        MessageContents(
-                            'error', f'Invalid action: {action}', request_id
-                        ),
-                    )
-            yield Message(
-                self._rooms[room_id].clients,
-                MessageContents('state', self.get_state(room_id), request_id),
-            )
+                    assert_never(update)
+
+        yield Message(
+            self._rooms[room_id].clients,
+            Response('state', self.get_state(room_id), request_id),
+        )
 
         if pings_created:
             await asyncio.sleep(3)
             for ping_id in pings_created:
                 self._remove_ping_from_state(ping_id, room_id)
+
             yield Message(
                 self._rooms[room_id].clients,
-                MessageContents('state', self.get_state(room_id), request_id),
+                Response('state', self.get_state(room_id), request_id),
             )
-
-    @staticmethod
-    def _is_valid_token(token: Token) -> bool:
-        return (
-            token.start_x < token.end_x
-            and token.start_y < token.end_y
-            and token.start_z < token.end_z
-        )
 
     def _is_valid_position(self, token: Token, room_id: str) -> bool:
         blocks = self._get_unit_blocks(token)

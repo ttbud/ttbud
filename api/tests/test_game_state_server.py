@@ -6,7 +6,9 @@ from src.game_state_server import (
     GameStateServer,
     MAX_USERS_PER_ROOM,
     InvalidConnectionException,
+    Message,
 )
+from src.api_structures import Response, CreateOrUpdateAction, DeleteAction, PingAction
 from src.room_store import MemoryRoomStore
 from src.game_components import Token, Ping, IconTokenContents
 from src.async_collect import async_collect
@@ -33,7 +35,7 @@ VALID_TOKEN = Token(
 UPDATED_TOKEN = Token(
     VALID_TOKEN.id, VALID_TOKEN.type, VALID_TOKEN.contents, 7, 8, 9, 8, 9, 10
 )
-VALID_UPDATE = {'action': 'create', 'data': asdict(VALID_TOKEN)}
+VALID_ACTION = CreateOrUpdateAction(action="create", data=VALID_TOKEN)
 VALID_PING = Ping('ping_id', 'ping', 0, 0)
 
 
@@ -69,7 +71,7 @@ async def test_room_does_not_exist(gss):
 async def test_room_data_is_stored(gss_with_client):
     await async_collect(
         gss_with_client.process_updates(
-            [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
+            [VALID_ACTION], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
         )
     )
     await gss_with_client.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
@@ -82,12 +84,12 @@ async def test_room_data_is_stored(gss_with_client):
 async def test_duplicate_update_rejected(gss_with_client):
     await async_collect(
         gss_with_client.process_updates(
-            [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
+            [VALID_ACTION], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
         )
     )
     reply = await async_collect(
         gss_with_client.process_updates(
-            [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
+            [VALID_ACTION], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
         )
     )
     assert_all_match(
@@ -104,10 +106,10 @@ async def test_duplicate_update_in_different_room(gss):
     await gss.new_connection_request('client1', 'room1')
     await gss.new_connection_request('client2', 'room2')
     reply1 = await async_collect(
-        gss.process_updates([VALID_UPDATE], 'room1', 'client1', 'request1')
+        gss.process_updates([VALID_ACTION], 'room1', 'client1', 'request1')
     )
     reply2 = await async_collect(
-        gss.process_updates([VALID_UPDATE], 'room2', 'client2', 'request2')
+        gss.process_updates([VALID_ACTION], 'room2', 'client2', 'request2')
     )
     assert_all_match(
         reply1,
@@ -141,7 +143,7 @@ async def test_duplicate_update_in_different_room(gss):
 async def test_update_in_occupied_position(gss_with_client):
     await async_collect(
         gss_with_client.process_updates(
-            [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
+            [VALID_ACTION], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
         )
     )
     other_valid_token = Token(
@@ -158,7 +160,7 @@ async def test_update_in_occupied_position(gss_with_client):
     )
     reply = await async_collect(
         gss_with_client.process_updates(
-            [{'action': 'create', 'data': asdict(other_valid_token)}],
+            [CreateOrUpdateAction(action="create", data=other_valid_token)],
             TEST_ROOM_ID,
             TEST_CLIENT_ID,
             BAD_REQUEST_ID,
@@ -183,12 +185,12 @@ async def test_update_in_occupied_position(gss_with_client):
 async def test_delete_token(gss_with_client):
     await async_collect(
         gss_with_client.process_updates(
-            [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
+            [VALID_ACTION], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
         )
     )
     reply = await async_collect(
         gss_with_client.process_updates(
-            [{'action': 'delete', 'data': VALID_TOKEN.id}],
+            [DeleteAction(action="delete", data=VALID_TOKEN.id)],
             TEST_ROOM_ID,
             TEST_CLIENT_ID,
             TEST_REQUEST_ID,
@@ -204,7 +206,7 @@ async def test_delete_token(gss_with_client):
 async def test_delete_non_existent_token(gss_with_client):
     reply = await async_collect(
         gss_with_client.process_updates(
-            [{'action': 'delete', 'data': VALID_TOKEN.id}],
+            [DeleteAction(action="delete", data=VALID_TOKEN.id)],
             TEST_ROOM_ID,
             TEST_CLIENT_ID,
             TEST_REQUEST_ID,
@@ -219,14 +221,14 @@ async def test_delete_non_existent_token(gss_with_client):
 async def test_delete_after_reload(gss_with_client):
     await async_collect(
         gss_with_client.process_updates(
-            [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, 'initial_request_id'
+            [VALID_ACTION], TEST_ROOM_ID, TEST_CLIENT_ID, 'initial_request_id'
         )
     )
     await gss_with_client.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
     await gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
     reply = await async_collect(
         gss_with_client.process_updates(
-            [{'action': 'delete', 'data': VALID_TOKEN.id}],
+            [DeleteAction(action="delete", data=VALID_TOKEN.id)],
             TEST_ROOM_ID,
             TEST_CLIENT_ID,
             TEST_REQUEST_ID,
@@ -242,12 +244,12 @@ async def test_delete_after_reload(gss_with_client):
 async def test_move_existing_token(gss_with_client):
     await async_collect(
         gss_with_client.process_updates(
-            [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, 'initial_request_id'
+            [VALID_ACTION], TEST_ROOM_ID, TEST_CLIENT_ID, 'initial_request_id'
         )
     )
     reply = await async_collect(
         gss_with_client.process_updates(
-            [{'action': 'update', 'data': asdict(UPDATED_TOKEN)}],
+            [CreateOrUpdateAction(action="update", data=UPDATED_TOKEN)],
             TEST_ROOM_ID,
             TEST_CLIENT_ID,
             TEST_REQUEST_ID,
@@ -261,7 +263,7 @@ async def test_ping(gss_with_client, mocker):
     mocker.patch('asyncio.sleep')
     reply = await async_collect(
         gss_with_client.process_updates(
-            [{'action': 'ping', 'data': asdict(VALID_PING)}],
+            [PingAction(action="ping", data=VALID_PING)],
             TEST_ROOM_ID,
             TEST_CLIENT_ID,
             TEST_REQUEST_ID,
@@ -272,145 +274,6 @@ async def test_ping(gss_with_client, mocker):
         [
             {'contents': {'type': 'state', 'data': [VALID_PING]}},
             {'contents': {'type': 'state', 'data': []}},
-        ],
-    )
-
-
-@pytest.mark.asyncio
-async def test_invalid_action(gss_with_client):
-    reply = await async_collect(
-        gss_with_client.process_updates(
-            [{'action': 'destroy all humans', 'data': VALID_TOKEN}],
-            TEST_ROOM_ID,
-            TEST_CLIENT_ID,
-            TEST_REQUEST_ID,
-        )
-    )
-    assert_all_match(
-        reply,
-        [
-            {
-                'targets': {TEST_CLIENT_ID},
-                'contents': {'type': 'error', 'request_id': TEST_REQUEST_ID},
-            },
-            {
-                'targets': {TEST_CLIENT_ID},
-                'contents': {
-                    'type': 'state',
-                    'data': [],
-                    'request_id': TEST_REQUEST_ID,
-                },
-            },
-        ],
-    )
-
-
-@pytest.mark.asyncio
-async def test_invalid_data(gss_with_client):
-    reply = await async_collect(
-        gss_with_client.process_updates(
-            [{'action': 'create', 'data': 'destroy all humans'}],
-            TEST_ROOM_ID,
-            TEST_CLIENT_ID,
-            TEST_REQUEST_ID,
-        )
-    )
-    assert_all_match(
-        reply,
-        [
-            {
-                'targets': {TEST_CLIENT_ID},
-                'contents': {'type': 'error', 'request_id': TEST_REQUEST_ID},
-            },
-            {
-                'targets': {TEST_CLIENT_ID},
-                'contents': {
-                    'type': 'state',
-                    'data': [],
-                    'request_id': TEST_REQUEST_ID,
-                },
-            },
-        ],
-    )
-
-
-@pytest.mark.asyncio
-async def test_incomplete_message(gss_with_client):
-    reply1 = await async_collect(
-        gss_with_client.process_updates(
-            [{'action': 'create'}], TEST_ROOM_ID, TEST_CLIENT_ID, BAD_REQUEST_ID
-        )
-    )
-    reply2 = await async_collect(
-        gss_with_client.process_updates(
-            [{'data': asdict(VALID_TOKEN)}],
-            TEST_ROOM_ID,
-            TEST_CLIENT_ID,
-            TEST_REQUEST_ID,
-        )
-    )
-    assert_all_match(
-        reply1,
-        [
-            {
-                'targets': {TEST_CLIENT_ID},
-                'contents': {'type': 'error', 'request_id': BAD_REQUEST_ID},
-            },
-            {
-                'targets': {TEST_CLIENT_ID},
-                'contents': {'type': 'state', 'data': [], 'request_id': BAD_REQUEST_ID},
-            },
-        ],
-    )
-    assert_all_match(
-        reply2,
-        [
-            {
-                'targets': {TEST_CLIENT_ID},
-                'contents': {'type': 'error', 'request_id': TEST_REQUEST_ID},
-            },
-            {
-                'targets': {TEST_CLIENT_ID},
-                'contents': {
-                    'type': 'state',
-                    'data': [],
-                    'request_id': TEST_REQUEST_ID,
-                },
-            },
-        ],
-    )
-
-
-@pytest.mark.asyncio
-async def test_delete_with_full_token(gss_with_client):
-    await async_collect(
-        gss_with_client.process_updates(
-            [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
-        )
-    )
-    reply = await async_collect(
-        gss_with_client.process_updates(
-            [{'action': 'delete', 'data': asdict(VALID_TOKEN)}],
-            TEST_ROOM_ID,
-            TEST_CLIENT_ID,
-            BAD_REQUEST_ID,
-        )
-    )
-    assert_all_match(
-        reply,
-        [
-            {
-                'targets': {TEST_CLIENT_ID},
-                'contents': {'type': 'error', 'request_id': BAD_REQUEST_ID},
-            },
-            {
-                'targets': {TEST_CLIENT_ID},
-                'contents': {
-                    'type': 'state',
-                    'data': [VALID_TOKEN],
-                    'request_id': BAD_REQUEST_ID,
-                },
-            },
         ],
     )
 
@@ -429,21 +292,22 @@ async def test_more_tokens_than_colors(gss_with_client):
     updates = []
     for i in range(len(colors) + 1):
         updates.append(
-            {
-                'action': 'create',
-                'data': {
-                    'id': f'token{i}',
-                    'type': 'character',
-                    'contents': {'icon_id': 'some_icon'},
-                    'start_x': i,
-                    'start_y': i,
-                    'start_z': 1,
-                    'end_x': i + 1,
-                    'end_y': i + 1,
-                    'end_z': 2,
-                },
-            }
+            CreateOrUpdateAction(
+                action='create',
+                data=Token(
+                    id=f'token{i}',
+                    type='character',
+                    contents=IconTokenContents('some icon'),
+                    start_x=i,
+                    start_y=i,
+                    start_z=1,
+                    end_x=i + 1,
+                    end_y=i + 1,
+                    end_z=2,
+                ),
+            )
         )
+
     reply = await async_collect(
         gss_with_client.process_updates(
             updates, TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
