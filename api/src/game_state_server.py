@@ -169,7 +169,7 @@ class GameStateServer:
                 yield Message(
                     {client_id},
                     Response('error', 'Your room does not exist, somehow', request_id),
-            )
+                )
                 return
 
             for update in updates:
@@ -186,22 +186,26 @@ class GameStateServer:
                             ),
                         )
                 elif update.action == 'delete':
-                        if self._rooms[room_id].game_state.get(update.data, False):
-                            self._delete_token(update.data, room_id)
-                        else:
-                            yield Message(
-                                {client_id},
-                                Response(
-                                    'error',
-                                    'Cannot delete token because it does not exist',
-                                    request_id,
-                                ),
-                            )
+                    if self._rooms[room_id].game_state.get(update.data, False):
+                        self._delete_token(update.data, room_id)
+                    else:
+                        yield Message(
+                            {client_id},
+                            Response(
+                                'error',
+                                'Cannot delete token because it does not exist',
+                                request_id,
+                            ),
+                        )
                 elif update.action == 'ping':
                     self._create_ping(update.data, room_id)
                     pings_created.append(update.data.id)
                 else:
-                    assert_never(update)
+                    logger.info(f'Invalid action: {update.action}')
+                    yield Message(
+                        {client_id},
+                        Response('error', f'Invalid action: {update.action}', request_id),
+                    )
 
         yield Message(
             self._rooms[room_id].clients,
