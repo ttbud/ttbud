@@ -124,8 +124,8 @@ class GameStateServer:
                                 extra={"invalid_token": token_data},
                                 exc_info=True,
                             )
-                    else:
-                        self._create_or_update_token(token, room_id)
+                        else:
+                            self._create_or_update_token(token, room_id)
 
         return Message({client_id}, Response('connected', self.get_state(room_id)))
 

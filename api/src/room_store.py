@@ -55,8 +55,7 @@ class FileRoomStore:
 
 
 class MemoryRoomStore:
-    def __init__(self, path):
-        self.path = path
+    def __init__(self):
         self.stored_data = {}
 
     def get_all_room_ids(self) -> list:
