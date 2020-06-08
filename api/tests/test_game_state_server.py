@@ -228,7 +228,7 @@ async def test_delete_after_reload(gss_with_client):
     await gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
     reply = await async_collect(
         gss_with_client.process_updates(
-            [DeleteAction(action="delete", data=VALID_TOKEN.id)],
+            [DeleteAction(action='delete', data=VALID_TOKEN.id)],
             TEST_ROOM_ID,
             TEST_CLIENT_ID,
             TEST_REQUEST_ID,
