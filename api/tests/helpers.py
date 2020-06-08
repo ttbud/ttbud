@@ -5,8 +5,8 @@ _SENTINEL = object()
 
 
 def assert_matches(actual: Any, expected: Any) -> None:
-    """Assert that actual and expected are equal. Recursively evaluates
-    dictionaries, and passes lists back to assert_all_match.
+    """Assert that all properties of expected exist on actual,
+    and that the values for matching properties are equal.
 
     :param actual: The object that is being validated.
     :param expected: The expected object to compare actual to.
