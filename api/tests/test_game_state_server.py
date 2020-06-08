@@ -1,10 +1,9 @@
 import pytest
 from dataclasses import asdict
 
+from tests.helpers import assert_matches, assert_all_match
 from src.game_state_server import (
     GameStateServer,
-    Message,
-    MessageContents,
     MAX_USERS_PER_ROOM,
     InvalidConnectionException,
 )
@@ -14,10 +13,11 @@ from src.async_collect import async_collect
 from src.colors import colors
 from tests.fake_apm import fake_transaction
 
+
 TEST_ROOM_ID = 'test_room'
 TEST_CLIENT_ID = 'test_client'
 TEST_REQUEST_ID = 'test_request'
-OTHER_REQUEST_ID = 'other_request'
+BAD_REQUEST_ID = 'bad_request'
 VALID_TOKEN = Token(
     'some_id',
     'character',
@@ -44,15 +44,15 @@ def gss():
 
 
 @pytest.fixture
-def gss_with_client(gss):
-    gss.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+async def gss_with_client(gss):
+    await gss.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
     return gss
 
 
-def test_new_connection(gss):
-    reply = gss.new_connection_request('test_client', 'room1')
-    assert reply.contents.type == 'connected'
-    assert len(reply.contents.data) == 0
+@pytest.mark.asyncio
+async def test_new_connection(gss):
+    reply = await gss.new_connection_request('test_client', 'room1')
+    assert_matches(reply, {'contents': {'type': 'connected', 'data': []}})
 
 
 @pytest.mark.asyncio
@@ -62,7 +62,7 @@ async def test_room_does_not_exist(gss):
             {}, 'room id that does not exist', TEST_CLIENT_ID, TEST_REQUEST_ID
         )
     )
-    assert reply[0].contents.type == 'error'
+    assert_all_match(reply, [{'contents': {'type': 'error'}}])
 
 
 @pytest.mark.asyncio
@@ -72,8 +72,9 @@ async def test_room_data_is_stored(gss_with_client):
             [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
         )
     )
-    gss_with_client.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
-    stored_data = gss_with_client.room_store.read_room_data(TEST_ROOM_ID)
+    await gss_with_client.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
+    stored_data = await gss_with_client.room_store.read_room_data(TEST_ROOM_ID)
+    assert stored_data
     assert asdict(VALID_TOKEN) in stored_data
 
 
@@ -89,23 +90,51 @@ async def test_duplicate_update_rejected(gss_with_client):
             [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
         )
     )
-    assert reply[0].contents.type == 'error'
-    assert reply[1].contents.type == 'state'
-    assert len(reply[1].contents.data) == 1
+    assert_all_match(
+        reply,
+        [
+            {'contents': {'type': 'error'}},
+            {'contents': {'type': 'state', 'data': [VALID_TOKEN]}},
+        ],
+    )
 
 
 @pytest.mark.asyncio
 async def test_duplicate_update_in_different_room(gss):
-    gss.new_connection_request('client1', 'room1')
-    gss.new_connection_request('client2', 'room2')
+    await gss.new_connection_request('client1', 'room1')
+    await gss.new_connection_request('client2', 'room2')
     reply1 = await async_collect(
         gss.process_updates([VALID_UPDATE], 'room1', 'client1', 'request1')
     )
     reply2 = await async_collect(
         gss.process_updates([VALID_UPDATE], 'room2', 'client2', 'request2')
     )
-    assert reply1[0].contents.data[0] == VALID_TOKEN
-    assert reply2[0].contents.data[0] == VALID_TOKEN
+    assert_all_match(
+        reply1,
+        [
+            {
+                'targets': ['client1'],
+                'contents': {
+                    'type': 'state',
+                    'data': [VALID_TOKEN],
+                    'request_id': 'request1',
+                },
+            }
+        ],
+    )
+    assert_all_match(
+        reply2,
+        [
+            {
+                'targets': {'client2'},
+                'contents': {
+                    'type': 'state',
+                    'data': [VALID_TOKEN],
+                    'request_id': 'request2',
+                },
+            }
+        ],
+    )
 
 
 @pytest.mark.asyncio
@@ -132,21 +161,22 @@ async def test_update_in_occupied_position(gss_with_client):
             [{'action': 'create', 'data': asdict(other_valid_token)}],
             TEST_ROOM_ID,
             TEST_CLIENT_ID,
-            OTHER_REQUEST_ID,
+            BAD_REQUEST_ID,
         )
     )
-    # FIXME: Brittle
-    assert reply == [
-        Message(
-            {TEST_CLIENT_ID},
-            MessageContents(
-                'error', 'That position is occupied, bucko', OTHER_REQUEST_ID
-            ),
-        ),
-        Message(
-            {TEST_CLIENT_ID}, MessageContents('state', [VALID_TOKEN], OTHER_REQUEST_ID)
-        ),
-    ]
+    assert_all_match(
+        reply,
+        [
+            {'contents': {'type': 'error', 'request_id': BAD_REQUEST_ID}},
+            {
+                'contents': {
+                    'type': 'state',
+                    'data': [VALID_TOKEN],
+                    'request_id': BAD_REQUEST_ID,
+                }
+            },
+        ],
+    )
 
 
 @pytest.mark.asyncio
@@ -164,7 +194,10 @@ async def test_delete_token(gss_with_client):
             TEST_REQUEST_ID,
         )
     )
-    assert len(reply[0].contents.data) == 0
+    assert_all_match(
+        reply,
+        [{'contents': {'type': 'state', 'data': [], 'request_id': TEST_REQUEST_ID}}],
+    )
 
 
 @pytest.mark.asyncio
@@ -177,18 +210,20 @@ async def test_delete_non_existent_token(gss_with_client):
             TEST_REQUEST_ID,
         )
     )
-    assert reply[0].contents.type == 'error'
+    assert_all_match(
+        reply, [{'contents': {'type': 'error'}}, {'contents': {'type': 'state'}}]
+    )
 
 
 @pytest.mark.asyncio
-async def test_delete_after_load(gss_with_client):
+async def test_delete_after_reload(gss_with_client):
     await async_collect(
         gss_with_client.process_updates(
-            [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
+            [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, 'initial_request_id'
         )
     )
-    gss_with_client.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
-    gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+    await gss_with_client.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
+    await gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
     reply = await async_collect(
         gss_with_client.process_updates(
             [{'action': 'delete', 'data': VALID_TOKEN.id}],
@@ -197,14 +232,17 @@ async def test_delete_after_load(gss_with_client):
             TEST_REQUEST_ID,
         )
     )
-    assert len(reply[0].contents.data) == 0
+    assert_all_match(
+        reply,
+        [{'contents': {'type': 'state', 'data': [], 'request_id': TEST_REQUEST_ID}}],
+    )
 
 
 @pytest.mark.asyncio
 async def test_move_existing_token(gss_with_client):
     await async_collect(
         gss_with_client.process_updates(
-            [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
+            [VALID_UPDATE], TEST_ROOM_ID, TEST_CLIENT_ID, 'initial_request_id'
         )
     )
     reply = await async_collect(
@@ -215,7 +253,7 @@ async def test_move_existing_token(gss_with_client):
             TEST_REQUEST_ID,
         )
     )
-    assert reply[0].contents.data == [UPDATED_TOKEN]
+    assert_all_match(reply, [{'contents': {'type': 'state', 'data': [UPDATED_TOKEN]}}])
 
 
 @pytest.mark.asyncio
@@ -229,8 +267,13 @@ async def test_ping(gss_with_client, mocker):
             TEST_REQUEST_ID,
         )
     )
-    assert reply[0].contents.type == 'state'
-    assert reply[0].contents.data == [VALID_PING]
+    assert_all_match(
+        reply,
+        [
+            {'contents': {'type': 'state', 'data': [VALID_PING]}},
+            {'contents': {'type': 'state', 'data': []}},
+        ],
+    )
 
 
 @pytest.mark.asyncio
@@ -243,16 +286,23 @@ async def test_invalid_action(gss_with_client):
             TEST_REQUEST_ID,
         )
     )
-    # FIXME: Brittle
-    assert reply == [
-        Message(
-            {TEST_CLIENT_ID},
-            MessageContents(
-                'error', 'Invalid action: destroy all humans', TEST_REQUEST_ID
-            ),
-        ),
-        Message({TEST_CLIENT_ID}, MessageContents('state', [], TEST_REQUEST_ID)),
-    ]
+    assert_all_match(
+        reply,
+        [
+            {
+                'targets': {TEST_CLIENT_ID},
+                'contents': {'type': 'error', 'request_id': TEST_REQUEST_ID},
+            },
+            {
+                'targets': {TEST_CLIENT_ID},
+                'contents': {
+                    'type': 'state',
+                    'data': [],
+                    'request_id': TEST_REQUEST_ID,
+                },
+            },
+        ],
+    )
 
 
 @pytest.mark.asyncio
@@ -265,23 +315,30 @@ async def test_invalid_data(gss_with_client):
             TEST_REQUEST_ID,
         )
     )
-    # FIXME: Brittle
-    assert reply == [
-        Message(
-            {TEST_CLIENT_ID},
-            MessageContents(
-                'error', 'Received bad token: destroy all humans', TEST_REQUEST_ID
-            ),
-        ),
-        Message({TEST_CLIENT_ID}, MessageContents('state', [], TEST_REQUEST_ID)),
-    ]
+    assert_all_match(
+        reply,
+        [
+            {
+                'targets': {TEST_CLIENT_ID},
+                'contents': {'type': 'error', 'request_id': TEST_REQUEST_ID},
+            },
+            {
+                'targets': {TEST_CLIENT_ID},
+                'contents': {
+                    'type': 'state',
+                    'data': [],
+                    'request_id': TEST_REQUEST_ID,
+                },
+            },
+        ],
+    )
 
 
 @pytest.mark.asyncio
 async def test_incomplete_message(gss_with_client):
     reply1 = await async_collect(
         gss_with_client.process_updates(
-            [{'action': 'create'}], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
+            [{'action': 'create'}], TEST_ROOM_ID, TEST_CLIENT_ID, BAD_REQUEST_ID
         )
     )
     reply2 = await async_collect(
@@ -292,16 +349,36 @@ async def test_incomplete_message(gss_with_client):
             TEST_REQUEST_ID,
         )
     )
-    # FIXME: Brittle
-    expected_reply = [
-        Message(
-            {TEST_CLIENT_ID},
-            MessageContents('error', 'Did not receive a full update', TEST_REQUEST_ID),
-        ),
-        Message({TEST_CLIENT_ID}, MessageContents('state', [], TEST_REQUEST_ID)),
-    ]
-    assert reply1 == expected_reply
-    assert reply2 == expected_reply
+    assert_all_match(
+        reply1,
+        [
+            {
+                'targets': {TEST_CLIENT_ID},
+                'contents': {'type': 'error', 'request_id': BAD_REQUEST_ID},
+            },
+            {
+                'targets': {TEST_CLIENT_ID},
+                'contents': {'type': 'state', 'data': [], 'request_id': BAD_REQUEST_ID},
+            },
+        ],
+    )
+    assert_all_match(
+        reply2,
+        [
+            {
+                'targets': {TEST_CLIENT_ID},
+                'contents': {'type': 'error', 'request_id': TEST_REQUEST_ID},
+            },
+            {
+                'targets': {TEST_CLIENT_ID},
+                'contents': {
+                    'type': 'state',
+                    'data': [],
+                    'request_id': TEST_REQUEST_ID,
+                },
+            },
+        ],
+    )
 
 
 @pytest.mark.asyncio
@@ -316,30 +393,35 @@ async def test_delete_with_full_token(gss_with_client):
             [{'action': 'delete', 'data': asdict(VALID_TOKEN)}],
             TEST_ROOM_ID,
             TEST_CLIENT_ID,
-            TEST_REQUEST_ID,
+            BAD_REQUEST_ID,
         )
     )
-    # FIXME: Brittle
-    assert reply == [
-        Message(
-            {TEST_CLIENT_ID},
-            MessageContents(
-                'error', 'Data for delete actions must be a token ID', TEST_REQUEST_ID
-            ),
-        ),
-        Message(
-            {TEST_CLIENT_ID}, MessageContents('state', [VALID_TOKEN], TEST_REQUEST_ID)
-        ),
-    ]
+    assert_all_match(
+        reply,
+        [
+            {
+                'targets': {TEST_CLIENT_ID},
+                'contents': {'type': 'error', 'request_id': BAD_REQUEST_ID},
+            },
+            {
+                'targets': {TEST_CLIENT_ID},
+                'contents': {
+                    'type': 'state',
+                    'data': [VALID_TOKEN],
+                    'request_id': BAD_REQUEST_ID,
+                },
+            },
+        ],
+    )
 
 
 @pytest.mark.asyncio
 async def test_room_full(gss_with_client):
     for i in range(MAX_USERS_PER_ROOM):
-        gss_with_client.new_connection_request(f'client{i}', TEST_ROOM_ID)
+        await gss_with_client.new_connection_request(f'client{i}', TEST_ROOM_ID)
 
     with pytest.raises(InvalidConnectionException):
-        gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+        await gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
 
 
 @pytest.mark.asyncio
@@ -369,6 +451,7 @@ async def test_more_tokens_than_colors(gss_with_client):
     )
     tokens_without_color = []
     for token in reply[0].contents.data:
+        assert isinstance(token, Token)
         if not token.color_rgb:
             tokens_without_color.append(token)
     assert len(tokens_without_color) == 1
