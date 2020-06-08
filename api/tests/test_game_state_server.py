@@ -263,7 +263,7 @@ async def test_ping(gss_with_client, mocker):
     mocker.patch('asyncio.sleep')
     reply = await async_collect(
         gss_with_client.process_updates(
-            [PingAction(action="ping", data=VALID_PING)],
+            [PingAction(action='ping', data=VALID_PING)],
             TEST_ROOM_ID,
             TEST_CLIENT_ID,
             TEST_REQUEST_ID,
