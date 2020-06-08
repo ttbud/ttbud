@@ -1,5 +1,4 @@
 import pytest
-from dataclasses import asdict
 
 from tests.helpers import assert_matches, assert_all_match
 from src.game_state_server import (
@@ -23,25 +22,42 @@ VALID_TOKEN = Token(
     'some_id',
     'character',
     IconTokenContents('some_icon_id'),
-    0,
-    0,
-    0,
-    1,
-    1,
-    1,
-    colors[0],
+    start_x=0,
+    start_y=0,
+    start_z=0,
+    end_x=1,
+    end_y=1,
+    end_z=1,
+    color_rgb=colors[0],
+)
+ANOTHER_VALID_TOKEN = Token(
+    'another_id',
+    'character',
+    IconTokenContents('another_icon_id'),
+    start_x=1,
+    start_y=1,
+    start_z=1,
+    end_x=2,
+    end_y=2,
+    end_z=2,
+    color_rgb=colors[1],
 )
 UPDATED_TOKEN = Token(
     VALID_TOKEN.id, VALID_TOKEN.type, VALID_TOKEN.contents, 7, 8, 9, 8, 9, 10
 )
 VALID_ACTION = CreateOrUpdateAction(action='create', data=VALID_TOKEN)
+ANOTHER_VALID_ACTION = CreateOrUpdateAction(action='create', data=ANOTHER_VALID_TOKEN)
 VALID_PING = Ping('ping_id', 'ping', 0, 0)
 
 
 @pytest.fixture
-def gss():
-    rs = MemoryRoomStore('/my/path/to/room/storage/')
-    return GameStateServer(rs, fake_transaction)
+def room_store():
+    return MemoryRoomStore()
+
+
+@pytest.fixture
+def gss(room_store):
+    return GameStateServer(room_store, fake_transaction)
 
 
 @pytest.fixture
@@ -67,16 +83,24 @@ async def test_room_does_not_exist(gss):
 
 
 @pytest.mark.asyncio
-async def test_room_data_is_stored(gss_with_client):
+async def test_room_data_is_stored(room_store):
+    gss_one = GameStateServer(room_store, fake_transaction)
+    await gss_one.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
     await async_collect(
-        gss_with_client.process_updates(
-            [VALID_ACTION], TEST_ROOM_ID, TEST_CLIENT_ID, TEST_REQUEST_ID
+        gss_one.process_updates(
+            [VALID_ACTION, ANOTHER_VALID_ACTION],
+            TEST_ROOM_ID,
+            TEST_CLIENT_ID,
+            TEST_REQUEST_ID,
         )
     )
-    await gss_with_client.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
-    stored_data = await gss_with_client.room_store.read_room_data(TEST_ROOM_ID)
-    assert stored_data
-    assert asdict(VALID_TOKEN) in stored_data
+    await gss_one.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
+
+    # Make another game state server to simulate the server going down/up
+    gss_two = GameStateServer(room_store, fake_transaction)
+    message = await gss_two.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+    await gss_two.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+    assert message.contents.data == [VALID_TOKEN, ANOTHER_VALID_TOKEN]
 
 
 @pytest.mark.asyncio
