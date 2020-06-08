@@ -71,15 +71,17 @@ class MemoryRoomStore:
 
 
 class DatabaseRoomStore:
-    def __init__(self, path):
-        self.path = path
-        self.db = None
+    def __init__(self, db):
+        self.db = db
 
     @staticmethod
-    async def obtain(path):
-        dbrs = DatabaseRoomStore(path)
-        dbrs.db = await aioredis.create_redis_pool('redis://db')
-        return dbrs
+    async def obtain(address):
+        db = await DatabaseRoomStore.connect(address)
+        return DatabaseRoomStore(db)
+
+    @staticmethod
+    async def connect(address):
+        return await aioredis.create_redis_pool(address)
 
     async def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
         await self.db.set(room_id, json.dumps(list(map(asdict, data))))
