@@ -39,7 +39,7 @@ heroku plugins:install @heroku-cli/plugin-manifest
 
 # Create staging environment
 heroku apps:create ttbud-staging --manifest --remote staging
-heroku config:set ENVIRONMENT=staging --remote prod
+heroku config:set ENVIRONMENT=staging --remote staging
 heroku config:set ROOM_STORE_DIR=/var/ttbud/rooms --remote staging
 heroku config:set JSON_LOGS=true --remote staging
 
