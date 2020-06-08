@@ -35,7 +35,7 @@ VALID_TOKEN = Token(
 UPDATED_TOKEN = Token(
     VALID_TOKEN.id, VALID_TOKEN.type, VALID_TOKEN.contents, 7, 8, 9, 8, 9, 10
 )
-VALID_ACTION = CreateOrUpdateAction(action="create", data=VALID_TOKEN)
+VALID_ACTION = CreateOrUpdateAction(action='create', data=VALID_TOKEN)
 VALID_PING = Ping('ping_id', 'ping', 0, 0)
 
 
