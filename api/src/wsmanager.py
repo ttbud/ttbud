@@ -34,7 +34,7 @@ class WebsocketManager:
         self.gss = gss
         self._client_ids = {}
 
-    async def start_server(self) -> None:
+    async def start_websocket(self) -> None:
         try:
             await websockets.serve(
                 self.consumer_handler, '0.0.0.0', self.port,
