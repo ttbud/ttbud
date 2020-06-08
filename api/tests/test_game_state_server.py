@@ -190,7 +190,7 @@ async def test_delete_token(gss_with_client):
     )
     reply = await async_collect(
         gss_with_client.process_updates(
-            [DeleteAction(action="delete", data=VALID_TOKEN.id)],
+            [DeleteAction(action='delete', data=VALID_TOKEN.id)],
             TEST_ROOM_ID,
             TEST_CLIENT_ID,
             TEST_REQUEST_ID,
