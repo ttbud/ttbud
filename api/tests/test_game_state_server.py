@@ -38,13 +38,13 @@ VALID_PING = Ping('ping_id', 'ping', 0, 0)
 
 
 @pytest.fixture
-def gss() -> GameStateServer:
+def gss():
     rs = MemoryRoomStore('/my/path/to/room/storage/')
     return GameStateServer(rs, fake_transaction)
 
 
 @pytest.fixture
-async def gss_with_client(gss) -> GameStateServer:
+async def gss_with_client(gss):
     await gss.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
     return gss
 
