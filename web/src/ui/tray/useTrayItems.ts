@@ -62,6 +62,6 @@ export default function useTrayItems(
           ref: ref,
         };
       }),
-    [blueprints]
+    [blueprints, blueprintRefs, droppableId]
   );
 }
