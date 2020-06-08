@@ -160,7 +160,7 @@ async def test_update_in_occupied_position(gss_with_client):
     )
     reply = await async_collect(
         gss_with_client.process_updates(
-            [CreateOrUpdateAction(action="create", data=other_valid_token)],
+            [CreateOrUpdateAction(action='create', data=other_valid_token)],
             TEST_ROOM_ID,
             TEST_CLIENT_ID,
             BAD_REQUEST_ID,
