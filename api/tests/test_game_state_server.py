@@ -1,7 +1,7 @@
 import pytest
 from dataclasses import asdict
-from typing import Iterable, Any
 
+from tests.helpers import assert_matches, assert_all_match
 from src.game_state_server import (
     GameStateServer,
     MAX_USERS_PER_ROOM,
@@ -35,25 +35,6 @@ UPDATED_TOKEN = Token(
 )
 VALID_UPDATE = {'action': 'create', 'data': asdict(VALID_TOKEN)}
 VALID_PING = Ping('ping_id', 'ping', 0, 0)
-_SENTINEL = object()
-
-
-def assert_matches(actual: Any, expected: Any) -> None:
-    if isinstance(expected, dict):
-        for k, v in expected.items():
-            assert hasattr(actual, k)
-            assert_matches(getattr(actual, k), v)
-    elif isinstance(expected, list):
-        assert_all_match(actual, expected)
-    else:
-        assert actual == expected
-
-
-def assert_all_match(actual: Iterable[Any], expected: Iterable[dict]) -> None:
-    expected_iter = iter(expected)
-    for actual_item in actual:
-        assert_matches(actual_item, next(expected_iter, _SENTINEL))
-    assert next(expected_iter, _SENTINEL) is _SENTINEL
 
 
 @pytest.fixture
