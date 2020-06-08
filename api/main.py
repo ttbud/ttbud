@@ -13,7 +13,7 @@ from src.game_state_server import GameStateServer
 
 async def start_server():
     room_store = await DatabaseRoomStore.obtain(config.db_address)
-    gss = GameStateServer(room_store)
+    gss = GameStateServer(room_store, apm.transaction)
     ws = WebsocketManager(config.websocket_port, gss)
     await ws.start_websocket()
     return gss
