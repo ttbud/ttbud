@@ -249,7 +249,7 @@ async def test_move_existing_token(gss_with_client):
     )
     reply = await async_collect(
         gss_with_client.process_updates(
-            [CreateOrUpdateAction(action="update", data=UPDATED_TOKEN)],
+            [CreateOrUpdateAction(action='update', data=UPDATED_TOKEN)],
             TEST_ROOM_ID,
             TEST_CLIENT_ID,
             TEST_REQUEST_ID,
