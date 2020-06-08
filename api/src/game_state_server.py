@@ -178,7 +178,9 @@ class GameStateServer:
                     if self._is_valid_position(token, room_id):
                         self._create_or_update_token(token, room_id)
                     else:
-                        logger.info(f'Token {token.id} cannot move to occupied position')
+                        logger.info(
+                            f'Token {token.id} cannot move to occupied position'
+                        )
                         yield Message(
                             {client_id},
                             Response(
@@ -201,11 +203,7 @@ class GameStateServer:
                     self._create_ping(update.data, room_id)
                     pings_created.append(update.data.id)
                 else:
-                    logger.info(f'Invalid action: {update.action}')
-                    yield Message(
-                        {client_id},
-                        Response('error', f'Invalid action: {update.action}', request_id),
-                    )
+                    assert_never(update)
 
         yield Message(
             self._rooms[room_id].clients,
