@@ -10,6 +10,7 @@ from typing import (
     Tuple,
     List,
     Callable,
+    ContextManager,
 )
 from copy import deepcopy
 
@@ -23,7 +24,6 @@ from dacite import (
 
 from .api_structures import Response, CreateOrUpdateAction, DeleteAction, PingAction
 from .assert_never import assert_never
-from .apm import ApmTransaction
 from .room_store import RoomStore
 from .game_components import Token, Ping, content_id
 from .ws_close_codes import ERR_ROOM_FULL
@@ -82,7 +82,7 @@ class RoomData:
 
 class GameStateServer:
     def __init__(
-        self, room_store: RoomStore, apm_transaction: Callable[[str], ApmTransaction]
+        self, room_store: RoomStore, apm_transaction: Callable[[str], ContextManager]
     ):
         self._rooms: Dict[str, RoomData] = {}
         self.room_store = room_store

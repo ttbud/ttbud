@@ -1,7 +1,7 @@
-from src.apm import ApmTransaction
+from typing import ContextManager
 
 
-class FakeApmTransaction(ApmTransaction):
+class FakeApmTransaction(ContextManager):
     def __enter__(self):
         pass
 
@@ -9,7 +9,7 @@ class FakeApmTransaction(ApmTransaction):
         pass
 
 
-def fake_transaction(transaction_name: str) -> ApmTransaction:
+def fake_transaction(transaction_name: str) -> ContextManager:
     """
     A fake APM transaction that does nothing
 
