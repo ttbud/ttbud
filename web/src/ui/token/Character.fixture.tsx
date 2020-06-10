@@ -5,15 +5,19 @@ import { ContentType, IconContents } from "../../types";
 
 const ICON = DEFAULT_CHARACTER_ICONS[0];
 const DEFAULT_PROPS = {
+  pos: { x: 0, y: 0, z: 0 },
   contents: { type: ContentType.Icon, iconId: ICON.id } as IconContents,
   isDragging: false,
   expandable: true,
 };
 
 export default {
-  Icon: <Character {...DEFAULT_PROPS}
-    contents={{ type: ContentType.Icon, iconId: ICON.id }}
-  />,
+  Icon: (
+    <Character
+      {...DEFAULT_PROPS}
+      contents={{ type: ContentType.Icon, iconId: ICON.id }}
+    />
+  ),
   Text: (
     <Character
       {...DEFAULT_PROPS}

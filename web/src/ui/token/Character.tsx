@@ -1,11 +1,13 @@
 import React, { memo, MouseEvent, useEffect, useState } from "react";
 import {
+  Backdrop,
   Card,
   CardMedia,
   Divider,
   Fade,
   makeStyles,
   Theme,
+  useTheme,
 } from "@material-ui/core";
 import clsx from "clsx";
 import { Icon, ICONS_BY_ID } from "../icons";
@@ -13,7 +15,7 @@ import { GRID_SIZE_PX } from "../../config";
 import { Color, ContentType, TokenContents } from "../../types";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import { DragAttributes } from "../../drag/Draggable";
-import { Pos3d } from "../../util/shape-math";
+import { Bounds, Pos3d } from "../../util/shape-math";
 import CardActions from "@material-ui/core/CardActions";
 import IconButton from "@material-ui/core/IconButton";
 import PaletteIcon from "@material-ui/icons/Palette";
@@ -35,9 +37,9 @@ const useStyles = makeStyles<Theme, StyleProps>((theme) => ({
     width: expanded ? GRID_SIZE_PX + 84 : GRID_SIZE_PX,
     height: GRID_SIZE_PX,
     border: `3px solid ${toCssColor(color)}`,
-    transition: theme.transitions.create(["width", "box-shadow"], {
-      duration: theme.transitions.duration.short,
-    }),
+    // transition: theme.transitions.create(["width", "box-shadow"], {
+    //   duration: theme.transitions.duration.short,
+    // }),
   }),
   media: {
     margin: theme.spacing(1),
@@ -100,13 +102,16 @@ const Character: React.FC<Props> = memo(
   }) => {
     const [expanded, setExpanded] = useState(false);
     const [hovering, setHovering] = useState(false);
+    const [resizeModeActive, setResizeModeActive] = useState(false);
     const [resizing, setResizing] = useState(false);
+    const [width, setWidth] = useState(GRID_SIZE_PX);
+    const [height, setHeight] = useState(GRID_SIZE_PX);
+    const theme = useTheme();
 
-    const classes = useStyles({ color, expanded, resizing });
-    console.log({ expanded, hovering, resizing, dragging: isDragging });
+    const classes = useStyles({ color, expanded, resizing: resizeModeActive });
 
     useEffect(() => {
-      if (expandable && hovering && !isDragging && !resizing) {
+      if (expandable && hovering && !isDragging && !resizeModeActive) {
         const timeoutId = setTimeout(
           () => setExpanded(true),
           HOVER_EXPAND_DELAY_MS
@@ -115,18 +120,18 @@ const Character: React.FC<Props> = memo(
       } else {
         setExpanded(false);
       }
-    }, [hovering, isDragging, expandable]);
+    }, [resizeModeActive, hovering, isDragging, expandable]);
 
     useEffect(() => {
       if (expanded && !isDragging) {
         const listener = () => {
           console.log("called");
-          setResizing(false);
+          setResizeModeActive(false);
         };
         window.addEventListener("click", listener);
         return () => window.removeEventListener("click", listener);
       }
-    }, [resizing, isDragging]);
+    }, [expanded, isDragging]);
 
     const renderContents = (
       contents: TokenContents,
@@ -157,7 +162,7 @@ const Character: React.FC<Props> = memo(
 
     const onResizeClicked = () => {
       setExpanded(false);
-      setResizing(true);
+      setResizeModeActive(true);
     };
 
     const renderIcon = (
@@ -165,70 +170,136 @@ const Character: React.FC<Props> = memo(
       dragAttributes: Pick<DragAttributes, "onPointerDown" | "style" | "ref">
     ) => {
       return (
-        <div {...dragAttributes}>
+        <div
+          {...dragAttributes}
+          style={{
+            width: width,
+            height: height,
+          }}
+        >
           <CardMedia
             className={classes.media}
             image={icon.img}
             aria-label={`Character: ${icon.desc}`}
             draggable={false}
+            style={{
+              width: "60%",
+              height: "60%",
+            }}
           />
         </div>
       );
     };
 
+    const onPointerDown = (e: MouseEvent) => {
+      if (resizeModeActive) {
+        setResizing(true);
+      }
+    };
+
+    useEffect(() => {
+      if (resizing) {
+        assert(pos, "Cannot resize un-positioned card");
+        const startBounds: Bounds = {
+          top: pos.y,
+          left: pos.x,
+          bottom: pos.y + GRID_SIZE_PX,
+          right: pos.x + GRID_SIZE_PX,
+        };
+
+        const onPointerMove = (e: PointerEvent) => {
+          setWidth(Math.max(e.clientX - startBounds.left, GRID_SIZE_PX));
+          setHeight(Math.max(e.clientY - startBounds.top, GRID_SIZE_PX));
+        };
+
+        const onPointerUp = () => {
+          setWidth(GRID_SIZE_PX);
+          setHeight(GRID_SIZE_PX);
+          setResizing(false);
+        };
+
+        document.addEventListener("pointermove", onPointerMove);
+        document.addEventListener("pointerup", onPointerUp);
+
+        return () => {
+          document.removeEventListener("pointermove", onPointerMove);
+          document.removeEventListener("pointerup", onPointerUp);
+        };
+      }
+    }, [resizing, pos]);
+
     const style = dragAttributes?.style;
+
     const renderCharacter = () => (
-      <Card
-        onContextMenu={onContextMenu}
-        raised={isDragging || hovering || resizing}
-        className={clsx(classes.character, className)}
-        onPointerEnter={() => setHovering(true)}
-        onPointerLeave={() => setHovering(false)}
-        onTransitionEnd={dragAttributes?.onTransitionEnd}
-        ref={dragAttributes?.ref}
-        style={{
-          position: style?.position ?? pos ? "absolute" : "relative",
-          top: pos?.y,
-          left: pos?.x,
-          zIndex: style?.zIndex ?? expanded ? 10_000 : pos?.z,
-          userSelect: style?.userSelect,
-          transform: style?.transform,
-          transition: style?.transition,
-        }}
-      >
-        {renderContents(contents, {
-          ref: dragAttributes?.handleRef ?? null,
-          onPointerDown: dragAttributes?.onPointerDown,
-          style: { cursor: dragAttributes?.style?.cursor },
-        })}
-        <Fade in={expanded && !isDragging}>
-          <Divider
-            className={classes.divider}
-            orientation={"vertical"}
-            flexItem
-          />
-        </Fade>
-        <div
-          className={classes.actions}
-          style={{ width: isDragging || !expanded ? 0 : 84 }}
+      <>
+        <Backdrop
+          style={{ zIndex: 5 }}
+          open={resizeModeActive}
+          onClick={() => setResizeModeActive(false)}
+        />
+        <Card
+          onContextMenu={onContextMenu}
+          raised={isDragging || hovering || resizeModeActive}
+          className={clsx(classes.character, className)}
+          onPointerEnter={() => setHovering(true)}
+          onPointerLeave={() => setHovering(false)}
+          onPointerDown={onPointerDown}
+          onTransitionEnd={dragAttributes?.onTransitionEnd}
+          ref={dragAttributes?.ref}
+          style={{
+            position: style?.position ?? pos ? "absolute" : "relative",
+            top: pos?.y,
+            left: pos?.x,
+            zIndex:
+              style?.zIndex ?? (expanded || resizeModeActive) ? 10_000 : pos?.z,
+            userSelect: style?.userSelect,
+            transform: style?.transform,
+            transition:
+              style?.transition ?? !resizing
+                ? theme.transitions.create(["width", "height", "box-shadow"], {
+                    duration: theme.transitions.duration.short,
+                  })
+                : undefined,
+          }}
         >
-          <CardActions>
-            <IconButton aria-label="choose character color" size={"small"}>
-              <PaletteIcon />
-            </IconButton>
-            <IconButton
-              aria-label="resize"
-              size={"small"}
-              onClick={onResizeClicked}
-            >
-              <ResizeIcon />
-            </IconButton>
-          </CardActions>
-        </div>
-        <Fade in={resizing && !isDragging}>
-          <div className={classes.resizeIndicator} />
-        </Fade>
-      </Card>
+          {renderContents(contents, {
+            ref: dragAttributes?.handleRef ?? null,
+            onPointerDown: !resizeModeActive
+              ? dragAttributes?.onPointerDown
+              : undefined,
+            style: {
+              cursor: dragAttributes?.style?.cursor,
+            },
+          })}
+          <Fade in={expanded && !isDragging}>
+            <Divider
+              className={classes.divider}
+              orientation={"vertical"}
+              flexItem
+            />
+          </Fade>
+          <div
+            className={classes.actions}
+            style={{
+              width: isDragging || !expanded ? 0 : 84,
+              visibility: resizeModeActive ? "collapse" : "visible",
+            }}
+          >
+            <CardActions>
+              <IconButton aria-label="choose character color" size={"small"}>
+                <PaletteIcon />
+              </IconButton>
+              <IconButton
+                aria-label="resize"
+                size={"small"}
+                onClick={onResizeClicked}
+              >
+                <ResizeIcon />
+              </IconButton>
+            </CardActions>
+          </div>
+        </Card>
+      </>
     );
 
     return renderCharacter();

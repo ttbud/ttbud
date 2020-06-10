@@ -233,7 +233,7 @@ const PureBoard: React.FC<Props> = ({
   };
 
   const onPointerMove: PointerEventHandler = (e) => {
-    if (isDragging) {
+    if (isDragging || e.target !== container.current) {
       return;
     }
 
