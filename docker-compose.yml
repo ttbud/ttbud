@@ -11,6 +11,7 @@ services:
       SCOUT_MONITOR:
       PORT: ${API_WEBSOCKET_PORT}
       ROOM_STORE_DIR: /var/ttbud/rooms
+      USE_REDIS:
       REDIS_URL: redis://db
     volumes:
       - rooms:/var/ttbud/rooms

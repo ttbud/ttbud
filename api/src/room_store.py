@@ -92,9 +92,10 @@ class RedisRoomStore(RoomStore):
         return RedisRoomStore(redis)
 
     async def get_all_room_ids(self) -> AsyncIterator[str]:
-        cur = b'0'
-        while cur:
-            cur, keys = await self.redis.scan(cur, 'room:*')
+        # A cursor of '0' tells redis.scan to start at the beginning
+        cursor = b'0'
+        while cursor:
+            cursor, keys = await self.redis.scan(cursor, 'room:*')
             for key in keys:
                 yield str(key[len('room:') :], 'utf-8')
 
