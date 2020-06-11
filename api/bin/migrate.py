@@ -35,7 +35,7 @@ def v1_to_v2(old: V1Token) -> V2Token:
         start_x=old.start_x,
         start_y=old.start_y,
         start_z=old.start_z,
-        end_x=old.start_x,
+        end_x=old.end_x,
         end_y=old.end_y,
         end_z=old.end_z,
         color_rgb=old.color_rgb,
