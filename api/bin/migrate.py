@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import dataclass
+from traceback import print_exc
 from typing import Optional
 
 from dacite import from_dict
@@ -45,11 +46,15 @@ async def migrate() -> None:
     async for room_id in store.get_all_room_ids():
         room_data = await store.read_room_data(room_id)
         if room_data:
-            new_tokens = []
-            for token_dict in room_data:
-                old_token = from_dict(V1Token, token_dict)
-                new_tokens.append(v1_to_v2(old_token))
-            await store.write_room_data(room_id, new_tokens)
+            try:
+                new_tokens = []
+                for token_dict in room_data:
+                    old_token = from_dict(V1Token, token_dict)
+                    new_tokens.append(v1_to_v2(old_token))
+                await store.write_room_data(room_id, new_tokens)
+            except Exception as e:
+                print_exc()
+                print('failed to migrate room', room_id, e)
 
 
 if __name__ == '__main__':
