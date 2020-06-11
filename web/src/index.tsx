@@ -10,6 +10,7 @@ import { BoardStateApiClient } from "./network/BoardStateApiClient";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import { CssBaseline, createMuiTheme, ThemeProvider } from "@material-ui/core";
+import purple from "@material-ui/core/colors/purple";
 
 const monitor = new DomDroppableMonitor();
 const apiClient = new BoardStateApiClient(
@@ -21,6 +22,7 @@ let persistor = persistStore(store);
 
 const theme = createMuiTheme({
   palette: {
+    primary: purple,
     background: {
       default: "#F5F5DC",
     },
