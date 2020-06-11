@@ -30,8 +30,8 @@ const TourPopupContent: React.FC<Props> = ({ title, notes }) => {
         {title}
       </Typography>
       <ul className={classes.notes}>
-        {notes.map((bullet) => (
-          <li>
+        {notes.map((bullet, i) => (
+          <li key={`tour-note-${i}`}>
             <Typography variant="body1">{bullet}</Typography>
           </li>
         ))}
