@@ -2,7 +2,7 @@ import logging
 import asyncio
 import json
 from dataclasses import asdict
-from typing import Union, List, Tuple, Dict, Any
+from typing import Union, List, Tuple, Dict, Any, Hashable
 from uuid import UUID
 
 import dacite
@@ -14,6 +14,7 @@ from websockets import ConnectionClosedError
 from .game_state_server import (
     InvalidConnectionException,
     Message,
+    GameStateServer,
 )
 from .api_structures import Response, Request
 from .ws_close_codes import ERR_INVALID_UUID
@@ -23,7 +24,7 @@ def ignore_none(items: List[Tuple[str, Any]]) -> Dict[str, Any]:
     return dict(filter(lambda entry: entry[1] is not None, items))
 
 
-def is_valid_uuid(uuid_string):
+def is_valid_uuid(uuid_string: str) -> bool:
     try:
         val = UUID(uuid_string, version=4)
     except ValueError:
@@ -35,10 +36,10 @@ logger = logging.getLogger(__name__)
 
 
 class WebsocketManager:
-    def __init__(self, port, gss):
+    def __init__(self, port: int, gss: GameStateServer) -> None:
         self.port = port
         self.gss = gss
-        self._client_ids = {}
+        self._clients_by_id: Dict[Hashable, websockets.WebSocketServerProtocol] = {}
 
     async def start_websocket(self) -> None:
         try:
@@ -59,7 +60,7 @@ class WebsocketManager:
             )
             return
 
-        self._client_ids[hash(client)] = client
+        self._clients_by_id[hash(client)] = client
         try:
             response = await self.gss.new_connection_request(hash(client), room_id)
         except InvalidConnectionException as e:
@@ -79,7 +80,7 @@ class WebsocketManager:
 
     async def send_message(self, message: Message) -> None:
         for target in message.targets:
-            client = self._client_ids.get(target)
+            client = self._clients_by_id.get(target)
             if client:
                 await client.send(
                     json.dumps(asdict(message.contents, dict_factory=ignore_none))

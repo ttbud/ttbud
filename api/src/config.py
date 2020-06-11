@@ -17,7 +17,7 @@ class Config:
     environment: Environment = Environment[os.environ['ENVIRONMENT'].upper()]
     websocket_port: int = int(os.environ['PORT'])
     room_store_dir: str = os.environ['ROOM_STORE_DIR']
-    db_address = os.environ['REDIS_URL']
+    redis_address = os.environ['REDIS_URL']
     json_logs: bool = os.environ.get('JSON_LOGS') == 'true'
     scout_config = {
         'name': f'ttbud ({environment.value})',

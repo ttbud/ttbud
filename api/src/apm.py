@@ -1,17 +1,9 @@
-from typing import Protocol
+from typing import ContextManager
 
 import scout_apm.api
 
 
-class ApmTransaction(Protocol):
-    def __enter__(self):
-        pass
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-
-def transaction(transaction_name: str) -> ApmTransaction:
+def transaction(transaction_name: str) -> ContextManager:
     """
     Create a tracked apm transaction context
 

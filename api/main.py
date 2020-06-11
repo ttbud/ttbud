@@ -7,19 +7,19 @@ import scout_apm.api
 from src import apm
 from src.config import config
 from src.wsmanager import WebsocketManager
-from src.room_store import DatabaseRoomStore
+from src.room_store import RedisRoomStore
 from src.game_state_server import GameStateServer
 
 
-async def start_server():
-    room_store = await DatabaseRoomStore.obtain(config.db_address)
+async def start_server() -> GameStateServer:
+    room_store = await RedisRoomStore.obtain(config.redis_address)
     gss = GameStateServer(room_store, apm.transaction)
     ws = WebsocketManager(config.websocket_port, gss)
     await ws.start_websocket()
     return gss
 
 
-def main():
+def main() -> None:
     logging.config.dictConfig(config.log_config)
     scout_apm.api.install(config=config.scout_config)
 

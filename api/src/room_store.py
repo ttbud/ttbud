@@ -1,19 +1,26 @@
+from __future__ import annotations
 import os
 import json
-from typing import Protocol, Iterable, Optional, List
+from typing import (
+    Protocol,
+    Iterable,
+    Optional,
+    List,
+    Dict,
+    AsyncIterator,
+)
 from abc import abstractmethod
 from dataclasses import asdict
 
 import aioredis
+from aioredis import Redis
 
 from .game_components import Token
 
 
 class RoomStore(Protocol):
-    path: str
-
     @abstractmethod
-    def get_all_room_ids(self) -> list:
+    def get_all_room_ids(self) -> AsyncIterator[str]:
         raise NotImplementedError
 
     @abstractmethod
@@ -21,22 +28,23 @@ class RoomStore(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    async def read_room_data(self, room_id: str) -> Optional[dict]:
+    async def read_room_data(self, room_id: str) -> Optional[List[dict]]:
         raise NotImplementedError
 
 
-class FileRoomStore:
-    def __init__(self, path):
+class FileRoomStore(RoomStore):
+    def __init__(self, path: str):
         self.path = path
         os.makedirs(self.path, exist_ok=True)
 
-    def get_all_room_ids(self) -> list:
-        return os.listdir(self.path)
+    async def get_all_room_ids(self) -> AsyncIterator[str]:
+        for file in os.listdir(self.path):
+            yield file
 
     def _is_valid_path(self, full_path: str) -> bool:
         return os.path.abspath(full_path).startswith(self.path)
 
-    def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
+    async def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
         full_path = f'{self.path}/{room_id}'
         storable_data = list(map(asdict, data))
         if self._is_valid_path(full_path):
@@ -45,7 +53,7 @@ class FileRoomStore:
         else:
             raise ValueError(f"path {full_path} is not a valid path")
 
-    def read_room_data(self, room_id: str) -> Optional[List[dict]]:
+    async def read_room_data(self, room_id: str) -> Optional[List[dict]]:
         full_path = f'{self.path}/{room_id}'
         if self._is_valid_path(full_path) and os.path.exists(full_path):
             with open(full_path, 'r') as f:
@@ -54,39 +62,47 @@ class FileRoomStore:
         return None
 
 
-class MemoryRoomStore:
-    def __init__(self):
-        self.stored_data = {}
+class MemoryRoomStore(RoomStore):
+    def __init__(self) -> None:
+        self.stored_data: Dict[str, List[dict]] = {}
 
-    def get_all_room_ids(self) -> list:
-        return list(self.stored_data.keys())
+    async def get_all_room_ids(self) -> AsyncIterator[str]:
+        for key in self.stored_data.keys():
+            yield key
 
     async def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
         storable_data = list(map(asdict, data))
         self.stored_data[room_id] = storable_data
 
-    async def read_room_data(self, room_id: str) -> Optional[dict]:
+    async def read_room_data(self, room_id: str) -> Optional[List[dict]]:
         return self.stored_data.get(room_id)
 
 
-class DatabaseRoomStore:
-    def __init__(self, db):
-        self.db = db
+def _room_key(room_id: str) -> str:
+    return f'room:{room_id}'
+
+
+class RedisRoomStore(RoomStore):
+    def __init__(self, redis: Redis) -> None:
+        self.redis = redis
 
     @staticmethod
-    async def obtain(address):
-        db = await DatabaseRoomStore.connect(address)
-        return DatabaseRoomStore(db)
+    async def obtain(address: str) -> RedisRoomStore:
+        redis = await aioredis.create_redis_pool(address)
+        return RedisRoomStore(redis)
 
-    @staticmethod
-    async def connect(address):
-        return await aioredis.create_redis_pool(address)
+    async def get_all_room_ids(self) -> AsyncIterator[str]:
+        cur = b'0'
+        while cur:
+            cur, keys = await self.redis.scan(cur, 'room:*')
+            for key in keys:
+                yield str(key[len('room:') :], 'utf-8')
 
     async def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
-        await self.db.set(room_id, json.dumps(list(map(asdict, data))))
+        await self.redis.set(_room_key(room_id), json.dumps(list(map(asdict, data))))
 
-    async def read_room_data(self, room_id: str) -> Optional[dict]:
-        data = await self.db.get(room_id, encoding='utf-8')
+    async def read_room_data(self, room_id: str) -> Optional[List[dict]]:
+        data = await self.redis.get(_room_key(room_id), encoding='utf-8')
         if data:
             return json.loads(data)
         return None

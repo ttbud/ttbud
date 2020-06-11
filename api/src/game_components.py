@@ -30,7 +30,7 @@ class Token:
     end_z: int
     color_rgb: Optional[Color] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if (
             self.start_x >= self.end_x
             or self.start_y >= self.end_y
