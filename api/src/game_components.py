@@ -37,9 +37,9 @@ class Token:
             or self.start_z >= self.end_z
         ):
             raise ValueError(
-                f"Start coordinates must be less than end positions:"
-                f" start=({self.start_x}, {self.start_y}, {self.start_z})"
-                f" end=({self.end_x}, {self.end_y}, {self.end_z})"
+                f'Start coordinates must be less than end positions:'
+                f' start=({self.start_x}, {self.start_y}, {self.start_z})'
+                f' end=({self.end_x}, {self.end_y}, {self.end_z})'
             )
 
 
@@ -53,8 +53,8 @@ class Ping:
 
 def content_id(contents: TokenContents) -> str:
     if isinstance(contents, TextTokenContents):
-        return f"text-{contents.text}"
+        return f'text-{contents.text}'
     elif isinstance(contents, IconTokenContents):
-        return f"icon-{contents.icon_id}"
+        return f'icon-{contents.icon_id}'
     else:
-        raise ValueError(f"Unknown contents class type {type(contents)}")
+        raise ValueError(f'Unknown contents class type {type(contents)}')

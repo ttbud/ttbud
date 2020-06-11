@@ -24,7 +24,7 @@ async def migrate() -> None:
                 await redis_store.write_room_data(target_room_id, tokens)
         except Exception as e:
             print_exc()
-            print("failed to migrate room", target_room_id, e)
+            print('failed to migrate room', target_room_id, e)
 
     migrate_futures = []
     async for room_id in file_store.get_all_room_ids():
