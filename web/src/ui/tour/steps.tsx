@@ -49,7 +49,7 @@ const steps: ReactourStep[] = [
     content: (
       <>
         <TourPopupContent
-          title="More Actions"
+          title="Commands"
           notes={[
             <>
               <ShortcutText>right-click</ShortcutText> to delete from the board

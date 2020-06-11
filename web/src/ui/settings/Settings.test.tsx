@@ -66,7 +66,7 @@ describe("Settings", () => {
     );
 
     getByLabelText("Settings").click();
-    getByText("Clear Room").click();
+    getByText("Clear Board").click();
     getByText("Clear").click();
 
     expect(onClearMap).toBeCalledTimes(1);
@@ -80,7 +80,7 @@ describe("Settings", () => {
     );
 
     getByLabelText("Settings").click();
-    getByText("Clear Room").click();
+    getByText("Clear Board").click();
     getByText("Cancel").click();
 
     expect(onClearMap).not.toBeCalled();
@@ -101,7 +101,7 @@ describe("Settings", () => {
     };
 
     getByLabelText("Settings").click();
-    getByText("Share Room").click();
+    getByText("Invite Players").click();
     expect(clipboardWriteFn).toBeCalledWith(window.location.href);
     expect(await findByText("URL copied to clipboard")).toBeVisible();
   });

@@ -174,7 +174,11 @@ const PureSettings: React.FC<Props> = memo(
           transformOrigin={{ vertical: "bottom", horizontal: "right" }}
         >
           <div className={classes.popoverContainer}>
-            <List subheader={<ListSubheader>Settings</ListSubheader>}>
+            <List
+              subheader={
+                <ListSubheader color="primary">Settings</ListSubheader>
+              }
+            >
               <ListItem dense={true}>
                 <ListItemText
                   primary="Initiative Tracker"
@@ -200,7 +204,9 @@ const PureSettings: React.FC<Props> = memo(
                 />
               </ListItem>
             </List>
-            <List subheader={<ListSubheader>Tour</ListSubheader>}>
+            <List
+              subheader={<ListSubheader color="primary">Tour</ListSubheader>}
+            >
               <ListItem
                 button
                 dense={true}
@@ -210,7 +216,11 @@ const PureSettings: React.FC<Props> = memo(
                 <ListItemText>Start Tour</ListItemText>
               </ListItem>
             </List>
-            <List subheader={<ListSubheader>Room Actions</ListSubheader>}>
+            <List
+              subheader={
+                <ListSubheader color="primary">Board Actions</ListSubheader>
+              }
+            >
               <ListItem
                 button
                 component="button"
@@ -218,10 +228,10 @@ const PureSettings: React.FC<Props> = memo(
                 className={classes.settingMainText}
                 onClick={openConfirmationDialog}
               >
-                <ListItemText primary="Clear Room" />
+                <ListItemText primary="Clear Board" />
               </ListItem>
               <ListItem button dense={true} component="a" href={"/"}>
-                <ListItemText>New Room</ListItemText>
+                <ListItemText>Open New Board</ListItemText>
               </ListItem>
               <ListItem
                 button
@@ -229,10 +239,14 @@ const PureSettings: React.FC<Props> = memo(
                 component="button"
                 onClick={onShareRoom}
               >
-                <ListItemText>Share Room</ListItemText>
+                <ListItemText>Invite Players</ListItemText>
               </ListItem>
             </List>
-            <List subheader={<ListSubheader>Commands</ListSubheader>}>
+            <List
+              subheader={
+                <ListSubheader color="primary">Commands</ListSubheader>
+              }
+            >
               <ListItem dense={true}>
                 <ListItemText primary="Search" />
                 <Typography color="textSecondary">
