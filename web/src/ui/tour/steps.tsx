@@ -1,6 +1,5 @@
 import { ReactourStep } from "reactour";
 import isMac from "../../util/isMac";
-import { Typography } from "@material-ui/core";
 import React from "react";
 import ShortcutText from "./ShortcutText";
 import TourPopupContent from "./TourPopupContent";
@@ -70,10 +69,14 @@ const steps: ReactourStep[] = [
   {
     selector: "[data-tour=settings]",
     content: (
-      <Typography variant="body1">
-        Click here to share this room with others, they'll see your changes in
-        real time!
-      </Typography>
+      <TourPopupContent
+        title={"Menu"}
+        notes={[
+          "Get a link to share your table with other players",
+          "Clear the board",
+          "Open a new board",
+        ]}
+      />
     ),
   },
 ];
