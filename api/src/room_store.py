@@ -51,7 +51,7 @@ class FileRoomStore(RoomStore):
             with open(full_path, 'w') as f:
                 f.write(json.dumps(storable_data))
         else:
-            raise ValueError(f"path {full_path} is not a valid path")
+            raise ValueError(f'path {full_path} is not a valid path')
 
     async def read_room_data(self, room_id: str) -> Optional[List[dict]]:
         full_path = f'{self.path}/{room_id}'
@@ -92,9 +92,10 @@ class RedisRoomStore(RoomStore):
         return RedisRoomStore(redis)
 
     async def get_all_room_ids(self) -> AsyncIterator[str]:
-        cur = b'0'
-        while cur:
-            cur, keys = await self.redis.scan(cur, 'room:*')
+        # A cursor of '0' tells redis.scan to start at the beginning
+        cursor = b'0'
+        while cursor:
+            cursor, keys = await self.redis.scan(cursor, 'room:*')
             for key in keys:
                 yield str(key[len('room:') :], 'utf-8')
 
