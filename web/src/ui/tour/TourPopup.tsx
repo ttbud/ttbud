@@ -1,5 +1,13 @@
 import React from "react";
-import { Button, Card, CardActions, CardContent } from "@material-ui/core";
+
+import CloseIcon from "@material-ui/icons/Close";
+import {
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  IconButton,
+} from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 
 interface Props {
@@ -33,6 +41,11 @@ const useStyles = makeStyles({
   root: {
     maxWidth: "400px",
   },
+  closeBtn: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
   actions: {
     display: "flex",
     justifyContent: "flex-end",
@@ -65,6 +78,9 @@ const TourPopup: React.FC<Props> = ({
 
   return (
     <Card className={classes.root}>
+      <IconButton className={classes.closeBtn} onClick={close}>
+        <CloseIcon />
+      </IconButton>
       <CardContent>{content}</CardContent>
       <CardActions className={classes.actions}>
         {!isFirstPopup && (
