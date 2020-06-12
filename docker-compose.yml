@@ -40,7 +40,7 @@ services:
       - 443:443
       - 1234:1234
   db:
-    image: redis:5.0
+    image: redis:6.0.4
     command: redis-server --appendonly yes
     ports:
       - 6379:6379
