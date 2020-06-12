@@ -2,14 +2,13 @@ import os
 from dataclasses import dataclass
 from enum import Enum
 
+from src.room_store import SSLValidation
+
 
 class Environment(Enum):
     DEV = 'dev'
     STAGING = 'staging'
     PROD = 'prod'
-
-
-_scout_key = os.environ.get('SCOUT_KEY')
 
 
 @dataclass
@@ -20,9 +19,12 @@ class Config:
     redis_address = os.environ['REDIS_URL']
     use_redis: bool = os.environ.get('USE_REDIS') == 'true'
     json_logs: bool = os.environ.get('JSON_LOGS') == 'true'
+    redis_ssl_validation: SSLValidation = SSLValidation[
+        os.environ.get('REDIS_SSL_VALIDATION', 'default').upper()
+    ]
     scout_config = {
         'name': f'ttbud ({environment.value})',
-        'key': _scout_key,
+        'key': os.environ.get('SCOUT_KEY'),
         'monitor': os.environ.get('SCOUT_MONITOR') == 'true',
     }
     log_config = {
