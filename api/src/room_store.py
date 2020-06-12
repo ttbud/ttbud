@@ -1,6 +1,9 @@
 from __future__ import annotations
 import os
 import json
+import ssl
+from enum import Enum
+from ssl import SSLContext
 from typing import (
     Protocol,
     Iterable,
@@ -8,6 +11,7 @@ from typing import (
     List,
     Dict,
     AsyncIterator,
+    Union,
 )
 from abc import abstractmethod
 from dataclasses import asdict
@@ -82,13 +86,36 @@ def _room_key(room_id: str) -> str:
     return f'room:{room_id}'
 
 
+class SSLValidation(Enum):
+    # No SSL at all. Free heroku redis instances (which we use for staging) do not
+    # support SSL
+    NONE = 'none'
+    # Use SSL, but disable cert verification.
+    # Heroku's _paid_ redis plans (which we use in production) have self-signed certs
+    # without a consistent key we can trust :(. If we ever start handling data that's
+    # even remotely private, we'll have to find a better solution
+    SELF_SIGNED = 'self_signed'
+    # Full SSL verification
+    DEFAULT = 'default'
+
+
 class RedisRoomStore(RoomStore):
     def __init__(self, redis: Redis) -> None:
         self.redis = redis
 
     @staticmethod
-    async def obtain(address: str) -> RedisRoomStore:
-        redis = await aioredis.create_redis_pool(address)
+    async def obtain(address: str, ssl_validation: SSLValidation) -> RedisRoomStore:
+        ssl_context: Union[SSLContext, bool]
+        if ssl_validation == SSLValidation.SELF_SIGNED:
+            ssl_context = SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.VerifyMode.CERT_NONE
+        elif ssl_validation == SSLValidation.NONE:
+            ssl_context = False
+        else:
+            ssl_context = ssl.create_default_context()
+
+        redis = await aioredis.create_redis_pool(address, ssl=ssl_context)
         return RedisRoomStore(redis)
 
     async def get_all_room_ids(self) -> AsyncIterator[str]:

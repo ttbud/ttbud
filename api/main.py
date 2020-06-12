@@ -14,7 +14,9 @@ from src.game_state_server import GameStateServer
 async def start_server() -> GameStateServer:
     room_store: RoomStore
     if config.use_redis:
-        room_store = await RedisRoomStore.obtain(config.redis_address)
+        room_store = await RedisRoomStore.obtain(
+            config.redis_address, config.redis_ssl_validation
+        )
     else:
         room_store = FileRoomStore(config.room_store_dir)
 
