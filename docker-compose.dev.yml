@@ -1,6 +1,9 @@
 version: "3"
 services:
   api:
+    build:
+      args:
+        DEV: "true"
     working_dir: /app/
     command: python -u -m watchgod main.main
     # watchgod will drop all stdout without a tty
@@ -8,6 +11,9 @@ services:
     volumes:
       - ./api:/app
       - ./storage:/var/ttbud/rooms
+    environment:
+      # Make logs show up immediately
+      PYTHONUNBUFFERED: 1
   web:
     image: tbbud-web-dev
     build: web

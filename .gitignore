@@ -16,3 +16,6 @@ storage
 
 # Local Netlify folder
 .netlify
+
+# Linting tools
+.dmypy.json
