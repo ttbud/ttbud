@@ -126,11 +126,13 @@ interface BoardStateEvent {
 enum DisconnectErrorCode {
   InvalidUuid = 4001,
   RoomFull = 4002,
+  TooManyConnections = 4003,
 }
 
 export enum ConnectionError {
   ROOM_FULL = "room full",
   INVALID_ROOM_ID = "invalid room id",
+  TOO_MANY_CONNECTIONS = "too many connections",
   UNKNOWN = "unknown",
 }
 
@@ -172,6 +174,8 @@ function disconnectReason(disconnectCode: number): ConnectionError {
       return ConnectionError.INVALID_ROOM_ID;
     case DisconnectErrorCode.RoomFull:
       return ConnectionError.ROOM_FULL;
+    case DisconnectErrorCode.TooManyConnections:
+      return ConnectionError.TOO_MANY_CONNECTIONS;
     default:
       return ConnectionError.UNKNOWN;
   }

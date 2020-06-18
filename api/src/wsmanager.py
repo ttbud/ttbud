@@ -1,8 +1,10 @@
 import logging
 import asyncio
 import json
+import socket
 from dataclasses import asdict
-from typing import Union, List, Tuple, Dict, Any, Hashable
+import random
+from typing import Union, List, Tuple, Dict, Any, Hashable, NoReturn
 from uuid import UUID
 
 import dacite
@@ -17,7 +19,14 @@ from .game_state_server import (
     GameStateServer,
 )
 from .api_structures import Response, Request
-from .ws_close_codes import ERR_INVALID_UUID
+from .rate_limit import (
+    RateLimiter,
+    SERVER_LIVENESS_EXPIRATION_SECONDS,
+    TooManyConnectionsException,
+)
+from .ws_close_codes import ERR_INVALID_UUID, ERR_TOO_MANY_CONNECTIONS
+
+logger = logging.getLogger(__name__)
 
 
 def ignore_none(items: List[Tuple[str, Any]]) -> Dict[str, Any]:
@@ -32,13 +41,25 @@ def is_valid_uuid(uuid_string: str) -> bool:
     return val.hex == uuid_string.replace('-', '')
 
 
-logger = logging.getLogger(__name__)
+def get_client_ip(client: websockets.WebSocketServerProtocol) -> str:
+    ip, _ = client.remote_address
+    xff = client.request_headers.get('X-FORWARDED-FOR', '')
+    last_xff_ip_str = xff.split(',').pop().strip()
+
+    try:
+        last_xff_ip = socket.inet_aton(last_xff_ip_str)
+        return str(last_xff_ip)
+    except socket.error:
+        return str(ip)
 
 
 class WebsocketManager:
-    def __init__(self, port: int, gss: GameStateServer) -> None:
+    def __init__(
+        self, port: int, gss: GameStateServer, rate_limiter: RateLimiter
+    ) -> None:
         self.port = port
         self.gss = gss
+        self._rate_limiter = rate_limiter
         self._clients_by_id: Dict[Hashable, websockets.WebSocketServerProtocol] = {}
 
     async def start_websocket(self) -> None:
@@ -46,8 +67,31 @@ class WebsocketManager:
             await websockets.serve(
                 self.consumer_handler, '0.0.0.0', self.port,
             )
+            asyncio.create_task(self.maintain_liveness(), name='maintain_liveness')
         except OSError:
             logger.exception('Failed to start websocket server', exc_info=True)
+
+    async def maintain_liveness(self) -> NoReturn:
+        while True:
+            logger.info("Refreshing liveness")
+            await self._rate_limiter.refresh_server_liveness(
+                map(
+                    lambda client: client.remote_address[0],
+                    self._clients_by_id.values(),
+                )
+            )
+
+            # Offset refresh interval by a random amount to avoid all hitting
+            # redis to refresh keys at the same time.
+            # These numbers were chosen by the scientific process of making it up
+            max_refresh_offset = SERVER_LIVENESS_EXPIRATION_SECONDS / 16
+            refresh_offset = random.uniform(-max_refresh_offset, max_refresh_offset)
+
+            # Leave plenty of wiggle room so that we can't miss our refresh
+            # target just by being overloaded
+            await asyncio.sleep(
+                (SERVER_LIVENESS_EXPIRATION_SECONDS / 3) + refresh_offset
+            )
 
     async def consumer_handler(
         self, client: websockets.WebSocketServerProtocol, room_id: str
@@ -61,22 +105,40 @@ class WebsocketManager:
             return
 
         self._clients_by_id[hash(client)] = client
-        try:
-            response = await self.gss.new_connection_request(hash(client), room_id)
-        except InvalidConnectionException as e:
-            await client.close(e.close_code, e.reason)
-            return
 
-        await self.send_message(response)
+        client_ip = get_client_ip(client)
         try:
-            async for message in client:
-                asyncio.ensure_future(self.consume(message, room_id, client))
-        except ConnectionClosedError:
-            # Disconnecting is a perfectly normal thing to happen, so just
-            # continue cleaning up connection state
-            pass
-        finally:
-            await self.gss.connection_dropped(hash(client), room_id)
+            async with self._rate_limiter.rate_limited_connection(client_ip):
+                logger.info(
+                    f'Connected to {client_ip}',
+                    extra={'client_ip': client_ip, 'room_id': room_id},
+                )
+                try:
+                    response = await self.gss.new_connection_request(
+                        hash(client), room_id
+                    )
+                except InvalidConnectionException as e:
+                    await client.close(e.close_code, e.reason)
+                    return
+
+                await self.send_message(response)
+                try:
+                    async for message in client:
+                        asyncio.ensure_future(self.consume(message, room_id, client))
+                except ConnectionClosedError:
+                    # Disconnecting is a perfectly normal thing to happen, so just
+                    # continue cleaning up connection state
+                    pass
+                finally:
+                    await self.gss.connection_dropped(hash(client), room_id)
+        except TooManyConnectionsException:
+            logger.info(
+                f'Rejecting connection to {client_ip}, too many connections for user',
+                extra={'client_ip': client_ip, 'room_id': room_id},
+            )
+            await client.close(
+                ERR_TOO_MANY_CONNECTIONS, reason='Too many active connections'
+            )
 
     async def send_message(self, message: Message) -> None:
         for target in message.targets:

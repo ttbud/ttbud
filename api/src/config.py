@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass
 from enum import Enum
 
-from src.room_store import SSLValidation
+from src.redis import SSLValidation
 
 
 class Environment(Enum):

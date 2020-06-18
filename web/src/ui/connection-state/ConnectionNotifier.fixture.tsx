@@ -1,7 +1,8 @@
 import { PureConnectionNotifier } from "./ConnectionNotifier";
-import { ConnectionStateType, ConnectionError } from "./connection-state-slice";
+import { ConnectionStateType } from "./connection-state-slice";
 import React from "react";
 import noop from "../../util/noop";
+import { ConnectionError } from "../../network/BoardStateApiClient";
 
 const Disconnected: React.FC<{ error: ConnectionError }> = ({ error }) => (
   <PureConnectionNotifier

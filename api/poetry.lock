@@ -311,6 +311,14 @@ requests = ">=2.9.1"
 
 [[package]]
 category = "dev"
+description = "Python wrapper around Lua and LuaJIT"
+name = "lupa"
+optional = false
+python-versions = "*"
+version = "1.9"
+
+[[package]]
+category = "dev"
 description = "Safely add untrusted strings to HTML/XML markup."
 name = "markupsafe"
 optional = false
@@ -727,7 +735,7 @@ test = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 
 [metadata]
-content-hash = "3b8ca3d1391b24983df5effe1c37a18c019b6a12214b87c35254147bf8c57108"
+content-hash = "7203d435dbb12fd4fc607942b173298b748a6a8461c9ed4605f18cd764b85d4d"
 python-versions = "^3.8"
 
 [metadata.files]
@@ -977,6 +985,33 @@ locust = [
     {file = "locust-1.0.3-py3-none-any.whl", hash = "sha256:b80deea54f470d8fd61a8f610d87041ce908924fe3fca09700376de49aa89195"},
     {file = "locust-1.0.3.tar.gz", hash = "sha256:7c2e850a84275b6f7c5ad4a8abde3488df94c08d3b52e619d9c71cc6b8c853cb"},
 ]
+lupa = [
+    {file = "lupa-1.9-cp27-cp27m-manylinux1_i686.whl", hash = "sha256:8434fdda16d101c458570d21baf9cd064304b515ed4ef9569949222ba04c3e37"},
+    {file = "lupa-1.9-cp27-cp27m-manylinux1_x86_64.whl", hash = "sha256:9823322e60b0d9695754e28f5a17323d111d6951933e958cfe72df9523a39e94"},
+    {file = "lupa-1.9-cp27-cp27m-win32.whl", hash = "sha256:a690b0bafb7e50dd8ba14a06065059b11f5c8e5961564d5d45de2d9b4a9972b1"},
+    {file = "lupa-1.9-cp27-cp27m-win_amd64.whl", hash = "sha256:6d65bdc251cd12b85487a1790ca1b282288be84555fe11fbe8b4357ae64708f5"},
+    {file = "lupa-1.9-cp27-cp27mu-manylinux1_i686.whl", hash = "sha256:ba879849832b87c18dbc471bffc62ff3393b2034a3b103348d620646575f448a"},
+    {file = "lupa-1.9-cp27-cp27mu-manylinux1_x86_64.whl", hash = "sha256:4badf4180f8fd28e032e8716422b7a0117879569e694b5e2e803a7e39fa85213"},
+    {file = "lupa-1.9-cp34-cp34m-manylinux1_i686.whl", hash = "sha256:ac7585125af7d7214e1f9dbdda965d7455c5065f71be20374c7900e01c74c05f"},
+    {file = "lupa-1.9-cp34-cp34m-manylinux1_x86_64.whl", hash = "sha256:517b96b23b4ce19feb54ee93d8c3b94f601a3d46cd1d570ecc5137fc7b9cb68c"},
+    {file = "lupa-1.9-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:632e7a101c288e05b823c2bae71ac69e0253e7f4120bc39b5dc1fcaf5daba0fb"},
+    {file = "lupa-1.9-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:42fcd8f7b33b84abce90c57aaeb80d9a2ba3c3fdb4cde2fac1c8f9e4eb00d581"},
+    {file = "lupa-1.9-cp35-cp35m-win32.whl", hash = "sha256:d3cf15d0c1126373535452bdeb71b016fe970d7e5ee2bc0381df7bd35f99c820"},
+    {file = "lupa-1.9-cp35-cp35m-win_amd64.whl", hash = "sha256:49afbeaf90c758512d3c0dea48ac0ecfa460974690cf1af58b95845e6b607c4b"},
+    {file = "lupa-1.9-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:abb357c35ad1c1b78b140c8cf1fd678bcaa04bab275c6d55e47a07717138e551"},
+    {file = "lupa-1.9-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:9ee2aa3e1e852a2917c5869e8ab69d725407a218d14c4c0c98f4b04b3b2a73a7"},
+    {file = "lupa-1.9-cp36-cp36m-win32.whl", hash = "sha256:d497f4727060a1daf8603e86cb731f587c38ab9a3451cd3c9c70f27859cbd3bd"},
+    {file = "lupa-1.9-cp36-cp36m-win_amd64.whl", hash = "sha256:a7d7761b007fbf8b524291ac42bccc32b072102e7f7e547783a5a5ded66a0c39"},
+    {file = "lupa-1.9-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:acaecd88ce6b708fbaf20b76b4d35ecb2817159f8a939b0a73d2aa840dfef850"},
+    {file = "lupa-1.9-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:c57cda6ba3dc55ddd8b6c566c4f315d6152307aee23f212aa06c5e653cde4f13"},
+    {file = "lupa-1.9-cp37-cp37m-win32.whl", hash = "sha256:fe1db400b471a0854fe364b63d7836973ee0d897a76628340d1721b6b4b89ddc"},
+    {file = "lupa-1.9-cp37-cp37m-win_amd64.whl", hash = "sha256:42285855c022b36ed3f0c5d19d0ef27b1648e0683838cddaf9191acad4d6616c"},
+    {file = "lupa-1.9-cp38-cp38-manylinux1_i686.whl", hash = "sha256:7619fbd85d9ece1d48fb72bb7389e98d878621d2da0b7622c99066671f294b65"},
+    {file = "lupa-1.9-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:2551ae82ea0f90383fb153ecd29a1a166e2552e10b7a712ff047cad88062ad37"},
+    {file = "lupa-1.9-cp38-cp38-win32.whl", hash = "sha256:162f6793b2ad40d25710b9998bce2eeb3938efbb4dbad49fb8c5082d214237b3"},
+    {file = "lupa-1.9-cp38-cp38-win_amd64.whl", hash = "sha256:09d6c45eb3b9407588c5a168e3371b629e75c5822050e9feff393601709bd0d7"},
+    {file = "lupa-1.9.tar.gz", hash = "sha256:a3e11d806ca02cf72e490ec1974f8b96a14a1091895c9dccebe0b8d52dd82e8e"},
+]
 markupsafe = [
     {file = "MarkupSafe-1.1.1-cp27-cp27m-macosx_10_6_intel.whl", hash = "sha256:09027a7803a62ca78792ad89403b1b7a73a01c8cb65909cd876f7fcebd79b161"},
     {file = "MarkupSafe-1.1.1-cp27-cp27m-manylinux1_i686.whl", hash = "sha256:e249096428b3ae81b08327a63a485ad0878de3fb939049038579ac0ef61e17e7"},
@@ -1179,6 +1214,7 @@ regex = [
     {file = "regex-2020.6.8.tar.gz", hash = "sha256:e9b64e609d37438f7d6e68c2546d2cb8062f3adb27e6336bc129b51be20773ac"},
 ]
 requests = [
+    {file = "requests-2.23.0-py2.7.egg", hash = "sha256:5d2d0ffbb515f39417009a46c14256291061ac01ba8f875b90cad137de83beb4"},
     {file = "requests-2.23.0-py2.py3-none-any.whl", hash = "sha256:43999036bfa82904b6af1d99e4882b560e5e2c68e5c4b0aa03b655f3d7d73fee"},
     {file = "requests-2.23.0.tar.gz", hash = "sha256:b3f43d496c6daba4493e7c431722aeb7dbc6288f52a6e04e7b6023b0247817e6"},
 ]
