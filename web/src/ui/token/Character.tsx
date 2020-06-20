@@ -94,6 +94,7 @@ const Character: React.FC<Props> = memo((props) => {
         position: pos ? "absolute" : "static",
         top: pos?.y,
         left: pos?.x,
+        zIndex: pos?.z,
         ...dragAttributes?.style,
       }}
     >
