@@ -19,6 +19,7 @@ import {
   LocationType,
 } from "../../drag/DragStateTypes";
 import { RootState } from "../../store/rootReducer";
+import AccessibleDraggable from "../../drag/AccessibleDraggable";
 
 export interface DraggableItem {
   descriptor: DraggableDescriptor;
@@ -329,7 +330,7 @@ export default function SortableList<T extends DraggableItem>({
         >
           {renderSpacer()}
           {items.map((item, idx) => (
-            <Draggable
+            <AccessibleDraggable
               key={item.descriptor.id}
               descriptor={item.descriptor}
               droppableId={id}
@@ -343,7 +344,7 @@ export default function SortableList<T extends DraggableItem>({
                   },
                 })
               }
-            </Draggable>
+            </AccessibleDraggable>
           ))}
         </div>
       );

@@ -28,6 +28,7 @@ import { RootState } from "../../store/rootReducer";
 import { addPing, addFloor, removeToken } from "./board-slice";
 import { connect } from "react-redux";
 import { Entity, EntityType, TokenContents } from "../../types";
+import AccessibleDraggable from "../../drag/AccessibleDraggable";
 
 let GRID_COLOR = "#947C65";
 
@@ -164,7 +165,7 @@ const PureBoard: React.FC<Props> = ({
           // Need to have some sort of transition otherwise the element will
           // never be removed from the dom :(
           <NoopTransition key={token.id}>
-            <Draggable
+            <AccessibleDraggable
               droppableId={DROPPABLE_IDS.BOARD}
               descriptor={{
                 id: `${DROPPABLE_IDS.BOARD}-${token.id}`,
@@ -186,7 +187,7 @@ const PureBoard: React.FC<Props> = ({
                   }}
                 />
               )}
-            </Draggable>
+            </AccessibleDraggable>
           </NoopTransition>
         );
       case EntityType.Ping:
