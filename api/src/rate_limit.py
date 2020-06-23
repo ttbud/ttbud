@@ -61,6 +61,7 @@ _USER_LIVENESS_REFRESH_BATCH_SIZE = 50
 # servers.
 # Returns true if user has not exceeded their max connection count and the
 # new connection has been recorded, false otherwise
+# language=lua
 ACQUIRE_CONNECTION_SLOT = f"""
 local user_id = ARGV[1]
 local target_server_id = ARGV[2]
@@ -94,6 +95,7 @@ else
 end
 """
 
+# language=lua
 RELEASE_CONNECTION_SLOT = """
     local user_id = ARGV[1]
     local server_id = ARGV[2]
