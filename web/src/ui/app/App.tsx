@@ -15,6 +15,7 @@ import ConnectionNotifier from "../connection-state/ConnectionNotifier";
 import { v4 as uuid } from "uuid";
 import { BoardStateApiClient } from "../../network/BoardStateApiClient";
 import Tour from "../tour/Tour";
+import MobileWarningDialog from "../mobile-warning/MobileWarningDialog";
 
 const useStyles = makeStyles((theme) => ({
   app: {
@@ -108,6 +109,7 @@ const App: React.FC<Props> = ({ apiClient }) => {
 
   return (
     <>
+      <MobileWarningDialog />
       <Tour isOpen={touring} onCloseClicked={() => setTouring(false)} />
       <div className={classes.app}>
         <Board />
