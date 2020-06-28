@@ -75,12 +75,12 @@ for _, server_id in pairs(server_ids) do
     if server_expired then
         redis.call('hdel', user_connections_key, server_id)
     else
-        local server_connection_count = redis.call(
+        local server_connection_count = tonumber(redis.call(
             'hget',
             user_connections_key,
             server_id
-        )
-        if server_connection_count ~= false then
+        ))
+        if server_connection_count ~= nil then
             total_connection_count = total_connection_count + server_connection_count
         end
     end
