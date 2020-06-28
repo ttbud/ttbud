@@ -113,7 +113,7 @@ async def create_redis_rate_limiter(server_id: str, redis: Redis) -> RedisRateLi
     initialize_futures = [
         redis.script_load(ACQUIRE_CONNECTION_SLOT),
         redis.script_load(RELEASE_CONNECTION_SLOT),
-        redis.set(server_key, "true"),
+        redis.set(server_key, 'true'),
         redis.expire(server_key, SERVER_LIVENESS_EXPIRATION_SECONDS),
     ]
     [acquire_sha, release_sha, *_] = await asyncio.gather(*initialize_futures)
