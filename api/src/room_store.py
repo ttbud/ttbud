@@ -1,5 +1,4 @@
 from __future__ import annotations
-import os
 import json
 from typing import (
     Protocol,
@@ -29,36 +28,6 @@ class RoomStore(Protocol):
     @abstractmethod
     async def read_room_data(self, room_id: str) -> Optional[List[dict]]:
         raise NotImplementedError
-
-
-class FileRoomStore(RoomStore):
-    def __init__(self, path: str):
-        self.path = path
-        os.makedirs(self.path, exist_ok=True)
-
-    async def get_all_room_ids(self) -> AsyncIterator[str]:
-        for file in os.listdir(self.path):
-            yield file
-
-    def _is_valid_path(self, full_path: str) -> bool:
-        return os.path.abspath(full_path).startswith(self.path)
-
-    async def write_room_data(self, room_id: str, data: Iterable[Token]) -> None:
-        full_path = f'{self.path}/{room_id}'
-        storable_data = list(map(asdict, data))
-        if self._is_valid_path(full_path):
-            with open(full_path, 'w') as f:
-                f.write(json.dumps(storable_data))
-        else:
-            raise ValueError(f'path {full_path} is not a valid path')
-
-    async def read_room_data(self, room_id: str) -> Optional[List[dict]]:
-        full_path = f'{self.path}/{room_id}'
-        if self._is_valid_path(full_path) and os.path.exists(full_path):
-            with open(full_path, 'r') as f:
-                return json.loads(f.read())
-
-        return None
 
 
 class MemoryRoomStore(RoomStore):
