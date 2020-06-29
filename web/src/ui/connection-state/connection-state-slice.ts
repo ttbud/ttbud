@@ -1,15 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { ConnectionError } from "../../network/BoardStateApiClient";
 
 export enum ConnectionStateType {
   Disconnected = "disconnected",
   Connecting = "connecting",
   Connected = "connected",
-}
-
-export enum ConnectionError {
-  ROOM_FULL = "room full",
-  INVALID_ROOM_ID = "invalid room id",
-  UNKNOWN = "unknown",
 }
 
 export interface Disconnected {

@@ -1,8 +1,7 @@
 import {
-  ConnectionStateType,
   ConnectionState,
+  ConnectionStateType,
   Disconnected,
-  ConnectionError,
 } from "./connection-state-slice";
 import React from "react";
 import Alert from "@material-ui/lab/Alert";
@@ -10,7 +9,8 @@ import RefreshIcon from "@material-ui/icons/Cached";
 import { connect } from "react-redux";
 import { RootState } from "../../store/rootReducer";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
-import { makeStyles, IconButton } from "@material-ui/core";
+import { IconButton, makeStyles } from "@material-ui/core";
+import { ConnectionError } from "../../network/BoardStateApiClient";
 
 interface Props {
   connectionState: ConnectionState;
@@ -29,6 +29,8 @@ function disconnectMessage(state: Disconnected) {
       return "Room link is invalid, try creating a new room";
     case ConnectionError.ROOM_FULL:
       return "This room is full";
+    case ConnectionError.TOO_MANY_CONNECTIONS:
+      return "You have too many rooms open, try closing some of your ttbud tabs";
     case ConnectionError.UNKNOWN:
       return "An unknown error has occurred";
     default:

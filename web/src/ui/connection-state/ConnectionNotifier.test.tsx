@@ -1,9 +1,10 @@
 import { render } from "@testing-library/react";
-import { ConnectionStateType, ConnectionError } from "./connection-state-slice";
+import { ConnectionStateType } from "./connection-state-slice";
 import React from "react";
 import { PureConnectionNotifier } from "./ConnectionNotifier";
 import "@testing-library/jest-dom";
 import noop from "../../util/noop";
+import { ConnectionError } from "../../network/BoardStateApiClient";
 
 describe("ConnectionNotifier", () => {
   it("says connecting when state is connecting", () => {
