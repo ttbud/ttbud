@@ -33,7 +33,7 @@ async def start_server(server_id: str) -> GameStateServer:
         room_store = FileRoomStore(config.room_store_dir)
         rate_limiter = MemoryRateLimiter(server_id, MemoryRateLimiterStorage())
 
-    gss = GameStateServer(room_store, apm.transaction)
+    gss = GameStateServer(room_store, apm.transaction, rate_limiter)
     ws = WebsocketManager(config.websocket_port, gss, rate_limiter)
     await ws.start_websocket()
     return gss
