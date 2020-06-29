@@ -27,6 +27,9 @@ docker-compose build
 docker-compose run --rm web yarn install
 # Start the development server in the background
 docker-compose up -d
+
+# Configure git hooks to enforce lint rules pre commit (optional)
+git config core.hooksPath hooks/
 ```
 
 ### Logs
