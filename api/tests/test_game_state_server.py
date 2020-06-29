@@ -80,7 +80,9 @@ async def test_room_data_is_stored(room_store, rate_limiter):
 
     # Make another game state server to simulate the server going down/up
     gss_two = GameStateServer(room_store, fake_transaction, rate_limiter)
-    message = await gss_two.new_connection_request(TEST_CLIENT_ID, '127.0.0.1', TEST_ROOM_ID)
+    message = await gss_two.new_connection_request(
+        TEST_CLIENT_ID, '127.0.0.1', TEST_ROOM_ID
+    )
     await gss_two.new_connection_request(TEST_CLIENT_ID, '127.0.0.1', TEST_ROOM_ID)
     assert message.contents.data == [VALID_TOKEN, ANOTHER_VALID_TOKEN]
 
@@ -230,7 +232,9 @@ async def test_delete_after_reload(gss_with_client):
         )
     )
     await gss_with_client.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
-    await gss_with_client.new_connection_request(TEST_CLIENT_ID, '127.0.0.1', TEST_ROOM_ID)
+    await gss_with_client.new_connection_request(
+        TEST_CLIENT_ID, '127.0.0.1', TEST_ROOM_ID
+    )
     reply = await async_collect(
         gss_with_client.process_updates(
             [DeleteAction(action='delete', data=VALID_TOKEN.id)],
@@ -286,10 +290,14 @@ async def test_ping(gss_with_client, mocker):
 @pytest.mark.asyncio
 async def test_room_full(gss_with_client):
     for i in range(MAX_USERS_PER_ROOM):
-        await gss_with_client.new_connection_request(f'client{i}', '127.0.0.1', TEST_ROOM_ID)
+        await gss_with_client.new_connection_request(
+            f'client{i}', '127.0.0.1', TEST_ROOM_ID
+        )
 
     with pytest.raises(InvalidConnectionException):
-        await gss_with_client.new_connection_request(TEST_CLIENT_ID, '127.0.0.1', TEST_ROOM_ID)
+        await gss_with_client.new_connection_request(
+            TEST_CLIENT_ID, '127.0.0.1', TEST_ROOM_ID
+        )
 
 
 @pytest.mark.asyncio
