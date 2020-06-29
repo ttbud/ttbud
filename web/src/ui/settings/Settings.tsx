@@ -20,6 +20,7 @@ import isMac from "../../util/isMac";
 import { connect } from "react-redux";
 import { RootState } from "../../store/rootReducer";
 import { toggleDebug, dismissTourPrompt } from "./settings-slice";
+import AboutDialog from "../about/About";
 
 const FIVE_SECONDS_MS = 5000;
 
@@ -36,6 +37,11 @@ const useStyles = makeStyles((theme) => ({
   aboutLink: {
     margin: "auto",
     color: "black",
+    background: "none",
+    border: "none",
+    padding: 0,
+    textDecoration: "underline",
+    cursor: "pointer",
   },
   tourPrompt: {
     display: "flex",
@@ -77,6 +83,7 @@ const PureSettings: React.FC<Props> = memo(
     const [isShowingCopyNotification, setShowingCopyNotification] = useState(
       false
     );
+    const [isShowingAboutDialog, setIsShowingAboutDialog] = useState(false);
 
     const open = Boolean(anchorEl);
     const onClick = (e: MouseEvent) => {
@@ -108,6 +115,13 @@ const PureSettings: React.FC<Props> = memo(
       setAnchorEl(null);
       onTourClicked();
     };
+
+    const onAboutClicked = () => {
+      setAnchorEl(null);
+      setIsShowingAboutDialog(true);
+    };
+
+    const onAboutClosed = () => setIsShowingAboutDialog(false);
 
     return (
       <>
@@ -156,6 +170,7 @@ const PureSettings: React.FC<Props> = memo(
           onCancel={closeConfirmationDialog}
           onConfirm={onClearMapClicked}
         />
+        <AboutDialog open={isShowingAboutDialog} onClose={onAboutClosed} />
         <Snackbar
           open={isShowingCopyNotification}
           onClose={onHideCopyNotification}
@@ -262,14 +277,9 @@ const PureSettings: React.FC<Props> = memo(
                 <Typography color="textSecondary">(shift+click)</Typography>
               </ListItem>
             </List>
-            <a
-              className={classes.aboutLink}
-              target="_blank"
-              rel="noreferrer noopener"
-              href="https://github.com/sjohnson31/ttbud"
-            >
+            <button className={classes.aboutLink} onClick={onAboutClicked}>
               about
-            </a>
+            </button>
           </div>
         </Popover>
       </>
