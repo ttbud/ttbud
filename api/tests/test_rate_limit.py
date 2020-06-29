@@ -1,7 +1,11 @@
+from asyncio import AbstractEventLoop
 from functools import partial
+from typing import Awaitable, TypeVar, Callable
 
 import fakeredis.aioredis
 import pytest
+from aioredis import Redis
+from pytest_mock import MockFixture
 
 from src.rate_limit import (
     RedisRateLimiter,
@@ -14,9 +18,14 @@ from src.rate_limit import (
     create_redis_rate_limiter,
 )
 
+T = TypeVar('T', bound=RateLimiter)
+
+GenericRateLimiterFactory = Callable[[str], Awaitable[T]]
+RateLimiterFactory = GenericRateLimiterFactory[RateLimiter]
+
 
 @pytest.fixture
-async def redis(event_loop):
+async def redis(event_loop: AbstractEventLoop):
     redis_instance = await fakeredis.aioredis.create_redis_pool()
     yield redis_instance
     redis_instance.close()
@@ -29,12 +38,14 @@ def memory_rate_limiter_storage():
 
 
 @pytest.fixture
-def redis_rate_limiter_factory(redis):
+def redis_rate_limiter_factory(redis: Redis):
     return partial(create_redis_rate_limiter, redis=redis)
 
 
 @pytest.fixture
-def memory_rate_limiter_factory(memory_rate_limiter_storage):
+def memory_rate_limiter_factory(
+    memory_rate_limiter_storage: MemoryRateLimiterStorage,
+) -> RateLimiterFactory:
     async def fn(server_id: str):
         return MemoryRateLimiter(server_id, memory_rate_limiter_storage)
 
@@ -42,12 +53,16 @@ def memory_rate_limiter_factory(memory_rate_limiter_storage):
 
 
 @pytest.fixture
-async def redis_rate_limiter(redis_rate_limiter_factory):
+async def redis_rate_limiter(
+    redis_rate_limiter_factory: GenericRateLimiterFactory[RedisRateLimiter],
+) -> RedisRateLimiter:
     return await redis_rate_limiter_factory('server-id')
 
 
 @pytest.fixture
-async def memory_rate_limiter(memory_rate_limiter_factory):
+async def memory_rate_limiter(
+    memory_rate_limiter_factory: GenericRateLimiterFactory[MemoryRateLimiter],
+) -> MemoryRateLimiter:
     return await memory_rate_limiter_factory('server-id')
 
 
@@ -59,7 +74,7 @@ async def memory_rate_limiter(memory_rate_limiter_factory):
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_acquire_connection(rate_limiter: RateLimiter):
+async def test_connection_limit(rate_limiter: RateLimiter):
     for i in range(0, MAX_CONNECTIONS_PER_USER):
         await rate_limiter.acquire_connection('user-1')
 
@@ -93,7 +108,7 @@ async def test_release_connection(rate_limiter: RedisRateLimiter):
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_release_nonexistant_connection(rate_limiter):
+async def test_release_nonexistant_connection(rate_limiter: RateLimiter):
     # Releasing a connection that does not exist should not fail
     await rate_limiter.release_connection('user-1')
 
@@ -114,7 +129,7 @@ async def test_release_nonexistant_connection(rate_limiter):
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_acquire_multiple_users(rate_limiter):
+async def test_acquire_multiple_users(rate_limiter: RateLimiter):
     for i in range(0, MAX_CONNECTIONS_PER_USER):
         await rate_limiter.acquire_connection('user-1')
 
@@ -130,7 +145,7 @@ async def test_acquire_multiple_users(rate_limiter):
         pytest.lazy_fixture('memory_rate_limiter_factory'),
     ],
 )
-async def test_acquire_multiple_servers(rate_limiter_factory):
+async def test_acquire_multiple_servers(rate_limiter_factory: RateLimiterFactory):
     server_1 = await rate_limiter_factory('server-id-1')
     server_2 = await rate_limiter_factory('server-id-2')
 
@@ -151,7 +166,7 @@ async def test_acquire_multiple_servers(rate_limiter_factory):
         pytest.lazy_fixture('memory_rate_limiter_factory'),
     ],
 )
-async def test_release_multiple_servers(rate_limiter_factory):
+async def test_release_multiple_servers(rate_limiter_factory: RateLimiterFactory):
     server_1 = await rate_limiter_factory('server-id-1')
     server_2 = await rate_limiter_factory('server-id-2')
 
@@ -175,7 +190,9 @@ async def test_release_multiple_servers(rate_limiter_factory):
         pytest.lazy_fixture('memory_rate_limiter_factory'),
     ],
 )
-async def test_expired_server(rate_limiter_factory, mocker):
+async def test_expired_server(
+    rate_limiter_factory: RateLimiterFactory, mocker: MockFixture
+):
 
     # Create a server that will expire
     mocker.patch('time.time', return_value=0)
@@ -201,7 +218,9 @@ async def test_expired_server(rate_limiter_factory, mocker):
         pytest.lazy_fixture('memory_rate_limiter_factory'),
     ],
 )
-async def test_refresh_server_liveness(rate_limiter_factory, mocker):
+async def test_refresh_server_liveness(
+    rate_limiter_factory: RateLimiterFactory, mocker: MockFixture
+):
     # Create a server that will expire
     mocker.patch('time.time', return_value=0)
     refreshing_server = await rate_limiter_factory('server-id-1')
@@ -210,7 +229,7 @@ async def test_refresh_server_liveness(rate_limiter_factory, mocker):
         await refreshing_server.acquire_connection('user-1')
 
     mocker.patch('time.time', return_value=SERVER_LIVENESS_EXPIRATION_SECONDS)
-    await refreshing_server.refresh_server_liveness(['user-1'])
+    await refreshing_server.refresh_server_liveness(iter(['user-1']))
 
     # Move forward past expiration time if the server hadn't refreshed itself
     mocker.patch('time.time', return_value=SERVER_LIVENESS_EXPIRATION_SECONDS + 1)
@@ -230,7 +249,7 @@ async def test_refresh_server_liveness(rate_limiter_factory, mocker):
         pytest.lazy_fixture('memory_rate_limiter_factory'),
     ],
 )
-async def test_context_manager(rate_limiter_factory):
+async def test_context_manager(rate_limiter_factory: RateLimiterFactory):
     server = await rate_limiter_factory('server-id')
 
     for i in range(0, MAX_CONNECTIONS_PER_USER - 1):
