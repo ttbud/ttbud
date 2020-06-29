@@ -2,13 +2,23 @@ version: "3"
 services:
   api:
     image: ttbud-api
-    build: api
+    build:
+      context: api
+      args:
+        DEV: "true"
+    working_dir: /app/
+    command: python -u -m watchgod main.main
+    # watchgod will drop all stdout without a tty
+    tty: true
     environment:
       ENVIRONMENT:
       JSON_LOGS:
       DOMAIN:
       SCOUT_KEY:
       SCOUT_MONITOR:
+      USE_SSL: "true"
+      SSL_CRT_FILE: /certs/ttbud.local.pem
+      SSL_KEY_FILE: /certs/ttbud.local-key.pem
       PORT: ${API_WEBSOCKET_PORT}
       ROOM_STORE_DIR: /var/ttbud/rooms
       USE_REDIS:
@@ -16,31 +26,28 @@ services:
       REDIS_SSL_VALIDATION: none
       REDIS_URL: redis://db
     volumes:
-      - rooms:/var/ttbud/rooms
+      - ./api:/app
+      - ./certs:/certs
+    ports:
+      - ${API_WEBSOCKET_PORT}:${API_WEBSOCKET_PORT}
   web:
     image: ttbud-web
     build: web
+    command: yarn run start
     environment:
       REACT_APP_DOMAIN: ${DOMAIN}
       REACT_APP_API_WEBSOCKET_PORT: ${API_WEBSOCKET_PORT}
-    command: yarn run build
-    volumes:
-      - static-assets:/app/build
-  ingress:
-    image: abiosoft/caddy
-    environment:
-      DOMAIN:
-      CERT_CONFIG:
-      API_WEBSOCKET_PORT:
-      ACME_AGREE: "true"
-    volumes:
-      - static-assets:/var/www/ttbud/web
-      - ./infra/ingress/Caddyfile:/etc/Caddyfile
-      - certs:/root/.caddy
+      PORT: ${WEB_HTTP_PORT}
+      HTTPS: "true"
+      SSL_CRT_FILE: /certs/ttbud.local.pem
+      SSL_KEY_FILE: /certs/ttbud.local-key.pem
+    user: ${WEB_USER:-1000}
+    tty: true
     ports:
-      - 80:80
-      - 443:443
-      - 1234:1234
+      - ${WEB_HTTP_PORT}:${WEB_HTTP_PORT}
+    volumes:
+      - ./web:/app
+      - ./certs:/certs
   db:
     image: redis:6.0.4
     command: redis-server --appendonly yes

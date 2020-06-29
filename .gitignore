@@ -19,3 +19,6 @@ storage
 
 # Linting tools
 .dmypy.json
+
+# Local dev certs
+certs
