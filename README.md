@@ -24,6 +24,15 @@ docker-compose run --rm web yarn install
 docker-compose up -d
 ```
 
+### Logs
+
+For more detailed api logs in local dev, add `JSON_LOGS=true` to your `.env` file.
+You can render them nicely with this command ([jq](https://stedolan.github.io/jq/) must be installed):
+
+```bash
+dc logs -f --no-color api | jq --raw-input 'split("|")| .[length  - 1]|fromjson'
+```
+
 ## Infrastructure setup
 
 ### Requirements
