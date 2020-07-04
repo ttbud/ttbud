@@ -12,28 +12,20 @@ from src import apm
 from src.config import config
 from src.rate_limit import (
     RateLimiter,
-    MemoryRateLimiter,
-    MemoryRateLimiterStorage,
     create_redis_rate_limiter,
 )
 from src.redis import create_redis_pool
 from src.wsmanager import WebsocketManager
-from src.room_store import RedisRoomStore, FileRoomStore, RoomStore
+from src.room_store import RedisRoomStore, RoomStore
 from src.game_state_server import GameStateServer
 
 
 async def start_server(server_id: str) -> GameStateServer:
     room_store: RoomStore
     rate_limiter: RateLimiter
-    if config.use_redis:
-        redis = await create_redis_pool(
-            config.redis_address, config.redis_ssl_validation
-        )
-        room_store = RedisRoomStore(redis)
-        rate_limiter = await create_redis_rate_limiter(server_id, redis)
-    else:
-        room_store = FileRoomStore(config.room_store_dir)
-        rate_limiter = MemoryRateLimiter(server_id, MemoryRateLimiterStorage())
+    redis = await create_redis_pool(config.redis_address, config.redis_ssl_validation)
+    room_store = RedisRoomStore(redis)
+    rate_limiter = await create_redis_rate_limiter(server_id, redis)
 
     gss = GameStateServer(room_store, apm.transaction, rate_limiter)
     ws = WebsocketManager(config.websocket_port, gss, rate_limiter)
