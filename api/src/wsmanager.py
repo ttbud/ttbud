@@ -1,7 +1,7 @@
+import ipaddress
 import logging
 import asyncio
 import json
-import socket
 from dataclasses import asdict
 import random
 from ssl import SSLContext
@@ -45,13 +45,12 @@ def is_valid_uuid(uuid_string: str) -> bool:
 def get_client_ip(client: websockets.WebSocketServerProtocol) -> str:
     ip, _ = client.remote_address
     xff = client.request_headers.get('X-FORWARDED-FOR', '')
-    last_xff_ip_str = xff.split(',').pop().strip()
+    last_xff_ip = xff.split(',').pop().strip()
 
     try:
-        last_xff_ip = socket.inet_aton(last_xff_ip_str)
-        return str(last_xff_ip)
-    except socket.error:
-        return str(ip)
+        return str(ipaddress.ip_address(last_xff_ip))
+    except ValueError:
+        return str(ipaddress.ip_address(ip))
 
 
 class WebsocketManager:
@@ -114,7 +113,7 @@ class WebsocketManager:
                 )
                 try:
                     response = await self.gss.new_connection_request(
-                        hash(client), room_id
+                        hash(client), client_ip, room_id,
                     )
                 except InvalidConnectionException as e:
                     await client.close(e.close_code, e.reason)

@@ -27,7 +27,7 @@ async def start_server(server_id: str) -> GameStateServer:
     room_store = RedisRoomStore(redis)
     rate_limiter = await create_redis_rate_limiter(server_id, redis)
 
-    gss = GameStateServer(room_store, apm.transaction)
+    gss = GameStateServer(room_store, apm.transaction, rate_limiter)
     ws = WebsocketManager(config.websocket_port, gss, rate_limiter)
 
     ssl_context: Optional[ssl.SSLContext]
