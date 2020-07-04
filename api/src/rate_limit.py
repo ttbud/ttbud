@@ -4,15 +4,20 @@ import asyncio
 import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import Dict, Protocol, AsyncGenerator, AsyncContextManager, Iterator
+from typing import Dict, Protocol, AsyncGenerator, AsyncContextManager, Iterator, List
 
 from aioredis import Redis
 
+MAX_ROOMS_PER_TEN_MINUTES = 50
 MAX_CONNECTIONS_PER_USER = 10
 SERVER_LIVENESS_EXPIRATION_SECONDS = 60 * 10
 
 
 class TooManyConnectionsException(Exception):
+    pass
+
+
+class TooManyRoomsCreatedException(Exception):
     pass
 
 
@@ -53,8 +58,20 @@ class RateLimiter(Protocol):
         """
         ...
 
+    async def acquire_new_room(self, user_id: str) -> None:
+        """
+        Increment the number of rooms this user has created in the last ten minutes
+
+        :param user_id: A string uniquely identifying the user, should be the
+        same across servers like the IP address of the user
+        :raises TooManyRoomsCreatedException if the user has already created too
+        many rooms recently
+        """
+        ...
+
 
 _USER_LIVENESS_REFRESH_BATCH_SIZE = 50
+_TEN_MINUTES_IN_SECONDS = 60 * 10
 
 # Lua script to increment the connection count for a given user on the given
 # server, if the user has not exceeded their connection count across all
@@ -107,22 +124,42 @@ RELEASE_CONNECTION_SLOT = """
     end
 """
 
+# Increment the given key, and if the key is new, set its expiration
+# to the given value in seconds.
+# Returns the incremented value
+# language=lua
+INCR_AND_EXPIRE_IF_NEW = """
+    local key = KEYS[1]
+    local expiration_secs = tonumber(ARGV[1])
+
+    local value = tonumber(redis.call('incr', key))
+    if value == 1 then
+        redis.call('expire', key, expiration_secs)
+    end
+
+    return value
+"""
+
 
 async def create_redis_rate_limiter(server_id: str, redis: Redis) -> RedisRateLimiter:
     server_key = f'api-server:{server_id}'
     initialize_futures = [
         redis.script_load(ACQUIRE_CONNECTION_SLOT),
         redis.script_load(RELEASE_CONNECTION_SLOT),
+        redis.script_load(INCR_AND_EXPIRE_IF_NEW),
         redis.set(server_key, 'true'),
         redis.expire(server_key, SERVER_LIVENESS_EXPIRATION_SECONDS),
     ]
-    [acquire_sha, release_sha, *_] = await asyncio.gather(*initialize_futures)
+    [acquire_sha, release_sha, incr_expire_sha, *_] = await asyncio.gather(
+        *initialize_futures
+    )
 
     return RedisRateLimiter(
         server_id,
         redis,
         acquire_connection_sha=acquire_sha,
         release_connection_sha=release_sha,
+        incr_expire_sha=incr_expire_sha,
     )
 
 
@@ -147,11 +184,13 @@ class RedisRateLimiter(RateLimiter):
         redis: Redis,
         acquire_connection_sha: bytes,
         release_connection_sha: bytes,
+        incr_expire_sha: bytes,
     ):
         self._server_id = server_id
         self._redis = redis
         self._acquire_connection_sha = acquire_connection_sha
         self._release_connection_sha = release_connection_sha
+        self._incr_expire_sha = incr_expire_sha
 
     @asynccontextmanager
     async def rate_limited_connection(self, user_id: str) -> AsyncGenerator:
@@ -190,18 +229,33 @@ class RedisRateLimiter(RateLimiter):
             self._release_connection_sha, args=[user_id, self._server_id]
         )
 
+    async def acquire_new_room(self, user_id: str) -> None:
+        recent_room_creation_count = await self._redis.evalsha(
+            self._incr_expire_sha,
+            keys=[f'rate-limit:room-create:{user_id}'],
+            args=[str(_TEN_MINUTES_IN_SECONDS)],
+        )
+        if recent_room_creation_count > MAX_ROOMS_PER_TEN_MINUTES:
+            raise TooManyRoomsCreatedException
+
+
+@dataclass
+class User:
+    connections_by_server_id: Dict[str, int] = field(default_factory=dict)
+    room_creation_times: List[float] = field(default_factory=list)
+
 
 @dataclass
 class MemoryRateLimiterStorage:
-    servers: Dict[str, float] = field(default_factory=dict)
-    users: Dict[str, Dict[str, int]] = field(default_factory=dict)
+    servers_by_id: Dict[str, float] = field(default_factory=dict)
+    users_by_id: Dict[str, User] = field(default_factory=dict)
 
 
 class MemoryRateLimiter(RateLimiter):
     def __init__(self, server_id: str, storage: MemoryRateLimiterStorage):
         self._server_id = server_id
         self._storage = storage
-        self._storage.servers[server_id] = (
+        self._storage.servers_by_id[server_id] = (
             time.time() + SERVER_LIVENESS_EXPIRATION_SECONDS
         )
 
@@ -213,30 +267,44 @@ class MemoryRateLimiter(RateLimiter):
 
     async def acquire_connection(self, user_id: str) -> None:
         now = time.time()
-        user_connections = self._storage.users.get(user_id, {})
+        user = self._storage.users_by_id.get(user_id, User())
 
         connection_count = 0
-        for server_id, count in user_connections.items():
-            if self._storage.servers[server_id] > now:
+        for server_id, count in user.connections_by_server_id.items():
+            if self._storage.servers_by_id[server_id] > now:
                 connection_count += count
 
         if connection_count >= MAX_CONNECTIONS_PER_USER:
             raise TooManyConnectionsException()
 
-        server_connection_count = user_connections.get(self._server_id, 0)
-        user_connections[self._server_id] = server_connection_count + 1
-        self._storage.users[user_id] = user_connections
+        server_connection_count = user.connections_by_server_id.get(self._server_id, 0)
+        user.connections_by_server_id[self._server_id] = server_connection_count + 1
+        self._storage.users_by_id[user_id] = user
 
     async def release_connection(self, user_id: str) -> None:
-        user_connections = self._storage.users.get(user_id)
-        if not user_connections:
+        user = self._storage.users_by_id.get(user_id)
+        if not user:
             return None
 
-        server_connection_count = user_connections.get(self._server_id, 0)
+        server_connection_count = user.connections_by_server_id.get(self._server_id, 0)
         if server_connection_count:
-            user_connections[self._server_id] = server_connection_count - 1
+            user.connections_by_server_id[self._server_id] = server_connection_count - 1
 
     async def refresh_server_liveness(self, user_ids: Iterator[str]) -> None:
-        self._storage.servers[self._server_id] = (
+        self._storage.servers_by_id[self._server_id] = (
             time.time() + SERVER_LIVENESS_EXPIRATION_SECONDS
         )
+
+    async def acquire_new_room(self, user_id: str) -> None:
+        user = self._storage.users_by_id.get(user_id, User())
+        now = time.time()
+        rooms_created_in_last_ten_minutes = 0
+        for creation_time in user.room_creation_times:
+            if (creation_time - now) < 10 * 60:
+                rooms_created_in_last_ten_minutes += 1
+
+        if rooms_created_in_last_ten_minutes >= MAX_ROOMS_PER_TEN_MINUTES:
+            raise TooManyRoomsCreatedException()
+
+        user.room_creation_times.append(now)
+        self._storage.users_by_id[user_id] = user

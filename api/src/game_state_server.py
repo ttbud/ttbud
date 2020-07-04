@@ -24,9 +24,10 @@ from dacite import (
 
 from .api_structures import Response, CreateOrUpdateAction, DeleteAction, PingAction
 from .assert_never import assert_never
+from .rate_limit import RateLimiter, TooManyRoomsCreatedException
 from .room_store import RoomStore
 from .game_components import Token, Ping, content_id
-from .ws_close_codes import ERR_ROOM_FULL
+from .ws_close_codes import ERR_ROOM_FULL, ERR_TOO_MANY_ROOMS_CREATED
 from .colors import colors
 
 
@@ -82,19 +83,25 @@ class RoomData:
 
 class GameStateServer:
     def __init__(
-        self, room_store: RoomStore, apm_transaction: Callable[[str], ContextManager]
+        self,
+        room_store: RoomStore,
+        apm_transaction: Callable[[str], ContextManager],
+        rate_limiter: RateLimiter,
     ):
         self._rooms: Dict[str, RoomData] = {}
         self.room_store = room_store
         self.apm_transaction = apm_transaction
+        self._rate_limiter = rate_limiter
 
     async def new_connection_request(
-        self, client_id: Hashable, room_id: str
+        self, client_id: Hashable, client_ip: str, room_id: str
     ) -> Message:
         """Register a new client
 
         :param client_id: Unique identifier for the client requesting a
         connection
+
+        :param client_ip: IP address of the client
 
         :param room_id: The UUID that identifies the room the client
         is trying to connect to
@@ -110,15 +117,29 @@ class GameStateServer:
                         ERR_ROOM_FULL, f'The room ${room_id} is full'
                     )
             else:
-                self._rooms[room_id] = RoomData(room_id, initial_connection=client_id)
                 tokens_to_load = await self.room_store.read_room_data(room_id)
+                if not tokens_to_load:
+                    try:
+                        await self._rate_limiter.acquire_new_room(client_ip)
+                    except TooManyRoomsCreatedException:
+                        logger.info(
+                            f'Rejecting connection to {client_ip}, too many rooms'
+                            ' created recently',
+                            extra={'client_ip': client_ip, 'room_id': room_id},
+                        )
+                        raise InvalidConnectionException(
+                            ERR_TOO_MANY_ROOMS_CREATED,
+                            'Too many rooms created by client',
+                        )
+
+                self._rooms[room_id] = RoomData(room_id, initial_connection=client_id)
                 if tokens_to_load:
                     for token_data in tokens_to_load:
                         try:
                             token = from_dict(data_class=Token, data=token_data)
                         except (WrongTypeError, MissingValueError, TypeError):
                             # Don't raise here. Loading a room minus any tokens that
-                            # havebeen corrupted is still valuable.
+                            # have been corrupted is still valuable.
                             logger.exception(
                                 f'Corrupted room {room_id}',
                                 extra={"invalid_token": token_data},

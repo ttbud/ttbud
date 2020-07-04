@@ -16,6 +16,8 @@ from src.rate_limit import (
     MemoryRateLimiter,
     MemoryRateLimiterStorage,
     create_redis_rate_limiter,
+    MAX_ROOMS_PER_TEN_MINUTES,
+    TooManyRoomsCreatedException,
 )
 
 T = TypeVar('T', bound=RateLimiter)
@@ -263,3 +265,64 @@ async def test_context_manager(rate_limiter_factory: RateLimiterFactory):
 
     # Should succeed now that we've exited the context
     await server.acquire_connection('user-1')
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    'rate_limiter',
+    [
+        pytest.lazy_fixture('redis_rate_limiter'),
+        pytest.lazy_fixture('memory_rate_limiter'),
+    ],
+)
+async def test_too_many_new_rooms(rate_limiter: RateLimiter, mocker):
+    mocker.patch('time.time', return_value=0)
+
+    for i in range(0, MAX_ROOMS_PER_TEN_MINUTES):
+        await rate_limiter.acquire_new_room('user-1')
+
+    with pytest.raises(TooManyRoomsCreatedException):
+        await rate_limiter.acquire_new_room('user-1')
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    'rate_limiter',
+    [
+        pytest.lazy_fixture('redis_rate_limiter'),
+        pytest.lazy_fixture('memory_rate_limiter'),
+    ],
+)
+async def test_new_room_multiple_users(rate_limiter: RateLimiter, mocker):
+    mocker.patch('time.time', return_value=0)
+
+    for i in range(0, MAX_ROOMS_PER_TEN_MINUTES):
+        await rate_limiter.acquire_new_room('user-1')
+
+    for i in range(0, MAX_ROOMS_PER_TEN_MINUTES):
+        await rate_limiter.acquire_new_room('user-2')
+
+    with pytest.raises(TooManyRoomsCreatedException):
+        await rate_limiter.acquire_new_room('user-2')
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    'rate_limiter_factory',
+    [
+        pytest.lazy_fixture('redis_rate_limiter_factory'),
+        pytest.lazy_fixture('memory_rate_limiter_factory'),
+    ],
+)
+async def test_new_room_multiple_servers(rate_limiter_factory, mocker):
+    mocker.patch('time.time', return_value=0)
+    server_1 = await rate_limiter_factory('server-1')
+    server_2 = await rate_limiter_factory('server-2')
+
+    for i in range(0, MAX_ROOMS_PER_TEN_MINUTES - 1):
+        await server_1.acquire_new_room('user-1')
+
+    await server_2.acquire_new_room('user-1')
+
+    with pytest.raises(TooManyRoomsCreatedException):
+        await server_2.acquire_new_room('user-1')

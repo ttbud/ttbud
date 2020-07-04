@@ -31,6 +31,8 @@ function disconnectMessage(state: Disconnected) {
       return "This room is full";
     case ConnectionError.TOO_MANY_CONNECTIONS:
       return "You have too many rooms open, try closing some of your ttbud tabs";
+    case ConnectionError.TOO_MANY_ROOMS_CREATED:
+      return "You've made too many rooms recently, please wait a few minutes before trying again";
     case ConnectionError.UNKNOWN:
       return "An unknown error has occurred";
     default:
