@@ -1,6 +1,8 @@
 import signal
 import asyncio
 import logging.config
+import ssl
+from typing import Optional
 from uuid import uuid4
 
 import scout_apm.api
@@ -35,7 +37,17 @@ async def start_server(server_id: str) -> GameStateServer:
 
     gss = GameStateServer(room_store, apm.transaction, rate_limiter)
     ws = WebsocketManager(config.websocket_port, gss, rate_limiter)
-    await ws.start_websocket()
+
+    ssl_context: Optional[ssl.SSLContext]
+    if config.cert_config:
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ssl_context.load_cert_chain(
+            keyfile=config.cert_config.key_file_path,
+            certfile=config.cert_config.cert_file_path,
+        )
+    else:
+        ssl_context = None
+    await ws.start_websocket(ssl=ssl_context)
     return gss
 
 

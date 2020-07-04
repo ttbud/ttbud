@@ -4,7 +4,8 @@ import asyncio
 import json
 from dataclasses import asdict
 import random
-from typing import Union, List, Tuple, Dict, Any, Hashable, NoReturn
+from ssl import SSLContext
+from typing import Union, List, Tuple, Dict, Any, Hashable, NoReturn, Optional
 from uuid import UUID
 
 import dacite
@@ -61,11 +62,9 @@ class WebsocketManager:
         self._rate_limiter = rate_limiter
         self._clients_by_id: Dict[Hashable, websockets.WebSocketServerProtocol] = {}
 
-    async def start_websocket(self) -> None:
+    async def start_websocket(self, ssl: Optional[SSLContext] = None) -> None:
         try:
-            await websockets.serve(
-                self.consumer_handler, '0.0.0.0', self.port,
-            )
+            await websockets.serve(self.consumer_handler, '0.0.0.0', self.port, ssl=ssl)
             asyncio.create_task(self.maintain_liveness(), name='maintain_liveness')
         except OSError:
             logger.exception('Failed to start websocket server', exc_info=True)

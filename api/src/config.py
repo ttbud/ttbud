@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 from src.redis import SSLValidation
 
@@ -11,6 +12,15 @@ class Environment(Enum):
     PROD = 'prod'
 
 
+_use_ssl = os.environ.get('USE_SSL') == 'true'
+
+
+@dataclass
+class CertConfig:
+    key_file_path: str = os.environ['SSL_KEY_FILE']
+    cert_file_path: str = os.environ['SSL_CRT_FILE']
+
+
 @dataclass
 class Config:
     environment: Environment = Environment[os.environ['ENVIRONMENT'].upper()]
@@ -19,6 +29,7 @@ class Config:
     redis_address = os.environ['REDIS_URL']
     use_redis: bool = os.environ.get('USE_REDIS') == 'true'
     json_logs: bool = os.environ.get('JSON_LOGS') == 'true'
+    cert_config: Optional[CertConfig] = CertConfig() if _use_ssl else None
     redis_ssl_validation: SSLValidation = SSLValidation[
         os.environ.get('REDIS_SSL_VALIDATION', 'default').upper()
     ]

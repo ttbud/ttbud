@@ -6,12 +6,17 @@ Your virtual table friend
 
 ## Requirements
 
+- [mkcert](https://github.com/FiloSottile/mkcert)
 - [docker](https://docs.docker.com/v17.09/engine/installation/)
 - [docker-compose](https://docs.docker.com/compose/install/)
 
 ## Development
 
 ```bash
+# Create a dev ssl cert
+mkcert -install
+mkcert -cert-file certs/ttbud.local.pem -key-file certs/ttbud.local-key.pem ttbud.local
+
 # Configure your environment
 cp .env.example .env
 # Use the development setup (for hot-reload, etc..)
