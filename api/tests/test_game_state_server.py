@@ -1,5 +1,6 @@
 import pytest
 
+from src.rate_limit import MemoryRateLimiterStorage, MemoryRateLimiter
 from tests.helpers import assert_matches, assert_all_match
 from src.game_state_server import (
     GameStateServer,
@@ -32,19 +33,24 @@ def room_store():
 
 
 @pytest.fixture
-def gss(room_store):
-    return GameStateServer(room_store, fake_transaction)
+def rate_limiter():
+    return MemoryRateLimiter('server-id', MemoryRateLimiterStorage())
+
+
+@pytest.fixture
+def gss(room_store, rate_limiter):
+    return GameStateServer(room_store, fake_transaction, rate_limiter)
 
 
 @pytest.fixture
 async def gss_with_client(gss):
-    await gss.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+    await gss.new_connection_request(TEST_CLIENT_ID, '127.0.0.1', TEST_ROOM_ID)
     return gss
 
 
 @pytest.mark.asyncio
 async def test_new_connection(gss):
-    reply = await gss.new_connection_request('test_client', 'room1')
+    reply = await gss.new_connection_request('test_client', '127.0.0.1', 'room1')
     assert_matches(reply, {'contents': {'type': 'connected', 'data': []}})
 
 
@@ -59,9 +65,9 @@ async def test_room_does_not_exist(gss):
 
 
 @pytest.mark.asyncio
-async def test_room_data_is_stored(room_store):
-    gss_one = GameStateServer(room_store, fake_transaction)
-    await gss_one.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+async def test_room_data_is_stored(room_store, rate_limiter):
+    gss_one = GameStateServer(room_store, fake_transaction, rate_limiter)
+    await gss_one.new_connection_request(TEST_CLIENT_ID, '127.0.0.1', TEST_ROOM_ID)
     await async_collect(
         gss_one.process_updates(
             [VALID_ACTION, ANOTHER_VALID_ACTION],
@@ -73,9 +79,10 @@ async def test_room_data_is_stored(room_store):
     await gss_one.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
 
     # Make another game state server to simulate the server going down/up
-    gss_two = GameStateServer(room_store, fake_transaction)
-    message = await gss_two.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
-    await gss_two.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+    gss_two = GameStateServer(room_store, fake_transaction, rate_limiter)
+    message = await gss_two.new_connection_request(
+        TEST_CLIENT_ID, '127.0.0.1', TEST_ROOM_ID
+    )
     assert message.contents.data == [VALID_TOKEN, ANOTHER_VALID_TOKEN]
 
 
@@ -102,8 +109,8 @@ async def test_duplicate_update_rejected(gss_with_client):
 
 @pytest.mark.asyncio
 async def test_duplicate_update_in_different_room(gss):
-    await gss.new_connection_request('client1', 'room1')
-    await gss.new_connection_request('client2', 'room2')
+    await gss.new_connection_request('client1', '127.0.0.1', 'room1')
+    await gss.new_connection_request('client2', '127.0.0.1', 'room2')
     reply1 = await async_collect(
         gss.process_updates([VALID_ACTION], 'room1', 'client1', 'request1')
     )
@@ -224,7 +231,9 @@ async def test_delete_after_reload(gss_with_client):
         )
     )
     await gss_with_client.connection_dropped(TEST_CLIENT_ID, TEST_ROOM_ID)
-    await gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+    await gss_with_client.new_connection_request(
+        TEST_CLIENT_ID, '127.0.0.1', TEST_ROOM_ID
+    )
     reply = await async_collect(
         gss_with_client.process_updates(
             [DeleteAction(action='delete', data=VALID_TOKEN.id)],
@@ -280,10 +289,14 @@ async def test_ping(gss_with_client, mocker):
 @pytest.mark.asyncio
 async def test_room_full(gss_with_client):
     for i in range(MAX_USERS_PER_ROOM):
-        await gss_with_client.new_connection_request(f'client{i}', TEST_ROOM_ID)
+        await gss_with_client.new_connection_request(
+            f'client{i}', '127.0.0.1', TEST_ROOM_ID
+        )
 
     with pytest.raises(InvalidConnectionException):
-        await gss_with_client.new_connection_request(TEST_CLIENT_ID, TEST_ROOM_ID)
+        await gss_with_client.new_connection_request(
+            TEST_CLIENT_ID, '127.0.0.1', TEST_ROOM_ID
+        )
 
 
 @pytest.mark.asyncio
