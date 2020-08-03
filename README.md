@@ -17,6 +17,9 @@ Your virtual table friend
 mkcert -install
 mkcert -cert-file certs/ttbud.local.pem -key-file certs/ttbud.local-key.pem ttbud.local
 
+# Add a hosts file entry for local ttbud
+echo "127.0.0.1 ttbud.local" | sudo tee -a /etc/hosts
+
 # Configure your environment
 cp .env.example .env
 # Use the development setup (for hot-reload, etc..)
@@ -31,6 +34,8 @@ docker-compose up -d
 # Configure git hooks to enforce lint rules pre commit (optional)
 git config core.hooksPath hooks/
 ```
+
+To test it out, go to https://ttbud.local:3000 in your browser
 
 ### Logs
 
