@@ -1,5 +1,5 @@
 [build]
     base = "web"
     command = "yarn build"
-    publish = "build"
+    publish = "web/build"
     environment = { REACT_APP_DOMAIN="ttbud.app", REACT_APP_API_WEBSOCKET_PORT="443" }
