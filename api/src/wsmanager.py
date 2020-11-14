@@ -24,8 +24,9 @@ from .rate_limit import (
     RateLimiter,
     SERVER_LIVENESS_EXPIRATION_SECONDS,
     TooManyConnectionsException,
+    RoomFullException,
 )
-from .ws_close_codes import ERR_INVALID_UUID, ERR_TOO_MANY_CONNECTIONS
+from .ws_close_codes import ERR_INVALID_UUID, ERR_TOO_MANY_CONNECTIONS, ERR_ROOM_FULL
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +107,7 @@ class WebsocketManager:
 
         client_ip = get_client_ip(client)
         try:
-            async with self._rate_limiter.rate_limited_connection(client_ip):
+            async with self._rate_limiter.rate_limited_connection(client_ip, room_id):
                 logger.info(
                     f'Connected to {client_ip}',
                     extra={'client_ip': client_ip, 'room_id': room_id},
@@ -137,6 +138,12 @@ class WebsocketManager:
             await client.close(
                 ERR_TOO_MANY_CONNECTIONS, reason='Too many active connections'
             )
+        except RoomFullException:
+            logger.info(
+                f'Rejecting connection to {client_ip}, room is full',
+                extra={'client_ip': client_ip, 'room_id': room_id},
+            )
+            await client.close(ERR_ROOM_FULL, reason=f'The room {room_id} is full')
 
     async def send_message(self, message: Message) -> None:
         for target in message.targets:
