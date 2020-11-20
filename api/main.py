@@ -1,4 +1,3 @@
-import signal
 import asyncio
 import logging.config
 import ssl
@@ -50,10 +49,7 @@ def main() -> None:
 
     with timber.context(server={'server_id': server_id}):
         loop = asyncio.get_event_loop()
-        gss = loop.run_until_complete(start_server(server_id))
-        loop.add_signal_handler(
-            signal.SIGTERM, lambda *_: loop.run_until_complete(gss.save_all())
-        )
+        loop.run_until_complete(start_server(server_id))
         loop.run_forever()
 
 

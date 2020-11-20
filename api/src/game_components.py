@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional, Union, Literal
 
 from .colors import Color
 
@@ -20,7 +20,7 @@ TokenContents = Union[TextTokenContents, IconTokenContents]
 @dataclass
 class Token:
     id: str
-    type: str
+    type: Union[Literal['character'], Literal['floor']]
     contents: TokenContents
     start_x: int
     start_y: int
@@ -46,7 +46,7 @@ class Token:
 @dataclass
 class Ping:
     id: str
-    type: str
+    type: Literal['ping']
     x: int
     y: int
 

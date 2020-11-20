@@ -186,7 +186,7 @@ class WebsocketManager:
             }
         ):
             try:
-                async for reply in self.gss.process_updates(
+                async for reply in self.gss.updates_received(
                     request.updates, room_id, client_id, request.request_id
                 ):
                     await self.send_message(reply)

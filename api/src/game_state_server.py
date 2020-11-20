@@ -1,57 +1,32 @@
+# It's important to import the whole module here because we mock sleep in tests
+import asyncio
 import logging
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import (
     Union,
     Hashable,
     AsyncIterator,
     Iterable,
-    Optional,
     Dict,
-    Tuple,
-    List,
     Callable,
     ContextManager,
-)
-from copy import deepcopy
-
-# It's important to import the whole module here because we mock sleep in tests
-import asyncio
-from dacite import (
-    from_dict,
-    WrongTypeError,
-    MissingValueError,
+    Set,
+    List,
+    Optional,
 )
 
 from .api_structures import Response, CreateOrUpdateAction, DeleteAction, PingAction
 from .assert_never import assert_never
+from .game_components import Token, Ping
 from .rate_limit import RateLimiter, TooManyRoomsCreatedException
-from .room_store import RoomStore
-from .game_components import Token, Ping, content_id
-from .ws_close_codes import ERR_ROOM_FULL, ERR_TOO_MANY_ROOMS_CREATED
-from .colors import colors
-
+from .room import create_room
+from .room_store import RoomStore, MutationResult
+from .ws_close_codes import ERR_TOO_MANY_ROOMS_CREATED, ERR_INVALID_ROOM
 
 logger = logging.getLogger(__name__)
 
-
-MAX_USERS_PER_ROOM = 20
-
-
-def assign_colors(tokens: List[Token]) -> None:
-    available_colors = deepcopy(colors)
-    for token in tokens:
-        if token.color_rgb:
-            if token.color_rgb in available_colors:
-                del available_colors[available_colors.index(token.color_rgb)]
-            else:
-                raise TypeError(f'Unknown color: {token.color_rgb}')
-    for token in tokens:
-        if not token.color_rgb:
-            if not available_colors:
-                logger.info(f'Max colors reached for icon {content_id(token.contents)}')
-                return
-            logger.info(f'Add color {available_colors[0]} to token {token.id}')
-            token.color_rgb = available_colors.pop(0)
+MAX_UPDATE_RETRIES = 3
 
 
 @dataclass
@@ -69,16 +44,16 @@ class InvalidConnectionException(Exception):
         self.reason = reason
 
 
-class RoomData:
-    def __init__(self, room_id: str, initial_connection: Optional[Hashable] = None):
-        self.room_id: str = room_id
-        self.game_state: Dict[str, Union[Ping, Token]] = {}
-        self.id_to_positions: Dict[str, List[Tuple[int, int, int]]] = {}
-        self.positions_to_ids: Dict[Tuple[int, int, int], str] = {}
-        self.icon_to_token_ids: Dict[str, List[str]] = {}
-        self.clients = set()
-        if initial_connection:
-            self.clients.add(initial_connection)
+@dataclass
+class UpdateResult(MutationResult):
+    entities: List[Union[Ping, Token]]
+    messages: List[Message]
+    ping_ids_created: List[str]
+
+
+@dataclass
+class BareUpdateResult(MutationResult):
+    entities: List[Union[Ping, Token]]
 
 
 class GameStateServer:
@@ -88,10 +63,12 @@ class GameStateServer:
         apm_transaction: Callable[[str], ContextManager],
         rate_limiter: RateLimiter,
     ):
-        self._rooms: Dict[str, RoomData] = {}
+        self.clients_by_room: Dict[str, Set[Hashable]] = defaultdict(set)
         self.room_store = room_store
         self.apm_transaction = apm_transaction
         self._rate_limiter = rate_limiter
+        self.num_updates = 0
+        self.num_retries = 0
 
     async def new_connection_request(
         self, client_id: Hashable, client_ip: str, room_id: str
@@ -109,72 +86,107 @@ class GameStateServer:
         :raise InvalidConnectionException: If the client connection should be rejected
         """
         with self.apm_transaction('connect'):
-            if self._rooms.get(room_id, False):
-                if len(self._rooms[room_id].clients) <= MAX_USERS_PER_ROOM:
-                    self._rooms[room_id].clients.add(client_id)
-                else:
-                    raise InvalidConnectionException(
-                        ERR_ROOM_FULL, f'The room ${room_id} is full'
-                    )
-            else:
-                tokens_to_load = await self.room_store.read_room_data(room_id)
-                if not tokens_to_load:
-                    try:
-                        await self._rate_limiter.acquire_new_room(client_ip)
-                    except TooManyRoomsCreatedException:
-                        logger.info(
-                            f'Rejecting connection to {client_ip}, too many rooms'
-                            ' created recently',
-                            extra={'client_ip': client_ip, 'room_id': room_id},
-                        )
-                        raise InvalidConnectionException(
-                            ERR_TOO_MANY_ROOMS_CREATED,
-                            'Too many rooms created by client',
-                        )
+            result = await self.room_store.apply_mutation(
+                room_id, lambda entities: self.create_room(entities, client_ip, room_id)
+            )
+        self.clients_by_room[room_id].add(client_id)
+        return Message({client_id}, Response('connected', result.entities))
 
-                self._rooms[room_id] = RoomData(room_id, initial_connection=client_id)
-                if tokens_to_load:
-                    for token_data in tokens_to_load:
-                        try:
-                            token = from_dict(data_class=Token, data=token_data)
-                        except (WrongTypeError, MissingValueError, TypeError):
-                            # Don't raise here. Loading a room minus any tokens that
-                            # have been corrupted is still valuable.
-                            logger.exception(
-                                f'Corrupted room {room_id}',
-                                extra={"invalid_token": token_data},
-                                exc_info=True,
-                            )
-                        else:
-                            self._create_or_update_token(token, room_id)
-
-        return Message({client_id}, Response('connected', self.get_state(room_id)))
+    async def create_room(
+        self, entities: Optional[List[Union[Token, Ping]]], client_ip: str, room_id: str
+    ) -> BareUpdateResult:
+        if not entities:
+            try:
+                await self._rate_limiter.acquire_new_room(client_ip)
+            except TooManyRoomsCreatedException:
+                logger.info(
+                    f'Rejecting connection to {client_ip}, too many rooms'
+                    ' created recently',
+                    extra={'client_ip': client_ip, 'room_id': room_id},
+                )
+                raise InvalidConnectionException(
+                    ERR_TOO_MANY_ROOMS_CREATED, 'Too many rooms created by client',
+                )
+            return BareUpdateResult([])
+        return BareUpdateResult(entities)
 
     async def connection_dropped(self, client_id: Hashable, room_id: str) -> None:
-        if self._rooms.get(room_id, False):
-            self._rooms[room_id].clients.remove(client_id)
-            # Save the room if the last client leaves and there is something to save
-            if not self._rooms[room_id].clients and self._rooms[room_id].game_state:
-                await self.save_room(room_id)
-                del self._rooms[room_id]
-            else:
-                logger.info(f'{len(self._rooms[room_id].clients)} clients remaining')
-
-    async def save_all(self) -> None:
-        for room in self._rooms.values():
-            if room.game_state:
-                await self.save_room(room.room_id)
-        logger.info('All rooms saved')
-
-    async def save_room(self, room_id: str) -> None:
-        logger.info(f'Saving room {room_id}')
-        data_to_store = []
-        for game_object in self._rooms[room_id].game_state.values():
-            if isinstance(game_object, Token):
-                data_to_store.append(game_object)
-        await self.room_store.write_room_data(room_id, data_to_store)
+        if self.clients_by_room.get(room_id, False):
+            self.clients_by_room[room_id].remove(client_id)
+            logger.info(f'{len(self.clients_by_room[room_id])} clients remaining')
 
     async def process_updates(
+        self,
+        room_id: str,
+        updates: Iterable[Union[CreateOrUpdateAction, DeleteAction, PingAction]],
+        entities: Optional[List[Union[Token, Ping]]],
+        client_id: Hashable,
+        request_id: str,
+    ) -> UpdateResult:
+        pings_created = []
+        messages = []
+        if entities is None:
+            raise InvalidConnectionException(
+                ERR_INVALID_ROOM,
+                f'{client_id} tried to update room {room_id}, which does not exist',
+            )
+
+        room = create_room(room_id, entities)
+        for update in updates:
+            if update.action == 'create' or update.action == 'update':
+                token = update.data
+                if room.is_valid_position(token):
+                    room.create_or_update_token(token)
+                else:
+                    logger.info(f'Token {token.id} cannot move to occupied position')
+                    messages.append(
+                        Message(
+                            {client_id},
+                            Response(
+                                'error', 'That position is occupied, bucko', request_id,
+                            ),
+                        )
+                    )
+            elif update.action == 'delete':
+                if room.game_state.get(update.data, False):
+                    room.delete_token(update.data)
+                else:
+                    messages.append(
+                        Message(
+                            {client_id},
+                            Response(
+                                'error',
+                                'Cannot delete token because it does not exist',
+                                request_id,
+                            ),
+                        )
+                    )
+            elif update.action == 'ping':
+                room.create_ping(update.data)
+                pings_created.append(update.data.id)
+            else:
+                assert_never(update)
+
+        return UpdateResult(list(room.game_state.values()), messages, pings_created)
+
+    async def expire_pings(
+        self,
+        room_id: str,
+        ping_ids_created: List[str],
+        entities: Optional[List[Union[Token, Ping]]],
+    ) -> BareUpdateResult:
+        if entities is None:
+            raise InvalidConnectionException(
+                ERR_INVALID_ROOM,
+                f'Tried to remove pings from room {room_id}, which does not exist',
+            )
+        room = create_room(room_id, entities)
+        for ping_id in ping_ids_created:
+            room.remove_ping_from_state(ping_id)
+
+        return BareUpdateResult(list(room.game_state.values()))
+
+    async def updates_received(
         self,
         updates: Iterable[Union[CreateOrUpdateAction, DeleteAction, PingAction]],
         room_id: str,
@@ -185,131 +197,30 @@ class GameStateServer:
         # each request with a ping will always take three seconds because
         # we just sleep before sending the final message
         with self.apm_transaction('update'):
-            pings_created = []
-            if not (self._rooms.get(room_id, False) and self._rooms[room_id].clients):
-                yield Message(
-                    {client_id},
-                    Response('error', 'Your room does not exist, somehow', request_id),
-                )
-                return
-
-            for update in updates:
-                if update.action == 'create' or update.action == 'update':
-                    token = update.data
-                    if self._is_valid_position(token, room_id):
-                        self._create_or_update_token(token, room_id)
-                    else:
-                        logger.info(
-                            f'Token {token.id} cannot move to occupied position'
-                        )
-                        yield Message(
-                            {client_id},
-                            Response(
-                                'error', 'That position is occupied, bucko', request_id,
-                            ),
-                        )
-                elif update.action == 'delete':
-                    if self._rooms[room_id].game_state.get(update.data, False):
-                        self._delete_token(update.data, room_id)
-                    else:
-                        yield Message(
-                            {client_id},
-                            Response(
-                                'error',
-                                'Cannot delete token because it does not exist',
-                                request_id,
-                            ),
-                        )
-                elif update.action == 'ping':
-                    self._create_ping(update.data, room_id)
-                    pings_created.append(update.data.id)
-                else:
-                    assert_never(update)
-
-        yield Message(
-            self._rooms[room_id].clients,
-            Response('state', self.get_state(room_id), request_id),
-        )
-
-        if pings_created:
-            await asyncio.sleep(3)
-            for ping_id in pings_created:
-                self._remove_ping_from_state(ping_id, room_id)
-
-            yield Message(
-                self._rooms[room_id].clients,
-                Response('state', self.get_state(room_id), request_id),
+            update_result = await self.room_store.apply_mutation(
+                room_id,
+                lambda entities: self.process_updates(
+                    room_id, updates, entities, client_id, request_id
+                ),
             )
 
-    def _is_valid_position(self, token: Token, room_id: str) -> bool:
-        blocks = self._get_unit_blocks(token)
-        for block in blocks:
-            if self._rooms[room_id].positions_to_ids.get(block, False):
-                return False
-        return True
+            for message in update_result.messages:
+                yield message
 
-    def _create_or_update_token(self, token: Token, room_id: str) -> None:
-        logger.info(f'New token: {token}')
-        if self._rooms[room_id].game_state.get(token.id):
-            self._remove_positions(token.id, room_id)
-        elif token.type.lower() == 'character':
-            new_content_id = content_id(token.contents)
-            if self._rooms[room_id].icon_to_token_ids.get(new_content_id):
-                token_ids = self._rooms[room_id].icon_to_token_ids[new_content_id]
-                tokens_with_icon = [token]
-                for t_id in token_ids:
-                    token_with_icon = self._rooms[room_id].game_state[t_id]
-                    if isinstance(token_with_icon, Token):
-                        tokens_with_icon.append(token_with_icon)
-                token_ids.append(token.id)
-                assign_colors(tokens_with_icon)
-            else:
-                self._rooms[room_id].icon_to_token_ids[new_content_id] = [token.id]
+            yield Message(
+                self.clients_by_room[room_id],
+                Response('state', update_result.entities, request_id),
+            )
 
-        # Update state for new or existing token
-        blocks = self._get_unit_blocks(token)
-        self._rooms[room_id].id_to_positions[token.id] = blocks
-        for block in blocks:
-            self._rooms[room_id].positions_to_ids[block] = token.id
-        self._rooms[room_id].game_state[token.id] = token
-
-    def _create_ping(self, ping: Ping, room_id: str) -> None:
-        self._rooms[room_id].game_state[ping.id] = ping
-
-    def _delete_token(self, token_id: str, room_id: str) -> None:
-        # Remove token data from position dictionaries
-        self._remove_positions(token_id, room_id)
-        self._rooms[room_id].id_to_positions.pop(token_id, None)
-        # Remove the token from the state
-        removed_token = self._rooms[room_id].game_state.pop(token_id, None)
-        # Remove token from icon_id table
-        if (
-            isinstance(removed_token, Token)
-            and removed_token.type.lower() == 'character'
-        ):
-            self._rooms[room_id].icon_to_token_ids[
-                content_id(removed_token.contents)
-            ].remove(removed_token.id)
-
-    def _remove_positions(self, token_id: str, room_id: str) -> None:
-        positions = self._rooms[room_id].id_to_positions[token_id]
-        for pos in positions:
-            self._rooms[room_id].positions_to_ids.pop(pos, None)
-
-    def _remove_ping_from_state(self, ping_id: str, room_id: str) -> None:
-        self._rooms[room_id].game_state.pop(ping_id, None)
-
-    @staticmethod
-    def _get_unit_blocks(token: Token) -> List[Tuple[int, int, int]]:
-        unit_blocks = []
-        for x in range(token.start_x, token.end_x):
-            for y in range(token.start_y, token.end_y):
-                for z in range(token.start_z, token.end_z):
-                    unit_blocks.append((x, y, z))
-        return unit_blocks
-
-    def get_state(self, room_id: str) -> list:
-        return list(self._rooms[room_id].game_state.values())
-
-    def get_clients(self, room_id: str) -> set:
-        return self._rooms[room_id].clients
+        if update_result.ping_ids_created:
+            await asyncio.sleep(3)
+            ping_removal_result = await self.room_store.apply_mutation(
+                room_id,
+                lambda entities: self.expire_pings(
+                    room_id, update_result.ping_ids_created, entities
+                ),
+            )
+            yield Message(
+                self.clients_by_room[room_id],
+                Response('state', ping_removal_result.entities, request_id),
+            )
