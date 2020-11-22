@@ -67,8 +67,6 @@ class GameStateServer:
         self.room_store = room_store
         self.apm_transaction = apm_transaction
         self._rate_limiter = rate_limiter
-        self.num_updates = 0
-        self.num_retries = 0
 
     async def new_connection_request(
         self, client_id: Hashable, client_ip: str, room_id: str
