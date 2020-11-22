@@ -15,7 +15,7 @@ from src.rate_limit import (
 )
 from src.redis import create_redis_pool
 from src.wsmanager import WebsocketManager
-from src.room_store import RedisRoomStore, RoomStore
+from src.room_store import RoomStore, create_redis_room_store
 from src.game_state_server import GameStateServer
 
 
@@ -23,7 +23,7 @@ async def start_server(server_id: str) -> GameStateServer:
     room_store: RoomStore
     rate_limiter: RateLimiter
     redis = await create_redis_pool(config.redis_address, config.redis_ssl_validation)
-    room_store = RedisRoomStore(redis)
+    room_store = await create_redis_room_store(redis)
     rate_limiter = await create_redis_rate_limiter(server_id, redis)
 
     gss = GameStateServer(room_store, apm.transaction, rate_limiter)

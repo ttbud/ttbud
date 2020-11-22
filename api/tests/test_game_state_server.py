@@ -6,7 +6,7 @@ from src.rate_limit import MemoryRateLimiterStorage, MemoryRateLimiter
 from tests.helpers import assert_matches, assert_all_match
 from src.game_state_server import GameStateServer, InvalidConnectionException
 from src.api_structures import CreateOrUpdateAction, DeleteAction, PingAction
-from src.room_store import MemoryRoomStore
+from src.room_store import MemoryRoomStore, MemoryRoomStorage
 from src.game_components import Token, IconTokenContents
 from src.async_collect import async_collect
 from src.colors import colors
@@ -27,7 +27,7 @@ from tests.static_fixtures import (
 
 @pytest.fixture
 def room_store():
-    return MemoryRoomStore()
+    return MemoryRoomStore(MemoryRoomStorage())
 
 
 @pytest.fixture
@@ -267,8 +267,7 @@ async def test_move_existing_token(gss_with_client):
 
 
 @pytest.mark.asyncio
-async def test_ping(gss_with_client, mocker):
-    mocker.patch('asyncio.sleep')
+async def test_ping(gss_with_client):
     reply = await async_collect(
         gss_with_client.updates_received(
             [PingAction(action='ping', data=VALID_PING)],

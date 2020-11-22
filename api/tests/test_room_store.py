@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import Future
-from typing import List, Union, Callable
+from typing import List, Union, Callable, Awaitable
 
 import fakeredis.aioredis
 import pytest
@@ -10,13 +10,14 @@ from src.game_components import Ping, Token
 from src.game_state_server import BareUpdateResult
 from src.room_store import (
     MemoryRoomStore,
-    RedisRoomStore,
     RoomStore,
     TransactionFailed,
     MutationResult,
+    create_redis_room_store,
+    MemoryRoomStorage,
 )
 
-from tests.static_fixtures import VALID_TOKEN
+from tests.static_fixtures import VALID_TOKEN, ANOTHER_VALID_TOKEN
 
 
 # If we don't depend on event_loop (even though it isn't explicitly used), then it
@@ -32,27 +33,30 @@ async def redis(event_loop):
 
 @pytest.fixture
 def redis_room_store_factory(redis):
-    return lambda: RedisRoomStore(redis)
+    return lambda: create_redis_room_store(redis)
 
 
 @pytest.fixture
-def redis_room_store(redis_room_store_factory):
-    return redis_room_store_factory()
+async def redis_room_store(redis_room_store_factory):
+    return await redis_room_store_factory()
 
 
 @pytest.fixture
 def memory_room_storage():
-    return {}
+    return MemoryRoomStorage()
 
 
 @pytest.fixture
 def memory_room_store_factory(memory_room_storage):
-    return lambda: MemoryRoomStore(memory_room_storage)
+    async def fn():
+        return MemoryRoomStore(memory_room_storage)
+
+    return fn
 
 
 @pytest.fixture
-def memory_room_store(memory_room_store_factory):
-    return memory_room_store_factory()
+async def memory_room_store(memory_room_store_factory):
+    return await memory_room_store_factory()
 
 
 async def mutate_to(entities: List[Union[Ping, Token]]) -> MutationResult:
@@ -95,24 +99,30 @@ async def test_list_all_keys(room_store: RoomStore):
         pytest.lazy_fixture('redis_room_store_factory'),
     ],
 )
-async def test_transaction_contention(room_store_factory: Callable[[], RoomStore]):
-    room_store_1 = room_store_factory()
-    room_store_2 = room_store_factory()
+async def test_transaction_contention(
+    room_store_factory: Callable[[], Awaitable[RoomStore]]
+):
+    room_store_1 = await room_store_factory()
+    room_store_2 = await room_store_factory()
 
-    future: Future = Future()
+    first_transaction_mutate: Future = Future()
     task = asyncio.create_task(
-        room_store_1.apply_mutation('room-id-1', lambda _: future)
+        room_store_1.apply_mutation('room-id-1', lambda _: first_transaction_mutate)
     )
     # Have to yield to the event loop here to get the above task to run up
     # until it waits for our mutate function to complete
     await asyncio.sleep(0)
 
     # Now that room_store_1 has started the transaction, but is stuck waiting for our
-    # mutate function to complete it, run another mutation to change the same room
-    await room_store_2.apply_mutation('room-id-1', lambda _: mutate_to([]))
-
-    # We've changed the room, now allow the first room store to attempt to finish
-    # its transaction. It should fail because room_store_2 got there first
-    future.set_result(BareUpdateResult([]))
+    # mutate function to complete it, attempts to make changes to the same room
+    # should fail
     with pytest.raises(TransactionFailed):
-        await task
+        await room_store_2.apply_mutation(
+            'room-id-1', lambda _: mutate_to([ANOTHER_VALID_TOKEN])
+        )
+
+    # Finish the original transaction, which should succeed
+    first_transaction_mutate.set_result(await mutate_to([VALID_TOKEN]))
+    await task
+
+    assert await room_store_1.read('room-id-1') == [VALID_TOKEN]
