@@ -15,6 +15,7 @@ from src.room_store import (
     MutationResult,
     create_redis_room_store,
     MemoryRoomStorage,
+    LOCK_EXPIRATION_SECS,
 )
 
 from tests.static_fixtures import VALID_TOKEN, ANOTHER_VALID_TOKEN
@@ -68,7 +69,8 @@ async def mutate_to(entities: List[Union[Ping, Token]]) -> MutationResult:
     'room_store',
     [pytest.lazy_fixture('memory_room_store'), pytest.lazy_fixture('redis_room_store')],
 )
-async def test_mutate_and_read(room_store: RoomStore):
+async def test_mutate_and_read(room_store: RoomStore, mocker):
+    mocker.patch('time.time', return_value=0)
     result = await room_store.apply_mutation(
         'room_id', lambda _: mutate_to([VALID_TOKEN])
     )
@@ -126,3 +128,46 @@ async def test_transaction_contention(
     await task
 
     assert await room_store_1.read('room-id-1') == [VALID_TOKEN]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    'room_store',
+    [pytest.lazy_fixture('memory_room_store'), pytest.lazy_fixture('redis_room_store')],
+)
+async def test_lock_expiration(room_store: RoomStore, mocker):
+    mocker.patch('time.time', return_value=0)
+    first_transaction_mutate: Future = Future()
+    task = asyncio.create_task(
+        room_store.apply_mutation('room-id', lambda _: first_transaction_mutate)
+    )
+
+    # Have to yield to the event loop here to get the above task to run up
+    # until it waits for our mutate function to complete
+    await asyncio.sleep(0)
+
+    mocker.patch('time.time', return_value=LOCK_EXPIRATION_SECS + 1)
+    first_transaction_mutate.set_result(await mutate_to([VALID_TOKEN]))
+    # Transaction should fail because the mutate function took too long
+    with pytest.raises(TransactionFailed):
+        await task
+
+    # No changes should be made to the room
+    assert await room_store.read('room-id') is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    'room_store',
+    [pytest.lazy_fixture('memory_room_store'), pytest.lazy_fixture('redis_room_store')],
+)
+async def test_exception_in_mutate(room_store: RoomStore):
+    async def failed_mutate(_):
+        raise Exception('Mutate failed')
+
+    with pytest.raises(Exception):
+        await room_store.apply_mutation('room-id', failed_mutate)
+
+    # Lock should be released at this point, since the mutation failed
+    await room_store.apply_mutation('room-id', lambda _: mutate_to([VALID_TOKEN]))
+    assert await room_store.read('room-id') == [VALID_TOKEN]
