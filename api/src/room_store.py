@@ -212,10 +212,15 @@ class RedisRoomStore(RoomStore):
         room_id: str,
         mutate: Callable[[Optional[EntityList]], Awaitable[MutationResultType]],
     ) -> MutationResultType:
-        # We use a simplified locking mechanism that only works for redis
-        # running as a single node. It allows us to only change the room if the
-        # lock hasn't expired. If we start using a redis cluster we will have
-        # to use a different strategy
+        # We use a simplified locking mechanism that does not guarantee
+        # exclusive locks across redis failovers. However, since the resource
+        # we are locking is on the same redis server as is holding the lock, if
+        # we still have the lock when we write, the room data is guaranteed to
+        # be the same as when we read it when we commit the mutation.
+        #
+        # If we start using redis clusters with multiple masters this will no longer
+        # hold true, and we will have to use a more complicated locking scheme.
+        #
         # See https://redis.io/commands/setnx#design-pattern-locking-with-codesetnxcode
 
         success = False
