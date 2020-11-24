@@ -26,7 +26,8 @@ from dacite import WrongTypeError, MissingValueError, from_dict
 
 from .game_components import Token, Ping
 
-MAX_UPDATE_RETRIES = 3
+MAX_LOCK_RETRIES = 3
+LOCK_EXPIRATION_SECS = 10
 
 EntityList = List[Union[Ping, Token]]
 logger = logging.getLogger(__name__)
@@ -145,9 +146,6 @@ class MemoryRoomStore(RoomStore):
         return result
 
 
-LOCK_EXPIRATION_SECS = 10
-
-
 def _room_key(room_id: str) -> str:
     return f'room:{room_id}'
 
@@ -228,7 +226,7 @@ class RedisRoomStore(RoomStore):
         lock_key = f'lock:room:{room_id}'
         lock_value = uuid4().bytes
 
-        while not success and retry_count < MAX_UPDATE_RETRIES:
+        while not success and retry_count < MAX_LOCK_RETRIES:
             success = await self._redis.set(
                 lock_key,
                 lock_value,
