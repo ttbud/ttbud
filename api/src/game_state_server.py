@@ -85,13 +85,58 @@ class GameStateServer:
         """
         with self.apm_transaction('connect'):
             result = await self.room_store.apply_mutation(
-                room_id, lambda entities: self.create_room(entities, client_ip, room_id)
+                room_id,
+                lambda entities: self._create_room(room_id, entities, client_ip),
             )
         self.clients_by_room[room_id].add(client_id)
         return Message({client_id}, Response('connected', result.entities))
 
-    async def create_room(
-        self, entities: Optional[List[Union[Token, Ping]]], client_ip: str, room_id: str
+    async def connection_dropped(self, client_id: Hashable, room_id: str) -> None:
+        if self.clients_by_room.get(room_id, False):
+            self.clients_by_room[room_id].remove(client_id)
+            logger.info(f'{len(self.clients_by_room[room_id])} clients remaining')
+
+    async def updates_received(
+        self,
+        updates: Iterable[Union[CreateOrUpdateAction, DeleteAction, PingAction]],
+        room_id: str,
+        client_id: Hashable,
+        request_id: str,
+    ) -> AsyncIterator[Message]:
+        # Just wrap the the initial response behind a transaction, otherwise
+        # each request with a ping will always take three seconds because
+        # we just sleep before sending the final message
+        with self.apm_transaction('update'):
+            update_result = await self.room_store.apply_mutation(
+                room_id,
+                lambda entities: self._process_updates(
+                    room_id, entities, updates, client_id, request_id
+                ),
+            )
+
+            for message in update_result.messages:
+                yield message
+
+            yield Message(
+                self.clients_by_room[room_id],
+                Response('state', update_result.entities, request_id),
+            )
+
+        if update_result.ping_ids_created:
+            await asyncio.sleep(3)
+            ping_removal_result = await self.room_store.apply_mutation(
+                room_id,
+                lambda entities: self._expire_pings(
+                    room_id, entities, update_result.ping_ids_created
+                ),
+            )
+            yield Message(
+                self.clients_by_room[room_id],
+                Response('state', ping_removal_result.entities, request_id),
+            )
+
+    async def _create_room(
+        self, room_id: str, entities: Optional[List[Union[Token, Ping]]], client_ip: str
     ) -> BareUpdateResult:
         if not entities:
             try:
@@ -108,16 +153,11 @@ class GameStateServer:
             return BareUpdateResult([])
         return BareUpdateResult(entities)
 
-    async def connection_dropped(self, client_id: Hashable, room_id: str) -> None:
-        if self.clients_by_room.get(room_id, False):
-            self.clients_by_room[room_id].remove(client_id)
-            logger.info(f'{len(self.clients_by_room[room_id])} clients remaining')
-
-    async def process_updates(
+    async def _process_updates(
         self,
         room_id: str,
-        updates: Iterable[Union[CreateOrUpdateAction, DeleteAction, PingAction]],
         entities: Optional[List[Union[Token, Ping]]],
+        updates: Iterable[Union[CreateOrUpdateAction, DeleteAction, PingAction]],
         client_id: Hashable,
         request_id: str,
     ) -> UpdateResult:
@@ -167,11 +207,11 @@ class GameStateServer:
 
         return UpdateResult(list(room.game_state.values()), messages, pings_created)
 
-    async def expire_pings(
+    async def _expire_pings(
         self,
         room_id: str,
-        ping_ids_created: List[str],
         entities: Optional[List[Union[Token, Ping]]],
+        ping_ids_created: List[str],
     ) -> BareUpdateResult:
         if entities is None:
             raise InvalidConnectionException(
@@ -183,42 +223,3 @@ class GameStateServer:
             room.remove_ping_from_state(ping_id)
 
         return BareUpdateResult(list(room.game_state.values()))
-
-    async def updates_received(
-        self,
-        updates: Iterable[Union[CreateOrUpdateAction, DeleteAction, PingAction]],
-        room_id: str,
-        client_id: Hashable,
-        request_id: str,
-    ) -> AsyncIterator[Message]:
-        # Just wrap the the initial response behind a transaction, otherwise
-        # each request with a ping will always take three seconds because
-        # we just sleep before sending the final message
-        with self.apm_transaction('update'):
-            update_result = await self.room_store.apply_mutation(
-                room_id,
-                lambda entities: self.process_updates(
-                    room_id, updates, entities, client_id, request_id
-                ),
-            )
-
-            for message in update_result.messages:
-                yield message
-
-            yield Message(
-                self.clients_by_room[room_id],
-                Response('state', update_result.entities, request_id),
-            )
-
-        if update_result.ping_ids_created:
-            await asyncio.sleep(3)
-            ping_removal_result = await self.room_store.apply_mutation(
-                room_id,
-                lambda entities: self.expire_pings(
-                    room_id, update_result.ping_ids_created, entities
-                ),
-            )
-            yield Message(
-                self.clients_by_room[room_id],
-                Response('state', ping_removal_result.entities, request_id),
-            )
