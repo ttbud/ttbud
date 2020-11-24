@@ -108,7 +108,7 @@ async def test_transaction_contention(
     room_store_2 = await room_store_factory()
 
     first_transaction_mutate: Future = Future()
-    task = asyncio.create_task(
+    first_transaction_task = asyncio.create_task(
         room_store_1.apply_mutation('room-id-1', lambda _: first_transaction_mutate)
     )
     # Have to yield to the event loop here to get the above task to run up
@@ -125,7 +125,7 @@ async def test_transaction_contention(
 
     # Finish the original transaction, which should succeed
     first_transaction_mutate.set_result(await mutate_to([VALID_TOKEN]))
-    await task
+    await first_transaction_task
 
     assert await room_store_1.read('room-id-1') == [VALID_TOKEN]
 
@@ -138,7 +138,7 @@ async def test_transaction_contention(
 async def test_lock_expiration(room_store: RoomStore, mocker):
     mocker.patch('time.time', return_value=0)
     first_transaction_mutate: Future = Future()
-    task = asyncio.create_task(
+    first_transaction_task = asyncio.create_task(
         room_store.apply_mutation('room-id', lambda _: first_transaction_mutate)
     )
 
@@ -150,7 +150,7 @@ async def test_lock_expiration(room_store: RoomStore, mocker):
     first_transaction_mutate.set_result(await mutate_to([VALID_TOKEN]))
     # Transaction should fail because the mutate function took too long
     with pytest.raises(TransactionFailed):
-        await task
+        await first_transaction_task
 
     # No changes should be made to the room
     assert await room_store.read('room-id') is None

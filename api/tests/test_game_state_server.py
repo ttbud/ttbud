@@ -1,5 +1,3 @@
-from unittest import TestCase
-
 import pytest
 
 from src.rate_limit import MemoryRateLimiterStorage, MemoryRateLimiter
@@ -81,9 +79,7 @@ async def test_room_data_is_stored(room_store, rate_limiter):
     message = await gss_two.new_connection_request(
         TEST_CLIENT_ID, '127.0.0.1', TEST_ROOM_ID
     )
-    TestCase().assertCountEqual(
-        message.contents.data, [VALID_TOKEN, ANOTHER_VALID_TOKEN]
-    )
+    assert list(message.contents.data) == [VALID_TOKEN, ANOTHER_VALID_TOKEN]
 
 
 @pytest.mark.asyncio
