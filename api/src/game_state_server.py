@@ -16,13 +16,18 @@ from typing import (
     Optional,
 )
 
-from .api_structures import Response, CreateOrUpdateAction, DeleteAction, PingAction
-from .assert_never import assert_never
+from src.api.api_structures import (
+    Response,
+    CreateOrUpdateAction,
+    DeleteAction,
+    PingAction,
+)
+from src.util.assert_never import assert_never
 from .game_components import Token, Ping
-from .rate_limit import RateLimiter, TooManyRoomsCreatedException
+from .rate_limit.rate_limit import RateLimiter, TooManyRoomsCreatedException
 from .room import create_room
-from .room_store import RoomStore, MutationResult
-from .ws_close_codes import ERR_TOO_MANY_ROOMS_CREATED, ERR_INVALID_ROOM
+from src.api.ws_close_codes import ERR_TOO_MANY_ROOMS_CREATED, ERR_INVALID_ROOM
+from .room_store.room_store import RoomStore, MutationResult
 
 logger = logging.getLogger(__name__)
 

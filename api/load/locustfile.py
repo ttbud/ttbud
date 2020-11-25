@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from locust.env import Environment
 from websocket import create_connection, WebSocket
-from src.api_structures import Request, CreateOrUpdateAction, PingAction, DeleteAction
+from src.api.api_structures import Request, CreateOrUpdateAction, PingAction, DeleteAction
 
 from locust import User, task, between
 

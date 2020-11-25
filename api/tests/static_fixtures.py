@@ -1,4 +1,4 @@
-from src.api_structures import CreateOrUpdateAction
+from src.api.api_structures import CreateOrUpdateAction
 from src.colors import colors
 from src.game_components import Token, IconTokenContents, Ping
 
