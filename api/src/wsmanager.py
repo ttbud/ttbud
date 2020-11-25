@@ -72,7 +72,7 @@ class WebsocketManager:
 
     async def maintain_liveness(self) -> NoReturn:
         while True:
-            logger.info("Refreshing liveness")
+            logger.info('Refreshing liveness')
             await self._rate_limiter.refresh_server_liveness(
                 map(
                     lambda client: client.remote_address[0],
@@ -169,7 +169,7 @@ class WebsocketManager:
         except (json.JSONDecodeError, WrongTypeError, MissingValueError):
             logger.info(
                 'invalid json received from client',
-                extra={"json": json_message},
+                extra={'json': json_message},
                 exc_info=True,
             )
             await self.send_message(
