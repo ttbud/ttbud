@@ -86,7 +86,7 @@ class GameStateServer:
         with self.apm_transaction('connect'):
             result = await self.room_store.apply_mutation(
                 room_id,
-                lambda entities: self._create_room(room_id, entities, client_ip),
+                lambda entities: self._acquire_room_slot(room_id, entities, client_ip),
             )
         self.clients_by_room[room_id].add(client_id)
         return Message({client_id}, Response('connected', result.entities))
@@ -135,7 +135,7 @@ class GameStateServer:
                 Response('state', ping_removal_result.entities, request_id),
             )
 
-    async def _create_room(
+    async def _acquire_room_slot(
         self, room_id: str, entities: Optional[List[Union[Token, Ping]]], client_ip: str
     ) -> BareUpdateResult:
         if not entities:
