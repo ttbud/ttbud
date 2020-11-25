@@ -13,19 +13,19 @@ class Response:
 
 @dataclass
 class CreateOrUpdateAction:
-    action: Union[Literal["create"], Literal["update"]]
+    action: Union[Literal['create'], Literal['update']]
     data: Token
 
 
 @dataclass
 class DeleteAction:
-    action: Literal["delete"]
+    action: Literal['delete']
     data: str
 
 
 @dataclass
 class PingAction:
-    action: Literal["ping"]
+    action: Literal['ping']
     data: Ping
 
 
