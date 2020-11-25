@@ -5,18 +5,22 @@ from typing import List, Union, Callable, Awaitable
 import fakeredis.aioredis
 import pytest
 
-from src.async_collect import async_collect
+from src.util.async_collect import async_collect
 from src.game_components import Ping, Token
 from src.game_state_server import BareUpdateResult
-from src.room_store import (
-    MemoryRoomStore,
+from src.room_store.room_store import (
     RoomStore,
     TransactionFailed,
     MutationResult,
-    create_redis_room_store,
-    MemoryRoomStorage,
     LOCK_EXPIRATION_SECS,
 )
+
+from src.room_store.memory_room_store import (
+    MemoryRoomStore,
+    MemoryRoomStorage,
+)
+
+from src.room_store.redis_room_store import create_redis_room_store
 
 from tests.static_fixtures import VALID_TOKEN, ANOTHER_VALID_TOKEN
 

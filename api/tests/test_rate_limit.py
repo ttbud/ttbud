@@ -7,20 +7,23 @@ import pytest
 from aioredis import Redis
 from pytest_mock import MockFixture
 
-from src.rate_limit import (
-    RedisRateLimiter,
+from src.rate_limit.rate_limit import (
     MAX_CONNECTIONS_PER_USER,
     TooManyConnectionsException,
     SERVER_LIVENESS_EXPIRATION_SECONDS,
     RateLimiter,
-    MemoryRateLimiter,
-    MemoryRateLimiterStorage,
-    create_redis_rate_limiter,
     MAX_ROOMS_PER_TEN_MINUTES,
     TooManyRoomsCreatedException,
     MAX_CONNECTIONS_PER_ROOM,
     RoomFullException,
 )
+
+from src.rate_limit.memory_rate_limit import (
+    MemoryRateLimiter,
+    MemoryRateLimiterStorage,
+)
+
+from src.rate_limit.redis_rate_limit import RedisRateLimiter, create_redis_rate_limiter
 
 T = TypeVar('T', bound=RateLimiter)
 

@@ -14,19 +14,23 @@ import timber
 import websockets
 from websockets import ConnectionClosedError
 
-from .game_state_server import (
+from src.game_state_server import (
     InvalidConnectionException,
     Message,
     GameStateServer,
 )
-from .api_structures import Response, Request
-from .rate_limit import (
+from src.api.api_structures import Response, Request
+from src.api.ws_close_codes import (
+    ERR_INVALID_UUID,
+    ERR_TOO_MANY_CONNECTIONS,
+    ERR_ROOM_FULL,
+)
+from src.rate_limit.rate_limit import (
     RateLimiter,
     SERVER_LIVENESS_EXPIRATION_SECONDS,
     TooManyConnectionsException,
     RoomFullException,
 )
-from .ws_close_codes import ERR_INVALID_UUID, ERR_TOO_MANY_CONNECTIONS, ERR_ROOM_FULL
 
 logger = logging.getLogger(__name__)
 
