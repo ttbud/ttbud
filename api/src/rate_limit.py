@@ -91,14 +91,16 @@ _TEN_MINUTES_IN_SECONDS = 60 * 10
 # new connection has been recorded, false otherwise
 # language=lua
 ACQUIRE_CONNECTION_SLOT = f"""
-local connection_key = ARGV[1]
-local target_server_id = ARGV[2]
-local max_connections = tonumber(ARGV[3])
+local connection_key = KEYS[1]
+local target_server_id = ARGV[1]
+local max_connections = tonumber(ARGV[2])
 
 local server_ids = redis.call('hkeys', connection_key)
 
 local total_connection_count = 0
 for _, server_id in pairs(server_ids) do
+    -- FIXME: This breaks redis cluster mode, because we don't declare these keys
+    -- ahead of time
     local server_expired = not redis.call('get', 'api-server:' .. server_id)
     if server_expired then
         redis.call('hdel', connection_key, server_id)
@@ -125,8 +127,8 @@ end
 
 # language=lua
 RELEASE_CONNECTION_SLOT = """
-    local connection_key = ARGV[1]
-    local server_id = ARGV[2]
+    local connection_key = KEYS[1]
+    local server_id = ARGV[1]
 
     local count = tonumber(redis.call('hget', connection_key, server_id))
     if count ~= nil and count > 0 then
@@ -233,19 +235,13 @@ class RedisRateLimiter(RateLimiter):
         transaction = self._redis.multi_exec()
         transaction.evalsha(
             self._acquire_connection_sha,
-            args=[
-                f'user-connections:{user_id}',
-                self._server_id,
-                MAX_CONNECTIONS_PER_USER,
-            ],
+            keys=[f'user-connections:{user_id}'],
+            args=[self._server_id, MAX_CONNECTIONS_PER_USER],
         )
         transaction.evalsha(
             self._acquire_connection_sha,
-            args=[
-                f'room-connections:{room_id}',
-                self._server_id,
-                MAX_CONNECTIONS_PER_ROOM,
-            ],
+            keys=[f'room-connections:{room_id}'],
+            args=[self._server_id, MAX_CONNECTIONS_PER_ROOM],
         )
 
         [open_connection_slot, open_room_slot] = await transaction.execute()
@@ -258,11 +254,13 @@ class RedisRateLimiter(RateLimiter):
         transaction = self._redis.multi_exec()
         transaction.evalsha(
             self._release_connection_sha,
-            args=[f'user-connections:{user_id}', self._server_id],
+            keys=[f'user-connections:{user_id}'],
+            args=[self._server_id],
         )
         transaction.evalsha(
             self._release_connection_sha,
-            args=[f'room-connections:{room_id}', self._server_id],
+            keys=[f'room-connections:{room_id}'],
+            args=[self._server_id],
         )
         await transaction.execute()
 
