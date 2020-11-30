@@ -4,3 +4,5 @@ venv/
 .venv/
 
 .pytest_cache
+htmlcov
+.coverage
