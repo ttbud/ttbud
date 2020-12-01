@@ -22,7 +22,7 @@ from src.room_store.memory_room_store import (
 
 from src.room_store.redis_room_store import create_redis_room_store
 
-from tests.static_fixtures import VALID_TOKEN, ANOTHER_VALID_TOKEN
+from tests.static_fixtures import VALID_TOKEN, ANOTHER_VALID_TOKEN, VALID_PING
 
 
 # If we don't depend on event_loop (even though it isn't explicitly used), then it
@@ -76,10 +76,10 @@ async def mutate_to(entities: List[Union[Ping, Token]]) -> MutationResult:
 async def test_mutate_and_read(room_store: RoomStore, mocker):
     mocker.patch('time.time', return_value=0)
     result = await room_store.apply_mutation(
-        'room_id', lambda _: mutate_to([VALID_TOKEN])
+        'room_id', lambda _: mutate_to([VALID_TOKEN, VALID_PING])
     )
-    assert result.entities == [VALID_TOKEN]
-    assert (await room_store.read('room_id')) == [VALID_TOKEN]
+    assert result.entities == [VALID_TOKEN, VALID_PING]
+    assert (await room_store.read('room_id')) == [VALID_TOKEN, VALID_PING]
 
 
 @pytest.mark.asyncio

@@ -7,7 +7,7 @@ import throttle from "../util/throttle";
 import { RootState } from "../store/rootReducer";
 import { Entity } from "../types";
 
-const UPDATE_RATE_MS = 60;
+const UPDATE_RATE_MS = 250;
 
 export default class BoardSyncer {
   /**
