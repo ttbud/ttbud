@@ -180,6 +180,7 @@ jobs:
           name: Run Integration Tests
           environment:
             DOMAIN: https://ttbud-staging.netlify.app
+            API_DOMAIN: wss://ttbud-staging.herokuapp.com
           command: yarn test
 workflows:
   version: 2
