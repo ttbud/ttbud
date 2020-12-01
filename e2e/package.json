@@ -12,7 +12,8 @@
     "jest-puppeteer": "^4.4.0",
     "prettier": "^2.0.5",
     "puppeteer": "2.1.1",
-    "typescript": "^3.9.2"
+    "typescript": "^3.9.2",
+    "ws": "^7.4.0"
   },
   "devDependencies": {},
   "name": "ttbud-e2e",

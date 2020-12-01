@@ -14,6 +14,7 @@ function requireEnv(envVarName) {
 
 module.exports = {
   domain: requireEnv("DOMAIN"),
+  apiDomain: requireEnv("API_DOMAIN"),
   ci: process.env["CI"] === "true",
   debugMode: process.env["DEBUG"] === "true",
 };
