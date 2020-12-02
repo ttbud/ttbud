@@ -45,7 +45,7 @@ class Config:
         'version': 1,
         'disable_existing_loggers': False,
         'formatters': {
-            'json': {'()': 'timber.formatter.TimberFormatter'},
+            'json': {'()': 'src.util.detailed_formatter.DetailedFormatter'},
             'simple': {'format': '%(levelname)s %(message)s'},
         },
         'handlers': {
