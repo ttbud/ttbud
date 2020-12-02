@@ -121,8 +121,10 @@ class RedisRateLimiter(RateLimiter):
         self, user_id: str, room_id: str
     ) -> AsyncGenerator:
         await self.acquire_connection(user_id, room_id)
-        yield
-        await self.release_connection(user_id, room_id)
+        try:
+            yield
+        finally:
+            await self.release_connection(user_id, room_id)
 
     async def refresh_server_liveness(self, user_ids: Iterator[str]) -> None:
         await self._redis.expire(
