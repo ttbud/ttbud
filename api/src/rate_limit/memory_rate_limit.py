@@ -44,8 +44,10 @@ class MemoryRateLimiter(RateLimiter):
         self, user_id: str, room_id: str
     ) -> AsyncGenerator:
         await self.acquire_connection(user_id, room_id)
-        yield
-        await self.release_connection(user_id, room_id)
+        try:
+            yield
+        finally:
+            await self.release_connection(user_id, room_id)
 
     async def acquire_connection(self, user_id: str, room_id: str) -> None:
         now = time.time()
