@@ -4,6 +4,14 @@ from typing import Iterable, Any
 _SENTINEL = object()
 
 
+def _is_iterable(instance: Any):
+    try:
+        iter(instance)
+        return True
+    except TypeError:
+        return False
+
+
 def assert_matches(actual: Any, expected: Any) -> None:
     """Assert that all properties of expected exist on actual,
     and that the values for matching properties are equal.
@@ -19,7 +27,7 @@ def assert_matches(actual: Any, expected: Any) -> None:
             else:
                 assert hasattr(actual, k), f'Expected {actual} to have attribute "{k}"'
                 assert_matches(getattr(actual, k), v)
-    elif isinstance(expected, list):
+    elif _is_iterable(expected) and not isinstance(expected, str):
         assert_all_match(actual, expected)
     else:
         assert actual == expected
