@@ -17,7 +17,7 @@ from src.room_store.room_store import (
     EntityList,
     RoomStore,
     MutationResultType,
-    TransactionFailed,
+    TransactionFailedException,
     LOCK_EXPIRATION_SECS,
 )
 
@@ -50,7 +50,9 @@ class MemoryRoomStore(RoomStore):
         ],
     ) -> MutationResultType:
         if self.storage.lock_expiration_times.get(room_id, False) is not False:
-            raise TransactionFailed(f'Unable to get room lock for room {room_id}')
+            raise TransactionFailedException(
+                f'Unable to get room lock for room {room_id}'
+            )
 
         self.storage.lock_expiration_times[room_id] = time.time() + LOCK_EXPIRATION_SECS
 
@@ -60,7 +62,7 @@ class MemoryRoomStore(RoomStore):
             if time.time() < self.storage.lock_expiration_times[room_id]:
                 self.storage.rooms_by_id[room_id] = result.entities
             else:
-                raise TransactionFailed('Lock expired')
+                raise TransactionFailedException('Lock expired')
         finally:
             del self.storage.lock_expiration_times[room_id]
         return result

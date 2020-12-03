@@ -16,9 +16,9 @@ from src.room_store.room_store import (
     MutationResultType,
     MAX_LOCK_RETRIES,
     LOCK_EXPIRATION_SECS,
-    TransactionFailed,
+    TransactionFailedException,
     logger,
-    CorruptedRoom,
+    CorruptedRoomException,
 )
 
 # language=lua
@@ -107,7 +107,7 @@ class RedisRoomStore(RoomStore):
                 await asyncio.sleep(random.uniform(0.05, 0.15))
 
         if not success:
-            raise TransactionFailed('Unable to acquire room lock')
+            raise TransactionFailedException('Unable to acquire room lock')
 
         # If mutation fails, release the lock and re-raise the original exception
         try:
@@ -128,7 +128,7 @@ class RedisRoomStore(RoomStore):
                 args=[lock_value, room_json],
             )
         except ReplyError as e:
-            raise TransactionFailed from e
+            raise TransactionFailedException from e
 
         return result
 
@@ -191,5 +191,5 @@ def _to_entities(room_id: str, raw_entities: List[dict]) -> List[Union[Ping, Tok
                 extra={'invalid_token': raw_entity},
                 exc_info=True,
             )
-            raise CorruptedRoom(f'{room_id} is corrupted') from e
+            raise CorruptedRoomException(f'{room_id} is corrupted') from e
     return room
