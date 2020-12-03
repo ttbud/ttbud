@@ -1,0 +1,20 @@
+# .coveragerc to control coverage.py
+[run]
+branch = True
+
+[report]
+# Regexes for lines to exclude from consideration
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+
+    # Don't care about empty implementations for protocols
+    \.\.\.
+
+    # assert_never occurs on lines we want mypy to verify statically are never run
+    assert_never
+
+ignore_errors = True
+
+[html]
+directory = coverage
