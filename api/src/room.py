@@ -63,7 +63,6 @@ class Room:
         self.game_state[ping.id] = ping
 
     def create_or_update_token(self, token: Union[Token, Ping]) -> None:
-        logger.info(f'New token: {token}')
         if self.game_state.get(token.id):
             self._remove_positions(token.id)
         elif token.type == 'character':
