@@ -1,4 +1,5 @@
 import asyncio
+import random
 
 import pytest
 
@@ -15,3 +16,9 @@ def disable_sleep(mocker):
         await original_sleep(0)
 
     mocker.patch('asyncio.sleep', sleep)
+
+
+@pytest.fixture(autouse=True)
+def fix_random():
+    """Force a consistent seed so there's no randomness in tests"""
+    random.seed(1)

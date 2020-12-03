@@ -19,3 +19,4 @@ storage
 
 # Linting tools
 .dmypy.json
+coverage/

@@ -10,8 +10,6 @@ from tests.helpers import assert_all_match
 
 
 class RecordingLogHandler(logging.Handler):
-    """Log handler that records """
-
     def __init__(self):
         super().__init__()
         self.lines = []
