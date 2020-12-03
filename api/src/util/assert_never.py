@@ -6,4 +6,5 @@ def assert_never(x: NoReturn) -> NoReturn:
     It can be used to tell mypy to force that branches before this must cover all cases
     (Such as checking all values in an enum or a discriminated union)
     """
+    # pragma: no coverage
     assert False, f'Unhandled type: {type(x)}'
