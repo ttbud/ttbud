@@ -494,3 +494,23 @@ async def test_new_room_multiple_servers(rate_limiter_factory, mocker):
 
     with pytest.raises(TooManyRoomsCreatedException):
         await server_2.acquire_new_room('user-1')
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    'rate_limiter',
+    [
+        pytest.lazy_fixture('redis_rate_limiter'),
+        pytest.lazy_fixture('memory_rate_limiter'),
+    ],
+)
+async def test_release_connection_on_exception(rate_limiter: RateLimiter):
+    for i in range(0, MAX_CONNECTIONS_PER_ROOM - 1):
+        await rate_limiter.acquire_connection(f'user-{i}', 'room-1')
+
+    with pytest.raises(NotImplementedError):
+        async with rate_limiter.rate_limited_connection('user-penultimate', 'room-1'):
+            raise NotImplementedError('Failed')
+
+    # Should be allowed because the connection should be freed after the exception
+    await rate_limiter.acquire_connection('user-last', 'room-1')
