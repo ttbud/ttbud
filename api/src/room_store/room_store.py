@@ -30,7 +30,7 @@ class MutationResult(Protocol):
 MutationResultType = TypeVar('MutationResultType', bound=MutationResult)
 
 
-class InvalidState(Exception):
+class CorruptedRoom(Exception):
     pass
 
 
