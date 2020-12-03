@@ -46,6 +46,32 @@ You can render them nicely with this command ([jq](https://stedolan.github.io/jq
 dc logs -f --no-color api | jq --raw-input 'split("|")| .[length  - 1]|fromjson'
 ```
 
+### Tests
+
+#### Lint and typecheck:
+
+```bash
+./hooks/pre-commit
+```
+
+#### api tests
+
+```bash
+docker-compose run --rm api pytest tests
+```
+
+#### api tests with coverage
+
+```bash
+docker-compose run --rm api pytest --cov=src --cov-report=html tests
+```
+
+#### web tests
+
+```
+docker-compose run --rm web yarn test
+```
+
 ## Infrastructure setup
 
 ### Requirements
