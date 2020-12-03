@@ -10,7 +10,7 @@ from src.game_components import Ping, Token
 from src.game_state_server import BareUpdateResult
 from src.room_store.room_store import (
     RoomStore,
-    TransactionFailed,
+    TransactionFailedException,
     MutationResult,
     LOCK_EXPIRATION_SECS,
 )
@@ -122,7 +122,7 @@ async def test_transaction_contention(
     # Now that room_store_1 has started the transaction, but is stuck waiting for our
     # mutate function to complete it, attempts to make changes to the same room
     # should fail
-    with pytest.raises(TransactionFailed):
+    with pytest.raises(TransactionFailedException):
         await room_store_2.apply_mutation(
             'room-id-1', lambda _: mutate_to([ANOTHER_VALID_TOKEN])
         )
@@ -153,7 +153,7 @@ async def test_lock_expiration(room_store: RoomStore, mocker):
     mocker.patch('time.time', return_value=LOCK_EXPIRATION_SECS + 1)
     first_transaction_mutate.set_result(await mutate_to([VALID_TOKEN]))
     # Transaction should fail because the mutate function took too long
-    with pytest.raises(TransactionFailed):
+    with pytest.raises(TransactionFailedException):
         await first_transaction_task
 
     # No changes should be made to the room

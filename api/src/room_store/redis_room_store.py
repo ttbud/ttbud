@@ -7,17 +7,18 @@ from typing import AsyncIterator, Optional, List, Union, Callable, Awaitable
 from uuid import uuid4
 
 from aioredis import Redis, ReplyError
-from dacite import from_dict, WrongTypeError, MissingValueError
 
-from src.game_components import Token, Ping
+from src.colors import Color
+from src.game_components import Token, Ping, TextTokenContents, IconTokenContents
 from src.room_store.room_store import (
     RoomStore,
     EntityList,
     MutationResultType,
     MAX_LOCK_RETRIES,
     LOCK_EXPIRATION_SECS,
-    TransactionFailed,
+    TransactionFailedException,
     logger,
+    CorruptedRoomException,
 )
 
 # language=lua
@@ -106,7 +107,7 @@ class RedisRoomStore(RoomStore):
                 await asyncio.sleep(random.uniform(0.05, 0.15))
 
         if not success:
-            raise TransactionFailed('Unable to acquire room lock')
+            raise TransactionFailedException('Unable to acquire room lock')
 
         # If mutation fails, release the lock and re-raise the original exception
         try:
@@ -127,7 +128,7 @@ class RedisRoomStore(RoomStore):
                 args=[lock_value, room_json],
             )
         except ReplyError as e:
-            raise TransactionFailed from e
+            raise TransactionFailedException from e
 
         return result
 
@@ -144,21 +145,51 @@ def _to_entities(room_id: str, raw_entities: List[dict]) -> List[Union[Ping, Tok
     for raw_entity in raw_entities:
         try:
             entity: Union[Ping, Token]
-            if (
-                raw_entity.get('type') == 'character'
-                or raw_entity.get('type') == 'floor'
-            ):
-                entity = from_dict(data_class=Token, data=raw_entity)
+            if raw_entity['type'] in ('character', 'floor'):
+                raw_contents = raw_entity['contents']
+                raw_color = raw_entity.get('color_rgb')
+                color = (
+                    Color(
+                        red=raw_color['red'],
+                        green=raw_color['green'],
+                        blue=raw_color['blue'],
+                    )
+                    if raw_color
+                    else None
+                )
+                contents: Union[TextTokenContents, IconTokenContents] = (
+                    TextTokenContents(raw_contents['text'])
+                    if 'text' in raw_contents
+                    else IconTokenContents(raw_contents['icon_id'])
+                )
+                entity = Token(
+                    id=raw_entity['id'],
+                    type=raw_entity['type'],
+                    contents=contents,
+                    start_x=raw_entity['start_x'],
+                    start_y=raw_entity['start_y'],
+                    start_z=raw_entity['start_z'],
+                    end_x=raw_entity['end_x'],
+                    end_y=raw_entity['end_y'],
+                    end_z=raw_entity['end_z'],
+                    color_rgb=color,
+                )
+            elif raw_entity['type'] == 'ping':
+                entity = Ping(
+                    id=raw_entity['id'],
+                    type='ping',
+                    x=raw_entity['x'],
+                    y=raw_entity['y'],
+                )
             else:
-                entity = from_dict(data_class=Ping, data=raw_entity)
+                raise TypeError(f'Invalid entity type {raw_entity["type"]}')
 
             room.append(entity)
-        except (WrongTypeError, MissingValueError, TypeError):
-            # Don't raise here. Loading a room minus any tokens that
-            # have been corrupted is still valuable.
+        except (KeyError, TypeError) as e:
             logger.exception(
                 f'Corrupted room {room_id}',
                 extra={'invalid_token': raw_entity},
                 exc_info=True,
             )
+            raise CorruptedRoomException(f'{room_id} is corrupted') from e
     return room
