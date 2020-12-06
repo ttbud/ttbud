@@ -74,7 +74,7 @@ async def mutate_to(entities: List[Union[Ping, Token]]) -> MutationResult:
     'room_store',
     [pytest.lazy_fixture('memory_room_store'), pytest.lazy_fixture('redis_room_store')],
 )
-@time_machine.travel("1970-01-01")
+@time_machine.travel('1970-01-01')
 async def test_mutate_and_read(room_store: RoomStore):
     result = await room_store.apply_mutation(
         'room_id', lambda _: mutate_to([VALID_TOKEN, VALID_PING])
