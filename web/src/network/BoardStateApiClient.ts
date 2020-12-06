@@ -216,10 +216,6 @@ export class BoardStateApiClient {
 
   public close() {
     this.socket?.close();
-    this.eventHandler({
-      type: EventType.Disconnected,
-      error: ConnectionError.UNKNOWN,
-    });
   }
 
   public send(requestId: string, updates: Update[]) {

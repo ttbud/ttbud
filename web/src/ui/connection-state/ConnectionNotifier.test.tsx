@@ -10,7 +10,10 @@ describe("ConnectionNotifier", () => {
   it("says connecting when state is connecting", () => {
     const { getByText } = render(
       <PureConnectionNotifier
-        connectionState={{ type: ConnectionStateType.Connecting }}
+        connectionState={{
+          type: ConnectionStateType.Connecting,
+          numRetries: 0,
+        }}
         onReconnectClick={noop}
       />
     );
@@ -24,6 +27,7 @@ describe("ConnectionNotifier", () => {
         connectionState={{
           type: ConnectionStateType.Disconnected,
           error: ConnectionError.UNKNOWN,
+          numRetries: 0,
         }}
         onReconnectClick={noop}
       />
@@ -39,6 +43,7 @@ describe("ConnectionNotifier", () => {
         connectionState={{
           type: ConnectionStateType.Disconnected,
           error: ConnectionError.UNKNOWN,
+          numRetries: 0,
         }}
         onReconnectClick={onReconnectClick}
       />

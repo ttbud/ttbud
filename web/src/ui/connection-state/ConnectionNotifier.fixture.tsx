@@ -6,7 +6,11 @@ import { ConnectionError } from "../../network/BoardStateApiClient";
 
 const Disconnected: React.FC<{ error: ConnectionError }> = ({ error }) => (
   <PureConnectionNotifier
-    connectionState={{ type: ConnectionStateType.Disconnected, error: error }}
+    connectionState={{
+      type: ConnectionStateType.Disconnected,
+      error: error,
+      numRetries: 0,
+    }}
     onReconnectClick={noop}
   />
 );
@@ -14,7 +18,7 @@ const Disconnected: React.FC<{ error: ConnectionError }> = ({ error }) => (
 export default {
   Connecting: (
     <PureConnectionNotifier
-      connectionState={{ type: ConnectionStateType.Connecting }}
+      connectionState={{ type: ConnectionStateType.Connecting, numRetries: 0 }}
       onReconnectClick={noop}
     />
   ),

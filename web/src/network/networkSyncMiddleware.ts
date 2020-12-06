@@ -1,10 +1,17 @@
-import { BoardStateApiClient, EventType } from "./BoardStateApiClient";
-import { Middleware } from "@reduxjs/toolkit";
+import {
+  BoardStateApiClient,
+  ConnectionError,
+  EventType,
+} from "./BoardStateApiClient";
+import { Dispatch, Middleware, MiddlewareAPI } from "@reduxjs/toolkit";
 import BoardSyncer from "./BoardSyncer";
 import {
-  setConnectionState,
+  connected,
+  connecting,
   ConnectionStateType,
+  disconnected,
 } from "../ui/connection-state/connection-state-slice";
+import { RootState } from "../store/rootReducer";
 
 /**
  * Sync network state and ui state
@@ -12,28 +19,36 @@ import {
 export function networkSyncMiddleware(
   apiClient: BoardStateApiClient
 ): Middleware {
-  return (store) => {
+  return (store: MiddlewareAPI<Dispatch, RootState>) => {
     const boardSyncer = new BoardSyncer(apiClient, store);
+    let retryTimeoutId: number | undefined = undefined;
 
     apiClient.setEventHandler((event) => {
       switch (event.type) {
         case EventType.Connected:
-          store.dispatch(
-            setConnectionState({ type: ConnectionStateType.Connected })
-          );
+          store.dispatch(connected());
           break;
         case EventType.Disconnected:
-          store.dispatch(
-            setConnectionState({
-              type: ConnectionStateType.Disconnected,
-              error: event.error,
-            })
-          );
+          const state = store.getState().connectionState;
+          const waitTimeSecs =
+            state.type === ConnectionStateType.Connecting ||
+            state.type === ConnectionStateType.Disconnected
+              ? Math.pow(state.numRetries, 2)
+              : 0;
+          if (event.error === ConnectionError.UNKNOWN) {
+            if (retryTimeoutId) {
+              window.clearTimeout(retryTimeoutId);
+            }
+            retryTimeoutId = window.setTimeout(
+              apiClient.reconnect.bind(apiClient),
+              waitTimeSecs * 1000
+            );
+          }
+
+          store.dispatch(disconnected({ error: event.error }));
           break;
         case EventType.Connecting:
-          store.dispatch(
-            setConnectionState({ type: ConnectionStateType.Connecting })
-          );
+          store.dispatch(connecting());
           break;
         case EventType.InitialState:
           boardSyncer.onNetworkTokenUpdate(event.tokens);
