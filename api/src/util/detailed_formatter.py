@@ -5,21 +5,20 @@ from typing import Dict, List, Optional
 
 from timber.formatter import TimberFormatter
 
+MAX_LOG_STACK_DEPTH = 20
+
 
 def _jsonable_traceback(tb: Optional[TracebackType]) -> List[Dict[str, str]]:
-    frames: List[Dict[str, str]] = []
-    stack = traceback.extract_tb(tb, limit=10)
-    for frame in stack:
-        frames.append(
-            {
-                'file': frame.filename,
-                'function': frame.name,
-                'line_number': str(frame.lineno),
-                'line': frame.line,
-            }
-        )
-
-    return frames
+    stack = traceback.extract_tb(tb, limit=MAX_LOG_STACK_DEPTH)
+    return [
+        {
+            'file': frame.filename,
+            'function': frame.name,
+            'line_number': str(frame.lineno),
+            'line': frame.line,
+        }
+        for frame in stack
+    ]
 
 
 class DetailedFormatter(TimberFormatter):
