@@ -1,3 +1,4 @@
+import time_machine
 import asyncio
 from asyncio import Future
 from typing import List, Union, Callable, Awaitable
@@ -73,8 +74,8 @@ async def mutate_to(entities: List[Union[Ping, Token]]) -> MutationResult:
     'room_store',
     [pytest.lazy_fixture('memory_room_store'), pytest.lazy_fixture('redis_room_store')],
 )
-async def test_mutate_and_read(room_store: RoomStore, mocker):
-    mocker.patch('time.time', return_value=0)
+@time_machine.travel("1970-01-01")
+async def test_mutate_and_read(room_store: RoomStore):
     result = await room_store.apply_mutation(
         'room_id', lambda _: mutate_to([VALID_TOKEN, VALID_PING])
     )
@@ -139,22 +140,22 @@ async def test_transaction_contention(
     'room_store',
     [pytest.lazy_fixture('memory_room_store'), pytest.lazy_fixture('redis_room_store')],
 )
-async def test_lock_expiration(room_store: RoomStore, mocker):
-    mocker.patch('time.time', return_value=0)
-    first_transaction_mutate: Future = Future()
-    first_transaction_task = asyncio.create_task(
-        room_store.apply_mutation('room-id', lambda _: first_transaction_mutate)
-    )
+async def test_lock_expiration(room_store: RoomStore):
+    with time_machine.travel('1970-01-01', tick=False) as traveler:
+        first_transaction_mutate: Future = Future()
+        first_transaction_task = asyncio.create_task(
+            room_store.apply_mutation('room-id', lambda _: first_transaction_mutate)
+        )
 
-    # Have to yield to the event loop here to get the above task to run up
-    # until it waits for our mutate function to complete
-    await asyncio.sleep(0)
+        # Have to yield to the event loop here to get the above task to run up
+        # until it waits for our mutate function to complete
+        await asyncio.sleep(0)
 
-    mocker.patch('time.time', return_value=LOCK_EXPIRATION_SECS + 1)
-    first_transaction_mutate.set_result(await mutate_to([VALID_TOKEN]))
-    # Transaction should fail because the mutate function took too long
-    with pytest.raises(TransactionFailedException):
-        await first_transaction_task
+        traveler.shift(LOCK_EXPIRATION_SECS + 1)
+        first_transaction_mutate.set_result(await mutate_to([VALID_TOKEN]))
+        # Transaction should fail because the mutate function took too long
+        with pytest.raises(TransactionFailedException):
+            await first_transaction_task
 
     # No changes should be made to the room
     assert await room_store.read('room-id') is None
