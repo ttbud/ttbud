@@ -68,7 +68,7 @@ class MemoryRateLimiter(RateLimiter):
 
         connection_count = 0
         for server_id, count in user.connections_by_server_id.items():
-            if self._storage.server_expirations_by_id[server_id] > timestamp:
+            if self._storage.server_expirations_by_id[server_id] >= timestamp:
                 connection_count += count
         if connection_count >= MAX_CONNECTIONS_PER_USER:
             raise TooManyConnectionsException()

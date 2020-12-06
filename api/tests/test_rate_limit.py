@@ -1,11 +1,12 @@
+from datetime import timedelta
 from asyncio import AbstractEventLoop
 from functools import partial
 from typing import Awaitable, TypeVar, Callable
 
 import fakeredis.aioredis
 import pytest
+import time_machine
 from aioredis import Redis
-from pytest_mock import MockFixture
 
 from src.rate_limit.rate_limit import (
     MAX_CONNECTIONS_PER_USER,
@@ -334,23 +335,21 @@ async def test_release_room_slot_multiple_servers(
     ],
 )
 async def test_acquire_connection_expired_server(
-    rate_limiter_factory: RateLimiterFactory, mocker: MockFixture
+    rate_limiter_factory: RateLimiterFactory,
 ):
-
     # Create a server that will expire
-    mocker.patch('time.time', return_value=0)
-    expired_server = await rate_limiter_factory('server-id-1')
+    with time_machine.travel('1970-01-01') as traveller:
+        expired_server = await rate_limiter_factory('server-id-1')
 
-    for i in range(0, MAX_CONNECTIONS_PER_USER):
-        await expired_server.acquire_connection('user-1', f'room-{i}')
+        for i in range(0, MAX_CONNECTIONS_PER_USER):
+            await expired_server.acquire_connection('user-1', f'room-{i}')
 
-    # Move forward in time to expire the server with all of the connections
-    mocker.patch('time.time', return_value=SERVER_LIVENESS_EXPIRATION_SECONDS + 1)
+        # Move forward in time to expire the server with all of the connections
+        traveller.shift(timedelta(seconds=SERVER_LIVENESS_EXPIRATION_SECONDS + 1))
+        live_server = await rate_limiter_factory('server-id-2')
 
-    live_server = await rate_limiter_factory('server-id-2')
-
-    # Should be able to acquire connections because server-id-1 has expired
-    await live_server.acquire_connection('user-1', 'room-last')
+        # Should be able to acquire connections because server-id-1 has expired
+        await live_server.acquire_connection('user-1', 'room-last')
 
 
 @pytest.mark.asyncio
@@ -362,22 +361,21 @@ async def test_acquire_connection_expired_server(
     ],
 )
 async def test_acquire_room_slot_expired_server(
-    rate_limiter_factory: RateLimiterFactory, mocker: MockFixture
+    rate_limiter_factory: RateLimiterFactory,
 ):
     # Create a server that will expire
-    mocker.patch('time.time', return_value=0)
-    expired_server = await rate_limiter_factory('server-id-1')
+    with time_machine.travel('1970-01-01') as traveller:
+        expired_server = await rate_limiter_factory('server-id-1')
 
-    for i in range(0, MAX_CONNECTIONS_PER_ROOM):
-        await expired_server.acquire_connection(f'user-{i}', 'room-1')
+        for i in range(0, MAX_CONNECTIONS_PER_ROOM):
+            await expired_server.acquire_connection(f'user-{i}', 'room-1')
 
-    # Move forward in time to expire the server with all of the connections
-    mocker.patch('time.time', return_value=SERVER_LIVENESS_EXPIRATION_SECONDS + 1)
+        # Move forward in time to expire the server with all of the connections
+        traveller.shift(timedelta(seconds=SERVER_LIVENESS_EXPIRATION_SECONDS + 1))
+        live_server = await rate_limiter_factory('server-id-2')
 
-    live_server = await rate_limiter_factory('server-id-2')
-
-    # Should be able to acquire a room slot because server-id-1 has expired
-    await live_server.acquire_connection('user-1', 'room-1')
+        # Should be able to acquire a room slot because server-id-1 has expired
+        await live_server.acquire_connection('user-1', 'room-1')
 
 
 @pytest.mark.asyncio
@@ -388,27 +386,25 @@ async def test_acquire_room_slot_expired_server(
         pytest.lazy_fixture('memory_rate_limiter_factory'),
     ],
 )
-async def test_refresh_server_liveness(
-    rate_limiter_factory: RateLimiterFactory, mocker: MockFixture
-):
-    # Create a server that will expire
-    mocker.patch('time.time', return_value=0)
-    refreshing_server = await rate_limiter_factory('server-id-1')
+async def test_refresh_server_liveness(rate_limiter_factory: RateLimiterFactory):
+    with time_machine.travel('1970-01-01', tick=False) as traveller:
+        # Create a server that will expire
+        refreshing_server = await rate_limiter_factory('server-id-1')
 
-    for i in range(0, MAX_CONNECTIONS_PER_USER):
-        await refreshing_server.acquire_connection('user-1', f'room-{i}')
+        for i in range(0, MAX_CONNECTIONS_PER_USER):
+            await refreshing_server.acquire_connection('user-1', f'room-{i}')
 
-    mocker.patch('time.time', return_value=SERVER_LIVENESS_EXPIRATION_SECONDS)
-    await refreshing_server.refresh_server_liveness(iter(['user-1']))
+        traveller.shift(timedelta(seconds=SERVER_LIVENESS_EXPIRATION_SECONDS / 2))
+        await refreshing_server.refresh_server_liveness(iter(['user-1']))
 
-    # Move forward past expiration time if the server hadn't refreshed itself
-    mocker.patch('time.time', return_value=SERVER_LIVENESS_EXPIRATION_SECONDS + 1)
+        # Move forward past expiration time if the server hadn't refreshed itself
+        traveller.shift(timedelta(seconds=SERVER_LIVENESS_EXPIRATION_SECONDS))
 
-    live_server = await rate_limiter_factory('server-id-2')
+        live_server = await rate_limiter_factory('server-id-2')
 
-    # Should not be able to acquire connections because server-id-1 has not expired
-    with pytest.raises(TooManyConnectionsException):
-        await live_server.acquire_connection('user-1', 'room-last')
+        # Should not be able to acquire connections because server-id-1 has not expired
+        with pytest.raises(TooManyConnectionsException):
+            await live_server.acquire_connection('user-1', 'room-last')
 
 
 @pytest.mark.asyncio

@@ -572,6 +572,17 @@ pytest = ">=2.7"
 dev = ["pre-commit", "tox", "pytest-asyncio"]
 
 [[package]]
+name = "python-dateutil"
+version = "2.8.1"
+description = "Extensions to the standard Python datetime module"
+category = "main"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
+
+[package.dependencies]
+six = ">=1.5"
+
+[[package]]
 name = "pyzmq"
 version = "19.0.1"
 description = "Python bindings for 0MQ"
@@ -657,6 +668,17 @@ python-versions = "*"
 [package.dependencies]
 msgpack = ">=0.5.6"
 requests = ">=2.18.4"
+
+[[package]]
+name = "time-machine"
+version = "1.2.1"
+description = "Travel through time in your tests."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+python-dateutil = "*"
 
 [[package]]
 name = "toml"
@@ -784,7 +806,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "ad630145fa41c91e2311760253a42cc48cf4feff496cfb60ef73b24445810a61"
+content-hash = "ede87d56d609533d367616c0c085063fa62c96bf7fa043ef82218ceb00f26e3c"
 
 [metadata.files]
 aioredis = [
@@ -1274,6 +1296,10 @@ pytest-mock = [
     {file = "pytest-mock-3.1.1.tar.gz", hash = "sha256:636e792f7dd9e2c80657e174c04bf7aa92672350090736d82e97e92ce8f68737"},
     {file = "pytest_mock-3.1.1-py3-none-any.whl", hash = "sha256:a9fedba70e37acf016238bb2293f2652ce19985ceb245bbd3d7f3e4032667402"},
 ]
+python-dateutil = [
+    {file = "python-dateutil-2.8.1.tar.gz", hash = "sha256:73ebfe9dbf22e832286dafa60473e4cd239f8592f699aa5adaf10050e6e1823c"},
+    {file = "python_dateutil-2.8.1-py2.py3-none-any.whl", hash = "sha256:75bb3f31ea686f1197762692a9ee6a7550b59fc6ca3a1f4b5d7e32fb98e2da2a"},
+]
 pyzmq = [
     {file = "pyzmq-19.0.1-cp27-cp27m-macosx_10_9_intel.whl", hash = "sha256:58688a2dfa044fad608a8e70ba8d019d0b872ec2acd75b7b5e37da8905605891"},
     {file = "pyzmq-19.0.1-cp27-cp27m-win32.whl", hash = "sha256:87c78f6936e2654397ca2979c1d323ee4a889eef536cc77a938c6b5be33351a7"},
@@ -1368,6 +1394,25 @@ sortedcontainers = [
 timber = [
     {file = "timber-2.1.0-py2.py3-none-any.whl", hash = "sha256:f5e5ab52f36a92b5eb54352c1ddef3fcd4d699cbc260ce2e68a65890a11c9c79"},
     {file = "timber-2.1.0.tar.gz", hash = "sha256:253499662c8f7e7b37fd220022211b1ae42f36fb91aa212dd94672ec48aba918"},
+]
+time-machine = [
+    {file = "time-machine-1.2.1.tar.gz", hash = "sha256:0022beef5543cf1944cd7e13380eb18fd58814bc0cfb1bdc5e16cd49ba40d055"},
+    {file = "time_machine-1.2.1-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:0a70581a0ead60d59a15d7a7c961359328cdeeb56cf4f4c976149aeacbdd65bd"},
+    {file = "time_machine-1.2.1-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:e60572cff743814685d35fe2af941b197d6bdfa2cd19122d33b79a6233363c0b"},
+    {file = "time_machine-1.2.1-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:93fd50d47da925de75a4e44a9a17cd3ef99dfcc688a0562a5ea9549537f972c1"},
+    {file = "time_machine-1.2.1-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:b3a45915f67917f00f34eeed7a115c0c08500fd663aab27f686aaa3ad7015b7a"},
+    {file = "time_machine-1.2.1-cp37-cp37m-macosx_10_14_x86_64.whl", hash = "sha256:fd6b482b7da667418d998c0de62c8df2f340eaca8724693101a0c14a5ec91557"},
+    {file = "time_machine-1.2.1-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:25de5522b38b6bb9c83655ebebb7301b3065eedf29117c02fd1db2fa25fb610a"},
+    {file = "time_machine-1.2.1-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:fdf255d49605c6eb1cd27099310073eab35bb0b791b4807adeef8a197fd46de4"},
+    {file = "time_machine-1.2.1-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:70f176980178550b47fbea5a9ef9310b1db96611514d05edb756f76284ab9458"},
+    {file = "time_machine-1.2.1-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:abd879cbc27244a797d947646321656e010b3911dfc7e65c15a34b0608d29c8d"},
+    {file = "time_machine-1.2.1-cp38-cp38-manylinux1_i686.whl", hash = "sha256:402e019dda89aae517dea902410f29f7db25f3e200b258f0ebb7006eba4904a8"},
+    {file = "time_machine-1.2.1-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:24f9f69bd4c801a49f7d6de41b344518b59b3a5d3a2363bf6e9ac5a545c126ab"},
+    {file = "time_machine-1.2.1-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:ea47117686ff8240274b76319718824a2d3dd569fb1ecd5dc36226edc7e1c3b1"},
+    {file = "time_machine-1.2.1-cp39-cp39-macosx_10_14_x86_64.whl", hash = "sha256:58c7b6251a2a9e9d04d3f77c88dd705745e2cd87532fb9ac2ad2bac59c4abebd"},
+    {file = "time_machine-1.2.1-cp39-cp39-manylinux1_i686.whl", hash = "sha256:613a372acfc52ca5247c643bb1f8678f2c592387aa0362021f74005361e7488e"},
+    {file = "time_machine-1.2.1-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:ea4311891a822b66d30f8d944e45a50957cbb6c2191b55a87285bfae8c5ab4b8"},
+    {file = "time_machine-1.2.1-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:41f35b28d72600b66e0e2856626f01aed5ab6967219d5e590f79e3bdfca7b6cb"},
 ]
 toml = [
     {file = "toml-0.10.1-py2.py3-none-any.whl", hash = "sha256:bda89d5935c2eac546d648028b9901107a595863cb36bae0c73ac804a9b4ce88"},
