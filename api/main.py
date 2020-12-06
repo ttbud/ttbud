@@ -9,19 +9,15 @@ import timber
 
 from src import apm
 from src.config import config
-from src.rate_limit.rate_limit import RateLimiter
 from src.rate_limit.redis_rate_limit import create_redis_rate_limiter
 
 from src.redis import create_redis_pool
 from src.api.wsmanager import WebsocketManager
 from src.game_state_server import GameStateServer
 from src.room_store.redis_room_store import create_redis_room_store
-from src.room_store.room_store import RoomStore
 
 
 async def start_server(server_id: str) -> GameStateServer:
-    room_store: RoomStore
-    rate_limiter: RateLimiter
     redis = await create_redis_pool(config.redis_address, config.redis_ssl_validation)
     room_store = await create_redis_room_store(redis)
     rate_limiter = await create_redis_rate_limiter(server_id, redis)
