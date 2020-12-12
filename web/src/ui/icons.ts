@@ -1,4 +1,5 @@
 import { loadIcons } from "./icon-loader";
+import { assert } from "../util/invariants";
 
 function byId(icons: Icon[]): Map<string, Icon> {
   return new Map(icons.map((icon) => [icon.id, icon]));
@@ -11,7 +12,9 @@ export interface Icon {
 }
 
 export const ICONS = loadIcons().map(({ path, img }) => {
-  const [, name] = path.match(/\/(.*)\.svg/);
+  const match = path.match(/\/(.*)\.svg/);
+  assert(match, `Invalid icon path ${path}`);
+  const [, name] = match;
   return {
     id: path,
     img,
