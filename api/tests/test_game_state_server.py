@@ -67,7 +67,9 @@ async def collect_responses(
     try:
         responses = await async_collect(
             gss.handle_connection(
-                room_id, '127.0.0.1', to_async_until(requests, disconnect_event),
+                room_id,
+                '127.0.0.1',
+                to_async_until(requests, disconnect_event),
             ),
             response_count,
         )
