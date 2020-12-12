@@ -63,7 +63,7 @@ commands:
 jobs:
   api:
     docker:
-      - image: circleci/python:3.8
+      - image: circleci/python:3.9
     working_directory: ~/repo/api
     steps:
       - checkout:
@@ -71,9 +71,9 @@ jobs:
       - restore_cache:
           keys:
             # Restore the cache with the exact dependencies,
-            - api-deps-v2-{{ checksum "poetry.lock" }}
+            - api-deps-v3-{{ checksum "poetry.lock" }}
             # or, failing that, just the most recent cache entry
-            - api-deps-v2
+            - api-deps-v3
       - run:
           name: Configure Poetry
           command: poetry config virtualenvs.in-project true && poetry config virtualenvs.path .venv
@@ -81,7 +81,7 @@ jobs:
           name: Install Deps
           command: poetry install
       - save_cache:
-          key: api-deps-v2-{{ checksum "poetry.lock" }}
+          key: api-deps-v3-{{ checksum "poetry.lock" }}
           paths:
             - .venv
       - run:
