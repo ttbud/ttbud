@@ -78,7 +78,8 @@ async def _decorated_requests(
             raise InvalidRequestException()
 
         yield DecoratedRequest(
-            updates=request.updates, request_id=request.request_id,
+            updates=request.updates,
+            request_id=request.request_id,
         )
 
 
@@ -105,7 +106,10 @@ class WebsocketManager:
         while True:
             logger.info('Refreshing liveness')
             await self._rate_limiter.refresh_server_liveness(
-                map(lambda client: client.remote_address[0], self._clients,)
+                map(
+                    lambda client: client.remote_address[0],
+                    self._clients,
+                )
             )
 
             # Offset refresh interval by a random amount to avoid all hitting
