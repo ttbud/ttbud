@@ -39,7 +39,7 @@
     "react-cosmos": "^5.5.3",
     "react-dom": "^16.14.0",
     "react-redux": "^7.2.2",
-    "react-scripts": "3.4.3",
+    "react-scripts": "4.0.1",
     "react-transition-group": "^4.3.0",
     "reactour": "^1.17.0",
     "redux": "^4.0.5",
