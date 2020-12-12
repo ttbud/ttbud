@@ -1,15 +1,16 @@
 import { CSSTransition } from "react-transition-group";
 import React, { memo } from "react";
 import { makeStyles } from "@material-ui/core/styles";
+import { Theme } from "@material-ui/core";
 
 interface Props {
   lengthMs: number;
   in?: boolean;
 }
 
-const useStyles = makeStyles({
+const useStyles = makeStyles<Theme, Props>({
   exit: { opacity: 1 },
-  exitActive: (lengthMs: number) => ({
+  exitActive: ({ lengthMs }) => ({
     opacity: 0,
     transition: `opacity ${lengthMs}ms`,
   }),
@@ -17,7 +18,7 @@ const useStyles = makeStyles({
 
 const Fade: React.FC<Props> = memo(
   ({ lengthMs, in: inProp = true, children }) => {
-    const classes = useStyles(lengthMs);
+    const classes = useStyles({ lengthMs });
 
     return (
       <CSSTransition
