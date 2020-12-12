@@ -51,13 +51,6 @@ interface Props<T> {
   ) => ReactElement;
 }
 
-interface Rect {
-  top: number;
-  left: number;
-  bottom: number;
-  right: number;
-}
-
 const SHUFFLE_TRANSITION = "transform 0.2s cubic-bezier(0.2, 0, 0, 1)";
 const SPACER_TRANSITION =
   "height 0.2s cubic-bezier(0.2, 0, 0, 1), width 0.2s cubic-bezier(0.2, 0, 0, 1)";

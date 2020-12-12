@@ -3,7 +3,7 @@ export const loadIcons = () => {
   return context.keys().map((path) => {
     return {
       path: path,
-      img: context(path),
+      img: context(path).default,
     };
   });
 };
