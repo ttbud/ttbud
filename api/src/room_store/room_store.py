@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import logging
+from dataclasses import dataclass
 from typing import (
     Protocol,
     Optional,
@@ -20,7 +20,6 @@ MAX_LOCK_RETRIES = 3
 LOCK_EXPIRATION_SECS = 10
 
 EntityList = List[Union[Ping, Token]]
-logger = logging.getLogger(__name__)
 
 
 class MutationResult(Protocol):
@@ -38,7 +37,16 @@ class TransactionFailedException(Exception):
     pass
 
 
+@dataclass
+class RoomChangeEvent:
+    request_id: Optional[str]
+    entities: List[Union[Token, Ping]]
+
+
 class RoomStore(Protocol):
+    def changes(self, room_id: str) -> Awaitable[AsyncIterator[RoomChangeEvent]]:
+        ...
+
     def get_all_room_ids(self) -> AsyncIterator[str]:
         ...
 
@@ -48,6 +56,7 @@ class RoomStore(Protocol):
     async def apply_mutation(
         self,
         room_id: str,
+        request_id: Optional[str],
         mutate: Callable[
             [Optional[EntityList]],
             Union[
@@ -59,6 +68,7 @@ class RoomStore(Protocol):
         Make a change to the specified room
 
         :param room_id: The unique room id
+        :param request_id: The request id associated with this change
         :param mutate: A function that takes the current state of the room and
         returns the MutationResult. *Note* This function must be pure, as
         it may be called multiple times in the event of a transaction conflict

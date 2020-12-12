@@ -42,7 +42,7 @@ class MemoryRateLimiter(RateLimiter):
     @asynccontextmanager
     async def rate_limited_connection(
         self, user_id: str, room_id: str
-    ) -> AsyncGenerator:
+    ) -> AsyncGenerator[None, None]:
         await self.acquire_connection(user_id, room_id)
         try:
             yield

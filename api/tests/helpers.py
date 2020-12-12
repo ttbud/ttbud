@@ -1,10 +1,10 @@
-from typing import Iterable, Any
-
+import asyncio
+from typing import Iterable, Any, TypeVar, AsyncIterator
 
 _SENTINEL = object()
 
 
-def _is_iterable(instance: Any):
+def _is_iterable(instance: Any) -> bool:
     try:
         iter(instance)
         return True
@@ -28,14 +28,27 @@ def assert_matches(actual: Any, expected: Any) -> None:
                 assert hasattr(actual, k), f'Expected {actual} to have attribute "{k}"'
                 assert_matches(getattr(actual, k), v)
     elif _is_iterable(expected) and not isinstance(expected, str):
-        assert_all_match(actual, expected)
+        try:
+            expected_iter = iter(expected)
+            for actual_item in actual:
+                assert_matches(actual_item, next(expected_iter, _SENTINEL))
+            next_item = next(expected_iter, _SENTINEL)
+            assert next_item is _SENTINEL, f'Missing item in iterable {next_item}'
+        except AssertionError as e:
+            raise AssertionError(f"actual = '{actual}', expected = '{expected}'") from e
     else:
         assert actual == expected
 
 
-def assert_all_match(actual: Iterable[Any], expected: Iterable[dict]) -> None:
-    expected_iter = iter(expected)
-    for actual_item in actual:
-        assert_matches(actual_item, next(expected_iter, _SENTINEL))
-    next_item = next(expected_iter, _SENTINEL)
-    assert next_item is _SENTINEL, f'Missing item in iterable {next_item}'
+T = TypeVar('T')
+
+
+async def to_async(it: Iterable[T]) -> AsyncIterator[T]:
+    for item in it:
+        yield item
+
+
+async def to_async_until(it: Iterable[T], stop: asyncio.Event) -> AsyncIterator[T]:
+    for item in it:
+        yield item
+    await stop.wait()

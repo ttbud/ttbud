@@ -1,29 +1,29 @@
-import ipaddress
-import logging
 import asyncio
+import ipaddress
 import json
-from dataclasses import asdict
+import logging
 import random
+from dataclasses import asdict
 from ssl import SSLContext
-from typing import Union, List, Tuple, Dict, Any, Hashable, NoReturn, Optional
+from typing import List, Tuple, Dict, Any, NoReturn, Optional, AsyncIterator
 from uuid import UUID
 
 import dacite
-from dacite.exceptions import WrongTypeError, MissingValueError
-import timber
 import websockets
+from dacite.exceptions import WrongTypeError, MissingValueError
 from websockets import ConnectionClosedError
 
-from src.game_state_server import (
-    InvalidConnectionException,
-    Message,
-    GameStateServer,
-)
-from src.api.api_structures import Response, Request
+from src.api.api_structures import Request
 from src.api.ws_close_codes import (
     ERR_INVALID_UUID,
     ERR_TOO_MANY_CONNECTIONS,
     ERR_ROOM_FULL,
+    ERR_INVALID_REQUEST,
+)
+from src.game_state_server import (
+    InvalidConnectionException,
+    GameStateServer,
+    DecoratedRequest,
 )
 from src.rate_limit.rate_limit import (
     RateLimiter,
@@ -33,6 +33,10 @@ from src.rate_limit.rate_limit import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class InvalidRequestException(Exception):
+    ...
 
 
 def ignore_none(items: List[Tuple[str, Any]]) -> Dict[str, Any]:
@@ -58,30 +62,50 @@ def get_client_ip(client: websockets.WebSocketServerProtocol) -> str:
         return str(ipaddress.ip_address(ip))
 
 
+async def _decorated_requests(
+    client: websockets.WebSocketServerProtocol,
+) -> AsyncIterator[DecoratedRequest]:
+    async for raw_message in client:
+        try:
+            message = json.loads(raw_message)
+            request = dacite.from_dict(Request, message)
+        except (json.JSONDecodeError, WrongTypeError, MissingValueError):
+            logger.info(
+                'invalid json received from client',
+                extra={'json': raw_message},
+                exc_info=True,
+            )
+            raise InvalidRequestException()
+
+        yield DecoratedRequest(
+            updates=request.updates, request_id=request.request_id,
+        )
+
+
 class WebsocketManager:
     def __init__(
         self, port: int, gss: GameStateServer, rate_limiter: RateLimiter
     ) -> None:
-        self.port = port
-        self.gss = gss
+        self._port = port
+        self._gss = gss
         self._rate_limiter = rate_limiter
-        self._clients_by_id: Dict[Hashable, websockets.WebSocketServerProtocol] = {}
+        self._clients: List[websockets.WebSocketServerProtocol] = []
 
     async def start_websocket(self, ssl: Optional[SSLContext] = None) -> None:
         try:
-            await websockets.serve(self.consumer_handler, '0.0.0.0', self.port, ssl=ssl)
+            await websockets.serve(
+                self._connection_handler, '0.0.0.0', self._port, ssl=ssl
+            )
             asyncio.create_task(self.maintain_liveness(), name='maintain_liveness')
         except OSError:
             logger.exception('Failed to start websocket server', exc_info=True)
+            raise
 
     async def maintain_liveness(self) -> NoReturn:
         while True:
             logger.info('Refreshing liveness')
             await self._rate_limiter.refresh_server_liveness(
-                map(
-                    lambda client: client.remote_address[0],
-                    self._clients_by_id.values(),
-                )
+                map(lambda client: client.remote_address[0], self._clients,)
             )
 
             # Offset refresh interval by a random amount to avoid all hitting
@@ -96,10 +120,10 @@ class WebsocketManager:
                 (SERVER_LIVENESS_EXPIRATION_SECONDS / 3) + refresh_offset
             )
 
-    async def consumer_handler(
-        self, client: websockets.WebSocketServerProtocol, room_id: str
+    async def _connection_handler(
+        self, client: websockets.WebSocketServerProtocol, path: str
     ) -> None:
-        room_id = room_id.lstrip('/')
+        room_id = path.lstrip('/')
         if not is_valid_uuid(room_id):
             logger.info(f'Invalid room UUID: {room_id}')
             await client.close(
@@ -107,33 +131,26 @@ class WebsocketManager:
             )
             return
 
-        self._clients_by_id[hash(client)] = client
+        self._clients.append(client)
 
         client_ip = get_client_ip(client)
         try:
-            async with self._rate_limiter.rate_limited_connection(client_ip, room_id):
-                logger.info(
-                    f'Connected to {client_ip}',
-                    extra={'client_ip': client_ip, 'room_id': room_id},
+            logger.info(
+                f'Connected to {client_ip}',
+                extra={'client_ip': client_ip, 'room_id': room_id},
+            )
+            async for response in self._gss.handle_connection(
+                room_id, client_ip, _decorated_requests(client)
+            ):
+                await client.send(
+                    json.dumps(asdict(response, dict_factory=ignore_none))
                 )
-                try:
-                    response = await self.gss.new_connection_request(
-                        hash(client), client_ip, room_id,
-                    )
-                except InvalidConnectionException as e:
-                    await client.close(e.close_code, e.reason)
-                    return
-
-                await self.send_message(response)
-                try:
-                    async for message in client:
-                        asyncio.ensure_future(self.consume(message, room_id, client))
-                except ConnectionClosedError:
-                    # Disconnecting is a perfectly normal thing to happen, so just
-                    # continue cleaning up connection state
-                    pass
-                finally:
-                    await self.gss.connection_dropped(hash(client), room_id)
+        except InvalidRequestException:
+            logger.info(
+                f'Closing connection to {client_ip}, invalid request received',
+                extra={'client_ip': client_ip, 'room_id': room_id},
+            )
+            await client.close(ERR_INVALID_REQUEST, reason='Invalid request')
         except TooManyConnectionsException:
             logger.info(
                 f'Rejecting connection to {client_ip}, too many connections for user',
@@ -148,57 +165,11 @@ class WebsocketManager:
                 extra={'client_ip': client_ip, 'room_id': room_id},
             )
             await client.close(ERR_ROOM_FULL, reason=f'The room {room_id} is full')
+        except InvalidConnectionException as e:
+            await client.close(e.close_code, e.reason)
+        except ConnectionClosedError:
+            # Disconnecting is a perfectly normal thing to happen, so just
+            # continue cleaning up connection state
+            pass
 
-    async def send_message(self, message: Message) -> None:
-        for target in message.targets:
-            client = self._clients_by_id.get(target)
-            if client:
-                await client.send(
-                    json.dumps(asdict(message.contents, dict_factory=ignore_none))
-                )
-            else:
-                logger.info(
-                    f'Cannot send message to target: {target} because it does not exist'
-                )
-
-    async def consume(
-        self,
-        json_message: Union[str, bytes],
-        room_id: str,
-        client: websockets.WebSocketServerProtocol,
-    ) -> None:
-        try:
-            message = json.loads(json_message)
-            request = dacite.from_dict(Request, message)
-        except (json.JSONDecodeError, WrongTypeError, MissingValueError):
-            logger.info(
-                'invalid json received from client',
-                extra={'json': json_message},
-                exc_info=True,
-            )
-            await self.send_message(
-                Message([hash(client)], Response('error', 'Invalid message format'))
-            )
-            return
-
-        client_id = hash(client)
-        with timber.context(
-            request={
-                'room_id': room_id,
-                'request_id': request.request_id,
-                'client_id': client_id,
-            }
-        ):
-            try:
-                async for reply in self.gss.updates_received(
-                    request.updates, room_id, client_id, request.request_id
-                ):
-                    await self.send_message(reply)
-            except Exception:
-                logger.exception('Failed to process updates', exc_info=True)
-                await self.send_message(
-                    Message(
-                        [hash(client)],
-                        Response('error', 'Something went wrong', request.request_id),
-                    )
-                )
+        self._clients.remove(client)
