@@ -1,23 +1,147 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 
-set -euo pipefail
+import asyncio
+import contextlib
+import sys
+import tempfile
+import termios
+import time
 
-if git diff-index --quiet HEAD -- web; then
-  echo "=== skipping web lint, no changes found ==="
-else
-  echo "=== checking web formatting ==="
-  docker-compose run --rm web yarn checkstyle
-  echo "=== typechecking web ==="
-  docker-compose run --rm web yarn typecheck
-fi
+from dataclasses import dataclass
+from datetime import datetime
+from typing import List
+from uuid import uuid4
 
-if git diff-index --quiet HEAD -- api; then
-  echo "=== Skipping api lint, no changes found =="
-else
-  echo "=== checking api formatting ==="
-  docker-compose run --rm api black -S src tests main.py --check
-  echo "=== checking api style ==="
-  docker-compose run --rm api flake8 src tests main.py
-  echo "=== typechecking api ==="
-  docker-compose run --rm api mypy src tests main.py
-fi
+
+@dataclass
+class RunResult:
+    cmd: str
+    exit_code: int
+    stdout: bytes
+    stderr: bytes
+
+
+class CommandFailed(Exception):
+    def __init__(self, cmd: str, stdout: str, stderr: str):
+        super(CommandFailed, self).__init__(
+            f'Command Failed:\n{cmd}\n[stdout]\n{stdout}\n[stderr]\n{stderr}'
+        )
+
+
+async def must_run(exc: str, *args: str) -> bytes:
+    result = await run(exc, *args)
+    if result.exit_code:
+        raise CommandFailed(result.cmd, result.stdout.decode(), result.stderr.decode())
+    return result.stdout
+
+
+async def run(exc: str, *args: str) -> RunResult:
+    proc = await asyncio.create_subprocess_exec(
+        exc, *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+    )
+
+    stdout, stderr = await proc.communicate()
+
+    cmd = exc + ' ' + ' '.join(args)
+    return RunResult(cmd, proc.returncode, stdout, stderr)
+
+
+async def run_in_service(container: str, name: str, cmd: str):
+    full_cmd = f"docker-compose run --rm -e CI=true --name {container}_{name}_{uuid4()} {container} {cmd}"
+    proc = await asyncio.create_subprocess_shell(
+        full_cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+
+    return RunResult(full_cmd, proc.returncode, stdout, stderr)
+
+
+@contextlib.asynccontextmanager
+async def only_staged_changes():
+    tree = (await must_run('git', 'write-tree')).decode('utf-8').strip()
+
+    result = await run(
+        'git',
+        'diff-index',
+        '--ignore-submodules',
+        '--exit-code',
+        '--no-color',
+        '--no-ext-diff',
+        '-p',
+        tree,
+        '--',
+    )
+
+    if result.exit_code and result.stdout:
+        # This blocks, which is a bad idea for async programs, but we can't exactly import or re-implement aiofiles
+        # here. This function is only ever called when it's the only thing we're doing anyways, so it's not the end of
+        # the world
+        now_str = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+        filepath = f'/tmp/precommit_{now_str}_{uuid4()}'
+        with open(filepath, 'wb') as patch_file:
+            patch_file.write(result.stdout)
+            await must_run('git', 'checkout', '--', '.')
+            try:
+                yield
+            finally:
+                try:
+                    await must_run('git', 'apply', '--whitespace=nowarn', filepath)
+                except CommandFailed:
+                    # Patch failed to apply, roll back changes made by hooks
+                    await must_run('git', 'checkout', '--', '.')
+                    await must_run('git', 'apply', '--whitespace=nowarn', filepath)
+                    raise
+    else:
+        # No unstaged changes, nothing to do
+        yield
+
+
+async def main():
+    start_time = time.monotonic()
+
+    stdout = sys.stdin.fileno()
+    old = termios.tcgetattr(stdout)
+    success = False
+    results: List[RunResult] = []
+    async with only_staged_changes():
+        try:
+            results = await asyncio.gather(
+                run_in_service("web", "checkstyle", "yarn checkstyle"),
+                run_in_service("web", "typecheck", "yarn typecheck"),
+                run_in_service(
+                    "web", "test", "yarn test --watchAll=false --onlyChanged"
+                ),
+                run_in_service(
+                    "api", "checkformat", "black -S src tests main.py --check"
+                ),
+                run_in_service("api", "checkstyle", "flake8 src tests main.py"),
+                run_in_service("api", "typecheck", "mypy src tests main.py"),
+                run_in_service("api", "test", "pytest tests"),
+            )
+            success = True
+        except RuntimeError:
+            pass
+        finally:
+            termios.tcsetattr(stdout, termios.TCSADRAIN, old)
+
+    for result in results:
+        if result.exit_code:
+            print(
+                f"Failed command:\n{result.cmd}\n[stdout]\n{result.stdout}\n[stderr]\n{result.stderr}"
+            )
+
+    total_time = time.monotonic() - start_time
+
+    print(f"Finished in {total_time}s")
+    if not success:
+        raise RuntimeError('Ahhh')
+
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        print(e, file=sys.stderr)
+        sys.exit(1)
