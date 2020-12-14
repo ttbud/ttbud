@@ -80,7 +80,8 @@ async def _process_updates(
     messages = []
     if entities is None:
         raise InvalidConnectionException(
-            ERR_INVALID_ROOM, f'Tried to update room {room_id}, which does not exist',
+            ERR_INVALID_ROOM,
+            f'Tried to update room {room_id}, which does not exist',
         )
 
     room = create_room(room_id, entities)
@@ -178,7 +179,9 @@ class GameStateServer:
                     yield msg
 
     async def _requests_to_messages(
-        self, room_id: str, requests: AsyncIterator[DecoratedRequest],
+        self,
+        room_id: str,
+        requests: AsyncIterator[DecoratedRequest],
     ) -> AsyncIterator[Response]:
         async for request in requests:
             with timber.context(request={'request_id': request.request_id}):
@@ -238,7 +241,8 @@ class GameStateServer:
                     extra={'client_ip': client_ip, 'room_id': room_id},
                 )
                 raise InvalidConnectionException(
-                    ERR_TOO_MANY_ROOMS_CREATED, 'Too many rooms created by client',
+                    ERR_TOO_MANY_ROOMS_CREATED,
+                    'Too many rooms created by client',
                 )
             return BareUpdateResult([])
         return BareUpdateResult(entities)
