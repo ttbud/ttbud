@@ -6,7 +6,7 @@ from typing import TypeVar, AsyncIterator, Union
 import pytest
 
 from src.util.amerge import amerge, CompleteCondition
-from src.util.async_util import async_collect, anext
+from src.util.async_util import async_collect, anext, race
 from tests.helpers import to_async
 
 pytestmark = pytest.mark.asyncio
@@ -22,7 +22,7 @@ async def queue_to_iterator(queue: asyncio.Queue[Union[T, object]]) -> AsyncIter
         value = await queue.get()
 
 
-async def test_all_completed() -> None:
+async def test_amerge_all_completed() -> None:
     combined = amerge(
         to_async([1, 2, 3]),
         to_async(['one', 'two', 'three']),
@@ -39,7 +39,7 @@ async def test_all_completed() -> None:
     assert words == ['one', 'two', 'three']
 
 
-async def test_first_completed() -> None:
+async def test_amerge_first_completed() -> None:
     numbers_queue: asyncio.Queue[Union[int, object]] = asyncio.Queue()
     words_queue: asyncio.Queue[Union[str, object]] = asyncio.Queue()
 
@@ -61,3 +61,33 @@ async def test_first_completed() -> None:
         await anext(combined)
 
     await words_queue.put(QUEUE_END)
+
+
+async def test_race():
+    """Verify that race returns the first future that finishes and cancels the rest"""
+    fut_one = asyncio.Future()
+    fut_two = asyncio.Future()
+    result = race(fut_one, fut_two)
+
+    fut_one.set_result('Result One')
+    assert await result == 'Result One'
+    assert fut_two.cancelled(), 'pending future was not cancelled'
+
+
+async def test_race_exception():
+    """Verify that race raises an exception it is passed a future that does"""
+    fut_one = asyncio.Future()
+    fut_two = asyncio.Future()
+    result = race(fut_one, fut_two)
+    fut_two.set_exception(NotImplementedError())
+
+    with pytest.raises(NotImplementedError):
+        await result
+
+    assert fut_one.cancelled(), 'Uncompleted future was not cancelled'
+
+
+async def test_race_no_args():
+    """Verify that race raises ValueError if no futures are provided"""
+    with pytest.raises(ValueError):
+        await race()

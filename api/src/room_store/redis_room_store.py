@@ -114,7 +114,8 @@ class RedisRoomStore(RoomStore):
                             )
                         )
         finally:
-            await self._redis.unsubscribe(_channel_key(room_id))
+            if not self._redis.closed:
+                await self._redis.unsubscribe(_channel_key(room_id))
 
     async def changes(self, room_id: str) -> AsyncIterator[RoomChangeEvent]:
         listener = self._listeners_by_room_id.get(room_id)

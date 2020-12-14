@@ -31,6 +31,7 @@ from src.rate_limit.rate_limit import (
     TooManyConnectionsException,
     RoomFullException,
 )
+from src.util.async_util import race
 
 logger = logging.getLogger(__name__)
 
@@ -92,12 +93,19 @@ class WebsocketManager:
         self._rate_limiter = rate_limiter
         self._clients: List[websockets.WebSocketServerProtocol] = []
 
-    async def start_websocket(self, ssl: Optional[SSLContext] = None) -> None:
+    async def listen(
+        self, stop: asyncio.Future, ssl: Optional[SSLContext] = None
+    ) -> None:
         try:
             await websockets.serve(
                 self._connection_handler, '0.0.0.0', self._port, ssl=ssl
             )
-            asyncio.create_task(self.maintain_liveness(), name='maintain_liveness')
+            liveness_task = asyncio.create_task(
+                self.maintain_liveness(), name='maintain_liveness'
+            )
+
+            await race(liveness_task, stop)
+
         except OSError:
             logger.exception('Failed to start websocket server', exc_info=True)
             raise
