@@ -27,6 +27,8 @@ from src.room_store.redis_room_store import create_redis_room_store, RedisRoomSt
 
 from tests.static_fixtures import VALID_TOKEN, ANOTHER_VALID_TOKEN, VALID_PING
 
+pytestmark = pytest.mark.asyncio
+
 
 # If we don't depend on event_loop (even though it isn't explicitly used), then it
 # won't be set up early enough for create_redis_pool to find it, and tests and redis
@@ -87,7 +89,6 @@ def any_room_store(func: Callable) -> Callable:
     )(func)
 
 
-@pytest.mark.asyncio
 @any_room_store
 async def test_mutate_and_read(room_store: RoomStore) -> None:
     result = await room_store.apply_mutation(
@@ -97,7 +98,6 @@ async def test_mutate_and_read(room_store: RoomStore) -> None:
     assert (await room_store.read('room_id')) == [VALID_TOKEN, VALID_PING]
 
 
-@pytest.mark.asyncio
 @any_room_store
 async def test_list_all_keys(room_store: RoomStore) -> None:
     await room_store.apply_mutation('room-id-1', 'request-id', lambda _: mutate_to([]))
@@ -111,7 +111,6 @@ async def test_list_all_keys(room_store: RoomStore) -> None:
     ]
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'room_store_factory',
     [
@@ -150,7 +149,6 @@ async def test_transaction_contention(
     assert await room_store_1.read('room-id-1') == [VALID_TOKEN]
 
 
-@pytest.mark.asyncio
 @any_room_store
 async def test_lock_expiration(room_store: RoomStore) -> None:
     with time_machine.travel('1970-01-01', tick=False) as traveler:
@@ -175,7 +173,6 @@ async def test_lock_expiration(room_store: RoomStore) -> None:
     assert await room_store.read('room-id') is None
 
 
-@pytest.mark.asyncio
 @any_room_store
 async def test_exception_in_mutate(room_store: RoomStore) -> None:
     async def failed_mutate(_: Any) -> NoReturn:
@@ -191,7 +188,6 @@ async def test_exception_in_mutate(room_store: RoomStore) -> None:
     assert await room_store.read('room-id') == [VALID_TOKEN]
 
 
-@pytest.mark.asyncio
 @any_room_store
 async def test_change_notifications(room_store: RoomStore) -> None:
     await room_store.apply_mutation(

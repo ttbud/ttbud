@@ -33,6 +33,8 @@ from tests.static_fixtures import (
     DELETE_VALID_TOKEN,
 )
 
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.fixture
 def room_store() -> RoomStore:
@@ -79,13 +81,11 @@ async def collect_responses(
         disconnect_event.set()
 
 
-@pytest.mark.asyncio
 async def test_new_connection(gss: GameStateServer) -> None:
     responses = await collect_responses(gss, requests=[], response_count=1)
     assert responses == [Response('connected', data=[])]
 
 
-@pytest.mark.asyncio
 async def test_room_data_is_stored(
     room_store: RoomStore, rate_limiter: RateLimiter
 ) -> None:
@@ -111,7 +111,6 @@ async def test_room_data_is_stored(
     assert responses == [Response('connected', [VALID_TOKEN, ANOTHER_VALID_TOKEN])]
 
 
-@pytest.mark.asyncio
 async def test_duplicate_update_rejected(gss: GameStateServer) -> None:
     responses = await collect_responses(
         gss,
@@ -127,7 +126,6 @@ async def test_duplicate_update_rejected(gss: GameStateServer) -> None:
     assert_matches(errors(responses), [{'type': 'error', 'request_id': 'request-id'}])
 
 
-@pytest.mark.asyncio
 async def test_duplicate_update_in_different_room(gss: GameStateServer) -> None:
 
     responses = await collect_responses(
@@ -155,7 +153,6 @@ async def test_duplicate_update_in_different_room(gss: GameStateServer) -> None:
     ]
 
 
-@pytest.mark.asyncio
 async def test_update_in_occupied_position(gss: GameStateServer) -> None:
     conflicting_position_token = Token(
         'some_other_id',
@@ -191,7 +188,6 @@ async def test_update_in_occupied_position(gss: GameStateServer) -> None:
     )
 
 
-@pytest.mark.asyncio
 async def test_delete_token(gss: GameStateServer) -> None:
     responses = await collect_responses(
         gss,
@@ -211,7 +207,6 @@ async def test_delete_token(gss: GameStateServer) -> None:
     ]
 
 
-@pytest.mark.asyncio
 async def test_delete_non_existent_token(gss: GameStateServer) -> None:
     responses = await collect_responses(
         gss,
@@ -230,7 +225,6 @@ async def test_delete_non_existent_token(gss: GameStateServer) -> None:
     )
 
 
-@pytest.mark.asyncio
 async def test_delete_after_reload(gss: GameStateServer) -> None:
     responses = await collect_responses(
         gss,
@@ -253,7 +247,6 @@ async def test_delete_after_reload(gss: GameStateServer) -> None:
     ]
 
 
-@pytest.mark.asyncio
 async def test_move_existing_token(gss: GameStateServer) -> None:
     responses = await collect_responses(
         gss,
@@ -273,7 +266,6 @@ async def test_move_existing_token(gss: GameStateServer) -> None:
     ]
 
 
-@pytest.mark.asyncio
 async def test_ping(gss: GameStateServer) -> None:
     responses = await collect_responses(
         gss,
@@ -291,7 +283,6 @@ async def test_ping(gss: GameStateServer) -> None:
     ]
 
 
-@pytest.mark.asyncio
 async def test_more_tokens_than_colors(gss: GameStateServer) -> None:
     updates = []
     for i in range(len(colors) + 1):
