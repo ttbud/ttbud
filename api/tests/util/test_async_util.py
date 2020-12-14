@@ -11,19 +11,26 @@ from tests.helpers import to_async
 
 pytestmark = pytest.mark.asyncio
 
-QUEUE_END = object()
+
+class QueueEnd:
+    pass
+
+
+QUEUE_END = QueueEnd()
 T = TypeVar('T')
 
 
-async def queue_to_iterator(queue: asyncio.Queue[Union[T, object]]) -> AsyncIterator[T]:
+async def queue_to_iterator(
+    queue: asyncio.Queue[Union[T, QueueEnd]]
+) -> AsyncIterator[T]:
     value = await queue.get()
-    while value is not QUEUE_END:
+    while not isinstance(value, QueueEnd):
         yield value
         value = await queue.get()
 
 
 async def test_amerge_all_completed() -> None:
-    combined = amerge(
+    combined: AsyncIterator[Union[int, str]] = amerge(
         to_async([1, 2, 3]),
         to_async(['one', 'two', 'three']),
         complete_when=CompleteCondition.ALL_COMPLETED,
@@ -40,10 +47,10 @@ async def test_amerge_all_completed() -> None:
 
 
 async def test_amerge_first_completed() -> None:
-    numbers_queue: asyncio.Queue[Union[int, object]] = asyncio.Queue()
-    words_queue: asyncio.Queue[Union[str, object]] = asyncio.Queue()
+    numbers_queue: asyncio.Queue[Union[int, str, QueueEnd]] = asyncio.Queue()
+    words_queue: asyncio.Queue[Union[int, str, QueueEnd]] = asyncio.Queue()
 
-    combined = amerge(
+    combined: AsyncIterator[Union[int, str]] = amerge(
         queue_to_iterator(numbers_queue),
         queue_to_iterator(words_queue),
         complete_when=CompleteCondition.FIRST_COMPLETED,
@@ -63,10 +70,10 @@ async def test_amerge_first_completed() -> None:
     await words_queue.put(QUEUE_END)
 
 
-async def test_race():
+async def test_race() -> None:
     """Verify that race returns the first future that finishes and cancels the rest"""
-    fut_one = asyncio.Future()
-    fut_two = asyncio.Future()
+    fut_one: asyncio.Future[str] = asyncio.Future()
+    fut_two: asyncio.Future[str] = asyncio.Future()
     result = race(fut_one, fut_two)
 
     fut_one.set_result('Result One')
@@ -74,10 +81,10 @@ async def test_race():
     assert fut_two.cancelled(), 'pending future was not cancelled'
 
 
-async def test_race_exception():
+async def test_race_exception() -> None:
     """Verify that race raises an exception it is passed a future that does"""
-    fut_one = asyncio.Future()
-    fut_two = asyncio.Future()
+    fut_one: asyncio.Future[None] = asyncio.Future()
+    fut_two: asyncio.Future[None] = asyncio.Future()
     result = race(fut_one, fut_two)
     fut_two.set_exception(NotImplementedError())
 
@@ -87,7 +94,7 @@ async def test_race_exception():
     assert fut_one.cancelled(), 'Uncompleted future was not cancelled'
 
 
-async def test_race_no_args():
+async def test_race_no_args() -> None:
     """Verify that race raises ValueError if no futures are provided"""
     with pytest.raises(ValueError):
         await race()
