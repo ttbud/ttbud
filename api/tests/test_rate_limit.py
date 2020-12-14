@@ -97,6 +97,7 @@ def any_rate_limiter_factory(func: Callable) -> Callable:
 
 
 @any_rate_limiter
+@pytest.mark.asyncio
 @time_machine.travel('1970-01-01', tick=False)
 async def test_user_connection_limit(rate_limiter: RateLimiter) -> None:
     for i in range(0, MAX_CONNECTIONS_PER_USER):
