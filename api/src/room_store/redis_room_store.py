@@ -1,9 +1,20 @@
-# language=lua
+from __future__ import annotations
+
 import asyncio
 import json
+import logging
 import random
-from dataclasses import asdict
-from typing import AsyncIterator, Optional, List, Union, Callable, Awaitable
+from dataclasses import asdict, dataclass, field
+from typing import (
+    Optional,
+    List,
+    Union,
+    Callable,
+    Awaitable,
+    AsyncGenerator,
+    Dict,
+    AsyncIterator,
+)
 from uuid import uuid4
 
 from aioredis import Redis, ReplyError
@@ -17,19 +28,26 @@ from src.room_store.room_store import (
     MAX_LOCK_RETRIES,
     LOCK_EXPIRATION_SECS,
     TransactionFailedException,
-    logger,
     CorruptedRoomException,
+    RoomChangeEvent,
 )
+
+logger = logging.getLogger(__name__)
+
+NO_REQUEST_ID = "NO_REQUEST_ID"
 
 # language=lua
 _SET_AND_RELEASE_LOCK = """
 local lock_key = KEYS[1]
-local key = KEYS[2]
+local room_key = KEYS[2]
+local channel_key = KEYS[3]
 local lock_value = ARGV[1]
 local value = ARGV[2]
+local request_key = ARGV[3]
 
 if redis.call("get", lock_key) == lock_value then
-    redis.call("set", key, value)
+    redis.call("set", room_key, value)
+    redis.call("publish", channel_key, request_key)
     redis.call("del", lock_key)
 else
     return redis.error_reply("Unable to set value, lock has expired")
@@ -53,6 +71,17 @@ def _room_key(room_id: str) -> str:
     return f'room:{room_id}'
 
 
+def _channel_key(room_id: str) -> str:
+    return f'channel:{room_id}'
+
+
+@dataclass
+class ChangeListener:
+    output_queues: List[asyncio.Queue[RoomChangeEvent]]
+    task: asyncio.Task
+    subscribe_started: asyncio.Future[None] = field(default_factory=asyncio.Future)
+
+
 class RedisRoomStore(RoomStore):
     def __init__(
         self, redis: Redis, set_and_release_lock_sha: str, release_lock_sha: str
@@ -60,8 +89,69 @@ class RedisRoomStore(RoomStore):
         self._redis = redis
         self._set_and_release_lock_sha = set_and_release_lock_sha
         self._release_lock_sha = release_lock_sha
+        self._listeners_by_room_id: Dict[str, ChangeListener] = dict()
 
-    async def get_all_room_ids(self) -> AsyncIterator[str]:
+    async def _listen_for_changes(self, room_id: str) -> None:
+        listener = self._listeners_by_room_id[room_id]
+        queues = listener.output_queues
+        channel = (await self._redis.subscribe(_channel_key(room_id)))[0]
+        listener.subscribe_started.set_result(None)
+        try:
+            while await channel.wait_message():
+                request_id = (await channel.get()).decode('utf-8')
+                entities = await self.read(room_id)
+                if entities is None:
+                    logger.error(
+                        'Received update notification for nonexistent room',
+                        extra={'request_id': request_id, 'room_id': room_id},
+                    )
+                else:
+                    for q in queues:
+                        await q.put(
+                            RoomChangeEvent(
+                                request_id if request_id != NO_REQUEST_ID else None,
+                                entities,
+                            )
+                        )
+        finally:
+            await self._redis.unsubscribe(_channel_key(room_id))
+
+    async def changes(self, room_id: str) -> AsyncIterator[RoomChangeEvent]:
+        listener = self._listeners_by_room_id.get(room_id)
+        if not listener:
+            listener = ChangeListener(
+                [],
+                asyncio.create_task(
+                    self._listen_for_changes(room_id), name=f'Redis Pubsub {room_id}'
+                ),
+            )
+            self._listeners_by_room_id[room_id] = listener
+
+        # This function shouldn't return until we've actually started listening
+        # for changes so that consumers know they're not missing events once they
+        # get the iterator back
+        await listener.subscribe_started
+
+        queue: asyncio.Queue[RoomChangeEvent] = asyncio.Queue()
+        listener.output_queues.append(queue)
+
+        return self._room_changes(room_id, queue)
+
+    async def _room_changes(
+        self, room_id: str, queue: asyncio.Queue[RoomChangeEvent]
+    ) -> AsyncIterator[RoomChangeEvent]:
+        try:
+            while True:
+                yield await queue.get()
+        finally:
+            listener = self._listeners_by_room_id[room_id]
+            listener.output_queues.remove(queue)
+            if not listener.output_queues:
+                listener.task.cancel()
+                if room_id in self._listeners_by_room_id:
+                    del self._listeners_by_room_id[room_id]
+
+    async def get_all_room_ids(self) -> AsyncGenerator[str, None]:
         # A cursor of '0' tells redis.scan to start at the beginning
         cursor = b'0'
         while cursor:
@@ -76,6 +166,7 @@ class RedisRoomStore(RoomStore):
     async def apply_mutation(
         self,
         room_id: str,
+        request_id: Optional[str],
         mutate: Callable[[Optional[EntityList]], Awaitable[MutationResultType]],
     ) -> MutationResultType:
         # We use a simplified locking mechanism that does not guarantee
@@ -124,8 +215,12 @@ class RedisRoomStore(RoomStore):
         try:
             await self._redis.evalsha(
                 self._set_and_release_lock_sha,
-                keys=[lock_key, _room_key(room_id)],
-                args=[lock_value, room_json],
+                keys=[lock_key, _room_key(room_id), _channel_key(room_id)],
+                args=[
+                    lock_value,
+                    room_json,
+                    request_id if request_id else NO_REQUEST_ID,
+                ],
             )
         except ReplyError as e:
             raise TransactionFailedException from e
