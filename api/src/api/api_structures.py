@@ -13,7 +13,7 @@ class Response:
 
 @dataclass
 class CreateOrUpdateAction:
-    action: Union[Literal['create'], Literal['update']]
+    action: Literal['create', 'update']
     data: Token
 
 

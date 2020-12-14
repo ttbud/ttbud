@@ -20,7 +20,7 @@ TokenContents = Union[TextTokenContents, IconTokenContents]
 @dataclass
 class Token:
     id: str
-    type: Union[Literal['character'], Literal['floor']]
+    type: Literal['character', 'floor']
     contents: TokenContents
     start_x: int
     start_y: int
