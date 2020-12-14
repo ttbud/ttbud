@@ -11,16 +11,21 @@ from tests.helpers import to_async
 
 pytestmark = pytest.mark.asyncio
 
-QUEUE_END = object()
+
+class QueueEnd:
+    pass
+
+
+QUEUE_END = QueueEnd()
 T = TypeVar('T')
 
 
-async def queue_to_iterator(queue: asyncio.Queue[Union[T, object]]) -> AsyncIterator[T]:
+async def queue_to_iterator(
+    queue: asyncio.Queue[Union[T, QueueEnd]]
+) -> AsyncIterator[T]:
     value = await queue.get()
-    while value is not QUEUE_END:
-        # Mypy doesn't know that the only thing of type object is QUEUE_END so
-        # value is guaranteed to be of type T
-        yield value  # type: ignore
+    while not isinstance(value, QueueEnd):
+        yield value
         value = await queue.get()
 
 
@@ -42,8 +47,8 @@ async def test_amerge_all_completed() -> None:
 
 
 async def test_amerge_first_completed() -> None:
-    numbers_queue: asyncio.Queue[Union[int, object]] = asyncio.Queue()
-    words_queue: asyncio.Queue[Union[str, object]] = asyncio.Queue()
+    numbers_queue: asyncio.Queue[Union[int, str, QueueEnd]] = asyncio.Queue()
+    words_queue: asyncio.Queue[Union[int, str, QueueEnd]] = asyncio.Queue()
 
     combined: AsyncIterator[Union[int, str]] = amerge(
         queue_to_iterator(numbers_queue),
