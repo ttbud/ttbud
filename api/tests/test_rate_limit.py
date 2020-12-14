@@ -1,12 +1,13 @@
 from datetime import timedelta
 from asyncio import AbstractEventLoop
 from functools import partial
-from typing import Awaitable, TypeVar, Callable
+from typing import Awaitable, TypeVar, Callable, AsyncIterator
 
 import fakeredis.aioredis
 import pytest
 import time_machine
 from aioredis import Redis
+from pytest_mock import MockerFixture
 
 from src.rate_limit.rate_limit import (
     MAX_CONNECTIONS_PER_USER,
@@ -33,7 +34,7 @@ RateLimiterFactory = GenericRateLimiterFactory[RateLimiter]
 
 
 @pytest.fixture
-async def redis(event_loop: AbstractEventLoop):
+async def redis(event_loop: AbstractEventLoop) -> AsyncIterator[Redis]:
     redis_instance = await fakeredis.aioredis.create_redis_pool()
     yield redis_instance
     redis_instance.close()
@@ -41,12 +42,12 @@ async def redis(event_loop: AbstractEventLoop):
 
 
 @pytest.fixture
-def memory_rate_limiter_storage():
+def memory_rate_limiter_storage() -> MemoryRateLimiterStorage:
     return MemoryRateLimiterStorage()
 
 
 @pytest.fixture
-def redis_rate_limiter_factory(redis: Redis):
+def redis_rate_limiter_factory(redis: Redis) -> RateLimiterFactory:
     return partial(create_redis_rate_limiter, redis=redis)
 
 
@@ -54,7 +55,7 @@ def redis_rate_limiter_factory(redis: Redis):
 def memory_rate_limiter_factory(
     memory_rate_limiter_storage: MemoryRateLimiterStorage,
 ) -> RateLimiterFactory:
-    async def fn(server_id: str):
+    async def fn(server_id: str) -> MemoryRateLimiter:
         return MemoryRateLimiter(server_id, memory_rate_limiter_storage)
 
     return fn
@@ -82,7 +83,7 @@ async def memory_rate_limiter(
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_user_connection_limit(rate_limiter: RateLimiter):
+async def test_user_connection_limit(rate_limiter: RateLimiter) -> None:
     for i in range(0, MAX_CONNECTIONS_PER_USER):
         await rate_limiter.acquire_connection('user-1', f'room-{i}')
 
@@ -98,7 +99,7 @@ async def test_user_connection_limit(rate_limiter: RateLimiter):
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_room_connection_limit(rate_limiter: RateLimiter):
+async def test_room_connection_limit(rate_limiter: RateLimiter) -> None:
     for i in range(0, MAX_CONNECTIONS_PER_ROOM):
         await rate_limiter.acquire_connection(f'user-{i}', 'room-1')
 
@@ -114,7 +115,7 @@ async def test_room_connection_limit(rate_limiter: RateLimiter):
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_release_connection(rate_limiter: RedisRateLimiter):
+async def test_release_connection(rate_limiter: RedisRateLimiter) -> None:
     for i in range(0, MAX_CONNECTIONS_PER_USER):
         await rate_limiter.acquire_connection('user-1', f'room-{i}')
 
@@ -132,7 +133,7 @@ async def test_release_connection(rate_limiter: RedisRateLimiter):
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_release_room_slot(rate_limiter: RedisRateLimiter):
+async def test_release_room_slot(rate_limiter: RedisRateLimiter) -> None:
     for i in range(0, MAX_CONNECTIONS_PER_ROOM):
         await rate_limiter.acquire_connection(f'user-{i}', 'room-1')
 
@@ -149,7 +150,7 @@ async def test_release_room_slot(rate_limiter: RedisRateLimiter):
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_release_nonexistant_connection(rate_limiter: RateLimiter):
+async def test_release_nonexistant_connection(rate_limiter: RateLimiter) -> None:
     # Releasing a connection that does not exist should not fail
     await rate_limiter.release_connection('user-1', 'room-nonexistant')
 
@@ -170,7 +171,7 @@ async def test_release_nonexistant_connection(rate_limiter: RateLimiter):
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_release_nonexistant_room_slot(rate_limiter: RateLimiter):
+async def test_release_nonexistant_room_slot(rate_limiter: RateLimiter) -> None:
     # Releasing a connection that does not exist should not fail
     await rate_limiter.release_connection('user-1', 'room-1')
 
@@ -191,7 +192,7 @@ async def test_release_nonexistant_room_slot(rate_limiter: RateLimiter):
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_acquire_multiple_users(rate_limiter: RateLimiter):
+async def test_acquire_multiple_users(rate_limiter: RateLimiter) -> None:
     for i in range(0, MAX_CONNECTIONS_PER_USER):
         await rate_limiter.acquire_connection('user-1', f'room-{i}')
 
@@ -207,7 +208,7 @@ async def test_acquire_multiple_users(rate_limiter: RateLimiter):
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_acquire_multiple_room_slots(rate_limiter: RateLimiter):
+async def test_acquire_multiple_room_slots(rate_limiter: RateLimiter) -> None:
     for i in range(0, MAX_CONNECTIONS_PER_ROOM):
         await rate_limiter.acquire_connection(f'user-{i}', 'room-1')
 
@@ -223,7 +224,7 @@ async def test_acquire_multiple_room_slots(rate_limiter: RateLimiter):
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_multiple_room_users(rate_limiter: RateLimiter):
+async def test_multiple_room_users(rate_limiter: RateLimiter) -> None:
     for i in range(0, MAX_CONNECTIONS_PER_ROOM):
         await rate_limiter.acquire_connection(f'user-{i}', 'room-1')
 
@@ -240,7 +241,9 @@ async def test_multiple_room_users(rate_limiter: RateLimiter):
         pytest.lazy_fixture('memory_rate_limiter_factory'),
     ],
 )
-async def test_acquire_multiple_servers(rate_limiter_factory: RateLimiterFactory):
+async def test_acquire_multiple_servers(
+    rate_limiter_factory: RateLimiterFactory,
+) -> None:
     server_1 = await rate_limiter_factory('server-id-1')
     server_2 = await rate_limiter_factory('server-id-2')
 
@@ -261,7 +264,9 @@ async def test_acquire_multiple_servers(rate_limiter_factory: RateLimiterFactory
         pytest.lazy_fixture('memory_rate_limiter_factory'),
     ],
 )
-async def test_room_limit_multiple_servers(rate_limiter_factory: RateLimiterFactory):
+async def test_room_limit_multiple_servers(
+    rate_limiter_factory: RateLimiterFactory,
+) -> None:
     server_1 = await rate_limiter_factory('server-id-1')
     server_2 = await rate_limiter_factory('server-id-2')
 
@@ -284,7 +289,7 @@ async def test_room_limit_multiple_servers(rate_limiter_factory: RateLimiterFact
 )
 async def test_release_connection_multiple_servers(
     rate_limiter_factory: RateLimiterFactory,
-):
+) -> None:
     server_1 = await rate_limiter_factory('server-id-1')
     server_2 = await rate_limiter_factory('server-id-2')
 
@@ -310,7 +315,7 @@ async def test_release_connection_multiple_servers(
 )
 async def test_release_room_slot_multiple_servers(
     rate_limiter_factory: RateLimiterFactory,
-):
+) -> None:
     server_1 = await rate_limiter_factory('server-id-1')
     server_2 = await rate_limiter_factory('server-id-2')
 
@@ -336,7 +341,7 @@ async def test_release_room_slot_multiple_servers(
 )
 async def test_acquire_connection_expired_server(
     rate_limiter_factory: RateLimiterFactory,
-):
+) -> None:
     # Create a server that will expire
     with time_machine.travel('1970-01-01') as traveller:
         expired_server = await rate_limiter_factory('server-id-1')
@@ -362,7 +367,7 @@ async def test_acquire_connection_expired_server(
 )
 async def test_acquire_room_slot_expired_server(
     rate_limiter_factory: RateLimiterFactory,
-):
+) -> None:
     # Create a server that will expire
     with time_machine.travel('1970-01-01') as traveller:
         expired_server = await rate_limiter_factory('server-id-1')
@@ -386,7 +391,9 @@ async def test_acquire_room_slot_expired_server(
         pytest.lazy_fixture('memory_rate_limiter_factory'),
     ],
 )
-async def test_refresh_server_liveness(rate_limiter_factory: RateLimiterFactory):
+async def test_refresh_server_liveness(
+    rate_limiter_factory: RateLimiterFactory,
+) -> None:
     with time_machine.travel('1970-01-01', tick=False) as traveller:
         # Create a server that will expire
         refreshing_server = await rate_limiter_factory('server-id-1')
@@ -415,7 +422,7 @@ async def test_refresh_server_liveness(rate_limiter_factory: RateLimiterFactory)
         pytest.lazy_fixture('memory_rate_limiter_factory'),
     ],
 )
-async def test_context_manager(rate_limiter_factory: RateLimiterFactory):
+async def test_context_manager(rate_limiter_factory: RateLimiterFactory) -> None:
     server = await rate_limiter_factory('server-id')
 
     for i in range(0, MAX_CONNECTIONS_PER_USER - 1):
@@ -439,7 +446,9 @@ async def test_context_manager(rate_limiter_factory: RateLimiterFactory):
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_too_many_new_rooms(rate_limiter: RateLimiter, mocker):
+async def test_too_many_new_rooms(
+    rate_limiter: RateLimiter, mocker: MockerFixture
+) -> None:
     mocker.patch('time.time', return_value=0)
 
     for i in range(0, MAX_ROOMS_PER_TEN_MINUTES):
@@ -457,7 +466,9 @@ async def test_too_many_new_rooms(rate_limiter: RateLimiter, mocker):
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_new_room_multiple_users(rate_limiter: RateLimiter, mocker):
+async def test_new_room_multiple_users(
+    rate_limiter: RateLimiter, mocker: MockerFixture
+) -> None:
     mocker.patch('time.time', return_value=0)
 
     for i in range(0, MAX_ROOMS_PER_TEN_MINUTES):
@@ -478,7 +489,9 @@ async def test_new_room_multiple_users(rate_limiter: RateLimiter, mocker):
         pytest.lazy_fixture('memory_rate_limiter_factory'),
     ],
 )
-async def test_new_room_multiple_servers(rate_limiter_factory, mocker):
+async def test_new_room_multiple_servers(
+    rate_limiter_factory: RateLimiterFactory, mocker: MockerFixture
+) -> None:
     mocker.patch('time.time', return_value=0)
     server_1 = await rate_limiter_factory('server-1')
     server_2 = await rate_limiter_factory('server-2')
@@ -500,7 +513,7 @@ async def test_new_room_multiple_servers(rate_limiter_factory, mocker):
         pytest.lazy_fixture('memory_rate_limiter'),
     ],
 )
-async def test_release_connection_on_exception(rate_limiter: RateLimiter):
+async def test_release_connection_on_exception(rate_limiter: RateLimiter) -> None:
     for i in range(0, MAX_CONNECTIONS_PER_ROOM - 1):
         await rate_limiter.acquire_connection(f'user-{i}', 'room-1')
 

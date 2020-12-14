@@ -10,11 +10,11 @@ from tests.helpers import assert_matches
 
 
 class RecordingLogHandler(logging.Handler):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self.lines = []
+        self.lines: List[str] = []
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         self.lines.append(self.format(record))
 
 
@@ -25,7 +25,7 @@ class LogContext:
 
 
 @pytest.fixture
-def log_context():
+def log_context() -> LogContext:
     logger = logging.getLogger('test')
     logger.setLevel(logging.DEBUG)
     logger.handlers = []
@@ -35,12 +35,12 @@ def log_context():
     return LogContext(logger, handler.lines)
 
 
-def test_allows_messages_without_exceptions(log_context: LogContext):
+def test_allows_messages_without_exceptions(log_context: LogContext) -> None:
     log_context.logger.debug('test')
     assert_matches(decoded_lines(log_context.lines), [{'message': 'test'}])
 
 
-def test_includes_exception_details(log_context: LogContext):
+def test_includes_exception_details(log_context: LogContext) -> None:
     try:
         raise Exception('exception message')
     except Exception:
