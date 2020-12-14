@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import asyncio
+from asyncio import Future
 from typing import TypeVar, AsyncIterable, AsyncIterator, Optional, List
 
 _T = TypeVar('_T')
@@ -9,6 +13,17 @@ async def anext(iterator: AsyncIterator[_T]) -> _T:
     If the iterator is exhausted, StopIteration is raised.
     """
     return await iterator.__anext__()
+
+
+async def race(*futures: Future[_T]) -> _T:
+    """Return the result of the first task that completes"""
+    if not futures:
+        raise ValueError('Cannot race zero iterables')
+
+    done, pending = await asyncio.wait(futures, return_when=asyncio.FIRST_COMPLETED)
+    for fut in pending:
+        fut.cancel()
+    return next(iter(done)).result()
 
 
 async def async_collect(

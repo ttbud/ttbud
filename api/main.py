@@ -1,6 +1,7 @@
 import asyncio
 import logging.config
 import ssl
+import signal
 from typing import Optional
 from uuid import uuid4
 
@@ -17,7 +18,7 @@ from src.game_state_server import GameStateServer
 from src.room_store.redis_room_store import create_redis_room_store
 
 
-async def start_server(server_id: str) -> GameStateServer:
+async def start_server(server_id: str) -> None:
     redis = await create_redis_pool(config.redis_address, config.redis_ssl_validation)
     room_store = await create_redis_room_store(redis)
     rate_limiter = await create_redis_rate_limiter(server_id, redis)
@@ -34,8 +35,15 @@ async def start_server(server_id: str) -> GameStateServer:
         )
     else:
         ssl_context = None
-    await ws.start_websocket(ssl=ssl_context)
-    return gss
+
+    stop: asyncio.Future[None] = asyncio.Future()
+    loop = asyncio.get_event_loop()
+    loop.add_signal_handler(signal.SIGINT, stop.set_result, None)
+    loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+
+    await ws.listen(stop, ssl=ssl_context)
+    redis.close()
+    await redis.wait_closed()
 
 
 def main() -> None:
@@ -44,9 +52,7 @@ def main() -> None:
     scout_apm.api.install(config=config.scout_config)
 
     with timber.context(server={'server_id': server_id}):
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(start_server(server_id))
-        loop.run_forever()
+        asyncio.run(start_server(server_id))
 
 
 if __name__ == '__main__':
