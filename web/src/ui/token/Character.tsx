@@ -1,10 +1,9 @@
 import React, { memo, MouseEvent } from "react";
 import { Card, CardMedia, makeStyles, Theme } from "@material-ui/core";
 import clsx from "clsx";
-import { ICONS_BY_ID } from "../icons";
+import { Icon, ICONS_BY_ID } from "../icons";
 import { GRID_SIZE_PX } from "../../config";
 import { Color, ContentType, TokenContents } from "../../types";
-import { assert } from "../../util/invariants";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import { DragAttributes } from "../../drag/Draggable";
 import { Pos3d } from "../../util/shape-math";
@@ -55,7 +54,13 @@ const Character: React.FC<Props> = memo((props) => {
   const renderContents = (contents: TokenContents) => {
     switch (contents.type) {
       case ContentType.Icon:
-        return renderIcon(contents.iconId);
+        const icon = ICONS_BY_ID.get(contents.iconId);
+        if (icon) {
+          return renderIcon(icon);
+        } else {
+          console.warn(`Invalid icon id ${contents.iconId}`);
+          return "?";
+        }
       case ContentType.Text:
         return contents.text.toLocaleUpperCase();
       default:
@@ -63,10 +68,7 @@ const Character: React.FC<Props> = memo((props) => {
     }
   };
 
-  const renderIcon = (iconId: string) => {
-    const icon = ICONS_BY_ID.get(iconId);
-    assert(icon, `Invalid icon id ${iconId}`);
-
+  const renderIcon = (icon: Icon) => {
     return (
       <CardMedia
         className={classes.media}
