@@ -2,10 +2,10 @@ import React, { CSSProperties } from "react";
 import { makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "../../config";
 import Pos2d from "../../util/shape-math";
-import { ICONS_BY_ID } from "../icons";
+import { Icon } from "../icons";
 
 interface Props {
-  iconId: string;
+  icon: Icon;
   pos: Pos2d;
 }
 
@@ -17,9 +17,8 @@ const useStyles = makeStyles({
   },
 });
 
-const FloorIcon: React.FC<Props> = ({ iconId, pos }) => {
+const FloorIcon: React.FC<Props> = ({ icon, pos }) => {
   const classes = useStyles();
-  const icon = ICONS_BY_ID.get(iconId)!;
 
   const style: CSSProperties = {
     position: "absolute",
