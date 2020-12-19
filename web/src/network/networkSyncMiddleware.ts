@@ -51,18 +51,19 @@ export function networkSyncMiddleware(
           store.dispatch(connecting());
           break;
         case EventType.InitialState:
-          const newUiTokens = boardSyncer.onNetworkTokenUpdate(
+          const initialTokens = boardSyncer.onNetworkTokenUpdate(
             store.getState().board.tokens,
             event.tokens
           );
-          store.dispatch(replaceTokens(newUiTokens));
+          store.dispatch(replaceTokens(initialTokens));
           break;
         case EventType.TokenUpdate:
-          boardSyncer.onNetworkTokenUpdate(
+          const newTokens = boardSyncer.onNetworkTokenUpdate(
             store.getState().board.tokens,
             event.tokens,
             event.requestId
           );
+          store.dispatch(replaceTokens(newTokens));
           break;
         case EventType.Error:
           if (event.requestId) {
