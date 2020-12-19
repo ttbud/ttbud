@@ -6,14 +6,14 @@ import { DomDroppableMonitor } from "./drag/DroppableMonitor";
 import { Provider } from "react-redux";
 import DndContext from "./drag/DndContext";
 import createStore from "./store/createStore";
-import { BoardStateApiClient } from "./network/BoardStateApiClient";
+import { RealBoardStateApiClient } from "./network/RealBoardStateApiClient";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import { CssBaseline, createMuiTheme, ThemeProvider } from "@material-ui/core";
 import purple from "@material-ui/core/colors/purple";
 
 const monitor = new DomDroppableMonitor();
-const apiClient = new BoardStateApiClient(
+const apiClient = new RealBoardStateApiClient(
   `wss://${process.env.REACT_APP_DOMAIN}:${process.env.REACT_APP_API_WEBSOCKET_PORT}`
 );
 const store = createStore(monitor, apiClient);

@@ -1,8 +1,3 @@
-import {
-  BoardStateApiClient,
-  ConnectionError,
-  EventType,
-} from "./BoardStateApiClient";
 import { Dispatch, Middleware, MiddlewareAPI } from "@reduxjs/toolkit";
 import BoardSyncer from "./BoardSyncer";
 import {
@@ -12,6 +7,11 @@ import {
   disconnected,
 } from "../ui/connection-state/connection-state-slice";
 import { RootState } from "../store/rootReducer";
+import { replaceTokens } from "../ui/board/board-slice";
+import BoardStateApiClient, {
+  ConnectionError,
+  EventType,
+} from "./BoardStateApiClient";
 
 /**
  * Sync network state and ui state
@@ -20,7 +20,7 @@ export function networkSyncMiddleware(
   apiClient: BoardStateApiClient
 ): Middleware {
   return (store: MiddlewareAPI<Dispatch, RootState>) => {
-    const boardSyncer = new BoardSyncer(apiClient, store);
+    const boardSyncer = new BoardSyncer(apiClient);
     let retryTimeoutId: number | undefined = undefined;
 
     apiClient.setEventHandler((event) => {
@@ -51,10 +51,18 @@ export function networkSyncMiddleware(
           store.dispatch(connecting());
           break;
         case EventType.InitialState:
-          boardSyncer.onNetworkTokenUpdate(event.tokens);
+          const newUiTokens = boardSyncer.onNetworkTokenUpdate(
+            store.getState().board.tokens,
+            event.tokens
+          );
+          store.dispatch(replaceTokens(newUiTokens));
           break;
         case EventType.TokenUpdate:
-          boardSyncer.onNetworkTokenUpdate(event.tokens, event.requestId);
+          boardSyncer.onNetworkTokenUpdate(
+            store.getState().board.tokens,
+            event.tokens,
+            event.requestId
+          );
           break;
         case EventType.Error:
           if (event.requestId) {
