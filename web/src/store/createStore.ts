@@ -13,7 +13,7 @@ import {
   REHYDRATE,
 } from "redux-persist";
 import { DroppableMonitor } from "../drag/DroppableMonitor";
-import { BoardStateApiClient } from "../network/BoardStateApiClient";
+import BoardStateApiClient from "../network/BoardStateApiClient";
 import { networkSyncMiddleware } from "../network/networkSyncMiddleware";
 import rootReducer, { RootState } from "./rootReducer";
 import debugLog from "./debugLog";

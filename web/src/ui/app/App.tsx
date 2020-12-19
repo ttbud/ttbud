@@ -13,7 +13,7 @@ import isMac from "../../util/isMac";
 import { startSearching, stopSearching } from "./app-slice";
 import ConnectionNotifier from "../connection-state/ConnectionNotifier";
 import { v4 as uuid } from "uuid";
-import { BoardStateApiClient } from "../../network/BoardStateApiClient";
+import BoardStateApiClient from "../../network/BoardStateApiClient";
 import Tour from "../tour/Tour";
 import MobileWarningDialog from "../mobile-warning/MobileWarningDialog";
 
