@@ -25,7 +25,6 @@ class CertConfig:
 class Config:
     environment: Environment = Environment[os.environ['ENVIRONMENT'].upper()]
     websocket_port: int = int(os.environ['PORT'])
-    room_store_dir: str = os.environ['ROOM_STORE_DIR']
     redis_address = os.environ['REDIS_URL']
     use_redis: bool = os.environ.get('USE_REDIS') == 'true'
     json_logs: bool = os.environ.get('JSON_LOGS') == 'true'
