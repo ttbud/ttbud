@@ -40,7 +40,7 @@ export function networkSyncMiddleware(
               window.clearTimeout(retryTimeoutId);
             }
             retryTimeoutId = window.setTimeout(
-              apiClient.reconnect.bind(apiClient),
+              () => apiClient.reconnect(),
               waitTimeSecs * 1000
             );
           }
