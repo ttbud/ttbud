@@ -86,13 +86,11 @@ heroku plugins:install @heroku-cli/plugin-manifest
 # Create staging environment
 heroku apps:create ttbud-staging --manifest --remote staging
 heroku config:set ENVIRONMENT=staging --remote staging
-heroku config:set ROOM_STORE_DIR=/var/ttbud/rooms --remote staging
 heroku config:set JSON_LOGS=true --remote staging
 
 # Create prod environment
 heroku apps:create ttbud --manifest --remote prod
 heroku config:set ENVIRONMENT=prod --remote prod
-heroku config:set ROOM_STORE_DIR=/var/ttbud/rooms --remote prod
 heroku config:set JSON_LOGS=true --remote prod
 ```
 
