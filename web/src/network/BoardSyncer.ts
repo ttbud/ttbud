@@ -1,10 +1,7 @@
-import { BoardStateApiClient } from "./BoardStateApiClient";
-import { Update, getNetworkUpdates, getLocalState } from "./board-state-diff";
-import { MiddlewareAPI } from "@reduxjs/toolkit";
+import BoardStateApiClient from "./BoardStateApiClient";
+import { getLocalState, getNetworkUpdates, Update } from "./board-state-diff";
 import { v4 as uuid } from "uuid";
-import { replaceTokens } from "../ui/board/board-slice";
 import throttle from "../util/throttle";
-import { RootState } from "../store/rootReducer";
 import { Entity } from "../types";
 
 const UPDATE_RATE_MS = 250;
@@ -24,46 +21,42 @@ export default class BoardSyncer {
    * The last UI tokens we processed, used to quickly bail if we get an update that changes nothing
    */
   private lastUiTokens: Entity[] | undefined = [];
-  private sendNetworkUpdatesThrottled: () => void;
+  private readonly sendNetworkUpdatesThrottled: (uiTokens: Entity[]) => void;
 
-  constructor(
-    private readonly apiClient: BoardStateApiClient,
-    private readonly store: MiddlewareAPI
-  ) {
+  constructor(private readonly apiClient: BoardStateApiClient) {
     this.sendNetworkUpdatesThrottled = throttle(
       this.sendNetworkUpdates.bind(this),
       UPDATE_RATE_MS
     );
   }
 
-  onNetworkTokenUpdate(tokens: Entity[], requestId?: string) {
-    const state: RootState = this.store.getState();
-    this.sendNetworkUpdates();
-    this.lastUiTokens = state.board.tokens;
+  onNetworkTokenUpdate(
+    uiTokens: Entity[],
+    networkTokens: Entity[],
+    requestId?: string
+  ): Entity[] {
+    this.sendNetworkUpdates(uiTokens);
+    this.lastUiTokens = uiTokens;
     if (requestId) {
       this.unackedUpdates.delete(requestId);
     }
-    this.networkTokens = tokens;
+    this.networkTokens = networkTokens;
 
-    const localState = getLocalState(
-      tokens,
+    return getLocalState(
+      networkTokens,
       Array.from(this.unackedUpdates.values()).flat()
     );
-
-    this.store.dispatch(replaceTokens(localState));
   }
 
-  onNetworkUpdateRejected(requestId: string) {
-    this.unackedUpdates.delete(requestId);
-  }
+  onNetworkUpdateRejected(requestId: string) {}
 
   onUiTokenUpdate(tokens: Entity[]) {
     if (tokens !== this.lastUiTokens) {
-      this.sendNetworkUpdatesThrottled();
+      this.sendNetworkUpdatesThrottled(tokens);
     }
   }
 
-  private sendNetworkUpdates() {
+  private sendNetworkUpdates(uiTokens: Entity[]) {
     if (!this.apiClient.connected()) {
       this.unackedUpdates.clear();
       return;
@@ -71,7 +64,7 @@ export default class BoardSyncer {
 
     const updates = getNetworkUpdates({
       networkTokens: this.networkTokens,
-      uiTokens: this.store.getState().board.tokens,
+      uiTokens: uiTokens,
       unackedUpdates: Array.from(this.unackedUpdates.values()).flat(),
     });
 

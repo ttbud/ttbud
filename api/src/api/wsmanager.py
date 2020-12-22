@@ -112,12 +112,9 @@ class WebsocketManager:
     async def maintain_liveness(self) -> NoReturn:
         while True:
             logger.info('Refreshing liveness')
-            await self._rate_limiter.refresh_server_liveness(
-                map(
-                    lambda client: client.remote_address[0],
-                    self._clients,
-                )
-            )
+
+            ips = [get_client_ip(client) for client in self._clients if client.open]
+            await self._rate_limiter.refresh_server_liveness(iter(ips))
 
             # Offset refresh interval by a random amount to avoid all hitting
             # redis to refresh keys at the same time.

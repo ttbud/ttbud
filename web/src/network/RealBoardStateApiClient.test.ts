@@ -1,8 +1,9 @@
-import { BoardStateApiClient, EventType } from "./BoardStateApiClient";
 import WS from "jest-websocket-mock";
 import { ContentType, EntityType, Ping, Token } from "../types";
 import { UpdateType } from "./board-state-diff";
 import { ApiPingToken } from "./api-types";
+import { RealBoardStateApiClient } from "./RealBoardStateApiClient";
+import { EventType } from "./BoardStateApiClient";
 
 const API_CHARACTER = {
   type: "character",
@@ -53,13 +54,13 @@ const VALID_PING: Ping = {
 describe("BoardStateApiClient", () => {
   let eventHandler: jest.Mock;
   let api: WS;
-  let client: BoardStateApiClient;
+  let client: RealBoardStateApiClient;
 
   beforeEach(async () => {
     WS.clean();
 
     api = new WS("ws://ttbud.local/roomId", { jsonProtocol: true });
-    client = new BoardStateApiClient("ws://ttbud.local");
+    client = new RealBoardStateApiClient("ws://ttbud.local");
 
     client.connect("roomId");
     await api.connected;
@@ -70,7 +71,7 @@ describe("BoardStateApiClient", () => {
 
   it("notifies listeners of connections", async () => {
     api = new WS("ws://localhost/roomId", { jsonProtocol: true });
-    client = new BoardStateApiClient("ws://localhost");
+    client = new RealBoardStateApiClient("ws://localhost");
 
     eventHandler = jest.fn();
     client.setEventHandler(eventHandler);
@@ -86,7 +87,7 @@ describe("BoardStateApiClient", () => {
 
   it("disconnects after a connection timeout", async () => {
     api = new WS("ws://localhost/roomId", { jsonProtocol: true });
-    client = new BoardStateApiClient("ws://localhost");
+    client = new RealBoardStateApiClient("ws://localhost");
 
     eventHandler = jest.fn();
     client.setEventHandler(eventHandler);

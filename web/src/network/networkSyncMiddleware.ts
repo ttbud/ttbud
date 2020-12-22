@@ -1,8 +1,3 @@
-import {
-  BoardStateApiClient,
-  ConnectionError,
-  EventType,
-} from "./BoardStateApiClient";
 import { Dispatch, Middleware, MiddlewareAPI } from "@reduxjs/toolkit";
 import BoardSyncer from "./BoardSyncer";
 import {
@@ -12,6 +7,11 @@ import {
   disconnected,
 } from "../ui/connection-state/connection-state-slice";
 import { RootState } from "../store/rootReducer";
+import { replaceTokens } from "../ui/board/board-slice";
+import BoardStateApiClient, {
+  ConnectionError,
+  EventType,
+} from "./BoardStateApiClient";
 
 /**
  * Sync network state and ui state
@@ -20,7 +20,7 @@ export function networkSyncMiddleware(
   apiClient: BoardStateApiClient
 ): Middleware {
   return (store: MiddlewareAPI<Dispatch, RootState>) => {
-    const boardSyncer = new BoardSyncer(apiClient, store);
+    const boardSyncer = new BoardSyncer(apiClient);
     let retryTimeoutId: number | undefined = undefined;
 
     apiClient.setEventHandler((event) => {
@@ -40,7 +40,7 @@ export function networkSyncMiddleware(
               window.clearTimeout(retryTimeoutId);
             }
             retryTimeoutId = window.setTimeout(
-              apiClient.reconnect.bind(apiClient),
+              () => apiClient.reconnect(),
               waitTimeSecs * 1000
             );
           }
@@ -51,10 +51,19 @@ export function networkSyncMiddleware(
           store.dispatch(connecting());
           break;
         case EventType.InitialState:
-          boardSyncer.onNetworkTokenUpdate(event.tokens);
+          const initialTokens = boardSyncer.onNetworkTokenUpdate(
+            store.getState().board.tokens,
+            event.tokens
+          );
+          store.dispatch(replaceTokens(initialTokens));
           break;
         case EventType.TokenUpdate:
-          boardSyncer.onNetworkTokenUpdate(event.tokens, event.requestId);
+          const newTokens = boardSyncer.onNetworkTokenUpdate(
+            store.getState().board.tokens,
+            event.tokens,
+            event.requestId
+          );
+          store.dispatch(replaceTokens(newTokens));
           break;
         case EventType.Error:
           if (event.requestId) {

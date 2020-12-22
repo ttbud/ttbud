@@ -17,6 +17,17 @@ describe("Character", () => {
     expect(getByText("LP")).toBeVisible();
   });
 
+  it("Shows a question mark when the icon id is invalid", () => {
+    const { getByText } = render(
+      <Character
+        isDragging={false}
+        contents={{ type: ContentType.Icon, iconId: "invalid-id.svg" }}
+      />
+    );
+
+    expect(getByText("?")).toBeVisible();
+  });
+
   it("Provides an appropriate aria label for icon characters", () => {
     const { getByLabelText } = render(
       <Character
