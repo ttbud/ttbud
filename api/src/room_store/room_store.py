@@ -7,26 +7,15 @@ from typing import (
     List,
     AsyncIterator,
     Union,
-    Callable,
-    TypeVar,
     Awaitable,
-    Coroutine,
-    Any,
+    Iterable,
 )
 
+from src.api.api_structures import Request, Update
 from src.game_components import Token, Ping
 
 MAX_LOCK_RETRIES = 3
 LOCK_EXPIRATION_SECS = 10
-
-EntityList = List[Union[Ping, Token]]
-
-
-class MutationResult(Protocol):
-    entities: EntityList
-
-
-MutationResultType = TypeVar('MutationResultType', bound=MutationResult)
 
 
 class CorruptedRoomException(Exception):
@@ -44,34 +33,18 @@ class RoomChangeEvent:
 
 
 class RoomStore(Protocol):
-    def changes(self, room_id: str) -> Awaitable[AsyncIterator[RoomChangeEvent]]:
+    def changes(self, room_id: str) -> Awaitable[AsyncIterator[Request]]:
         ...
 
     def get_all_room_ids(self) -> AsyncIterator[str]:
         ...
 
-    async def read(self, room_id: str) -> Optional[EntityList]:
+    async def read(self, room_id: str) -> Iterable[Update]:
         ...
 
-    async def apply_mutation(
-        self,
-        room_id: str,
-        request_id: Optional[str],
-        mutate: Callable[
-            [Optional[EntityList]],
-            Union[
-                Awaitable[MutationResultType], Coroutine[Any, Any, MutationResultType]
-            ],
-        ],
-    ) -> MutationResultType:
+    async def add_update(self, room_id: str, request: Request) -> None:
         """
-        Make a change to the specified room
 
-        :param room_id: The unique room id
-        :param request_id: The request id associated with this change
-        :param mutate: A function that takes the current state of the room and
-        returns the MutationResult. *Note* This function must be pure, as
-        it may be called multiple times in the event of a transaction conflict
-        :return: The result returned by the mutate function
+        :rtype: object
         """
         ...
