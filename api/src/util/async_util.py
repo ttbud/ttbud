@@ -23,6 +23,7 @@ async def items_until(it: asyncio.Queue[_T], stop: asyncio.Future) -> AsyncItera
             [q_task, stop], return_when=asyncio.FIRST_COMPLETED
         )
         if stop in done:
+            q_task.cancel()
             return
         else:
             # MyPy does not know that the only task in done is the result of the queue
