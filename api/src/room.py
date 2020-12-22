@@ -1,7 +1,8 @@
 import logging
 from copy import deepcopy
-from typing import Dict, Union, List, Tuple
+from typing import Dict, Union, List, Tuple, Iterable
 
+from src.api.api_structures import Action
 from src.colors import colors
 from src.game_components import Ping, Token, content_id
 
@@ -43,7 +44,7 @@ class Room:
         self.icon_to_token_ids: Dict[str, List[str]] = {}
 
     def _remove_positions(self, token_id: str) -> None:
-        positions = self.id_to_positions[token_id]
+        positions = self.id_to_positions.get(token_id, [])
         for pos in positions:
             self.positions_to_ids.pop(pos, None)
 
@@ -98,8 +99,11 @@ class Room:
         self.game_state.pop(ping_id, None)
 
 
-def create_room(room_id: str, entities: List[Union[Token, Ping]]) -> Room:
+def create_room(room_id: str, updates: Iterable[Action]) -> Room:
     room = Room(room_id)
-    for entity in entities:
-        room.create_or_update_token(entity)
+    for update in updates:
+        if update.action == 'create' or update.action == 'update':
+            room.create_or_update_token(update.data)
+        elif update.action == 'delete':
+            room.delete_token(update.data)
     return room

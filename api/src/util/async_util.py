@@ -15,6 +15,20 @@ async def anext(iterator: AsyncIterator[_T]) -> _T:
     return await iterator.__anext__()
 
 
+async def items_until(it: asyncio.Queue[_T], stop: asyncio.Future) -> AsyncIterator[_T]:
+    """Yield items from the queue until the stop future is completed"""
+    while True:
+        q_task = asyncio.create_task(it.get())
+        done, pending = await asyncio.wait(
+            [q_task, stop], return_when=asyncio.FIRST_COMPLETED
+        )
+        if stop in done:
+            return
+        else:
+            # MyPy does not know that the only task in done is the result of the queue
+            yield next(iter(done)).result()  # type: ignore
+
+
 async def race(*futures: Future[_T]) -> _T:
     """Return the result of the first task that completes"""
     if not futures:
