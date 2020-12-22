@@ -22,7 +22,6 @@ services:
       SSL_CRT_FILE: /certs/ttbud.local.pem
       SSL_KEY_FILE: /certs/ttbud.local-key.pem
       PORT: ${API_WEBSOCKET_PORT}
-      ROOM_STORE_DIR: /var/ttbud/rooms
       USE_REDIS:
       # We don't set up ssl certs for redis local dev
       REDIS_SSL_VALIDATION: none
