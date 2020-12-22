@@ -70,17 +70,20 @@ class GameStateServer:
         self._room_context_by_id: Dict[str, RoomContext] = {}
 
     async def _listen_for_changes(
-        self, room_id: str, session_id: str, queues: List[asyncio.Queue[Response]]
+        self,
+        room_id: str,
+        session_id: str,
+        queues: List[asyncio.Queue[Response]],
+        updates: AsyncIterator[Request],
     ) -> None:
-        requests = await self.room_store.changes(room_id)
         async for response in self._room_changes_to_messages(
-            room_id, session_id, requests
+            room_id, session_id, updates
         ):
             for q in queues:
                 await q.put(response)
 
     async def _process_requests(
-        self, room_id: str, requests: AsyncIterator, stop_fut: asyncio.Future
+        self, room_id: str, requests: AsyncIterator[Request], stop_fut: asyncio.Future
     ) -> None:
         try:
             async for request in requests:
@@ -107,10 +110,13 @@ class GameStateServer:
                     if not self._room_context_by_id.get(room_id):
                         await self._acquire_room_slot(room_id, client_ip)
                         queues: List[asyncio.Queue[Response]] = []
+                        updates = await self.room_store.changes(room_id)
                         change_listener = ChangeListener(
                             queues,
                             asyncio.create_task(
-                                self._listen_for_changes(room_id, session_id, queues)
+                                self._listen_for_changes(
+                                    room_id, session_id, queues, updates
+                                )
                             ),
                         )
                         room = create_room(room_id, await self.room_store.read(room_id))
