@@ -12,7 +12,7 @@ from src.api.api_structures import (
     StateResponse,
     ErrorResponse,
     ConnectionResponse,
-    Update,
+    Action,
 )
 from src.colors import colors
 from src.game_components import Token, IconTokenContents
@@ -278,7 +278,7 @@ async def test_ping(gss: GameStateServer) -> None:
 
 
 async def test_more_tokens_than_colors(gss: GameStateServer) -> None:
-    updates: List[Update] = []
+    updates: List[Action] = []
     for i in range(len(colors) + 1):
         updates.append(
             CreateOrUpdateAction(

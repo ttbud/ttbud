@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict
 from typing import (
     List,
     AsyncGenerator,
@@ -15,7 +14,7 @@ from typing import (
 from aioredis import Redis, Channel
 from dacite import from_dict
 
-from src.api.api_structures import Request, Update, CreateOrUpdateAction, DeleteAction
+from src.api.api_structures import Request, Action, CreateOrUpdateAction, DeleteAction
 from src.room_store.room_store import (
     RoomStore,
 )
@@ -42,12 +41,6 @@ def _room_key(room_id: str) -> str:
 
 def _channel_key(room_id: str) -> str:
     return f'channel:{room_id}'
-
-
-@dataclass
-class SubscriptionResult:
-    changes: AsyncIterator[Request]
-    subscribe_started: asyncio.Future[None] = field(default_factory=asyncio.Future)
 
 
 class RedisRoomStore(RoomStore):
@@ -80,11 +73,11 @@ class RedisRoomStore(RoomStore):
             for key in keys:
                 yield str(key[len('room:') :], 'utf-8')
 
-    async def read(self, room_id: str) -> Iterable[Update]:
+    async def read(self, room_id: str) -> Iterable[Action]:
         data = await self._redis.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
         return _to_updates(data)
 
-    async def add_update(self, room_id: str, request: Request) -> None:
+    async def add_request(self, room_id: str, request: Request) -> None:
         await self._redis.evalsha(
             self._append_to_room_sha,
             keys=[_room_key(room_id), _channel_key(room_id)],
@@ -100,7 +93,7 @@ async def create_redis_room_store(redis: Redis) -> RedisRoomStore:
     return RedisRoomStore(redis, append_to_room)
 
 
-def _to_updates(raw_updates: List[str]) -> Iterator[Update]:
+def _to_updates(raw_updates: List[str]) -> Iterator[Action]:
     for raw_update_group in raw_updates:
         update_group = json.loads(raw_update_group)
         for update in update_group:

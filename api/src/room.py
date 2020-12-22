@@ -2,7 +2,7 @@ import logging
 from copy import deepcopy
 from typing import Dict, Union, List, Tuple, Iterable
 
-from src.api.api_structures import Update
+from src.api.api_structures import Action
 from src.colors import colors
 from src.game_components import Ping, Token, content_id
 
@@ -99,7 +99,7 @@ class Room:
         self.game_state.pop(ping_id, None)
 
 
-def create_room(room_id: str, updates: Iterable[Update]) -> Room:
+def create_room(room_id: str, updates: Iterable[Action]) -> Room:
     room = Room(room_id)
     for update in updates:
         if update.action == 'create' or update.action == 'update':
