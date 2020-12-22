@@ -13,7 +13,7 @@ from typing import (
     Iterable,
 )
 
-from src.api.api_structures import Request, Update
+from src.api.api_structures import Request, Action
 from src.room_store.room_store import RoomStore
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MemoryRoomStorage:
-    rooms_by_id: DefaultDict[str, List[Update]] = field(
+    rooms_by_id: DefaultDict[str, List[Action]] = field(
         default_factory=lambda: defaultdict(list)
     )
 
@@ -46,18 +46,18 @@ class MemoryRoomStore(RoomStore):
         finally:
             self._changes[room_id].remove(queue)
 
-    async def add_update(self, room_id: str, request: Request) -> None:
+    async def add_request(self, room_id: str, request: Request) -> None:
         await self._write(
             room_id, filter(lambda x: x.action != 'ping', request.updates)
         )
         await self._publish(room_id, request)
 
-    async def read(self, room_id: str) -> Iterable[Update]:
+    async def read(self, room_id: str) -> Iterable[Action]:
         # Yield the event loop at least once so reading is truly async
         await asyncio.sleep(0)
         return self.storage.rooms_by_id.get(room_id, [])
 
-    async def _write(self, room_id: str, updates: Iterable[Update]) -> None:
+    async def _write(self, room_id: str, updates: Iterable[Action]) -> None:
         # Yield the event loop at least once so writing is truly async
         await asyncio.sleep(0)
         for update in updates:

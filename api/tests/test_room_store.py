@@ -5,7 +5,7 @@ import fakeredis.aioredis
 import pytest
 from aioredis import Redis
 
-from src.api.api_structures import Request, Update
+from src.api.api_structures import Request, Action
 from src.room_store.memory_room_store import (
     MemoryRoomStore,
     MemoryRoomStorage,
@@ -83,15 +83,15 @@ def any_room_store(func: Callable) -> Callable:
 
 @any_room_store
 async def test_mutate_and_read(room_store: RoomStore) -> None:
-    updates: List[Update] = [VALID_ACTION, PING_ACTION]
-    await room_store.add_update(TEST_ROOM_ID, Request(TEST_REQUEST_ID, updates))
+    updates: List[Action] = [VALID_ACTION, PING_ACTION]
+    await room_store.add_request(TEST_ROOM_ID, Request(TEST_REQUEST_ID, updates))
     assert list(await room_store.read(TEST_ROOM_ID)) == [VALID_ACTION]
 
 
 @any_room_store
 async def test_list_all_keys(room_store: RoomStore) -> None:
-    await room_store.add_update('room-id-1', VALID_REQUEST)
-    await room_store.add_update('room-id-2', VALID_REQUEST)
+    await room_store.add_request('room-id-1', VALID_REQUEST)
+    await room_store.add_request('room-id-2', VALID_REQUEST)
 
     assert (await async_collect(room_store.get_all_room_ids())) == [
         'room-id-1',
@@ -104,6 +104,6 @@ async def test_change_notifications(room_store: RoomStore) -> None:
     changes = await room_store.changes(TEST_ROOM_ID)
     sub_task = asyncio.create_task(async_collect(changes, count=1))
 
-    await room_store.add_update(TEST_ROOM_ID, VALID_REQUEST)
+    await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
     reply = await sub_task
     assert reply == [VALID_REQUEST]

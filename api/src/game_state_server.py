@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections import defaultdict
 from dataclasses import dataclass
 from typing import (
     AsyncIterator,
@@ -11,7 +10,6 @@ from typing import (
     List,
     AsyncIterable,
     Dict,
-    DefaultDict,
 )
 from uuid import uuid4
 
@@ -70,11 +68,10 @@ class GameStateServer:
         self.apm_transaction = apm_transaction
         self._rate_limiter = rate_limiter
         self._room_context_by_id: Dict[str, RoomContext] = {}
-        self._room_occupancy: DefaultDict[str, int] = defaultdict(lambda: 0)
 
-    async def _listen_for_changes(self, room_id: str, session_id: str) -> None:
-        listener = self._room_context_by_id[room_id].change_listener
-        queues = listener.output_queues
+    async def _listen_for_changes(
+        self, room_id: str, session_id: str, queues: List[asyncio.Queue[Response]]
+    ) -> None:
         requests = await self.room_store.changes(room_id)
         async for response in self._room_changes_to_messages(
             room_id, session_id, requests
@@ -87,7 +84,7 @@ class GameStateServer:
     ) -> None:
         try:
             async for request in requests:
-                await self.room_store.add_update(room_id, request)
+                await self.room_store.add_request(room_id, request)
         finally:
             stop_fut.set_result(None)
 
@@ -109,26 +106,24 @@ class GameStateServer:
                 with self.apm_transaction('connect'):
                     if not self._room_context_by_id.get(room_id):
                         await self._acquire_room_slot(room_id, client_ip)
-                        room = create_room(room_id, await self.room_store.read(room_id))
+                        queues: List[asyncio.Queue[Response]] = []
                         change_listener = ChangeListener(
-                            [],
+                            queues,
                             asyncio.create_task(
-                                self._listen_for_changes(room_id, session_id)
+                                self._listen_for_changes(room_id, session_id, queues)
                             ),
                         )
+                        room = create_room(room_id, await self.room_store.read(room_id))
                         self._room_context_by_id[room_id] = RoomContext(
                             room, change_listener
                         )
-                    self._room_context_by_id[
-                        room_id
-                    ].change_listener.output_queues.append(listener_q)
+                    room_context = self._room_context_by_id[room_id]
+                    room_context.change_listener.output_queues.append(listener_q)
 
-                    room_state = list(
-                        self._room_context_by_id[room_id].room.game_state.values()
+                    yield ConnectionResponse(
+                        list(room_context.room.game_state.values())
                     )
-                    yield ConnectionResponse(room_state)
 
-                self._room_occupancy[room_id] += 1
                 try:
                     stop_fut: asyncio.Future = asyncio.Future()
                     request_task = asyncio.create_task(
@@ -138,10 +133,12 @@ class GameStateServer:
                         yield msg
                 finally:
                     request_task.cancel()
-                    self._room_occupancy[room_id] -= 1
-                    if self._room_occupancy[room_id] <= 0:
-                        del self._room_occupancy[room_id]
-                        self._room_context_by_id[room_id].change_listener.task.cancel()
+                    room_context = self._room_context_by_id[room_id]
+                    queues = room_context.change_listener.output_queues
+                    queues.remove(listener_q)
+                    if not queues:
+                        room_context.change_listener.task.cancel()
+                        del self._room_context_by_id[room_id]
 
     async def _room_changes_to_messages(
         self,
@@ -202,7 +199,7 @@ class GameStateServer:
     async def _expire_ping(self, room_id: str, request_id: str, ping_id: str) -> None:
         await asyncio.sleep(PING_LENGTH_SECS)
         delete_ping_action = DeleteAction('delete', ping_id)
-        await self.room_store.add_update(
+        await self.room_store.add_request(
             room_id, Request(request_id, [delete_ping_action])
         )
 

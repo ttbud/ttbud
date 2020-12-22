@@ -16,6 +16,7 @@ async def anext(iterator: AsyncIterator[_T]) -> _T:
 
 
 async def items_until(it: asyncio.Queue[_T], stop: asyncio.Future) -> AsyncIterator[_T]:
+    """Yield items from the queue until the stop future is completed"""
     while True:
         q_task = asyncio.create_task(it.get())
         done, pending = await asyncio.wait(

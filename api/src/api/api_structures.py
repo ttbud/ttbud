@@ -46,10 +46,10 @@ class PingAction:
     data: Ping
 
 
-Update = Union[CreateOrUpdateAction, DeleteAction, PingAction]
+Action = Union[CreateOrUpdateAction, DeleteAction, PingAction]
 
 
 @dataclass
 class Request:
     request_id: str
-    updates: List[Update]
+    updates: List[Action]

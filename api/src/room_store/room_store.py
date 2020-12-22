@@ -11,7 +11,7 @@ from typing import (
     Iterable,
 )
 
-from src.api.api_structures import Request, Update
+from src.api.api_structures import Request, Action
 from src.game_components import Token, Ping
 
 MAX_LOCK_RETRIES = 3
@@ -39,10 +39,10 @@ class RoomStore(Protocol):
     def get_all_room_ids(self) -> AsyncIterator[str]:
         ...
 
-    async def read(self, room_id: str) -> Iterable[Update]:
+    async def read(self, room_id: str) -> Iterable[Action]:
         ...
 
-    async def add_update(self, room_id: str, request: Request) -> None:
+    async def add_request(self, room_id: str, request: Request) -> None:
         """
 
         :rtype: object
