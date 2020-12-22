@@ -7,7 +7,7 @@ from src.game_components import Ping, Token
 @dataclass
 class ConnectionResponse:
     data: Iterable[Union[Ping, Token]]
-    type: Literal['connection'] = field(init=False, default='connection')
+    type: Literal['connected'] = field(init=False, default='connected')
 
 
 @dataclass
