@@ -23,7 +23,6 @@ from src.api.ws_close_codes import (
 from src.game_state_server import (
     InvalidConnectionException,
     GameStateServer,
-    DecoratedRequest,
 )
 from src.rate_limit.rate_limit import (
     RateLimiter,
@@ -65,7 +64,7 @@ def get_client_ip(client: websockets.WebSocketServerProtocol) -> str:
 
 async def _decorated_requests(
     client: websockets.WebSocketServerProtocol,
-) -> AsyncIterator[DecoratedRequest]:
+) -> AsyncIterator[Request]:
     async for raw_message in client:
         try:
             message = json.loads(raw_message)
@@ -78,7 +77,7 @@ async def _decorated_requests(
             )
             raise InvalidRequestException()
 
-        yield DecoratedRequest(
+        yield Request(
             updates=request.updates,
             request_id=request.request_id,
         )
