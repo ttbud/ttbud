@@ -15,7 +15,7 @@ from src.api.api_structures import (
     Action,
 )
 from src.colors import colors
-from src.game_components import Token, IconTokenContents
+from src.game_components import Token, IconTokenContents, Ping
 from src.game_state_server import GameStateServer
 from src.rate_limit.memory_rate_limit import MemoryRateLimiterStorage, MemoryRateLimiter
 from src.rate_limit.rate_limit import RateLimiter
@@ -273,6 +273,31 @@ async def test_ping(gss: GameStateServer) -> None:
     assert responses == [
         ConnectionResponse([]),
         StateResponse([VALID_PING], 'ping-request-id'),
+        StateResponse([], 'ping-request-id'),
+    ]
+
+
+async def test_multiple_pings(gss: GameStateServer) -> None:
+    ping1 = Ping('ping-id-1', 'ping', 0, 0)
+    ping2 = Ping('ping-id-2', 'ping', 0, 0)
+    ping3 = Ping('ping-id-3', 'ping', 0, 0)
+    responses = await collect_responses(
+        gss,
+        requests=[
+            Request(
+                'ping-request-id',
+                [
+                    PingAction(action='ping', data=ping1),
+                    PingAction(action='ping', data=ping2),
+                    PingAction(action='ping', data=ping3),
+                ],
+            )
+        ],
+        response_count=3,
+    )
+    assert responses == [
+        ConnectionResponse([]),
+        StateResponse([ping1, ping2, ping3], 'ping-request-id'),
         StateResponse([], 'ping-request-id'),
     ]
 

@@ -22,6 +22,7 @@ from src.api.api_structures import (
     ErrorResponse,
     StateResponse,
     ConnectionResponse,
+    Action,
 )
 from src.api.ws_close_codes import ERR_TOO_MANY_ROOMS_CREATED, ERR_INVALID_ROOM
 from src.util.assert_never import assert_never
@@ -154,9 +155,6 @@ class GameStateServer:
     ) -> AsyncIterator[Response]:
         async for request in room_changes:
             if request.request_id:
-                # Just wrap the the initial response behind a transaction, otherwise
-                # each request with a ping will always take three seconds because
-                # we just sleep before sending the final message
                 with self.apm_transaction('update'):
                     room_context = self._room_context_by_id.get(room_id)
                     if not room_context:
@@ -166,6 +164,7 @@ class GameStateServer:
                         )
                     room = room_context.room
 
+                    pings_created = []
                     for update in request.updates:
                         if update.action == 'create' or update.action == 'update':
                             token = update.data
@@ -191,23 +190,27 @@ class GameStateServer:
                                 )
                         elif update.action == 'ping':
                             room.create_ping(update.data)
-                            asyncio.create_task(
-                                self._expire_ping(
-                                    room_id, request.request_id, update.data.id
-                                )
-                            )
+                            pings_created.append(update.data.id)
                         else:
                             assert_never(update)
+                    if pings_created:
+                        asyncio.create_task(
+                            self._expire_pings(
+                                room_id, request.request_id, pings_created
+                            )
+                        )
                     yield StateResponse(
                         list(room.game_state.values()), request.request_id
                     )
 
-    async def _expire_ping(self, room_id: str, request_id: str, ping_id: str) -> None:
+    async def _expire_pings(
+        self, room_id: str, request_id: str, ping_ids: List[str]
+    ) -> None:
         await asyncio.sleep(PING_LENGTH_SECS)
-        delete_ping_action = DeleteAction('delete', ping_id)
-        await self.room_store.add_request(
-            room_id, Request(request_id, [delete_ping_action])
-        )
+        delete_actions: List[Action] = []
+        for ping_id in ping_ids:
+            delete_actions.append(DeleteAction('delete', ping_id))
+        await self.room_store.add_request(room_id, Request(request_id, delete_actions))
 
     async def _acquire_room_slot(self, room_id: str, client_ip: str) -> None:
         try:
