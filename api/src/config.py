@@ -47,6 +47,7 @@ class Config:
     log_config = {
         'version': 1,
         'disable_existing_loggers': False,
+        'root': {'level': 'INFO', 'handlers': ['stdout']},
         'formatters': {
             'json': {'()': 'src.util.detailed_formatter.DetailedFormatter'},
             'simple': {'format': '%(levelname)s %(message)s'},
@@ -58,7 +59,19 @@ class Config:
                 'formatter': 'json' if json_logs else 'simple',
             }
         },
-        'loggers': {'': {'handlers': ['stdout'], 'level': 'INFO'}},
+        'loggers': {
+            '': {'handlers': ['stdout'], 'level': 'INFO'},
+            'gunicorn.error': {
+                'level': 'INFO',
+                'handlers': ['stdout'],
+                'qualname': 'gunicorn.access',
+            },
+            'gunicorn.access': {
+                'level': 'INFO',
+                'handlers': ['stdout'],
+                'qualname': 'gunicorn.access',
+            },
+        },
     }
 
 

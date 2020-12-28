@@ -11,5 +11,4 @@ RUN if [ ${DEV} = "true" ]; then poetry install; else poetry install --no-dev; f
 ADD . .
 EXPOSE 5000
 
-#TODO: (#27) Serve this with a real production-grade server
 CMD ["python", "main.py"]

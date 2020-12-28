@@ -4,8 +4,7 @@ import json
 import logging
 import random
 from dataclasses import asdict
-from ssl import SSLContext
-from typing import List, Tuple, Dict, Any, NoReturn, Optional, AsyncIterator
+from typing import List, Tuple, Dict, Any, NoReturn, AsyncIterator
 from uuid import UUID
 
 import dacite
@@ -30,7 +29,7 @@ from src.rate_limit.rate_limit import (
     TooManyConnectionsException,
     RoomFullException,
 )
-from src.util.async_util import race
+from src.ws.ws_client import WebsocketClient
 
 logger = logging.getLogger(__name__)
 
@@ -62,10 +61,8 @@ def get_client_ip(client: websockets.WebSocketServerProtocol) -> str:
         return str(ipaddress.ip_address(ip))
 
 
-async def _decorated_requests(
-    client: websockets.WebSocketServerProtocol,
-) -> AsyncIterator[Request]:
-    async for raw_message in client:
+async def _requests(client: WebsocketClient) -> AsyncIterator[Request]:
+    async for raw_message in client.requests():
         try:
             message = json.loads(raw_message)
             request = dacite.from_dict(Request, message)
@@ -90,30 +87,13 @@ class WebsocketManager:
         self._port = port
         self._gss = gss
         self._rate_limiter = rate_limiter
-        self._clients: List[websockets.WebSocketServerProtocol] = []
-
-    async def listen(
-        self, stop: asyncio.Future, ssl: Optional[SSLContext] = None
-    ) -> None:
-        try:
-            await websockets.serve(
-                self._connection_handler, '0.0.0.0', self._port, ssl=ssl
-            )
-            liveness_task = asyncio.create_task(
-                self.maintain_liveness(), name='maintain_liveness'
-            )
-
-            await race(liveness_task, stop)
-
-        except OSError:
-            logger.exception('Failed to start websocket server', exc_info=True)
-            raise
+        self._clients: List[WebsocketClient] = []
 
     async def maintain_liveness(self) -> NoReturn:
         while True:
             logger.info('Refreshing liveness')
 
-            ips = [get_client_ip(client) for client in self._clients if client.open]
+            ips = [client.ip() for client in self._clients]
             await self._rate_limiter.refresh_server_liveness(iter(ips))
 
             # Offset refresh interval by a random amount to avoid all hitting
@@ -128,27 +108,21 @@ class WebsocketManager:
                 (SERVER_LIVENESS_EXPIRATION_SECONDS / 3) + refresh_offset
             )
 
-    async def _connection_handler(
-        self, client: websockets.WebSocketServerProtocol, path: str
-    ) -> None:
-        room_id = path.lstrip('/')
+    async def connection_handler(self, client: WebsocketClient) -> None:
+        room_id = client.path().lstrip('/')
         if not is_valid_uuid(room_id):
             logger.info(f'Invalid room UUID: {room_id}')
-            await client.close(
-                code=ERR_INVALID_UUID, reason=f'Invalid room UUID: {room_id}'
-            )
+            await client.close(code=ERR_INVALID_UUID)
             return
+
+        await client.accept()
 
         self._clients.append(client)
 
-        client_ip = get_client_ip(client)
+        client_ip = client.ip()
         try:
-            logger.info(
-                f'Connected to {client_ip}',
-                extra={'client_ip': client_ip, 'room_id': room_id},
-            )
             async for response in self._gss.handle_connection(
-                room_id, client_ip, _decorated_requests(client)
+                room_id, client_ip, _requests(client)
             ):
                 await client.send(
                     json.dumps(asdict(response, dict_factory=ignore_none))
@@ -158,23 +132,25 @@ class WebsocketManager:
                 f'Closing connection to {client_ip}, invalid request received',
                 extra={'client_ip': client_ip, 'room_id': room_id},
             )
-            await client.close(ERR_INVALID_REQUEST, reason='Invalid request')
+            await client.close(ERR_INVALID_REQUEST)
         except TooManyConnectionsException:
             logger.info(
                 f'Rejecting connection to {client_ip}, too many connections for user',
                 extra={'client_ip': client_ip, 'room_id': room_id},
             )
-            await client.close(
-                ERR_TOO_MANY_CONNECTIONS, reason='Too many active connections'
-            )
+            await client.close(ERR_TOO_MANY_CONNECTIONS)
         except RoomFullException:
             logger.info(
                 f'Rejecting connection to {client_ip}, room is full',
                 extra={'client_ip': client_ip, 'room_id': room_id},
             )
-            await client.close(ERR_ROOM_FULL, reason=f'The room {room_id} is full')
+            await client.close(ERR_ROOM_FULL)
         except InvalidConnectionException as e:
-            await client.close(e.close_code, e.reason)
+            logger.info(
+                f'Rejecting connection to {client_ip}, {e.reason}',
+                extra={'client_ip': client_ip, 'room_id': room_id},
+            )
+            await client.close(e.close_code)
         except ConnectionClosedError:
             # Disconnecting is a perfectly normal thing to happen, so just
             # continue cleaning up connection state
