@@ -7,11 +7,7 @@ services:
       args:
         DEV: "true"
     working_dir: /app/
-    command: python -u -m watchgod main.main
-    # watchgod will drop all stdout without a tty
-    tty: true
-    # watchgod ignores SIGTERM :(
-    stop_signal: SIGINT
+    command: python main.py
     environment:
       ENVIRONMENT:
       JSON_LOGS:
