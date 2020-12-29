@@ -1,7 +1,12 @@
+import asyncio
 import logging
+import sys
+from asyncio import Future
+from typing import NoReturn
 from uuid import uuid4
 
 import timber
+import uvicorn
 from starlette.applications import Starlette
 from starlette.routing import WebSocketRoute
 
@@ -9,11 +14,10 @@ from src import apm
 from src.api.wsmanager import WebsocketManager
 from src.config import config, Environment
 from src.game_state_server import GameStateServer
-from src.gunicorn_config import gunicorn_config
 from src.rate_limit.redis_rate_limit import create_redis_rate_limiter
 from src.redis import create_redis_pool
 from src.room_store.redis_room_store import create_redis_room_store
-from src.util.lazy_app import LazyApp
+from src.util.lazy_asgi import LazyASGI
 from src.ws.starlette_ws_client import StarletteWebsocketClient
 
 logger = logging.getLogger(__name__)
@@ -30,6 +34,17 @@ async def make_app() -> Starlette:
 
     gss = GameStateServer(room_store, apm.transaction, rate_limiter)
     ws = WebsocketManager(config.websocket_port, gss, rate_limiter)
+
+    def liveness_failed(fut: Future) -> NoReturn:
+        logger.critical(
+            'Maintain liveness task failed, shutting down', exc_info=fut.exception()
+        )
+        sys.exit(1)
+
+    liveness_task = asyncio.create_task(
+        ws.maintain_liveness(), name='maintain_liveness'
+    )
+    liveness_task.add_done_callback(liveness_failed)
     routes = [
         WebSocketRoute(
             '/{room_id}',
@@ -50,5 +65,15 @@ async def make_app() -> Starlette:
     )
 
 
+app = LazyASGI(make_app)
+
 if __name__ == '__main__':
-    LazyApp(make_app, gunicorn_config).run()
+    uvicorn.run(
+        'main:app',
+        reload=True,
+        host='0.0.0.0',
+        port=config.websocket_port,
+        log_config=config.log_config,
+        ssl_keyfile=config.cert_config.key_file_path if config.cert_config else None,
+        ssl_certfile=config.cert_config.cert_file_path if config.cert_config else None,
+    )

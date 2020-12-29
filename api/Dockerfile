@@ -11,4 +11,4 @@ RUN if [ ${DEV} = "true" ]; then poetry install; else poetry install --no-dev; f
 ADD . .
 EXPOSE 5000
 
-CMD ["python", "main.py"]
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "main:app"]

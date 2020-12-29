@@ -3,7 +3,7 @@ from typing import cast, AsyncIterable, TypedDict, Tuple
 from starlette.websockets import WebSocket
 
 from src.util.ip import get_client_ip
-from ws_client import WebsocketClient
+from src.ws.ws_client import WebsocketClient
 
 
 class StarletteWebsocketClient(WebsocketClient):

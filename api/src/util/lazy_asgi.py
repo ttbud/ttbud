@@ -13,5 +13,4 @@ class LazyASGI:
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if not self._asgi:
             self._asgi = await self._make_asgi()
-
         await self._asgi(scope, receive, send)
