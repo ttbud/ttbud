@@ -1,5 +1,4 @@
 import asyncio
-import ipaddress
 import json
 import logging
 import random
@@ -8,7 +7,6 @@ from typing import List, Tuple, Dict, Any, NoReturn, AsyncIterator
 from uuid import UUID
 
 import dacite
-import websockets
 from dacite.exceptions import WrongTypeError, MissingValueError
 from websockets import ConnectionClosedError
 
@@ -48,17 +46,6 @@ def is_valid_uuid(uuid_string: str) -> bool:
     except ValueError:
         return False
     return val.hex == uuid_string.replace('-', '')
-
-
-def get_client_ip(client: websockets.WebSocketServerProtocol) -> str:
-    ip, _ = client.remote_address
-    xff = client.request_headers.get('X-FORWARDED-FOR', '')
-    last_xff_ip = xff.split(',').pop().strip()
-
-    try:
-        return str(ipaddress.ip_address(last_xff_ip))
-    except ValueError:
-        return str(ipaddress.ip_address(ip))
 
 
 async def _requests(client: WebsocketClient) -> AsyncIterator[Request]:
