@@ -32,7 +32,7 @@ async def make_app() -> Starlette:
     rate_limiter = await create_redis_rate_limiter(server_id, redis)
 
     gss = GameStateServer(room_store, apm.transaction, rate_limiter)
-    ws = WebsocketManager(config.websocket_port, gss, rate_limiter)
+    ws = WebsocketManager(gss, rate_limiter)
 
     def liveness_failed(fut: Future) -> NoReturn:
         logger.critical(
