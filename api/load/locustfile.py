@@ -17,7 +17,6 @@ from src.api.api_structures import (
     DeleteAction,
     Action,
 )
-from src.colors import colors
 from src.game_components import Ping, Token, IconTokenContents
 
 CONNECTION_TIMEOUT_SECONDS = 10
@@ -138,7 +137,6 @@ class TTBudUser(User):
                             end_x=start_x + 1,
                             end_y=start_y + 1,
                             end_z=start_z + 1,
-                            color_rgb=colors[0],
                         ),
                     )
                 ],
