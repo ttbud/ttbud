@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from asyncio import Future
-from typing import TypeVar, AsyncIterable, AsyncIterator, Optional, List
+from typing import TypeVar, AsyncIterable, AsyncIterator, Optional, List, cast
 
 _T = TypeVar('_T')
 
@@ -15,19 +15,35 @@ async def anext(iterator: AsyncIterator[_T]) -> _T:
     return await iterator.__anext__()
 
 
-async def items_until(it: asyncio.Queue[_T], stop: asyncio.Future) -> AsyncIterator[_T]:
-    """Yield items from the queue until the stop future is completed"""
+def aiter(iterable: AsyncIterable[_T]) -> AsyncIterator[_T]:
+    """Return the iterator object for the given iterable"""
+    return iterable.__aiter__()
+
+
+async def all_items(q: asyncio.Queue[_T]) -> AsyncIterator[_T]:
+    """Create an indefinite iterator that contains all items the queue contains"""
     while True:
-        q_task = asyncio.create_task(it.get())
+        yield await q.get()
+
+
+async def items_until(it: AsyncIterable[_T], stop: asyncio.Future) -> AsyncIterator[_T]:
+    """Yield items from the iterator until the stop future is completed"""
+    it = aiter(it)
+    while True:
+        next_item_task = asyncio.create_task(it.__anext__())
         done, pending = await asyncio.wait(
-            [q_task, stop], return_when=asyncio.FIRST_COMPLETED
+            [next_item_task, stop], return_when=asyncio.FIRST_COMPLETED
         )
+
         if stop in done:
-            q_task.cancel()
+            next_item_task.cancel()
+            # Allow stop to raise if it completed with an exception
+            stop.result()
             return
         else:
-            # MyPy does not know that the only task in done is the result of the queue
-            yield next(iter(done)).result()  # type: ignore
+            # MyPy does not know that the only task in done is the next item in the
+            # iterable
+            yield cast(_T, next(iter(done)).result())
 
 
 async def race(*futures: Future[_T]) -> _T:

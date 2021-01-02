@@ -8,7 +8,6 @@ from uuid import uuid4
 import timber
 import uvicorn
 from starlette.applications import Starlette
-from starlette.routing import WebSocketRoute
 
 from src import apm
 from src.api.wsmanager import WebsocketManager
@@ -17,8 +16,8 @@ from src.game_state_server import GameStateServer
 from src.rate_limit.redis_rate_limit import create_redis_rate_limiter
 from src.redis import create_redis_pool
 from src.room_store.redis_room_store import create_redis_room_store
+from src.routes import routes
 from src.util.lazy_asgi import LazyASGI
-from src.ws.starlette_ws_client import StarletteWebsocketClient
 
 logger = logging.getLogger(__name__)
 server_id = str(uuid4())
@@ -45,21 +44,13 @@ async def make_app() -> Starlette:
         ws.maintain_liveness(), name='maintain_liveness'
     )
     liveness_task.add_done_callback(liveness_failed)
-    routes = [
-        WebSocketRoute(
-            '/{room_id}',
-            lambda websocket: ws.connection_handler(
-                StarletteWebsocketClient(websocket)
-            ),
-        )
-    ]
 
     async def shutdown() -> None:
         redis.close()
         await redis.wait_closed()
 
     return Starlette(
-        routes=routes,
+        routes=routes(ws),
         on_shutdown=[shutdown],
         debug=config.environment == Environment.DEV,
     )

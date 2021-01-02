@@ -29,7 +29,7 @@ from src.util.assert_never import assert_never
 from .rate_limit.rate_limit import RateLimiter, TooManyRoomsCreatedException
 from .room import Room, create_room
 from .room_store.room_store import RoomStore
-from .util.async_util import items_until
+from .util.async_util import items_until, all_items
 
 logger = logging.getLogger(__name__)
 
@@ -84,13 +84,10 @@ class GameStateServer:
                 await q.put(response)
 
     async def _process_requests(
-        self, room_id: str, requests: AsyncIterator[Request], stop_fut: asyncio.Future
+        self, room_id: str, requests: AsyncIterator[Request]
     ) -> None:
-        try:
-            async for request in requests:
-                await self.room_store.add_request(room_id, request)
-        finally:
-            stop_fut.set_result(None)
+        async for request in requests:
+            await self.room_store.add_request(room_id, request)
 
     async def handle_connection(
         self, room_id: str, client_ip: str, requests: AsyncIterator[Request]
@@ -139,11 +136,10 @@ class GameStateServer:
                     )
 
                 try:
-                    stop_fut: asyncio.Future = asyncio.Future()
                     request_task = asyncio.create_task(
-                        self._process_requests(room_id, requests, stop_fut)
+                        self._process_requests(room_id, requests)
                     )
-                    async for msg in items_until(listener_q, stop_fut):
+                    async for msg in items_until(all_items(listener_q), request_task):
                         yield msg
                 finally:
                     request_task.cancel()

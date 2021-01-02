@@ -4,6 +4,10 @@ from typing import (
 )
 
 
+class InvalidWebsocketState(Exception):
+    pass
+
+
 class WebsocketClient(Protocol):
     async def send(self, msg: str) -> None:
         ...

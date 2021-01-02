@@ -32,7 +32,6 @@ from tests.static_fixtures import (
     VALID_ACTION,
     ANOTHER_VALID_ACTION,
     VALID_PING,
-    DELETE_VALID_TOKEN,
 )
 
 pytestmark = pytest.mark.asyncio
@@ -219,28 +218,6 @@ async def test_delete_non_existent_token(gss: GameStateServer) -> None:
 
     assert states(responses) == [StateResponse([], 'delete-request-id')]
     assert_matches(errors(responses), [{'request_id': 'delete-request-id'}])
-
-
-async def test_delete_after_reload(gss: GameStateServer) -> None:
-    responses = await collect_responses(
-        gss,
-        requests=[Request('create-request-id', [VALID_ACTION])],
-        response_count=2,
-    )
-    assert responses == [
-        ConnectionResponse([]),
-        StateResponse([VALID_TOKEN], 'create-request-id'),
-    ]
-
-    responses = await collect_responses(
-        gss,
-        requests=[Request('delete-request-id', [DELETE_VALID_TOKEN])],
-        response_count=2,
-    )
-    assert responses == [
-        ConnectionResponse([VALID_TOKEN]),
-        StateResponse([], 'delete-request-id'),
-    ]
 
 
 async def test_move_existing_token(gss: GameStateServer) -> None:
