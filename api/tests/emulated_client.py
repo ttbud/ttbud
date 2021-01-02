@@ -62,24 +62,24 @@ class RequiredWebsocketScope(TypedDict):
 
 class WebsocketScope(RequiredWebsocketScope, total=False):
     http_version: Literal['1.1', '2']
-    scheme: Optional[str]
+    scheme: str
     """URL scheme portion (likely "ws" or "wss"). Optional (but must not be empty);
     default is "ws". """
-    raw_path: Optional[bytes]
+    raw_path: bytes
     """The original HTTP path component unmodified from the bytes that were
     received by the web server. Some web server implementations may be unable to
     provide this. Optional; if missing defaults to None."""
-    query_string: Optional[bytes]
+    query_string: bytes
     """URL portion after the ?. Optional; if missing default is empty string."""
-    root_path: Optional[bytes]
+    root_path: bytes
     """The root path this application is mounted at; same as SCRIPT_NAME in
     WSGI. Optional; if missing defaults to empty string."""
-    server: Optional[Tuple[str, Optional[int]]]
+    server: Tuple[str, Optional[int]]
     """Either a two-item iterable of [host, port], where host is the listening
     address for this server, and port is the integer listening port, or [path,
     None] where path is that of the unix socket. Optional; if missing defaults to
     None."""
-    subprotocols: Optional[Iterable[str]]
+    subprotocols: Iterable[str]
     """Subprotocols the client advertised. Optional; if missing defaults to empty
     list."""
 
@@ -98,11 +98,14 @@ class Connect(TypedDict):
     type: Literal['websocket.connect']
 
 
-class Accept(TypedDict):
+class AcceptRequired(TypedDict):
+    type: Literal['websocket.accept']
+
+
+class Accept(AcceptRequired, total=False):
     """Sent by the application when it wishes to accept an incoming connection."""
 
-    type: Literal['websocket.accept']
-    subprotocol: Optional[str]
+    subprotocol: str
     """The subprotocol the server wishes to accept. Optional; if missing defaults to
     None. """
     headers: Iterable[Tuple[bytes, bytes]]
@@ -154,7 +157,7 @@ class Disconnect(TypedDict):
     """The WebSocket close code, as per the WebSocket spec."""
 
 
-class Close(TypedDict):
+class Close(TypedDict, total=False):
     """Sent by the application to tell the server to close the connection.
 
     If this is sent before the socket is accepted, the server must close the
@@ -167,7 +170,7 @@ class Close(TypedDict):
     """
 
     type: Literal['websocket.disconnect']
-    code: Optional[int]
+    code: int
     """The WebSocket close code, as per the WebSocket spec. Optional; if missing
     defaults to 1000. """
 
