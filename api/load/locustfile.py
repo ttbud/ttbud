@@ -6,15 +6,19 @@ import uuid
 from dataclasses import asdict
 from typing import List, Optional
 
+from locust import User, task, between
 from locust.env import Environment
 from websocket import create_connection, WebSocket
-from src.api.api_structures import Request, CreateOrUpdateAction, PingAction, DeleteAction
 
-from locust import User, task, between
-
+from src.api.api_structures import (
+    Request,
+    CreateOrUpdateAction,
+    PingAction,
+    DeleteAction,
+    Action,
+)
 from src.colors import colors
 from src.game_components import Ping, Token, IconTokenContents
-
 
 CONNECTION_TIMEOUT_SECONDS = 10
 
@@ -29,7 +33,7 @@ class TTBudClient:
         self._locust = locust_env
         self._ws: Optional[WebSocket] = None
 
-    def connect(self):
+    def connect(self) -> None:
         start_time = time.time()
         try:
             self._ws = create_connection(
@@ -56,12 +60,14 @@ class TTBudClient:
                 response_length=0,
             )
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         if self._ws:
             self._ws.close()
 
     @task
-    def send(self, request: Request):
+    def send(self, request: Request) -> None:
+        if not self._ws:
+            raise RuntimeError('ws not set up, connect was not called before send')
         start_time = time.time()
         try:
             self._ws.send(json.dumps(asdict(request)))
@@ -85,7 +91,6 @@ class TTBudClient:
                 response_time=milliseconds_since(start_time),
                 response_length=0,
             )
-            return resp
 
 
 class TTBudUser(User):
@@ -96,12 +101,13 @@ class TTBudUser(User):
         self.client = TTBudClient(environment, str(uuid.uuid4()))
         self.tokens_ids_sent: List[str] = []
 
-    def on_start(self):
+    def on_start(self) -> None:
         self.client.connect()
 
-    def on_stop(self):
-        # Delete all the tokens from the room to avoid saving load test rooms to the store
-        updates = list(
+    def on_stop(self) -> None:
+        # Delete all the tokens from the room to avoid saving load test rooms
+        # to the store
+        updates: List[Action] = list(
             map(
                 lambda token_id: DeleteAction(action='delete', data=token_id),
                 self.tokens_ids_sent,
@@ -111,7 +117,7 @@ class TTBudUser(User):
         self.client.disconnect()
 
     @task(10)
-    def add_token(self):
+    def add_token(self) -> None:
         start_x = random.randint(0, 400)
         start_y = random.randint(0, 400)
         start_z = random.randint(0, 400)
@@ -140,7 +146,7 @@ class TTBudUser(User):
         )
 
     @task(1)
-    def ping(self):
+    def ping(self) -> None:
         self.client.send(
             Request(
                 str(uuid.uuid4()),
