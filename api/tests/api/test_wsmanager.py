@@ -44,19 +44,15 @@ TEST_TOKEN = {
 
 
 @pytest.fixture
-async def wsmanager() -> WebsocketManager:
+async def app() -> Starlette:
     room_store = MemoryRoomStore(MemoryRoomStorage())
     rate_limiter = MemoryRateLimiter(
         'server-id',
         MemoryRateLimiterStorage(),
     )
     gss = GameStateServer(room_store, fake_transaction, rate_limiter)
-    return WebsocketManager(0, gss, rate_limiter)
-
-
-@pytest.fixture
-async def app(wsmanager: WebsocketManager) -> Starlette:
-    return Starlette(routes=routes(wsmanager), debug=True)
+    ws = WebsocketManager(gss, rate_limiter)
+    return Starlette(routes=routes(ws), debug=True)
 
 
 pytestmark = pytest.mark.asyncio
