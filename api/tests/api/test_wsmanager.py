@@ -4,7 +4,6 @@ from uuid import uuid4
 
 import pytest
 from starlette.applications import Starlette
-from starlette.routing import WebSocketRoute
 
 from src.api.ws_close_codes import (
     ERR_INVALID_UUID,
@@ -22,7 +21,7 @@ from src.rate_limit.rate_limit import (
     MAX_ROOMS_PER_TEN_MINUTES,
 )
 from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
-from src.ws.starlette_ws_client import StarletteWebsocketClient
+from src.routes import routes
 from tests import emulated_client
 from tests.emulated_client import WebsocketClosed
 from tests.fake_apm import fake_transaction
@@ -57,17 +56,7 @@ async def wsmanager() -> WebsocketManager:
 
 @pytest.fixture
 async def app(wsmanager: WebsocketManager) -> Starlette:
-    # TODO: Something better
-    routes = [
-        WebSocketRoute(
-            '/{room_id}',
-            lambda websocket: wsmanager.connection_handler(
-                StarletteWebsocketClient(websocket)
-            ),
-        )
-    ]
-
-    return Starlette(routes=routes, debug=True)
+    return Starlette(routes=routes(wsmanager), debug=True)
 
 
 pytestmark = pytest.mark.asyncio
