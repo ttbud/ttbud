@@ -68,10 +68,7 @@ async def _requests(client: WebsocketClient) -> AsyncIterator[Request]:
 
 
 class WebsocketManager:
-    def __init__(
-        self, port: int, gss: GameStateServer, rate_limiter: RateLimiter
-    ) -> None:
-        self._port = port
+    def __init__(self, gss: GameStateServer, rate_limiter: RateLimiter) -> None:
         self._gss = gss
         self._rate_limiter = rate_limiter
         self._clients: List[WebsocketClient] = []
