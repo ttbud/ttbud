@@ -20,6 +20,7 @@ import CardActions from "@material-ui/core/CardActions";
 import IconButton from "@material-ui/core/IconButton";
 import PaletteIcon from "@material-ui/icons/Palette";
 import ResizeIcon from "@material-ui/icons/Crop";
+import { assert } from "../../util/invariants";
 
 interface StyleProps {
   resizing: boolean;
@@ -141,7 +142,7 @@ const Character: React.FC<Props> = memo(
         case ContentType.Icon:
           const icon = ICONS_BY_ID.get(contents.iconId);
           if (icon) {
-            return renderIcon(icon);
+            return renderIcon(icon, dragAttributes);
           } else {
             console.warn(`Invalid icon id ${contents.iconId}`);
             return "?";
