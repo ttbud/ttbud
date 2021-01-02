@@ -103,7 +103,14 @@ class GameStateServer:
         :raise InvalidConnectionException: If the client connection should be rejected
         """
         session_id = str(uuid4())
-        with timber.context(connection={'session_id': session_id, 'room_id': room_id}):
+        with timber.context(
+            connection={
+                'session_id': session_id,
+                'room_id': room_id,
+                'client_ip': client_ip,
+            }
+        ):
+            logger.info(f'Connected to {client_ip}')
             async with self._rate_limiter.rate_limited_connection(client_ip, room_id):
                 listener_q: asyncio.Queue[Response] = asyncio.Queue()
 

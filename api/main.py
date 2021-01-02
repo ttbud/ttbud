@@ -1,24 +1,33 @@
 import asyncio
-import logging.config
-import ssl
-import signal
-from typing import Optional
+import logging
+import sys
+from asyncio import Future
+from typing import NoReturn
 from uuid import uuid4
 
-import scout_apm.api
 import timber
+import uvicorn
+from starlette.applications import Starlette
+from starlette.routing import WebSocketRoute
 
 from src import apm
-from src.config import config
-from src.rate_limit.redis_rate_limit import create_redis_rate_limiter
-
-from src.redis import create_redis_pool
 from src.api.wsmanager import WebsocketManager
+from src.config import config, Environment
 from src.game_state_server import GameStateServer
+from src.rate_limit.redis_rate_limit import create_redis_rate_limiter
+from src.redis import create_redis_pool
 from src.room_store.redis_room_store import create_redis_room_store
+from src.util.lazy_asgi import LazyASGI
+from src.ws.starlette_ws_client import StarletteWebsocketClient
+
+logger = logging.getLogger(__name__)
+server_id = str(uuid4())
 
 
-async def start_server(server_id: str) -> None:
+async def make_app() -> Starlette:
+    worker_id = str(uuid4())
+    timber.context(server={'server_id': server_id, 'worker_id': worker_id})
+
     redis = await create_redis_pool(config.redis_address, config.redis_ssl_validation)
     room_store = await create_redis_room_store(redis)
     rate_limiter = await create_redis_rate_limiter(server_id, redis)
@@ -26,34 +35,45 @@ async def start_server(server_id: str) -> None:
     gss = GameStateServer(room_store, apm.transaction, rate_limiter)
     ws = WebsocketManager(config.websocket_port, gss, rate_limiter)
 
-    ssl_context: Optional[ssl.SSLContext]
-    if config.cert_config:
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(
-            keyfile=config.cert_config.key_file_path,
-            certfile=config.cert_config.cert_file_path,
+    def liveness_failed(fut: Future) -> NoReturn:
+        logger.critical(
+            'Maintain liveness task failed, shutting down', exc_info=fut.exception()
         )
-    else:
-        ssl_context = None
+        sys.exit(1)
 
-    stop: asyncio.Future[None] = asyncio.Future()
-    loop = asyncio.get_event_loop()
-    loop.add_signal_handler(signal.SIGINT, stop.set_result, None)
-    loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+    liveness_task = asyncio.create_task(
+        ws.maintain_liveness(), name='maintain_liveness'
+    )
+    liveness_task.add_done_callback(liveness_failed)
+    routes = [
+        WebSocketRoute(
+            '/{room_id}',
+            lambda websocket: ws.connection_handler(
+                StarletteWebsocketClient(websocket)
+            ),
+        )
+    ]
 
-    await ws.listen(stop, ssl=ssl_context)
-    redis.close()
-    await redis.wait_closed()
+    async def shutdown() -> None:
+        redis.close()
+        await redis.wait_closed()
+
+    return Starlette(
+        routes=routes,
+        on_shutdown=[shutdown],
+        debug=config.environment == Environment.DEV,
+    )
 
 
-def main() -> None:
-    server_id = str(uuid4())
-    logging.config.dictConfig(config.log_config)
-    scout_apm.api.install(config=config.scout_config)
-
-    with timber.context(server={'server_id': server_id}):
-        asyncio.run(start_server(server_id))
-
+app = LazyASGI(make_app)
 
 if __name__ == '__main__':
-    main()
+    uvicorn.run(
+        'main:app',
+        reload=True,
+        host='0.0.0.0',
+        port=config.websocket_port,
+        log_config=config.log_config,
+        ssl_keyfile=config.cert_config.key_file_path if config.cert_config else None,
+        ssl_certfile=config.cert_config.cert_file_path if config.cert_config else None,
+    )
