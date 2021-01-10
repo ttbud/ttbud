@@ -62,7 +62,7 @@ async def _requests(client: WebsocketClient) -> AsyncIterator[Request]:
             raise InvalidRequestException()
 
         yield Request(
-            updates=request.updates,
+            actions=request.actions,
             request_id=request.request_id,
         )
 

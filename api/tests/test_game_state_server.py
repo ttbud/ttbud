@@ -4,18 +4,14 @@ from typing import List
 import pytest
 
 from src.api.api_structures import (
-    CreateOrUpdateAction,
-    DeleteAction,
     PingAction,
     Response,
     Request,
-    StateResponse,
+    UpdateResponse,
     ErrorResponse,
     ConnectionResponse,
-    Action,
 )
-from src.colors import colors
-from src.game_components import Token, IconTokenContents, Ping
+from src.game_components import Ping
 from src.game_state_server import GameStateServer
 from src.rate_limit.memory_rate_limit import MemoryRateLimiterStorage, MemoryRateLimiter
 from src.rate_limit.rate_limit import RateLimiter
@@ -23,15 +19,14 @@ from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
 from src.room_store.room_store import RoomStore
 from src.util.async_util import async_collect
 from tests.fake_apm import fake_transaction
-from tests.helpers import to_async_until, assert_matches
+from tests.helpers import to_async_until
 from tests.static_fixtures import (
     TEST_ROOM_ID,
     VALID_TOKEN,
     ANOTHER_VALID_TOKEN,
-    UPDATED_TOKEN,
     VALID_ACTION,
     ANOTHER_VALID_ACTION,
-    VALID_PING,
+    PING_ACTION,
 )
 
 pytestmark = pytest.mark.asyncio
@@ -56,8 +51,10 @@ def errors(responses: List[Response]) -> List[Response]:
     return list(filter(lambda response: isinstance(response, ErrorResponse), responses))
 
 
-def states(responses: List[Response]) -> List[Response]:
-    return list(filter(lambda response: isinstance(response, StateResponse), responses))
+def updates(responses: List[Response]) -> List[Response]:
+    return list(
+        filter(lambda response: isinstance(response, UpdateResponse), responses)
+    )
 
 
 async def collect_responses(
@@ -96,7 +93,7 @@ async def test_room_data_is_stored(
         requests=[
             Request(
                 request_id='first-request-id',
-                updates=[VALID_ACTION, ANOTHER_VALID_ACTION],
+                actions=[VALID_ACTION, ANOTHER_VALID_ACTION],
             )
         ],
         response_count=2,
@@ -104,7 +101,7 @@ async def test_room_data_is_stored(
 
     assert responses == [
         ConnectionResponse([]),
-        StateResponse([VALID_TOKEN, ANOTHER_VALID_TOKEN], 'first-request-id'),
+        UpdateResponse([VALID_ACTION, ANOTHER_VALID_ACTION], 'first-request-id'),
     ]
 
     gss_two = GameStateServer(room_store, fake_transaction, rate_limiter)
@@ -112,201 +109,33 @@ async def test_room_data_is_stored(
     assert responses == [ConnectionResponse([VALID_TOKEN, ANOTHER_VALID_TOKEN])]
 
 
-async def test_duplicate_update_rejected(gss: GameStateServer) -> None:
-    responses = await collect_responses(
-        gss,
-        requests=[
-            Request(request_id='request-id', updates=[VALID_ACTION, VALID_ACTION])
-        ],
-        response_count=3,
-    )
-
-    assert states(responses) == [StateResponse([VALID_TOKEN], 'request-id')]
-    assert_matches(errors(responses), [{'request_id': 'request-id'}])
-
-
-async def test_duplicate_update_in_different_room(gss: GameStateServer) -> None:
-
-    responses = await collect_responses(
-        gss,
-        requests=[Request('request-id-1', [VALID_ACTION])],
-        response_count=2,
-        room_id='room-1',
-    )
-
-    assert responses == [
-        ConnectionResponse([]),
-        StateResponse([VALID_TOKEN], 'request-id-1'),
-    ]
-
-    responses = await collect_responses(
-        gss,
-        requests=[Request('request-id-2', [VALID_ACTION])],
-        response_count=2,
-        room_id='room-2',
-    )
-
-    assert responses == [
-        ConnectionResponse([]),
-        StateResponse([VALID_TOKEN], 'request-id-2'),
-    ]
-
-
-async def test_update_in_occupied_position(gss: GameStateServer) -> None:
-    conflicting_position_token = Token(
-        'some_other_id',
-        'character',
-        IconTokenContents('some_other_icon_id'),
-        start_x=0,
-        start_y=0,
-        start_z=0,
-        end_x=1,
-        end_y=1,
-        end_z=1,
-        color_rgb=colors[0],
-    )
-    responses = await collect_responses(
-        gss,
-        requests=[
-            Request('good-request-id', [VALID_ACTION]),
-            Request(
-                'bad-request-id',
-                [
-                    CreateOrUpdateAction(
-                        action='create', data=conflicting_position_token
-                    )
-                ],
-            ),
-        ],
-        response_count=3,
-    )
-
-    assert states(responses) == [StateResponse([VALID_TOKEN], 'good-request-id')]
-    assert_matches(errors(responses), [{'request_id': 'bad-request-id'}])
-
-
-async def test_delete_token(gss: GameStateServer) -> None:
-    responses = await collect_responses(
-        gss,
-        requests=[
-            Request('create-request-id', [VALID_ACTION]),
-            Request(
-                'delete-request-id',
-                [DeleteAction(action='delete', data=VALID_TOKEN.id)],
-            ),
-        ],
-        response_count=3,
-    )
-    assert responses == [
-        ConnectionResponse([]),
-        StateResponse([VALID_TOKEN], 'create-request-id'),
-        StateResponse([], 'delete-request-id'),
-    ]
-
-
-async def test_delete_non_existent_token(gss: GameStateServer) -> None:
-    responses = await collect_responses(
-        gss,
-        requests=[
-            Request(
-                'delete-request-id',
-                [DeleteAction(action='delete', data='unused-token-id')],
-            )
-        ],
-        response_count=3,
-    )
-
-    assert states(responses) == [StateResponse([], 'delete-request-id')]
-    assert_matches(errors(responses), [{'request_id': 'delete-request-id'}])
-
-
-async def test_move_existing_token(gss: GameStateServer) -> None:
-    responses = await collect_responses(
-        gss,
-        requests=[
-            Request('create-request-id', [VALID_ACTION]),
-            Request(
-                'move-request-id',
-                [CreateOrUpdateAction(action='update', data=UPDATED_TOKEN)],
-            ),
-        ],
-        response_count=3,
-    )
-    assert responses == [
-        ConnectionResponse([]),
-        StateResponse([VALID_TOKEN], 'create-request-id'),
-        StateResponse([UPDATED_TOKEN], 'move-request-id'),
-    ]
-
-
 async def test_ping(gss: GameStateServer) -> None:
     responses = await collect_responses(
         gss,
-        requests=[
-            Request('ping-request-id', [PingAction(action='ping', data=VALID_PING)])
-        ],
-        response_count=3,
+        requests=[Request('ping-request-id', [PING_ACTION])],
+        response_count=2,
     )
     assert responses == [
         ConnectionResponse([]),
-        StateResponse([VALID_PING], 'ping-request-id'),
-        StateResponse([], 'ping-request-id'),
+        UpdateResponse([PING_ACTION], 'ping-request-id'),
     ]
 
 
 async def test_multiple_pings(gss: GameStateServer) -> None:
-    ping1 = Ping('ping-id-1', 'ping', 0, 0)
-    ping2 = Ping('ping-id-2', 'ping', 0, 0)
-    ping3 = Ping('ping-id-3', 'ping', 0, 0)
+    ping1 = PingAction(Ping('ping-id-1', 'ping', 0, 0))
+    ping2 = PingAction(Ping('ping-id-2', 'ping', 0, 0))
+    ping3 = PingAction(Ping('ping-id-3', 'ping', 0, 0))
     responses = await collect_responses(
         gss,
         requests=[
             Request(
                 'ping-request-id',
-                [
-                    PingAction(action='ping', data=ping1),
-                    PingAction(action='ping', data=ping2),
-                    PingAction(action='ping', data=ping3),
-                ],
+                [ping1, ping2, ping3],
             )
         ],
-        response_count=3,
+        response_count=2,
     )
     assert responses == [
         ConnectionResponse([]),
-        StateResponse([ping1, ping2, ping3], 'ping-request-id'),
-        StateResponse([], 'ping-request-id'),
+        UpdateResponse([ping1, ping2, ping3], 'ping-request-id'),
     ]
-
-
-async def test_more_tokens_than_colors(gss: GameStateServer) -> None:
-    updates: List[Action] = []
-    for i in range(len(colors) + 1):
-        updates.append(
-            CreateOrUpdateAction(
-                action='create',
-                data=Token(
-                    id=f'token{i}',
-                    type='character',
-                    contents=IconTokenContents('some icon'),
-                    start_x=i,
-                    start_y=i,
-                    start_z=1,
-                    end_x=i + 1,
-                    end_y=i + 1,
-                    end_z=2,
-                ),
-            )
-        )
-
-    responses = await collect_responses(
-        gss, requests=[Request('request-id', updates)], response_count=2
-    )
-
-    tokens_without_color = []
-    for token in responses[1].data:
-        assert isinstance(token, Token)
-        if not token.color_rgb:
-            tokens_without_color.append(token)
-
-    assert len(tokens_without_color) == 1

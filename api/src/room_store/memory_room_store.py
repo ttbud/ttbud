@@ -48,7 +48,7 @@ class MemoryRoomStore(RoomStore):
 
     async def add_request(self, room_id: str, request: Request) -> None:
         await self._write(
-            room_id, filter(lambda x: x.action != 'ping', request.updates)
+            room_id, filter(lambda x: x.action != 'ping', request.actions)
         )
         await self._publish(room_id, request)
 

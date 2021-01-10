@@ -12,7 +12,7 @@ from websocket import create_connection, WebSocket
 
 from src.api.api_structures import (
     Request,
-    CreateOrUpdateAction,
+    UpsertAction,
     PingAction,
     DeleteAction,
     Action,
@@ -125,7 +125,7 @@ class TTBudUser(User):
             Request(
                 str(uuid.uuid4()),
                 updates=[
-                    CreateOrUpdateAction(
+                    UpsertAction(
                         'create',
                         Token(
                             id=str(uuid.uuid4()),

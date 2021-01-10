@@ -36,9 +36,8 @@ def _get_unit_blocks(token: Token) -> List[Tuple[int, int, int]]:
 
 
 class Room:
-    def __init__(self, room_id: str):
-        self.room_id: str = room_id
-        self.game_state: Dict[str, Union[Ping, Token]] = {}
+    def __init__(self) -> None:
+        self.game_state: Dict[str, Token] = {}
         self.id_to_positions: Dict[str, List[Tuple[int, int, int]]] = {}
         self.positions_to_ids: Dict[Tuple[int, int, int], str] = {}
         self.icon_to_token_ids: Dict[str, List[str]] = {}
@@ -60,33 +59,31 @@ class Room:
                 removed_token.id
             )
 
-    def create_ping(self, ping: Ping) -> None:
-        self.game_state[ping.id] = ping
+    def create_or_update_token(self, token: Token) -> None:
+        if self.is_valid_position(token):
+            if self.game_state.get(token.id):
+                self._remove_positions(token.id)
+            elif token.type == 'character':
+                new_content_id = content_id(token.contents)
+                if self.icon_to_token_ids.get(new_content_id):
+                    token_ids = self.icon_to_token_ids[new_content_id]
+                    tokens_with_icon = [token]
+                    for t_id in token_ids:
+                        token_with_icon = self.game_state[t_id]
+                        if isinstance(token_with_icon, Token):
+                            tokens_with_icon.append(token_with_icon)
+                    token_ids.append(token.id)
+                    _assign_colors(tokens_with_icon)
+                else:
+                    self.icon_to_token_ids[new_content_id] = [token.id]
 
-    def create_or_update_token(self, token: Union[Token, Ping]) -> None:
-        if self.game_state.get(token.id):
-            self._remove_positions(token.id)
-        elif token.type == 'character':
-            new_content_id = content_id(token.contents)
-            if self.icon_to_token_ids.get(new_content_id):
-                token_ids = self.icon_to_token_ids[new_content_id]
-                tokens_with_icon = [token]
-                for t_id in token_ids:
-                    token_with_icon = self.game_state[t_id]
-                    if isinstance(token_with_icon, Token):
-                        tokens_with_icon.append(token_with_icon)
-                token_ids.append(token.id)
-                _assign_colors(tokens_with_icon)
-            else:
-                self.icon_to_token_ids[new_content_id] = [token.id]
-
-        # Update state for new or existing token
-        if token.type == 'character' or token.type == 'floor':
-            blocks = _get_unit_blocks(token)
-            self.id_to_positions[token.id] = blocks
-            for block in blocks:
-                self.positions_to_ids[block] = token.id
-        self.game_state[token.id] = token
+            # Update state for new or existing token
+            if token.type == 'character' or token.type == 'floor':
+                blocks = _get_unit_blocks(token)
+                self.id_to_positions[token.id] = blocks
+                for block in blocks:
+                    self.positions_to_ids[block] = token.id
+            self.game_state[token.id] = token
 
     def is_valid_position(self, token: Token) -> bool:
         blocks = _get_unit_blocks(token)
@@ -95,14 +92,11 @@ class Room:
                 return False
         return True
 
-    def remove_ping_from_state(self, ping_id: str) -> None:
-        self.game_state.pop(ping_id, None)
 
-
-def create_room(room_id: str, updates: Iterable[Action]) -> Room:
-    room = Room(room_id)
+def create_room(updates: Iterable[Action]) -> Room:
+    room = Room()
     for update in updates:
-        if update.action == 'create' or update.action == 'update':
+        if update.action == 'upsert':
             room.create_or_update_token(update.data)
         elif update.action == 'delete':
             room.delete_token(update.data)
