@@ -14,7 +14,7 @@ from typing import (
 from aioredis import Redis, Channel
 from dacite import from_dict
 
-from src.api.api_structures import Request, Action, CreateOrUpdateAction, DeleteAction
+from src.api.api_structures import Request, Action, UpsertAction, DeleteAction
 from src.room_store.room_store import (
     RoomStore,
 )
@@ -82,7 +82,14 @@ class RedisRoomStore(RoomStore):
             self._append_to_room_sha,
             keys=[_room_key(room_id), _channel_key(room_id)],
             args=[
-                json.dumps(list(map(asdict, request.updates))),
+                json.dumps(
+                    list(
+                        map(
+                            asdict,
+                            filter(lambda x: x.action != 'ping', request.actions),
+                        )
+                    )
+                ),
                 json.dumps(asdict(request)),
             ],
         )
@@ -98,7 +105,7 @@ def _to_updates(raw_updates: List[str]) -> Iterator[Action]:
         update_group = json.loads(raw_update_group)
         for update in update_group:
             action = update['action']
-            if action == 'create' or action == 'update':
-                yield from_dict(CreateOrUpdateAction, update)
+            if action == 'upsert':
+                yield from_dict(UpsertAction, update)
             elif action == 'delete':
                 yield from_dict(DeleteAction, update)

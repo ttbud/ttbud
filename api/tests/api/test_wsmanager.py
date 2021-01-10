@@ -25,6 +25,7 @@ from src.routes import routes
 from tests import emulated_client
 from tests.emulated_client import WebsocketClosed
 from tests.fake_apm import fake_transaction
+from tests.helpers import assert_matches
 from tests.static_fixtures import TEST_REQUEST_ID
 
 SERVER_ID = 'server-id'
@@ -40,6 +41,11 @@ TEST_TOKEN = {
     'end_x': 1,
     'end_y': 1,
     'end_z': 1,
+}
+
+TEST_UPSERT_TOKEN = {
+    'data': TEST_TOKEN,
+    'action': 'upsert',
 }
 
 
@@ -78,15 +84,18 @@ async def test_add_token(app: Starlette) -> None:
         await client.send_json(
             {
                 'request_id': TEST_REQUEST_ID,
-                'updates': [{'action': 'create', 'data': TEST_TOKEN}],
+                'actions': [TEST_UPSERT_TOKEN],
             }
         )
 
-        assert await client.receive_json() == {
-            'type': 'state',
-            'request_id': TEST_REQUEST_ID,
-            'data': [TEST_TOKEN],
-        }
+        assert_matches(
+            await client.receive_json(),
+            {
+                'type': 'update',
+                'request_id': TEST_REQUEST_ID,
+                'actions': [TEST_UPSERT_TOKEN],
+            },
+        )
 
 
 async def test_invalid_request(app: Starlette) -> None:
