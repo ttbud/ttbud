@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass
 from typing import (
     AsyncIterator,
     Callable,
     ContextManager,
     List,
     AsyncIterable,
-    Dict,
 )
 from uuid import uuid4
 
@@ -25,7 +23,7 @@ from src.api.ws_close_codes import ERR_TOO_MANY_ROOMS_CREATED, ERR_INVALID_ROOM
 from .rate_limit.rate_limit import RateLimiter, TooManyRoomsCreatedException
 from .room import create_room
 from .room_store.room_store import RoomStore
-from .util.async_util import items_until, all_items
+from .util.async_util import items_until
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +40,12 @@ class InvalidConnectionException(Exception):
         self.reason = reason
 
 
-@dataclass
-class ChangeListener:
-    output_queues: List[asyncio.Queue[Response]]
-    task: asyncio.Task
+async def _requests_to_messages(
+    requests: AsyncIterator[Request],
+) -> AsyncIterator[Response]:
+    async for request in requests:
+        with timber.context(request={'request_id': request.request_id}):
+            yield UpdateResponse(request.actions, request.request_id)
 
 
 class GameStateServer:
@@ -58,7 +58,6 @@ class GameStateServer:
         self.room_store = room_store
         self.apm_transaction = apm_transaction
         self._rate_limiter = rate_limiter
-        self._change_listener_by_id: Dict[str, ChangeListener] = {}
 
     async def _listen_for_changes(
         self,
@@ -96,23 +95,11 @@ class GameStateServer:
         ):
             logger.info(f'Connected to {client_ip}')
             async with self._rate_limiter.rate_limited_connection(client_ip, room_id):
-                listener_q: asyncio.Queue[Response] = asyncio.Queue()
+                room_changes = await self.room_store.changes(room_id)
 
                 with self.apm_transaction('connect'):
-                    if not self._change_listener_by_id.get(room_id):
+                    if not await self.room_store.room_exists(room_id):
                         await self._acquire_room_slot(room_id, client_ip)
-                        queues: List[asyncio.Queue[Response]] = []
-                        updates = await self.room_store.changes(room_id)
-                        change_listener = ChangeListener(
-                            queues,
-                            asyncio.create_task(
-                                self._listen_for_changes(room_id, queues, updates)
-                            ),
-                        )
-                        self._change_listener_by_id[room_id] = change_listener
-                    self._change_listener_by_id[room_id].output_queues.append(
-                        listener_q
-                    )
 
                     room = create_room(await self.room_store.read(room_id))
                     yield ConnectionResponse(list(room.game_state.values()))
@@ -121,16 +108,12 @@ class GameStateServer:
                     request_task = asyncio.create_task(
                         self._process_requests(room_id, requests)
                     )
-                    async for msg in items_until(all_items(listener_q), request_task):
+                    async for msg in items_until(
+                        _requests_to_messages(room_changes), request_task
+                    ):
                         yield msg
                 finally:
                     request_task.cancel()
-                    change_listener = self._change_listener_by_id[room_id]
-                    queues = change_listener.output_queues
-                    queues.remove(listener_q)
-                    if not queues:
-                        change_listener.task.cancel()
-                        del self._change_listener_by_id[room_id]
 
     async def _room_changes_to_messages(
         self,
@@ -140,8 +123,7 @@ class GameStateServer:
         async for request in room_changes:
             if request.request_id:
                 with self.apm_transaction('update'):
-                    change_listener = self._change_listener_by_id.get(room_id)
-                    if not change_listener:
+                    if not self.room_store.room_exists(room_id):
                         raise InvalidConnectionException(
                             ERR_INVALID_ROOM,
                             f'Tried to update room {room_id}, which does not exist',

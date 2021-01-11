@@ -1,17 +1,19 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
-from dataclasses import asdict
+from dataclasses import asdict, dataclass, field
 from typing import (
     List,
     AsyncGenerator,
     AsyncIterator,
     Iterator,
     Iterable,
+    Dict,
 )
 
-from aioredis import Redis, Channel
+from aioredis import Redis
 from dacite import from_dict
 
 from src.api.api_structures import Request, Action, UpsertAction, DeleteAction
@@ -43,27 +45,68 @@ def _channel_key(room_id: str) -> str:
     return f'channel:{room_id}'
 
 
+@dataclass
+class ChangeListener:
+    output_queues: List[asyncio.Queue[Request]]
+    task: asyncio.Task
+    subscribe_started: asyncio.Future[None] = field(default_factory=asyncio.Future)
+
+
 class RedisRoomStore(RoomStore):
     def __init__(self, redis: Redis, append_to_room_sha: str):
         self._redis = redis
         self._append_to_room_sha = append_to_room_sha
+        self._listeners_by_room_id: Dict[str, ChangeListener] = dict()
 
-    async def _listen_for_changes(
-        self, room_id: str, channel: Channel
-    ) -> AsyncIterator[Request]:
+    async def _listen_for_changes(self, room_id: str) -> None:
+        listener = self._listeners_by_room_id[room_id]
+        queues = listener.output_queues
+        channel = (await self._redis.subscribe(_channel_key(room_id)))[0]
+        listener.subscribe_started.set_result(None)
         try:
             while await channel.wait_message():
-                yield from_dict(
+                update = from_dict(
                     Request, json.loads((await channel.get()).decode('utf-8'))
                 )
+                for q in queues:
+                    await q.put(update)
         finally:
             if not self._redis.closed:
                 await self._redis.unsubscribe(_channel_key(room_id))
 
     async def changes(self, room_id: str) -> AsyncIterator[Request]:
-        channel = (await self._redis.subscribe(_channel_key(room_id)))[0]
-        it = self._listen_for_changes(room_id, channel)
-        return it
+        listener = self._listeners_by_room_id.get(room_id)
+        if not listener:
+            listener = ChangeListener(
+                [],
+                asyncio.create_task(
+                    self._listen_for_changes(room_id), name=f'Redis Pubsub {room_id}'
+                ),
+            )
+            self._listeners_by_room_id[room_id] = listener
+        # This function shouldn't return until we've actually started listening
+        # for changes so that consumers know they're not missing events once they
+        # get the iterator back
+        await listener.subscribe_started
+
+        queue: asyncio.Queue[Request] = asyncio.Queue()
+        listener.output_queues.append(queue)
+
+        return self._room_changes(room_id, queue)
+
+    async def _room_changes(
+        self, room_id: str, queue: asyncio.Queue[Request]
+    ) -> AsyncIterator[Request]:
+        try:
+            while True:
+                yield await queue.get()
+        finally:
+            listener = self._listeners_by_room_id[room_id]
+            listener.output_queues.remove(queue)
+            if not listener.output_queues:
+                listener.task.cancel()
+                if room_id in self._listeners_by_room_id:
+                    del self._listeners_by_room_id[room_id]
 
     async def get_all_room_ids(self) -> AsyncGenerator[str, None]:
         # A cursor of '0' tells redis.scan to start at the beginning
@@ -72,6 +115,9 @@ class RedisRoomStore(RoomStore):
             cursor, keys = await self._redis.scan(cursor, 'room:*')
             for key in keys:
                 yield str(key[len('room:') :], 'utf-8')
+
+    async def room_exists(self, room_id: str) -> bool:
+        return bool(await self._redis.exists(_room_key(room_id)))
 
     async def read(self, room_id: str) -> Iterable[Action]:
         data = await self._redis.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
