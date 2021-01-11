@@ -39,6 +39,9 @@ class RoomStore(Protocol):
     def get_all_room_ids(self) -> AsyncIterator[str]:
         ...
 
+    async def room_exists(self, room_id: str) -> bool:
+        ...
+
     async def read(self, room_id: str) -> Iterable[Action]:
         ...
 

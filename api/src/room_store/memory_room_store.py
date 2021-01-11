@@ -67,6 +67,9 @@ class MemoryRoomStore(RoomStore):
         for key in self.storage.rooms_by_id.keys():
             yield key
 
+    async def room_exists(self, room_id: str) -> bool:
+        return room_id in self.storage.rooms_by_id
+
     async def _publish(self, room_id: str, request: Request) -> None:
         for q in self._changes[room_id]:
             await q.put(request)

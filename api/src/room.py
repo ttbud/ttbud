@@ -1,10 +1,10 @@
 import logging
 from copy import deepcopy
-from typing import Dict, Union, List, Tuple, Iterable
+from typing import Dict, List, Tuple, Iterable
 
 from src.api.api_structures import Action
 from src.colors import colors
-from src.game_components import Ping, Token, content_id
+from src.game_components import Token, content_id
 
 logger = logging.getLogger(__name__)
 
