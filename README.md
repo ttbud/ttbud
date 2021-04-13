@@ -44,7 +44,7 @@ For more detailed api logs in local dev, add `JSON_LOGS=true` to your `.env` fil
 You can render them nicely with this command ([jq](https://stedolan.github.io/jq/) must be installed):
 
 ```bash
-dc logs -f --no-color api | jq --raw-input 'split("|")| .[length  - 1]|fromjson'
+docker-compose logs -f --no-color api | jq --raw-input 'split("|")| .[length  - 1]|fromjson'
 ```
 
 ### Tests
