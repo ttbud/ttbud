@@ -7,29 +7,35 @@ import { v4 as uuid } from "uuid";
 import getDragResult, { DragResult } from "../../drag/getDragResult";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import Pos2d from "../../util/shape-math";
-import { Entity, EntityType, TokenContents } from "../../types";
+import { EntityType, Token, TokenContents } from "../../types";
+import {
+  applyLocalAction,
+  applyNetworkUpdate,
+  collectUpdate,
+  MergeState,
+} from "./action-reconciliation";
+import { Action } from "../../network/BoardStateApiClient";
+import { AppThunk } from "../../store/createStore";
+import pause from "../../util/pause";
 
-export interface BoardState {
-  tokens: Entity[];
-}
-
-const INITIAL_STATE: BoardState = {
-  tokens: [],
+const INITIAL_STATE: MergeState = {
+  unqueuedActions: [],
+  queuedUpdates: [],
+  local: {
+    entityById: {},
+    charIdsByContentId: {},
+    tokenIdsByPosStr: {},
+  },
+  network: {
+    entityById: {},
+    charIdsByContentId: {},
+    tokenIdsByPosStr: {},
+  },
 };
 
-function moveToken(state: BoardState, tokenId: string, dest: Pos2d) {
-  const tokenToMove = state.tokens.find((token) => token.id === tokenId);
-  if (!tokenToMove) {
-    // The token was deleted by another person while dragging, so just ignore it
-    return;
-  }
-
-  tokenToMove.pos.x = dest.x;
-  tokenToMove.pos.y = dest.y;
-}
-
-function _removeToken(state: BoardState, tokenId: string) {
-  state.tokens = state.tokens.filter((token) => token.id !== tokenId);
+interface NetworkUpdateAction {
+  actions: Action[];
+  updateId: string;
 }
 
 interface AddTokenAction {
@@ -43,49 +49,73 @@ interface AddPingAction {
   pos: Pos2d;
 }
 
-const FLOOR_HEIGHT = 0;
-const CHARACTER_HEIGHT = 1;
+interface BatchUnqueuedAction {
+  updateId: string;
+}
+
+export const FLOOR_HEIGHT = 0;
+export const CHARACTER_HEIGHT = 1;
 
 const boardSlice = createSlice({
   name: "board",
   initialState: INITIAL_STATE,
   reducers: {
-    replaceTokens(state, action: PayloadAction<Entity[]>) {
-      state.tokens = action.payload;
+    receiveInitialState(state, action: PayloadAction<Token[]>) {
+      applyNetworkUpdate(
+        state,
+        action.payload.map((token) => ({ type: "upsert", token }))
+      );
+    },
+    receiveNetworkUpdate(state, action: PayloadAction<NetworkUpdateAction>) {
+      const { actions, updateId } = action.payload;
+      applyNetworkUpdate(state, actions, updateId);
+    },
+    batchUnqueuedActions(state, action: PayloadAction<BatchUnqueuedAction>) {
+      collectUpdate(state, action.payload.updateId);
+    },
+    clear(state) {
+      for (const [id] of Object.entries(state.local.entityById)) {
+        applyLocalAction(state, { type: "delete", entityId: id });
+      }
     },
     addFloor: {
       reducer: (state, action: PayloadAction<AddTokenAction>) => {
         const { id, contents, pos } = action.payload;
-        const token = {
-          id,
-          contents,
-          type: EntityType.Floor,
-          pos: {
-            ...pos,
-            z: FLOOR_HEIGHT,
+
+        applyLocalAction(state, {
+          type: "upsert",
+          token: {
+            id,
+            contents,
+            type: EntityType.Floor,
+            pos: {
+              ...pos,
+              z: FLOOR_HEIGHT,
+            },
           },
-        };
-        state.tokens.push(token);
+        });
       },
       prepare: (contents: TokenContents, pos: Pos2d) => ({
         payload: { id: uuid(), contents, pos },
       }),
     },
-    addPing: {
-      reducer: (state, action: PayloadAction<AddPingAction>) => {
-        const { id, pos } = action.payload;
-        state.tokens.push({
+    pingAdded: (state, action: PayloadAction<AddPingAction>) => {
+      const { id, pos } = action.payload;
+      applyLocalAction(state, {
+        type: "ping",
+        ping: {
           type: EntityType.Ping,
           id,
           pos,
-        });
-      },
-      prepare: (pos: Pos2d) => ({
-        payload: { id: uuid(), pos },
-      }),
+        },
+      });
     },
-    removeToken(state, action: PayloadAction<string>) {
-      _removeToken(state, action.payload);
+    removeEntity(state, action: PayloadAction<string>) {
+      const id = action.payload;
+      applyLocalAction(state, {
+        type: "delete",
+        entityId: id,
+      });
     },
   },
   extraReducers: {
@@ -96,15 +126,33 @@ const boardSlice = createSlice({
 
       switch (dragResult) {
         case DragResult.MovedInside:
+          const loc = destination.logicalLocation;
           assert(
             draggable.type === DraggableType.Token,
             "Dragged from board but draggable type was not token"
           );
           assert(
-            destination.logicalLocation?.type === LocationType.Grid,
+            loc?.type === LocationType.Grid,
             "Dropped in board but drop type was not grid"
           );
-          moveToken(state, draggable.tokenId, destination.logicalLocation);
+
+          const token = state.local.entityById[draggable.tokenId];
+          // The token was deleted before the drag completed
+          if (!token) return;
+          assert(
+            token.type === "character",
+            "Draggable had the id of a non-character token"
+          );
+
+          const newToken = {
+            ...token,
+            pos: { x: loc.x, y: loc.y, z: CHARACTER_HEIGHT },
+          } as Token;
+
+          applyLocalAction(state, {
+            type: "upsert",
+            token: newToken,
+          });
           break;
         case DragResult.DraggedOutOf:
           assert(
@@ -112,7 +160,10 @@ const boardSlice = createSlice({
             "Dragged from board but draggable type was not token"
           );
 
-          _removeToken(state, draggable.tokenId);
+          applyLocalAction(state, {
+            type: "delete",
+            entityId: draggable.tokenId,
+          });
           break;
         case DragResult.DraggedInto:
           assert(
@@ -121,11 +172,14 @@ const boardSlice = createSlice({
           );
 
           const { x, y } = destination.logicalLocation;
-          state.tokens.push({
-            type: EntityType.Character,
-            id: uuid(),
-            contents: draggable.contents,
-            pos: { x, y, z: CHARACTER_HEIGHT },
+          applyLocalAction(state, {
+            type: "upsert",
+            token: {
+              type: EntityType.Character,
+              id: uuid(),
+              contents: draggable.contents,
+              pos: { x, y, z: CHARACTER_HEIGHT },
+            },
           });
           break;
         case DragResult.None:
@@ -137,7 +191,32 @@ const boardSlice = createSlice({
   },
 });
 
-const { addFloor, addPing, removeToken, replaceTokens } = boardSlice.actions;
+function addPing(pos: Pos2d): AppThunk {
+  return async (dispatch) => {
+    const id = uuid();
+    dispatch(pingAdded({ id, pos }));
+    await pause(3000);
+    dispatch(removeEntity(id));
+  };
+}
 
-export { addFloor, addPing, removeToken, replaceTokens };
+const {
+  addFloor,
+  removeEntity,
+  clear,
+  pingAdded,
+  receiveInitialState,
+  receiveNetworkUpdate,
+  batchUnqueuedActions,
+} = boardSlice.actions;
+
+export {
+  addFloor,
+  addPing,
+  removeEntity,
+  clear,
+  receiveInitialState,
+  receiveNetworkUpdate,
+  batchUnqueuedActions,
+};
 export default boardSlice.reducer;

@@ -1,7 +1,7 @@
 import { makeStyles } from "@material-ui/core";
 import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { replaceTokens } from "../board/board-slice";
+import { clear } from "../board/board-slice";
 import Board from "../board/Board";
 import { ICONS } from "../icons";
 import SearchDialog from "../search/SearchDialog";
@@ -103,7 +103,7 @@ const App: React.FC<Props> = ({ apiClient }) => {
     dispatch,
   ]);
 
-  const onClearMap = () => dispatch(replaceTokens([]));
+  const onClearMap = () => dispatch(clear());
 
   const reconnect = () => apiClient.reconnect();
 

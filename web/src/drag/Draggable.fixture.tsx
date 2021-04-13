@@ -18,24 +18,26 @@ const store = configureStore({
   middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
 
-export default () => (
-  <Provider store={store}>
-    <DndContext.Provider value={monitor}>
-      <Draggable
-        descriptor={{
-          type: DraggableType.TokenBlueprint,
-          id: "draggable",
-          contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
-        }}
-      >
-        {(isDragging, attributes) => (
-          <DraggableSquare
-            isDragging={isDragging}
-            color={"red"}
-            {...attributes}
-          />
-        )}
-      </Draggable>
-    </DndContext.Provider>
-  </Provider>
-);
+export default function DraggableFixture() {
+  return (
+    <Provider store={store}>
+      <DndContext.Provider value={monitor}>
+        <Draggable
+          descriptor={{
+            type: DraggableType.TokenBlueprint,
+            id: "draggable",
+            contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
+          }}
+        >
+          {(isDragging, attributes) => (
+            <DraggableSquare
+              isDragging={isDragging}
+              color={"red"}
+              {...attributes}
+            />
+          )}
+        </Draggable>
+      </DndContext.Provider>
+    </Provider>
+  );
+}
