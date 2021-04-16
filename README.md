@@ -47,6 +47,12 @@ You can render them nicely with this command ([jq](https://stedolan.github.io/jq
 docker-compose logs -f --no-color api | jq --raw-input 'split("|")| .[length  - 1]|fromjson'
 ```
 
+
+### Redis
+
+Go to localhost:8001 to use redisinsight to inspect the dev redis database.
+The redis host address is `db` and the port is `6379`, there is no username or password
+
 ### Tests
 
 #### Lint and typecheck:
