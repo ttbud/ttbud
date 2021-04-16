@@ -20,6 +20,9 @@ mkcert -cert-file certs/ttbud.local.pem -key-file certs/ttbud.local-key.pem ttbu
 # Add a hosts file entry for local ttbud
 echo "127.0.0.1 ttbud.local" | sudo tee -a /etc/hosts
 
+# Increase the number of file watchers allowed so automatic reloading works
+echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+
 # Configure your environment
 cp .env.example .env
 # Build all the images
@@ -41,7 +44,7 @@ For more detailed api logs in local dev, add `JSON_LOGS=true` to your `.env` fil
 You can render them nicely with this command ([jq](https://stedolan.github.io/jq/) must be installed):
 
 ```bash
-dc logs -f --no-color api | jq --raw-input 'split("|")| .[length  - 1]|fromjson'
+docker-compose logs -f --no-color api | jq --raw-input 'split("|")| .[length  - 1]|fromjson'
 ```
 
 
