@@ -9,6 +9,7 @@ import timber
 import uvicorn
 from starlette.applications import Starlette
 
+from compaction import Compactor
 from src import apm
 from src.api.wsmanager import WebsocketManager
 from src.config import config, Environment
@@ -31,6 +32,8 @@ async def make_app() -> Starlette:
     room_store = await create_redis_room_store(redis)
     rate_limiter = await create_redis_rate_limiter(server_id, redis)
 
+    compactor = Compactor(room_store)
+
     gss = GameStateServer(room_store, apm.transaction, rate_limiter)
     ws = WebsocketManager(gss, rate_limiter)
 
@@ -44,6 +47,17 @@ async def make_app() -> Starlette:
         ws.maintain_liveness(), name='maintain_liveness'
     )
     liveness_task.add_done_callback(liveness_failed)
+
+    def compaction_failed(fut: Future) -> NoReturn:
+        logger.critical(
+            'Compaction task failed, shutting down', exc_info=fut.exception()
+        )
+        sys.exit(1)
+
+    compaction_task = asyncio.create_task(
+        compactor.maintain_compaction(), name='maintain_compaction'
+    )
+    compaction_task.add_done_callback(compaction_failed)
 
     async def shutdown() -> None:
         redis.close()

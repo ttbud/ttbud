@@ -11,6 +11,7 @@ from typing import (
     Iterator,
     Iterable,
     Dict,
+    Any,
 )
 
 from aioredis import Redis
@@ -19,6 +20,7 @@ from dacite import from_dict
 from src.api.api_structures import Request, Action, UpsertAction, DeleteAction
 from src.room_store.room_store import (
     RoomStore,
+    ReplacementData,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,6 +36,16 @@ local publish_value = ARGV[2]
 
 redis.call("rpush", room_key, room_update)
 redis.call("publish", channel_key, publish_value)
+"""
+
+# language=lua
+_LREPLACE = """
+local room_key = KEYS[1]
+local replace_item = ARGS[1]
+local replace_until = ARGS[2]
+
+redis.call("ltrim", room_key, replace_until, -1)
+redis.call("lpush", room_key, replace_item)
 """
 
 
@@ -53,9 +65,10 @@ class ChangeListener:
 
 
 class RedisRoomStore(RoomStore):
-    def __init__(self, redis: Redis, append_to_room_sha: str):
+    def __init__(self, redis: Redis, append_to_room_sha: str, lreplace_sha: str):
         self._redis = redis
         self._append_to_room_sha = append_to_room_sha
+        self._lreplace_sha = lreplace_sha
         self._listeners_by_room_id: Dict[str, ChangeListener] = dict()
 
     async def _listen_for_changes(self, room_id: str) -> None:
@@ -121,7 +134,7 @@ class RedisRoomStore(RoomStore):
 
     async def read(self, room_id: str) -> Iterable[Action]:
         data = await self._redis.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
-        return _to_updates(data)
+        return _to_actions(data)
 
     async def add_request(self, room_id: str, request: Request) -> None:
         await self._redis.evalsha(
@@ -140,13 +153,29 @@ class RedisRoomStore(RoomStore):
             ],
         )
 
+    async def read_for_replacement(self, room_id: str) -> ReplacementData:
+        updates = await self._redis.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
+        actions = _to_actions(updates)
+        return ReplacementData(actions, len(updates))
+
+    async def replace(self, room_id: str, request: Request, replace_token: Any) -> None:
+        await self._redis.evalsha(
+            self._lreplace_sha,
+            keys=[_room_key(room_id)],
+            args=[
+                json.dumps(asdict(request)),
+                replace_token,
+            ],
+        )
+
 
 async def create_redis_room_store(redis: Redis) -> RedisRoomStore:
     append_to_room = await redis.script_load(_APPEND_TO_ROOM)
-    return RedisRoomStore(redis, append_to_room)
+    lreplace = await redis.script_load(_LREPLACE)
+    return RedisRoomStore(redis, append_to_room, lreplace)
 
 
-def _to_updates(raw_updates: List[str]) -> Iterator[Action]:
+def _to_actions(raw_updates: List[str]) -> Iterator[Action]:
     for raw_update_group in raw_updates:
         update_group = json.loads(raw_update_group)
         for update in update_group:

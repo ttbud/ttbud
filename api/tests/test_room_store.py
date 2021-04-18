@@ -11,9 +11,7 @@ from src.room_store.memory_room_store import (
     MemoryRoomStorage,
 )
 from src.room_store.redis_room_store import create_redis_room_store, RedisRoomStore
-from src.room_store.room_store import (
-    RoomStore,
-)
+from src.room_store.room_store import RoomStore
 from src.util.async_util import async_collect
 from tests.static_fixtures import (
     VALID_ACTION,

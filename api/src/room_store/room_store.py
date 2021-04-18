@@ -9,6 +9,8 @@ from typing import (
     Union,
     Awaitable,
     Iterable,
+    Any,
+    Iterator,
 )
 
 from src.api.api_structures import Request, Action
@@ -32,6 +34,12 @@ class RoomChangeEvent:
     entities: List[Union[Token, Ping]]
 
 
+@dataclass
+class ReplacementData:
+    actions: Iterator[Action]
+    replace_token: Any
+
+
 class RoomStore(Protocol):
     def changes(self, room_id: str) -> Awaitable[AsyncIterator[Request]]:
         ...
@@ -46,8 +54,10 @@ class RoomStore(Protocol):
         ...
 
     async def add_request(self, room_id: str, request: Request) -> None:
-        """
+        ...
 
-        :rtype: object
-        """
+    async def read_for_replacement(self, room_id: str) -> ReplacementData:
+        ...
+
+    async def replace(self, room_id: str, request: Request, replace_token: Any) -> None:
         ...
