@@ -232,7 +232,7 @@ it("removes tokens", () => {
   expect(getEntities(store)).toMatchObject([TOKEN_2]);
 });
 
-it("removes tokens from the board when they are dragged from the board into something else", () => {
+it("leaves tokens in the board when they are dragged from the board into something else", () => {
   const store = createTestStore([TOKEN_1, TOKEN_2]);
   store.dispatch(
     dragEnded({
@@ -252,7 +252,7 @@ it("removes tokens from the board when they are dragged from the board into some
     })
   );
 
-  expect(getEntities(store)).toEqual([TOKEN_2]);
+  expect(getEntities(store)).toEqual([TOKEN_1, TOKEN_2]);
 });
 
 it("adds tokens to the board when they are dragged in", () => {
