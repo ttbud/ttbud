@@ -38,6 +38,8 @@ async def items_until(it: AsyncIterable[_T], stop: asyncio.Future) -> AsyncItera
         if stop in done:
             next_item_task.cancel()
             try:
+                # Await the task to ensure that the cancel finishes.
+                # This should raise a CancelledError, which we ignore
                 await next_item_task
             except CancelledError:
                 pass
