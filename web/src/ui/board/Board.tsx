@@ -25,9 +25,16 @@ import { TransitionGroup } from "react-transition-group";
 import Fade from "../transition/Fade";
 import NoopTransition from "../transition/NoopTransition";
 import { RootState } from "../../store/rootReducer";
-import { addPing, addFloor, removeToken } from "./board-slice";
+import {
+  addPing,
+  addFloor,
+  removeEntity,
+  CHARACTER_HEIGHT,
+  FLOOR_HEIGHT,
+} from "./board-slice";
 import { connect } from "react-redux";
-import { Entity, EntityType, TokenContents } from "../../types";
+import { EntityType, TokenContents } from "../../types";
+import { BoardState, pingAt, tokenIdAt } from "./board-state";
 
 let GRID_COLOR = "#947C65";
 
@@ -83,7 +90,7 @@ const preventDefault: MouseEventHandler = (e) => e.preventDefault();
 
 interface Props {
   isDragging: boolean;
-  tokens: Entity[];
+  boardState: BoardState;
   activeFloor: TokenContents;
   onPingCreated: (pos: Pos2d) => void;
   onFloorCreated: (contents: TokenContents, pos: Pos2d) => void;
@@ -92,19 +99,19 @@ interface Props {
 
 const mapStateToProps = (state: RootState) => ({
   isDragging: state.drag.type === DragStateType.Dragging,
-  tokens: state.board.tokens,
+  boardState: state.board.local,
   activeFloor: state.floorTray.activeFloor,
 });
 
 const dispatchProps = {
   onPingCreated: addPing,
   onFloorCreated: addFloor,
-  onTokenDeleted: removeToken,
+  onTokenDeleted: removeEntity,
 };
 
 const PureBoard: React.FC<Props> = ({
   isDragging,
-  tokens,
+  boardState,
   activeFloor,
   onPingCreated,
   onFloorCreated,
@@ -118,10 +125,10 @@ const PureBoard: React.FC<Props> = ({
       assert(container.current, "Board ref not assigned properly");
       const gridPos = toGridPos(pos);
 
-      const existingTokenId = tokens.find(
-        (token) =>
-          posAreEqual(token.pos, gridPos) && token.type === EntityType.Character
-      )?.id;
+      const existingTokenId = tokenIdAt(boardState, {
+        ...gridPos,
+        z: CHARACTER_HEIGHT,
+      });
       const draggedTokenId =
         draggable.type === DraggableType.Token ? draggable.tokenId : undefined;
       if (existingTokenId && existingTokenId !== draggedTokenId) {
@@ -143,10 +150,10 @@ const PureBoard: React.FC<Props> = ({
         },
       };
     },
-    [tokens]
+    [boardState]
   );
 
-  const tokenIcons = tokens.map((token) => {
+  const tokenIcons = Object.values(boardState.entityById).map((token) => {
     const pixelPos = {
       x: token.pos.x * GRID_SIZE_PX,
       y: token.pos.y * GRID_SIZE_PX,
@@ -211,11 +218,14 @@ const PureBoard: React.FC<Props> = ({
       onPingCreated(gridPos);
     } else if (
       buttons === LEFT_MOUSE &&
-      !tokens.find((token) => posAreEqual(token.pos, gridPos))
+      !tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })
     ) {
       onFloorCreated(activeFloor, gridPos);
     } else if (buttons === RIGHT_MOUSE) {
-      const id = tokens.find((token) => posAreEqual(token.pos, gridPos))?.id;
+      let id = tokenIdAt(boardState, { ...gridPos, z: CHARACTER_HEIGHT });
+      if (!id) {
+        id = tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT });
+      }
       if (id) {
         onTokenDeleted(id);
       }
@@ -249,29 +259,27 @@ const PureBoard: React.FC<Props> = ({
       }
 
       if (buttons === LEFT_MOUSE && shiftKey) {
-        if (
-          !tokens.find(
-            (token) =>
-              token.type === EntityType.Ping && posAreEqual(token.pos, gridPos)
-          )
-        ) {
+        if (!pingAt(boardState, gridPos)) {
           onPingCreated(gridPos);
         }
       } else if (
         buttons === LEFT_MOUSE &&
-        !tokens.find(
-          (token) =>
-            token.type !== EntityType.Ping && posAreEqual(token.pos, gridPos)
-        )
+        !tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })
       ) {
         onFloorCreated(activeFloor, gridPos);
       } else if (buttons === RIGHT_MOUSE) {
-        const toDelete = tokens.find(
-          (token) =>
-            token.type !== EntityType.Ping && posAreEqual(token.pos, gridPos)
-        );
-        if (toDelete) {
-          onTokenDeleted(toDelete.id);
+        let toDeleteId = tokenIdAt(boardState, {
+          ...gridPos,
+          z: CHARACTER_HEIGHT,
+        });
+        if (!toDeleteId) {
+          toDeleteId = tokenIdAt(boardState, {
+            ...gridPos,
+            z: FLOOR_HEIGHT,
+          });
+        }
+        if (toDeleteId) {
+          onTokenDeleted(toDeleteId);
         }
       }
 

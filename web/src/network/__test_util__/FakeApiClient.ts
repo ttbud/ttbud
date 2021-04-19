@@ -1,6 +1,8 @@
 import { assert } from "../../util/invariants";
-import { Update } from "../board-state-diff";
-import BoardStateApiClient, { ApiEventHandler } from "../BoardStateApiClient";
+import BoardStateApiClient, {
+  Action,
+  ApiEventHandler,
+} from "../BoardStateApiClient";
 
 export default class FakeApiClient implements BoardStateApiClient {
   private isConnected: boolean = false;
@@ -27,7 +29,7 @@ export default class FakeApiClient implements BoardStateApiClient {
     this.isConnected = false;
   }
 
-  public send(requestId: string, updates: Update[]) {
+  public send(requestId: string, actions: Action[]) {
     if (this.isConnected) {
       this.requestIds.push(requestId);
     } else {

@@ -12,7 +12,7 @@ from websocket import create_connection, WebSocket
 
 from src.api.api_structures import (
     Request,
-    CreateOrUpdateAction,
+    UpsertAction,
     PingAction,
     DeleteAction,
     Action,
@@ -106,13 +106,13 @@ class TTBudUser(User):
     def on_stop(self) -> None:
         # Delete all the tokens from the room to avoid saving load test rooms
         # to the store
-        updates: List[Action] = list(
+        actions: List[Action] = list(
             map(
-                lambda token_id: DeleteAction(action='delete', data=token_id),
+                lambda token_id: DeleteAction(data=token_id),
                 self.tokens_ids_sent,
             )
         )
-        self.client.send(Request(request_id=str(uuid.uuid4()), updates=updates))
+        self.client.send(Request(request_id=str(uuid.uuid4()), actions=actions))
         self.client.disconnect()
 
     @task(10)
@@ -124,9 +124,8 @@ class TTBudUser(User):
         self.client.send(
             Request(
                 str(uuid.uuid4()),
-                updates=[
-                    CreateOrUpdateAction(
-                        'create',
+                actions=[
+                    UpsertAction(
                         Token(
                             id=str(uuid.uuid4()),
                             type='character',
@@ -148,8 +147,6 @@ class TTBudUser(User):
         self.client.send(
             Request(
                 str(uuid.uuid4()),
-                updates=[
-                    PingAction('ping', Ping(str(uuid.uuid4()), type='ping', x=1, y=1))
-                ],
+                actions=[PingAction(Ping(str(uuid.uuid4()), type='ping', x=1, y=1))],
             )
         )
