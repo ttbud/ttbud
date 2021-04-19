@@ -4,7 +4,7 @@ import Floor from "./Floor";
 import { ContentType } from "../../types";
 import { WALL_ICON } from "../icons";
 
-export default {
+const floorFixtures = {
   icon: (
     <Floor
       contents={{ type: ContentType.Icon, iconId: WALL_ICON.id }}
@@ -18,3 +18,5 @@ export default {
     />
   ),
 };
+
+export default floorFixtures;

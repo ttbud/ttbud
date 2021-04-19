@@ -2,7 +2,7 @@ import { PureSettings } from "./Settings";
 import React, { useState } from "react";
 import noop from "../../util/noop";
 
-export default () => {
+export default function SettingsFixture() {
   const [debugEnabled, setDebugEnabled] = useState(false);
   const [showTourPrompt, setShowTourPrompt] = useState(true);
 
@@ -16,4 +16,4 @@ export default () => {
       onTourPromptDismissed={() => setShowTourPrompt(false)}
     />
   );
-};
+}
