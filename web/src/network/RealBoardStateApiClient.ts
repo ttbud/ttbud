@@ -1,62 +1,63 @@
 import decode from "../util/decode";
-import { Update, UpdateType } from "./board-state-diff";
 import UnreachableCaseError from "../util/UnreachableCaseError";
 import noop from "../util/noop";
 import {
-  ApiEntity,
+  ApiAction,
+  ApiToken,
   ApiTokenContents,
-  ApiUpdate,
   isTextContents,
   MessageDecoder,
 } from "./api-types";
-import { ContentType, Entity, EntityType, TokenContents } from "../types";
+import { ContentType, EntityType, Token, TokenContents } from "../types";
 import { assert } from "../util/invariants";
 import {
+  Action,
   ApiEventHandler,
   ConnectionError,
   EventType,
 } from "./BoardStateApiClient";
 
-function toApiUpdate(update: Update): ApiUpdate {
-  switch (update.type) {
-    case UpdateType.CREATE:
-    case UpdateType.MOVE:
-      if (update.token.type === EntityType.Ping) {
-        const { id, type, pos } = update.token;
-        return {
-          action: "ping",
-          data: { id, type, x: pos.x, y: pos.y },
-        };
-      } else {
-        const { id, type, contents, pos, color } = update.token;
-        const apiContents =
-          contents.type === ContentType.Text
-            ? { text: contents.text }
-            : { icon_id: contents.iconId };
+function toApiAction(action: Action): ApiAction {
+  switch (action.type) {
+    case "upsert":
+      const { id, type, contents, pos, color } = action.token;
+      const apiContents =
+        contents.type === ContentType.Text
+          ? { text: contents.text }
+          : { icon_id: contents.iconId };
 
-        return {
-          action: "update",
-          data: {
-            id,
-            type,
-            contents: apiContents,
-            start_x: pos.x,
-            start_y: pos.y,
-            start_z: pos.z,
-            end_x: pos.x + 1,
-            end_y: pos.y + 1,
-            end_z: pos.z + 1,
-            color_rgb: color,
-          },
-        };
-      }
-    case UpdateType.DELETE:
+      return {
+        action: "upsert",
+        data: {
+          id,
+          type,
+          contents: apiContents,
+          start_x: pos.x,
+          start_y: pos.y,
+          start_z: pos.z,
+          end_x: pos.x + 1,
+          end_y: pos.y + 1,
+          end_z: pos.z + 1,
+          color_rgb: color,
+        },
+      };
+    case "delete":
       return {
         action: "delete",
-        data: update.tokenId,
+        data: action.entityId,
+      };
+    case "ping":
+      const ping = action.ping;
+      return {
+        action: "ping",
+        data: {
+          type: "ping",
+          id: ping.id,
+          ...ping.pos,
+        },
       };
     default:
-      throw new UnreachableCaseError(update);
+      throw new UnreachableCaseError(action);
   }
 }
 
@@ -74,43 +75,71 @@ function toContents(contents: ApiTokenContents): TokenContents {
   }
 }
 
-function toEntity(apiEntity: ApiEntity): Entity {
-  switch (apiEntity.type) {
-    case "ping":
-      return {
-        type: EntityType.Ping,
-        id: apiEntity.id,
-        pos: {
-          x: apiEntity.x,
-          y: apiEntity.y,
-        },
-      };
+function toType(type: "character" | "floor") {
+  switch (type) {
     case "character":
-      return {
-        id: apiEntity.id,
-        type: apiEntity.type as EntityType.Character,
-        contents: toContents(apiEntity.contents),
-        pos: {
-          x: apiEntity.start_x,
-          y: apiEntity.start_y,
-          z: apiEntity.start_z,
-        },
-        color: apiEntity.color_rgb,
-      };
+      return EntityType.Character;
     case "floor":
+      return EntityType.Floor;
+    default:
+      throw new UnreachableCaseError(type);
+  }
+}
+
+function toAction(apiAction: ApiAction): Action {
+  switch (apiAction.action) {
+    case "delete":
       return {
-        id: apiEntity.id,
-        type: apiEntity.type as EntityType.Floor,
-        contents: toContents(apiEntity.contents),
-        pos: {
-          x: apiEntity.start_x,
-          y: apiEntity.start_y,
-          z: apiEntity.start_z,
+        type: "delete",
+        entityId: apiAction.data,
+      };
+    case "ping":
+      const ping = apiAction.data;
+      return {
+        type: "ping",
+        ping: {
+          id: ping.id,
+          type: EntityType.Ping,
+          pos: {
+            x: ping.x,
+            y: ping.y,
+          },
         },
       };
-    default:
-      throw new UnreachableCaseError(apiEntity);
+    case "upsert":
+      const token = apiAction.data;
+      return {
+        type: "upsert",
+        token: {
+          id: token.id,
+          type: toType(token.type),
+          contents: toContents(token.contents),
+          pos: {
+            x: token.start_x,
+            y: token.start_y,
+            z: token.start_z,
+          },
+          color: token.color_rgb,
+        },
+      };
   }
+}
+
+function toToken(apiToken: ApiToken): Token {
+  const token: Token = {
+    id: apiToken.id,
+    type: apiToken.type as EntityType.Character | EntityType.Floor,
+    contents: toContents(apiToken.contents),
+    pos: {
+      x: apiToken.start_x,
+      y: apiToken.start_y,
+      z: apiToken.start_z,
+    },
+  };
+  if (apiToken.type === "character") {
+    token.color = apiToken.color_rgb;
+  }
+  return token;
 }
 
 enum DisconnectErrorCode {
@@ -168,12 +197,12 @@ export class RealBoardStateApiClient {
     this.socket?.close();
   }
 
-  public send(requestId: string, updates: Update[]) {
+  public send(requestId: string, actions: Action[]) {
     if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(
         JSON.stringify({
           request_id: requestId,
-          updates: updates.map(toApiUpdate),
+          actions: actions.map(toApiAction),
         })
       );
     } else {
@@ -231,11 +260,11 @@ export class RealBoardStateApiClient {
     }
 
     switch (message.type) {
-      case "state":
+      case "update":
         this.eventHandler({
-          type: EventType.TokenUpdate,
+          type: EventType.Update,
           requestId: message.request_id,
-          tokens: message.data.map(toEntity),
+          actions: message.actions.map(toAction),
         });
         break;
       case "error":
@@ -249,7 +278,7 @@ export class RealBoardStateApiClient {
       case "connected":
         this.eventHandler({
           type: EventType.InitialState,
-          tokens: message.data.map(toEntity),
+          tokens: message.data.map(toToken),
         });
         break;
       default:

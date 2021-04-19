@@ -1,6 +1,5 @@
 import WS from "jest-websocket-mock";
 import { ContentType, EntityType, Ping, Token } from "../types";
-import { UpdateType } from "./board-state-diff";
 import { ApiPingToken } from "./api-types";
 import { RealBoardStateApiClient } from "./RealBoardStateApiClient";
 import { EventType } from "./BoardStateApiClient";
@@ -79,9 +78,9 @@ describe("BoardStateApiClient", () => {
     client.connect("roomId");
     await api.connected;
 
-    expect(eventHandler.mock.calls.flat()).toEqual([
-      { type: EventType.Connecting },
-      { type: EventType.Connected },
+    expect(eventHandler.mock.calls).toEqual([
+      [{ type: EventType.Connecting }],
+      [{ type: EventType.Connected }],
     ]);
   });
 
@@ -129,32 +128,31 @@ describe("BoardStateApiClient", () => {
 
   it("notifies listeners of token updates", async () => {
     api.send({
-      type: "state",
+      type: "update",
       request_id: "request-id",
-      data: [API_CHARACTER],
+      actions: [{ action: "upsert", data: API_CHARACTER }],
     });
 
     expect(eventHandler).toHaveBeenCalledWith({
-      type: "tokens",
+      type: "update",
       requestId: "request-id",
-      tokens: [CHARACTER],
+      actions: [{ type: "upsert", token: CHARACTER }],
     });
   });
 
   it("sends token creates", async () => {
     client.send("request-id", [
       {
-        type: UpdateType.CREATE,
+        type: "upsert",
         token: CHARACTER,
       },
     ]);
 
     await expect(api).toReceiveMessage({
       request_id: "request-id",
-      updates: [
+      actions: [
         {
-          // Creates and updates are sent as "update"
-          action: "update",
+          action: "upsert",
           data: API_CHARACTER,
         },
       ],
@@ -164,14 +162,14 @@ describe("BoardStateApiClient", () => {
   it("sends pings", async () => {
     client.send("request-id", [
       {
-        type: UpdateType.CREATE,
-        token: VALID_PING,
+        type: "ping",
+        ping: VALID_PING,
       },
     ]);
 
     await expect(api).toReceiveMessage({
       request_id: "request-id",
-      updates: [
+      actions: [
         {
           // Creates and updates are sent as "update"
           action: "ping",
