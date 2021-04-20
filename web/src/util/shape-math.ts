@@ -1,4 +1,4 @@
-import { GRID_SIZE_PX } from "../config";
+import { GRID_SIZE_PX, GRID_SIZE_PX_X, GRID_SIZE_PX_Y } from "../config";
 
 export interface Bounds {
   top: number;
@@ -20,8 +20,10 @@ export interface Pos3d {
 
 export function snapToGrid(pos: Pos2d): Pos2d {
   return {
-    x: snapDimensionToGrid(pos.x),
-    y: snapDimensionToGrid(pos.y),
+    x:
+      Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X +
+      (Math.floor(pos.y / GRID_SIZE_PX_Y) % 2) * GRID_SIZE_PX_X * 0.5,
+    y: Math.floor(pos.y / GRID_SIZE_PX_Y) * GRID_SIZE_PX_Y,
   };
 }
 

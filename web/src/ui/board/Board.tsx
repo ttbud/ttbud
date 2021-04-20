@@ -5,7 +5,7 @@ import React, {
   useRef,
 } from "react";
 import { makeStyles } from "@material-ui/core";
-import { GRID_SIZE_PX } from "../../config";
+import { GRID_SIZE_PX, GRID_SIZE_PX_X, GRID_SIZE_PX_Y } from "../../config";
 import Floor from "../token/Floor";
 import Character from "../token/Character";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
@@ -46,14 +46,19 @@ const useStyles = makeStyles((theme) => ({
       ${GRID_COLOR} ${GRID_SIZE_PX}px
     ),
     repeating-linear-gradient(
-      -90deg,
+      -120deg,
+      transparent,
+      transparent ${GRID_SIZE_PX - 1}px,
+      ${GRID_COLOR} ${GRID_SIZE_PX - 1}px,
+      ${GRID_COLOR} ${GRID_SIZE_PX}px
+    ),
+    repeating-linear-gradient(
+      -60deg,
       transparent,
       transparent ${GRID_SIZE_PX - 1}px,
       ${GRID_COLOR} ${GRID_SIZE_PX - 1}px,
       ${GRID_COLOR} ${GRID_SIZE_PX}px
     )`,
-    borderBottom: `1px solid ${GRID_COLOR}`,
-    borderRight: `1px solid ${GRID_COLOR}`,
     backgroundSize: `${GRID_SIZE_PX}px ${GRID_SIZE_PX}px`,
     height: "100%",
     width: "100%",
@@ -71,8 +76,8 @@ const scrolledPos = (pixelPos: Pos2d) => {
 const toGridPos = (pixelPos: Pos2d) => {
   const snappedPixelPos = snapToGrid(scrolledPos(pixelPos));
   return {
-    x: snappedPixelPos.x / GRID_SIZE_PX,
-    y: snappedPixelPos.y / GRID_SIZE_PX,
+    x: snappedPixelPos.x / GRID_SIZE_PX_X,
+    y: snappedPixelPos.y / GRID_SIZE_PX_Y,
   };
 };
 
@@ -148,8 +153,8 @@ const PureBoard: React.FC<Props> = ({
 
   const tokenIcons = tokens.map((token) => {
     const pixelPos = {
-      x: token.pos.x * GRID_SIZE_PX,
-      y: token.pos.y * GRID_SIZE_PX,
+      x: token.pos.x * GRID_SIZE_PX_X, //+ token.pos.y % 2 * 0.5 * GRID_SIZE_PX_X
+      y: token.pos.y * GRID_SIZE_PX_Y,
     };
 
     switch (token.type) {
