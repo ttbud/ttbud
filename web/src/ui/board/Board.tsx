@@ -28,8 +28,7 @@ import { RootState } from "../../store/rootReducer";
 import { addPing, addFloor, removeToken } from "./board-slice";
 import { connect } from "react-redux";
 import { Entity, EntityType, TokenContents } from "../../types";
-
-let GRID_COLOR = "#947C65";
+import hexagon from "../../hexagon.svg";
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -38,28 +37,8 @@ const useStyles = makeStyles((theme) => ({
   },
   board: {
     backgroundColor: theme.palette.background.default,
-    backgroundImage: `repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent ${GRID_SIZE_PX - 1}px,
-      ${GRID_COLOR} ${GRID_SIZE_PX - 1}px,
-      ${GRID_COLOR} ${GRID_SIZE_PX}px
-    ),
-    repeating-linear-gradient(
-      -120deg,
-      transparent,
-      transparent ${GRID_SIZE_PX - 1}px,
-      ${GRID_COLOR} ${GRID_SIZE_PX - 1}px,
-      ${GRID_COLOR} ${GRID_SIZE_PX}px
-    ),
-    repeating-linear-gradient(
-      -60deg,
-      transparent,
-      transparent ${GRID_SIZE_PX - 1}px,
-      ${GRID_COLOR} ${GRID_SIZE_PX - 1}px,
-      ${GRID_COLOR} ${GRID_SIZE_PX}px
-    )`,
-    backgroundSize: `${GRID_SIZE_PX}px ${GRID_SIZE_PX}px`,
+    backgroundImage: `url(${hexagon})`,
+    backgroundSize: `${GRID_SIZE_PX_X}px ${GRID_SIZE_PX_Y}px`,
     height: "100%",
     width: "100%",
     zIndex: 0,

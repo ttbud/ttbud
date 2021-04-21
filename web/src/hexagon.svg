@@ -1,0 +1,8 @@
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" height="623.769145" width="1083">
+    <polygon points="723,312 543,623.769145 183,623.769145 3,312 183,0 543,0 723,312" fill="white"
+             fill-opacity="0"
+             stroke="#947C65" stroke-width="10"/>
+
+    <line x1="723" y1="312" x2="1083" y2="312" stroke="#947C65" stroke-width="10"/>
+</svg>
