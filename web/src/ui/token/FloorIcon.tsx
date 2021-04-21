@@ -1,6 +1,6 @@
 import React, { CSSProperties } from "react";
 import { makeStyles } from "@material-ui/core";
-import { GRID_SIZE_PX } from "../../config";
+import { GRID_SIZE_PX, GRID_SIZE_PX_X, GRID_SIZE_PX_Y } from "../../config";
 import Pos2d from "../../util/shape-math";
 import { Icon } from "../icons";
 
@@ -11,8 +11,8 @@ interface Props {
 
 const useStyles = makeStyles({
   media: {
-    width: GRID_SIZE_PX,
-    height: GRID_SIZE_PX,
+    width: GRID_SIZE_PX_X,
+    height: GRID_SIZE_PX_Y,
     userSelect: "none",
   },
 });

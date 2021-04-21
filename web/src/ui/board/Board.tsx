@@ -45,7 +45,7 @@ const useStyles = makeStyles((theme) => ({
   board: {
     backgroundColor: theme.palette.background.default,
     backgroundImage: `url(${hexagon})`,
-    backgroundSize: `${GRID_SIZE_PX_X}px ${GRID_SIZE_PX_Y}px`,
+    backgroundSize: `${GRID_SIZE_PX_X * 6}px ${GRID_SIZE_PX_Y * 2}px`,
     height: "100%",
     width: "100%",
     zIndex: 0,

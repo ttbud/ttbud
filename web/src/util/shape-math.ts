@@ -22,7 +22,7 @@ export function snapToGrid(pos: Pos2d): Pos2d {
   return {
     x:
       Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X +
-      (Math.floor(pos.y / GRID_SIZE_PX_Y) % 2) * GRID_SIZE_PX_X * 0.5,
+      (Math.floor(pos.x / GRID_SIZE_PX_X) % 3 == 0 ? 1 : 0) * GRID_SIZE_PX_X,
     y: Math.floor(pos.y / GRID_SIZE_PX_Y) * GRID_SIZE_PX_Y,
   };
 }
