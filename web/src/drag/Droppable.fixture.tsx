@@ -67,10 +67,12 @@ const DropTargets: React.FC = () => {
   );
 };
 
-export default () => (
-  <Provider store={store}>
-    <DndContext.Provider value={monitor}>
-      <DropTargets />
-    </DndContext.Provider>
-  </Provider>
-);
+export default function DroppableFixture() {
+  return (
+    <Provider store={store}>
+      <DndContext.Provider value={monitor}>
+        <DropTargets />
+      </DndContext.Provider>
+    </Provider>
+  );
+}

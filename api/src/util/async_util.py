@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from asyncio import Future
+from asyncio import Future, CancelledError
 from typing import TypeVar, AsyncIterable, AsyncIterator, Optional, List, cast
 
 _T = TypeVar('_T')
@@ -37,8 +37,13 @@ async def items_until(it: AsyncIterable[_T], stop: asyncio.Future) -> AsyncItera
 
         if stop in done:
             next_item_task.cancel()
-            # Allow stop to raise if it completed with an exception
-            stop.result()
+            try:
+                # Await the task to ensure that the cancel finishes.
+                # This should raise a CancelledError, which we ignore
+                await next_item_task
+            except CancelledError:
+                pass
+            await stop
             return
         else:
             # MyPy does not know that the only task in done is the next item in the

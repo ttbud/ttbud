@@ -48,7 +48,7 @@ class MemoryRoomStore(RoomStore):
 
     async def add_request(self, room_id: str, request: Request) -> None:
         await self._write(
-            room_id, filter(lambda x: x.action != 'ping', request.updates)
+            room_id, filter(lambda x: x.action != 'ping', request.actions)
         )
         await self._publish(room_id, request)
 
@@ -66,6 +66,9 @@ class MemoryRoomStore(RoomStore):
     async def get_all_room_ids(self) -> AsyncIterator[str]:
         for key in self.storage.rooms_by_id.keys():
             yield key
+
+    async def room_exists(self, room_id: str) -> bool:
+        return room_id in self.storage.rooms_by_id
 
     async def _publish(self, room_id: str, request: Request) -> None:
         for q in self._changes[room_id]:

@@ -35,13 +35,26 @@ const TokenDecoder = t.type({
   color_rgb: t.union([ColorDecoder, t.undefined]),
 });
 
-const ApiEntityDecoder = t.union([TokenDecoder, PingDecoder]);
-
-const BoardStateDecoder = t.type({
-  type: t.literal("state"),
-  request_id: t.string,
-  data: t.array(ApiEntityDecoder),
+const UpsertActionDecoder = t.type({
+  data: TokenDecoder,
+  action: t.literal("upsert"),
 });
+
+const DeleteActionDecoder = t.type({
+  data: t.string,
+  action: t.literal("delete"),
+});
+
+const PingActionDecoder = t.type({
+  data: PingDecoder,
+  action: t.literal("ping"),
+});
+
+const ActionDecoder = t.union([
+  PingActionDecoder,
+  UpsertActionDecoder,
+  DeleteActionDecoder,
+]);
 
 const ErrorMessageDecoder = t.type({
   type: t.literal("error"),
@@ -51,35 +64,40 @@ const ErrorMessageDecoder = t.type({
 
 const ConnectionResultDecoder = t.type({
   type: t.literal("connected"),
-  data: t.array(ApiEntityDecoder),
+  data: t.array(TokenDecoder),
+});
+
+const UpdateDecoder = t.type({
+  request_id: t.string,
+  type: t.literal("update"),
+  actions: t.array(ActionDecoder),
 });
 
 export const MessageDecoder = t.union([
-  BoardStateDecoder,
+  UpdateDecoder,
   ErrorMessageDecoder,
   ConnectionResultDecoder,
 ]);
 
 export type ApiPingToken = t.TypeOf<typeof PingDecoder>;
-type ApiToken = t.TypeOf<typeof TokenDecoder>;
+export type ApiToken = t.TypeOf<typeof TokenDecoder>;
 
-interface PingApiUpdate {
+interface PingApiAction {
   action: "ping";
   data: ApiPingToken;
 }
 
-interface TokenApiUpdate {
-  action: "update";
+interface TokenApiAction {
+  action: "upsert";
   data: ApiToken;
 }
 
-interface TokenDelete {
+interface TokenDeleteAction {
   action: "delete";
   data: string;
 }
 
-export type ApiUpdate = PingApiUpdate | TokenApiUpdate | TokenDelete;
-export type ApiEntity = t.TypeOf<typeof ApiEntityDecoder>;
+export type ApiAction = PingApiAction | TokenApiAction | TokenDeleteAction;
 export type ApiTextContent = t.TypeOf<typeof TextContentsDecoder>;
 export type ApiTokenContents = t.TypeOf<typeof TokenContentsDecoder>;
 

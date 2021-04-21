@@ -5,16 +5,37 @@ from src.game_components import Ping, Token
 
 
 @dataclass
+class UpsertAction:
+    data: Token
+    action: Literal['upsert'] = field(init=False, default='upsert')
+
+
+@dataclass
+class DeleteAction:
+    data: str
+    action: Literal['delete'] = field(init=False, default='delete')
+
+
+@dataclass
+class PingAction:
+    data: Ping
+    action: Literal['ping'] = field(init=False, default='ping')
+
+
+Action = Union[UpsertAction, DeleteAction, PingAction]
+
+
+@dataclass
 class ConnectionResponse:
-    data: Iterable[Union[Ping, Token]]
+    data: Iterable[Token]
     type: Literal['connected'] = field(init=False, default='connected')
 
 
 @dataclass
-class StateResponse:
-    data: Iterable[Union[Ping, Token]]
+class UpdateResponse:
+    actions: Iterable[Action]
     request_id: str
-    type: Literal['state'] = field(init=False, default='state')
+    type: Literal['update'] = field(init=False, default='update')
 
 
 @dataclass
@@ -25,31 +46,10 @@ class ErrorResponse:
     type: Literal['error'] = field(init=False, default='error')
 
 
-Response = Union[ConnectionResponse, StateResponse, ErrorResponse]
-
-
-@dataclass
-class CreateOrUpdateAction:
-    action: Literal['create', 'update']
-    data: Token
-
-
-@dataclass
-class DeleteAction:
-    action: Literal['delete']
-    data: str
-
-
-@dataclass
-class PingAction:
-    action: Literal['ping']
-    data: Ping
-
-
-Action = Union[CreateOrUpdateAction, DeleteAction, PingAction]
+Response = Union[ConnectionResponse, UpdateResponse, ErrorResponse]
 
 
 @dataclass
 class Request:
     request_id: str
-    updates: List[Action]
+    actions: List[Action]
