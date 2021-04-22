@@ -11,8 +11,8 @@ interface Props {
 
 const useStyles = makeStyles({
   media: {
-    width: GRID_SIZE_PX_X,
-    height: GRID_SIZE_PX_Y,
+    width: GRID_SIZE_PX_X * 2,
+    height: GRID_SIZE_PX_Y * 2,
     userSelect: "none",
   },
 });

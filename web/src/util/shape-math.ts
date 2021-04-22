@@ -21,9 +21,33 @@ export interface Pos3d {
 export function snapToGrid(pos: Pos2d): Pos2d {
   return {
     x:
-      Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X +
-      (Math.floor(pos.x / GRID_SIZE_PX_X) % 3 == 0 ? 1 : 0) * GRID_SIZE_PX_X,
-    y: Math.floor(pos.y / GRID_SIZE_PX_Y) * GRID_SIZE_PX_Y,
+      (Math.floor(pos.x / GRID_SIZE_PX_X) +
+        (Math.floor(pos.x / GRID_SIZE_PX_X) % 3 == 0 ? 1 : 0) +
+        ((Math.floor(pos.x / GRID_SIZE_PX_X) +
+          (Math.floor(pos.x / GRID_SIZE_PX_X) % 3 == 0 ? 1 : 0) +
+          1) %
+          3 ==
+        0
+          ? -1
+          : 0)) *
+      GRID_SIZE_PX_X,
+    y:
+      Math.floor(pos.y / (GRID_SIZE_PX_Y * 2)) * GRID_SIZE_PX_Y * 2 +
+      ((Math.floor(pos.x / GRID_SIZE_PX_X) +
+        (Math.floor(pos.x / GRID_SIZE_PX_X) % 3 == 0 ? 1 : 0) +
+        ((Math.floor(pos.x / GRID_SIZE_PX_X) +
+          (Math.floor(pos.x / GRID_SIZE_PX_X) % 3 == 0 ? 1 : 0) +
+          1) %
+          3 ==
+        0
+          ? -1
+          : 0)) %
+        6 ==
+      1
+        ? 0
+        : -1) *
+        (Math.floor(pos.y / GRID_SIZE_PX_Y) % 2 == 0 ? 1 : -1) *
+        GRID_SIZE_PX_Y,
   };
 }
 
