@@ -22,7 +22,34 @@ export function snapToGrid(pos: Pos2d): Pos2d {
   return {
     x:
       (Math.floor(pos.x / GRID_SIZE_PX_X) +
-        (Math.floor(pos.x / GRID_SIZE_PX_X) % 3 == 0 ? 1 : 0) +
+        (Math.floor(pos.x / GRID_SIZE_PX_X) % 6 == 0
+          ? Math.floor(pos.y / GRID_SIZE_PX_Y) % 2 == 0
+            ? ((Math.floor(pos.y / GRID_SIZE_PX_Y) + 1) * GRID_SIZE_PX_Y -
+                pos.y) *
+                Math.tan(0.523598775598) <
+              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
+              ? 1
+              : -2
+            : (pos.y - Math.floor(pos.y / GRID_SIZE_PX_Y) * GRID_SIZE_PX_Y) *
+                Math.tan(0.523598775598) <
+              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
+            ? 1
+            : -2
+          : 0) +
+        (Math.floor(pos.x / GRID_SIZE_PX_X) % 6 == 3
+          ? Math.floor(pos.y / GRID_SIZE_PX_Y) % 2 == 0
+            ? (pos.y - Math.floor(pos.y / GRID_SIZE_PX_Y) * GRID_SIZE_PX_Y) *
+                Math.tan(0.523598775598) <
+              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
+              ? 1
+              : -2
+            : ((Math.floor(pos.y / GRID_SIZE_PX_Y) + 1) * GRID_SIZE_PX_Y -
+                pos.y) *
+                Math.tan(0.523598775598) <
+              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
+            ? 1
+            : -2
+          : 0) +
         ((Math.floor(pos.x / GRID_SIZE_PX_X) +
           (Math.floor(pos.x / GRID_SIZE_PX_X) % 3 == 0 ? 1 : 0) +
           1) %
@@ -34,7 +61,34 @@ export function snapToGrid(pos: Pos2d): Pos2d {
     y:
       Math.floor(pos.y / (GRID_SIZE_PX_Y * 2)) * GRID_SIZE_PX_Y * 2 +
       ((Math.floor(pos.x / GRID_SIZE_PX_X) +
-        (Math.floor(pos.x / GRID_SIZE_PX_X) % 3 == 0 ? 1 : 0) +
+        (Math.floor(pos.x / GRID_SIZE_PX_X) % 6 == 0
+          ? Math.floor(pos.y / GRID_SIZE_PX_Y) % 2 == 0
+            ? ((Math.floor(pos.y / GRID_SIZE_PX_Y) + 1) * GRID_SIZE_PX_Y -
+                pos.y) *
+                Math.tan(0.523598775598) <
+              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
+              ? 1
+              : -2
+            : (pos.y - Math.floor(pos.y / GRID_SIZE_PX_Y) * GRID_SIZE_PX_Y) *
+                Math.tan(0.523598775598) <
+              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
+            ? 1
+            : -2
+          : 0) +
+        (Math.floor(pos.x / GRID_SIZE_PX_X) % 6 == 3
+          ? Math.floor(pos.y / GRID_SIZE_PX_Y) % 2 == 0
+            ? (pos.y - Math.floor(pos.y / GRID_SIZE_PX_Y) * GRID_SIZE_PX_Y) *
+                Math.tan(0.523598775598) <
+              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
+              ? 1
+              : -2
+            : ((Math.floor(pos.y / GRID_SIZE_PX_Y) + 1) * GRID_SIZE_PX_Y -
+                pos.y) *
+                Math.tan(0.523598775598) <
+              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
+            ? 1
+            : -2
+          : 0) +
         ((Math.floor(pos.x / GRID_SIZE_PX_X) +
           (Math.floor(pos.x / GRID_SIZE_PX_X) % 3 == 0 ? 1 : 0) +
           1) %
