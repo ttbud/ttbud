@@ -14,9 +14,10 @@ const useStyles = makeStyles<Theme, Props>({
     alignItems: "center",
     justifyContent: "center",
     boxSizing: "border-box",
-    width: GRID_SIZE_PX,
-    height: GRID_SIZE_PX,
+    width: 80,
+    height: 70,
     border: `3px solid ${toCssColor(color)}`,
+    clipPath: "polygon(26% 1%, 74% 1%, 99% 50%, 74% 99%, 26% 99%, 1% 50%)",
   }),
   media: {
     width: "70%",

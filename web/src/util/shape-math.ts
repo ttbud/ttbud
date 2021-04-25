@@ -1,4 +1,5 @@
 import { GRID_SIZE_PX, GRID_SIZE_PX_X, GRID_SIZE_PX_Y } from "../config";
+import UnreachableCaseError from "./UnreachableCaseError";
 
 export interface Bounds {
   top: number;
@@ -18,90 +19,71 @@ export interface Pos3d {
   z: number;
 }
 
+const THIRTY_DEG_RADIANS = 0.523598775598;
+
 export function snapToGrid(pos: Pos2d): Pos2d {
+  const column = Math.floor(pos.x / GRID_SIZE_PX_X);
+  const row = Math.floor(pos.y / GRID_SIZE_PX_Y);
+  const rowIsEven = row % 2 == 0;
+  const distanceToBottomOfRow = (row + 1) * GRID_SIZE_PX_Y - pos.y;
+
+  const distanceToLeftOfColumn = pos.x - column * GRID_SIZE_PX_X;
+  const distanceToTopOfRow = pos.y - row * GRID_SIZE_PX_Y;
+
+  const isRightOfForwardSlash =
+    distanceToBottomOfRow * Math.tan(THIRTY_DEG_RADIANS) <
+    distanceToLeftOfColumn;
+
+  const isRightOfBackslash =
+    distanceToTopOfRow * Math.tan(THIRTY_DEG_RADIANS) < distanceToLeftOfColumn;
+
+  let columnOffset;
+  switch (column % 6) {
+    case 0:
+      if (rowIsEven) {
+        columnOffset = isRightOfForwardSlash ? 1 : -2;
+      } else {
+        columnOffset = isRightOfBackslash ? 1 : -2;
+      }
+      break;
+    case 1:
+    case 4:
+      columnOffset = 0;
+      break;
+    case 2:
+    case 5:
+      columnOffset = -1;
+      break;
+    case 3:
+      if (rowIsEven) {
+        columnOffset = isRightOfBackslash ? 1 : -2;
+      } else {
+        columnOffset = isRightOfForwardSlash ? 1 : -2;
+      }
+      break;
+    default:
+      //TODO: Better
+      throw new Error("ahhh");
+  }
+
+  const trueColumn = column + columnOffset;
+  const fullHexRow =
+    Math.floor(pos.y / (GRID_SIZE_PX_Y * 2)) * GRID_SIZE_PX_Y * 2;
+  const isEvenRow = Math.floor(pos.y / GRID_SIZE_PX_Y) % 2;
+
+  const isFirstHex = trueColumn % 6 == 1;
+  let rowOffset;
+  if (!isFirstHex && isEvenRow) {
+    rowOffset = 1;
+  } else if (!isFirstHex && !isEvenRow) {
+    rowOffset = -1;
+  } else {
+    rowOffset = 0;
+  }
+
   return {
-    x:
-      (Math.floor(pos.x / GRID_SIZE_PX_X) +
-        (Math.floor(pos.x / GRID_SIZE_PX_X) % 6 == 0
-          ? Math.floor(pos.y / GRID_SIZE_PX_Y) % 2 == 0
-            ? ((Math.floor(pos.y / GRID_SIZE_PX_Y) + 1) * GRID_SIZE_PX_Y -
-                pos.y) *
-                Math.tan(0.523598775598) <
-              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
-              ? 1
-              : -2
-            : (pos.y - Math.floor(pos.y / GRID_SIZE_PX_Y) * GRID_SIZE_PX_Y) *
-                Math.tan(0.523598775598) <
-              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
-            ? 1
-            : -2
-          : 0) +
-        (Math.floor(pos.x / GRID_SIZE_PX_X) % 6 == 3
-          ? Math.floor(pos.y / GRID_SIZE_PX_Y) % 2 == 0
-            ? (pos.y - Math.floor(pos.y / GRID_SIZE_PX_Y) * GRID_SIZE_PX_Y) *
-                Math.tan(0.523598775598) <
-              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
-              ? 1
-              : -2
-            : ((Math.floor(pos.y / GRID_SIZE_PX_Y) + 1) * GRID_SIZE_PX_Y -
-                pos.y) *
-                Math.tan(0.523598775598) <
-              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
-            ? 1
-            : -2
-          : 0) +
-        ((Math.floor(pos.x / GRID_SIZE_PX_X) +
-          (Math.floor(pos.x / GRID_SIZE_PX_X) % 3 == 0 ? 1 : 0) +
-          1) %
-          3 ==
-        0
-          ? -1
-          : 0)) *
-      GRID_SIZE_PX_X,
-    y:
-      Math.floor(pos.y / (GRID_SIZE_PX_Y * 2)) * GRID_SIZE_PX_Y * 2 +
-      ((Math.floor(pos.x / GRID_SIZE_PX_X) +
-        (Math.floor(pos.x / GRID_SIZE_PX_X) % 6 == 0
-          ? Math.floor(pos.y / GRID_SIZE_PX_Y) % 2 == 0
-            ? ((Math.floor(pos.y / GRID_SIZE_PX_Y) + 1) * GRID_SIZE_PX_Y -
-                pos.y) *
-                Math.tan(0.523598775598) <
-              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
-              ? 1
-              : -2
-            : (pos.y - Math.floor(pos.y / GRID_SIZE_PX_Y) * GRID_SIZE_PX_Y) *
-                Math.tan(0.523598775598) <
-              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
-            ? 1
-            : -2
-          : 0) +
-        (Math.floor(pos.x / GRID_SIZE_PX_X) % 6 == 3
-          ? Math.floor(pos.y / GRID_SIZE_PX_Y) % 2 == 0
-            ? (pos.y - Math.floor(pos.y / GRID_SIZE_PX_Y) * GRID_SIZE_PX_Y) *
-                Math.tan(0.523598775598) <
-              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
-              ? 1
-              : -2
-            : ((Math.floor(pos.y / GRID_SIZE_PX_Y) + 1) * GRID_SIZE_PX_Y -
-                pos.y) *
-                Math.tan(0.523598775598) <
-              pos.x - Math.floor(pos.x / GRID_SIZE_PX_X) * GRID_SIZE_PX_X
-            ? 1
-            : -2
-          : 0) +
-        ((Math.floor(pos.x / GRID_SIZE_PX_X) +
-          (Math.floor(pos.x / GRID_SIZE_PX_X) % 3 == 0 ? 1 : 0) +
-          1) %
-          3 ==
-        0
-          ? -1
-          : 0)) %
-        6 ==
-      1
-        ? 0
-        : -1) *
-        (Math.floor(pos.y / GRID_SIZE_PX_Y) % 2 == 0 ? 1 : -1) *
-        GRID_SIZE_PX_Y,
+    x: (trueColumn - 1) * GRID_SIZE_PX_X,
+    y: fullHexRow + rowOffset * GRID_SIZE_PX_Y,
   };
 }
 
