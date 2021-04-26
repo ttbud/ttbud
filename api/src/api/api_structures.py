@@ -15,6 +15,7 @@ class DeleteAction:
     data: str
     action: Literal['delete'] = field(init=False, default='delete')
 
+
 @dataclass
 class PingAction:
     data: Ping
