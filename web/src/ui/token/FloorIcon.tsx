@@ -11,8 +11,11 @@ interface Props {
 
 const useStyles = makeStyles({
   media: {
-    width: GRID_SIZE_PX_X * 2,
-    height: GRID_SIZE_PX_Y * 2,
+    marginLeft: 10,
+    marginTop: 5,
+    width: 60,
+    height: 60,
+    clipPath: "polygon(26% 1%, 74% 1%, 99% 50%, 74% 99%, 26% 99%, 1% 50%)",
     userSelect: "none",
   },
 });

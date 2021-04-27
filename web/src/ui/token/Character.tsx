@@ -9,16 +9,19 @@ import { DragAttributes } from "../../drag/Draggable";
 import { Pos3d } from "../../util/shape-math";
 
 const useStyles = makeStyles<Theme, Props>({
-  character: ({ color }) => ({
+  container: ({ color }) => ({
+    filter: "drop-shadow(16px 16px 20px gray)",
+    border: `3px solid ${toCssColor(color)}`,
+  }),
+  character: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     boxSizing: "border-box",
     width: 80,
     height: 70,
-    border: `3px solid ${toCssColor(color)}`,
     clipPath: "polygon(26% 1%, 74% 1%, 99% 50%, 74% 99%, 26% 99%, 1% 50%)",
-  }),
+  },
   media: {
     width: "70%",
     height: "70%",
@@ -88,11 +91,8 @@ const Character: React.FC<Props> = memo((props) => {
   };
 
   return (
-    <Card
-      onContextMenu={onContextMenu}
-      raised={isDragging}
-      className={clsx(classes.character, className)}
-      {...dragAttributes}
+    <div
+      className={classes.container}
       style={{
         position: pos ? "absolute" : "static",
         top: pos?.y,
@@ -100,9 +100,16 @@ const Character: React.FC<Props> = memo((props) => {
         zIndex: pos?.z,
         ...dragAttributes?.style,
       }}
+      {...dragAttributes}
     >
-      {renderContents(contents)}
-    </Card>
+      <Card
+        onContextMenu={onContextMenu}
+        raised={isDragging}
+        className={clsx(classes.character, className)}
+      >
+        {renderContents(contents)}
+      </Card>
+    </div>
   );
 });
 
