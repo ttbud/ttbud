@@ -11,7 +11,8 @@ from typing import (
     Iterator,
     Iterable,
     Dict,
-    Any, )
+    Any,
+)
 
 from aioredis import Redis
 from aioredis.errors import ReplyError
@@ -20,7 +21,9 @@ from dacite import from_dict
 from src.api.api_structures import Request, Action, UpsertAction, DeleteAction
 from src.room_store.room_store import (
     RoomStore,
-    ReplacementData, UnexpectedReplacementId, COMPACTION_LOCK_EXPIRATION_MINUTES,
+    ReplacementData,
+    UnexpectedReplacementId,
+    COMPACTION_LOCK_EXPIRATION_MINUTES,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,7 +43,7 @@ redis.call("publish", channel_key, publish_value)
 """
 
 
-#language=lua
+# language=lua
 _SET_REPLACEMENT_LOCK = f"""
 local replacement_key = KEYS[1]
 local replacer_id = ARGV[1]
@@ -88,7 +91,13 @@ class ChangeListener:
 
 
 class RedisRoomStore(RoomStore):
-    def __init__(self, redis: Redis, append_to_room_sha: str, set_replacement_lock_sha: str, lreplace_sha: str):
+    def __init__(
+        self,
+        redis: Redis,
+        append_to_room_sha: str,
+        set_replacement_lock_sha: str,
+        lreplace_sha: str,
+    ):
         self._redis = redis
         self._append_to_room_sha = append_to_room_sha
         self._set_replacement_lock_sha = set_replacement_lock_sha
@@ -178,14 +187,23 @@ class RedisRoomStore(RoomStore):
         )
 
     async def acquire_replacement_lock(self, replacer_id: str) -> bool:
-        return await self._redis.evalsha(self._set_replacement_lock_sha, keys=[REPLACEMENT_KEY], args=[replacer_id],) == 1
+        return (
+            await self._redis.evalsha(
+                self._set_replacement_lock_sha,
+                keys=[REPLACEMENT_KEY],
+                args=[replacer_id],
+            )
+            == 1
+        )
 
     async def read_for_replacement(self, room_id: str) -> ReplacementData:
         updates = await self._redis.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
         actions = [action for action in _to_actions(updates)]
         return ReplacementData(actions, len(updates))
 
-    async def replace(self, room_id: str, actions: List[Action], replace_token: Any, replacer_id: str) -> None:
+    async def replace(
+        self, room_id: str, actions: List[Action], replace_token: Any, replacer_id: str
+    ) -> None:
         try:
             await self._redis.evalsha(
                 self._lreplace_sha,

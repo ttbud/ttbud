@@ -9,7 +9,7 @@ import timber
 import uvicorn
 from starlette.applications import Starlette
 
-from compaction import Compactor
+from src.compaction import Compactor
 from src import apm
 from src.api.wsmanager import WebsocketManager
 from src.config import config, Environment
@@ -32,7 +32,7 @@ async def make_app() -> Starlette:
     room_store = await create_redis_room_store(redis)
     rate_limiter = await create_redis_rate_limiter(server_id, redis)
 
-    compactor = Compactor(room_store)
+    compactor = Compactor(room_store, worker_id)
 
     gss = GameStateServer(room_store, apm.transaction, rate_limiter)
     ws = WebsocketManager(gss, rate_limiter)

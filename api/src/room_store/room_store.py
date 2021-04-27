@@ -10,7 +10,6 @@ from typing import (
     Awaitable,
     Iterable,
     Any,
-    Iterator,
 )
 
 from src.api.api_structures import Request, Action
@@ -41,7 +40,7 @@ class RoomChangeEvent:
 
 @dataclass
 class ReplacementData:
-    actions: Iterator[Action]
+    actions: Iterable[Action]
     replace_token: Any
 
 
@@ -67,5 +66,11 @@ class RoomStore(Protocol):
     async def read_for_replacement(self, room_id: str) -> ReplacementData:
         ...
 
-    async def replace(self, room_id: str, actions: List[Action], replace_token: Any, compaction_id: str) -> None:
+    async def replace(
+        self,
+        room_id: str,
+        actions: List[Action],
+        replace_token: Any,
+        compaction_id: str,
+    ) -> None:
         ...

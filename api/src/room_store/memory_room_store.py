@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections import defaultdict
+from copy import copy
 from dataclasses import dataclass, field
 from typing import (
     Dict,
@@ -10,11 +11,17 @@ from typing import (
     AsyncIterator,
     AsyncGenerator,
     DefaultDict,
-    Iterable, Any, Optional,
+    Iterable,
+    Any,
+    Optional,
 )
 
 from src.api.api_structures import Request, Action
-from src.room_store.room_store import RoomStore, ReplacementData, UnexpectedReplacementId
+from src.room_store.room_store import (
+    RoomStore,
+    ReplacementData,
+    UnexpectedReplacementId,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +63,7 @@ class MemoryRoomStore(RoomStore):
     async def read(self, room_id: str) -> Iterable[Action]:
         # Yield the event loop at least once so reading is truly async
         await asyncio.sleep(0)
-        return self.storage.rooms_by_id.get(room_id, [])
+        return copy(self.storage.rooms_by_id.get(room_id, []))
 
     async def _write(self, room_id: str, updates: Iterable[Action]) -> None:
         # Yield the event loop at least once so writing is truly async
@@ -83,9 +90,15 @@ class MemoryRoomStore(RoomStore):
 
     async def read_for_replacement(self, room_id: str) -> ReplacementData:
         actions = self.storage.rooms_by_id[room_id]
-        return ReplacementData(actions, len(actions))
+        return ReplacementData(copy(actions), len(actions))
 
-    async def replace(self, room_id: str, actions: List[Action], replace_token: Any, compaction_id: str) -> None:
+    async def replace(
+        self,
+        room_id: str,
+        actions: List[Action],
+        replace_token: Any,
+        compaction_id: str,
+    ) -> None:
         if self._compaction_id == compaction_id:
             self.storage.rooms_by_id[room_id][0:replace_token] = actions
         else:
