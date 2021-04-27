@@ -10,11 +10,11 @@ from typing import (
     AsyncIterator,
     AsyncGenerator,
     DefaultDict,
-    Iterable,
+    Iterable, Any, Optional,
 )
 
 from src.api.api_structures import Request, Action
-from src.room_store.room_store import RoomStore
+from src.room_store.room_store import RoomStore, ReplacementData, UnexpectedReplacementId
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,7 @@ class MemoryRoomStore(RoomStore):
     def __init__(self, storage: MemoryRoomStorage) -> None:
         self.storage = storage
         self._changes: Dict[str, List[asyncio.Queue]] = defaultdict(list)
+        self._compaction_id: Optional[str] = None
 
     async def changes(self, room_id: str) -> AsyncGenerator[Request, None]:
         queue: asyncio.Queue[Request] = asyncio.Queue()
@@ -73,3 +74,19 @@ class MemoryRoomStore(RoomStore):
     async def _publish(self, room_id: str, request: Request) -> None:
         for q in self._changes[room_id]:
             await q.put(request)
+
+    async def acquire_replacement_lock(self, compaction_id: str) -> bool:
+        if not self._compaction_id:
+            self._compaction_id = compaction_id
+            return True
+        return False
+
+    async def read_for_replacement(self, room_id: str) -> ReplacementData:
+        actions = self.storage.rooms_by_id[room_id]
+        return ReplacementData(actions, len(actions))
+
+    async def replace(self, room_id: str, actions: List[Action], replace_token: Any, compaction_id: str) -> None:
+        if self._compaction_id == compaction_id:
+            self.storage.rooms_by_id[room_id][0:replace_token] = actions
+        else:
+            raise UnexpectedReplacementId()

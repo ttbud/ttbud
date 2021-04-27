@@ -11,14 +11,14 @@ from src.room_store.memory_room_store import (
     MemoryRoomStorage,
 )
 from src.room_store.redis_room_store import create_redis_room_store, RedisRoomStore
-from src.room_store.room_store import RoomStore
+from src.room_store.room_store import RoomStore, ReplacementData
 from src.util.async_util import async_collect
 from tests.static_fixtures import (
     VALID_ACTION,
     PING_ACTION,
     TEST_REQUEST_ID,
     TEST_ROOM_ID,
-    VALID_REQUEST,
+    VALID_REQUEST, ANOTHER_VALID_ACTION,
 )
 
 pytestmark = pytest.mark.asyncio
@@ -105,3 +105,23 @@ async def test_change_notifications(room_store: RoomStore) -> None:
     await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
     reply = await sub_task
     assert reply == [VALID_REQUEST]
+
+
+@any_room_store
+async def test_replacement_lock(room_store: RoomStore) -> None:
+    success = await room_store.acquire_replacement_lock('compaction_id_1')
+    assert success
+
+    success = await room_store.acquire_replacement_lock('compaction_id_2')
+    assert not success
+
+
+@any_room_store
+async def test_replace(room_store: RoomStore) -> None:
+    await room_store.acquire_replacement_lock('compaction_id')
+    await room_store.add_request('room-id-1', VALID_REQUEST)
+    replace_data = await room_store.read_for_replacement('room-id-1')
+    assert replace_data == ReplacementData([VALID_ACTION], 1)
+
+    await room_store.replace('room-id-1', [ANOTHER_VALID_ACTION], replace_data.replace_token, 'compaction_id')
+    assert list(await room_store.read('room-id-1')) == [ANOTHER_VALID_ACTION]

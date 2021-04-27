@@ -1,26 +1,37 @@
 import asyncio
-from typing import List, NoReturn
+from typing import List, NoReturn, Optional
 from uuid import uuid4
 
 from room import Room
-from src.api.api_structures import UpsertAction, DeleteAction, Request, Action
+from src.api.api_structures import UpsertAction, DeleteAction, Action
 from src.game_components import Token
-from src.room_store.room_store import RoomStore
-
-COMPACTION_INTERVAL_MINUTES = 10
+from src.room_store.room_store import RoomStore, UnexpectedReplacementId, COMPACTION_INTERVAL_MINUTES
 
 
 class Compactor:
     def __init__(self, room_store: RoomStore):
         self._room_store = room_store
+        self._compaction_id: Optional[str] = None
 
     async def maintain_compaction(self) -> NoReturn:
+        acquired: bool = False
         while True:
-            async for room_id in self._room_store.get_all_room_ids():
-                await self.compact_room(room_id)
+            if not acquired:
+                self._compaction_id = str(uuid4())
+                if self._room_store.acquire_replacement_lock(self._compaction_id):
+                    acquired = True
+                else:
+                    self._compaction_id = None
+            if acquired:
+                async for room_id in self._room_store.get_all_room_ids():
+                    try:
+                        await self._compact_room(room_id)
+                    except UnexpectedReplacementId:
+                        acquired = False
+                        self._compaction_id = None
             await asyncio.sleep(COMPACTION_INTERVAL_MINUTES * 60)
 
-    async def compact_room(self, room_id: str) -> None:
+    async def _compact_room(self, room_id: str) -> None:
         replacement_data = await self._room_store.read_for_replacement(room_id)
         room = Room()
         for action in replacement_data.actions:
@@ -29,8 +40,7 @@ class Compactor:
             elif isinstance(action, DeleteAction):
                 room.delete_token(action.data)
         compacted_actions = _tokens_to_actions(list(room.game_state.values()))
-        request = Request(str(uuid4()), compacted_actions)
-        await self._room_store.replace(room_id, request, replacement_data.replace_token)
+        await self._room_store.replace(room_id, compacted_actions, replacement_data.replace_token, self._compaction_id)
 
 
 def _tokens_to_actions(tokens: List[Token]) -> List[Action]:
