@@ -36,7 +36,7 @@ class Compactor:
                 except UnexpectedReplacementId:
                     acquired = False
                 logger.info(
-                    f'Compaction cycle complete',
+                    'Compaction cycle complete',
                     extra={'elapsed_time_secs': time.monotonic() - start_time},
                 )
 

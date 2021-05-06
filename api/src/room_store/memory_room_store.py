@@ -10,11 +10,17 @@ from typing import (
     AsyncIterator,
     AsyncGenerator,
     DefaultDict,
-    Iterable, Any, Optional,
+    Iterable,
+    Any,
+    Optional,
 )
 
 from src.api.api_structures import Request, Action
-from src.room_store.room_store import RoomStore, ReplacementData, UnexpectedReplacementId
+from src.room_store.room_store import (
+    RoomStore,
+    ReplacementData,
+    UnexpectedReplacementId,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +91,13 @@ class MemoryRoomStore(RoomStore):
         actions = self.storage.rooms_by_id[room_id]
         return ReplacementData(actions, len(actions))
 
-    async def replace(self, room_id: str, actions: List[Action], replace_token: Any, replacement_id: str) -> None:
+    async def replace(
+        self,
+        room_id: str,
+        actions: List[Action],
+        replace_token: Any,
+        replacement_id: str,
+    ) -> None:
         if self._replacement_id == replacement_id:
             self.storage.rooms_by_id[room_id][0:replace_token] = actions
         else:
