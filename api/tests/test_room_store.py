@@ -141,12 +141,13 @@ async def test_replace_concurrent_updates(room_store: RoomStore) -> None:
     await room_store.add_request('room-id-1', DELETE_REQUEST)
     assert replace_data.actions == [VALID_ACTION]
 
+    replace_actions: List[Action] = [ANOTHER_VALID_ACTION]
     await room_store.replace(
-        'room-id-1', [ANOTHER_VALID_ACTION], replace_data.replace_token, 'compaction_id'
+        'room-id-1', replace_actions, replace_data.replace_token, 'compaction_id'
     )
-    assert list(await room_store.read('room-id-1')) == DELETE_REQUEST.actions + [
-        ANOTHER_VALID_ACTION
-    ]
+    actions = list(await room_store.read('room-id-1'))
+
+    assert actions == replace_actions + DELETE_REQUEST.actions
 
 
 @any_room_store

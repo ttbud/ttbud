@@ -13,7 +13,9 @@ from tests.static_fixtures import (
     TEST_ROOM_ID,
     VALID_TOKEN,
     VALID_REQUEST,
-    DELETE_REQUEST, VALID_MOVE_REQUEST, UPDATED_TOKEN,
+    DELETE_REQUEST,
+    VALID_MOVE_REQUEST,
+    UPDATED_TOKEN,
 )
 
 TEST_COMPACTOR_ID = 'compactor_1'
@@ -66,10 +68,12 @@ async def test_color_persistence(compactor: Compactor, room_store: RoomStore) ->
         end_x=3,
         end_y=3,
         end_z=3,
-        color_rgb=colors[1]
+        color_rgb=colors[1],
     )
     await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
-    await room_store.add_request(TEST_ROOM_ID, Request('new_request', [UpsertAction(green_token)]))
+    await room_store.add_request(
+        TEST_ROOM_ID, Request('new_request', [UpsertAction(green_token)])
+    )
     await room_store.add_request(TEST_ROOM_ID, DELETE_REQUEST)
     await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
     await compactor._compact_room(TEST_ROOM_ID)
