@@ -50,7 +50,14 @@ services:
     command: redis-server --appendonly yes
     ports:
       - 6379:6379
+    volumes:
+      - db:/data
+  redisinsight:
+    image: redislabs/redisinsight
+    volumes:
+      - redisinsight:/db
+    ports:
+      - 8001:8001
 volumes:
-  static-assets:
-  certs:
-  rooms:
+  redisinsight:
+  db:

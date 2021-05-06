@@ -9,13 +9,15 @@ from typing import (
     Union,
     Awaitable,
     Iterable,
+    Any,
 )
 
 from src.api.api_structures import Request, Action
 from src.game_components import Token, Ping
 
 MAX_LOCK_RETRIES = 3
-LOCK_EXPIRATION_SECS = 10
+COMPACTION_INTERVAL_MINUTES = 10
+COMPACTION_LOCK_EXPIRATION_MINUTES = COMPACTION_INTERVAL_MINUTES * 2
 
 
 class CorruptedRoomException(Exception):
@@ -26,10 +28,20 @@ class TransactionFailedException(Exception):
     pass
 
 
+class UnexpectedReplacementId(BaseException):
+    pass
+
+
 @dataclass
 class RoomChangeEvent:
     request_id: Optional[str]
     entities: List[Union[Token, Ping]]
+
+
+@dataclass
+class ReplacementData:
+    actions: Iterable[Action]
+    replace_token: Any
 
 
 class RoomStore(Protocol):
@@ -46,8 +58,19 @@ class RoomStore(Protocol):
         ...
 
     async def add_request(self, room_id: str, request: Request) -> None:
-        """
+        ...
 
-        :rtype: object
-        """
+    async def acquire_replacement_lock(self, compaction_id: str) -> bool:
+        ...
+
+    async def read_for_replacement(self, room_id: str) -> ReplacementData:
+        ...
+
+    async def replace(
+        self,
+        room_id: str,
+        actions: List[Action],
+        replace_token: Any,
+        compaction_id: str,
+    ) -> None:
         ...
