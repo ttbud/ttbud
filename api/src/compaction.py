@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import time
 from typing import List, NoReturn
 
 from src.room import Room
@@ -9,6 +11,8 @@ from src.room_store.room_store import (
     UnexpectedReplacementId,
     COMPACTION_INTERVAL_MINUTES,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class Compactor:
@@ -25,11 +29,16 @@ class Compactor:
                 )
 
             if acquired:
+                start_time = time.monotonic()
                 try:
                     async for room_id in self._room_store.get_all_room_ids():
                         await self._compact_room(room_id)
                 except UnexpectedReplacementId:
                     acquired = False
+                logger.info(
+                    f'Compaction cycle complete',
+                    extra={'elapsed_time_secs': time.monotonic() - start_time},
+                )
 
             await asyncio.sleep(COMPACTION_INTERVAL_MINUTES * 60)
 
