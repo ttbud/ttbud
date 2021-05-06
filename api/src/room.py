@@ -67,12 +67,11 @@ class Room:
                 new_content_id = content_id(token.contents)
                 if self.icon_to_token_ids.get(new_content_id):
                     token_ids = self.icon_to_token_ids[new_content_id]
-                    tokens_with_icon: List[Token] = []
+                    tokens_with_icon = [token]
                     for t_id in token_ids:
                         token_with_icon = self.game_state[t_id]
                         if isinstance(token_with_icon, Token):
                             tokens_with_icon.append(token_with_icon)
-                        tokens_with_icon.append(token)
                     token_ids.append(token.id)
                     _assign_colors(tokens_with_icon)
                 else:

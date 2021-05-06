@@ -43,7 +43,7 @@ TEST_TOKEN = {
     'end_z': 1,
 }
 
-TEST_UPSERT_ACTION = {
+TEST_UPSERT_TOKEN = {
     'data': TEST_TOKEN,
     'action': 'upsert',
 }
@@ -84,7 +84,7 @@ async def test_add_token(app: Starlette) -> None:
         await client.send_json(
             {
                 'request_id': TEST_REQUEST_ID,
-                'actions': [TEST_UPSERT_ACTION],
+                'actions': [TEST_UPSERT_TOKEN],
             }
         )
 
@@ -93,7 +93,7 @@ async def test_add_token(app: Starlette) -> None:
             {
                 'type': 'update',
                 'request_id': TEST_REQUEST_ID,
-                'actions': [TEST_UPSERT_ACTION],
+                'actions': [TEST_UPSERT_TOKEN],
             },
         )
 

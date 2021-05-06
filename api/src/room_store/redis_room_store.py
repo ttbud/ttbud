@@ -11,19 +11,25 @@ from typing import (
     Iterator,
     Iterable,
     Dict,
+    Any,
 )
 
 from aioredis import Redis
+from aioredis.errors import ReplyError
 from dacite import from_dict
 
 from src.api.api_structures import Request, Action, UpsertAction, DeleteAction
 from src.room_store.room_store import (
     RoomStore,
+    ReplacementData,
+    UnexpectedReplacementId,
+    COMPACTION_LOCK_EXPIRATION_MINUTES,
 )
 
 logger = logging.getLogger(__name__)
 
 NO_REQUEST_ID = "NO_REQUEST_ID"
+REPLACEMENT_KEY = 'replacement_lock'
 
 # language=lua
 _APPEND_TO_ROOM = """
@@ -34,6 +40,38 @@ local publish_value = ARGV[2]
 
 redis.call("rpush", room_key, room_update)
 redis.call("publish", channel_key, publish_value)
+"""
+
+
+# language=lua
+_SET_REPLACEMENT_LOCK = f"""
+local replacement_key = KEYS[1]
+local replacer_id = ARGV[1]
+
+local success = redis.call("setnx", replacement_key, replacer_id)
+if success == 1 then
+    redis.call("expire", replacement_key, {COMPACTION_LOCK_EXPIRATION_MINUTES * 60})
+    return true
+else
+    return false
+end
+"""
+
+
+# language=lua
+_LREPLACE = """
+local room_key = KEYS[1]
+local compaction_key = KEYS[2]
+local replace_item = ARGV[1]
+local replace_until = ARGV[2]
+local compactor_id = ARGV[3]
+
+if redis.call("get", compaction_key) == compactor_id then
+    redis.call("ltrim", room_key, replace_until, -1)
+    redis.call("lpush", room_key, replace_item)
+else
+    error("Unexpected value for compaction key")
+end
 """
 
 
@@ -53,9 +91,17 @@ class ChangeListener:
 
 
 class RedisRoomStore(RoomStore):
-    def __init__(self, redis: Redis, append_to_room_sha: str):
+    def __init__(
+        self,
+        redis: Redis,
+        append_to_room_sha: str,
+        set_replacement_lock_sha: str,
+        lreplace_sha: str,
+    ):
         self._redis = redis
         self._append_to_room_sha = append_to_room_sha
+        self._set_replacement_lock_sha = set_replacement_lock_sha
+        self._lreplace_sha = lreplace_sha
         self._listeners_by_room_id: Dict[str, ChangeListener] = dict()
 
     async def _listen_for_changes(self, room_id: str) -> None:
@@ -121,7 +167,7 @@ class RedisRoomStore(RoomStore):
 
     async def read(self, room_id: str) -> Iterable[Action]:
         data = await self._redis.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
-        return _to_updates(data)
+        return _to_actions(data)
 
     async def add_request(self, room_id: str, request: Request) -> None:
         await self._redis.evalsha(
@@ -140,18 +186,56 @@ class RedisRoomStore(RoomStore):
             ],
         )
 
+    async def acquire_replacement_lock(self, replacer_id: str) -> bool:
+        return (
+            await self._redis.evalsha(
+                self._set_replacement_lock_sha,
+                keys=[REPLACEMENT_KEY],
+                args=[replacer_id],
+            )
+            == 1
+        )
+
+    async def read_for_replacement(self, room_id: str) -> ReplacementData:
+        updates = await self._redis.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
+        actions = [action for action in _to_actions(updates)]
+        return ReplacementData(actions, len(updates))
+
+    async def replace(
+        self, room_id: str, actions: List[Action], replace_token: Any, replacer_id: str
+    ) -> None:
+        try:
+            await self._redis.evalsha(
+                self._lreplace_sha,
+                keys=[
+                    _room_key(room_id),
+                    REPLACEMENT_KEY,
+                ],
+                args=[
+                    json.dumps(list(map(asdict, actions))),
+                    replace_token,
+                    replacer_id,
+                ],
+            )
+        except ReplyError as e:
+            raise UnexpectedReplacementId(e.args)
+
 
 async def create_redis_room_store(redis: Redis) -> RedisRoomStore:
     append_to_room = await redis.script_load(_APPEND_TO_ROOM)
-    return RedisRoomStore(redis, append_to_room)
+    set_replacement_lock = await redis.script_load(_SET_REPLACEMENT_LOCK)
+    lreplace = await redis.script_load(_LREPLACE)
+    return RedisRoomStore(redis, append_to_room, set_replacement_lock, lreplace)
 
 
-def _to_updates(raw_updates: List[str]) -> Iterator[Action]:
+def _to_actions(raw_updates: List[str]) -> Iterator[Action]:
     for raw_update_group in raw_updates:
         update_group = json.loads(raw_update_group)
         for update in update_group:
             action = update['action']
-            if action == 'upsert':
+            # Older version uses "update" or "create" instead of upsert
+            if action in ['upsert', 'update', 'create']:
+                update['action'] = 'upsert'
                 yield from_dict(UpsertAction, update)
             elif action == 'delete':
                 yield from_dict(DeleteAction, update)
