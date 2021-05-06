@@ -3,7 +3,6 @@ import { render } from "@testing-library/react";
 import { ContentType } from "../../types";
 import { WALL_ICON } from "../icons";
 import Floor from "./Floor";
-import Character from "./Character";
 
 describe("Floor", () => {
   it("Capitalizes text for text floors", () => {

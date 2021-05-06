@@ -9,7 +9,7 @@ const DEFAULT_PROPS = {
   isDragging: false,
 };
 
-export default {
+const characterFixtures = {
   Default: <Character {...DEFAULT_PROPS} />,
   Text: (
     <Character
@@ -21,3 +21,5 @@ export default {
     <Character {...DEFAULT_PROPS} color={{ red: 255, green: 0, blue: 0 }} />
   ),
 };
+
+export default characterFixtures;
