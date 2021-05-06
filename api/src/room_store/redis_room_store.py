@@ -233,7 +233,9 @@ def _to_actions(raw_updates: List[str]) -> Iterator[Action]:
         update_group = json.loads(raw_update_group)
         for update in update_group:
             action = update['action']
-            if action == 'upsert':
+            # Older version uses "update" or "create" instead of upsert
+            if action in ['upsert', 'update', 'create']:
+                update['action'] = 'upsert'
                 yield from_dict(UpsertAction, update)
             elif action == 'delete':
                 yield from_dict(DeleteAction, update)
