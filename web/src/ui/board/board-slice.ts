@@ -155,15 +155,7 @@ const boardSlice = createSlice({
           });
           break;
         case DragResult.DraggedOutOf:
-          assert(
-            draggable.type === DraggableType.Token,
-            "Dragged from board but draggable type was not token"
-          );
-
-          applyLocalAction(state, {
-            type: "delete",
-            entityId: draggable.tokenId,
-          });
+          // Dragging a token to a tray from the board should not remove the token from the board
           break;
         case DragResult.DraggedInto:
           assert(
