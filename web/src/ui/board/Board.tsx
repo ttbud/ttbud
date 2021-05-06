@@ -2,6 +2,7 @@ import React, {
   MouseEventHandler,
   PointerEventHandler,
   useCallback,
+  useEffect,
   useRef,
 } from "react";
 import { makeStyles } from "@material-ui/core";
@@ -31,10 +32,14 @@ import {
   removeEntity,
   CHARACTER_HEIGHT,
   FLOOR_HEIGHT,
+  undo,
+  undoFence,
+  redo,
 } from "./board-slice";
 import { connect } from "react-redux";
 import { EntityType, TokenContents } from "../../types";
 import { BoardState, pingAt, tokenIdAt } from "./board-state";
+import { useHotkeys } from "react-hotkeys-hook";
 
 let GRID_COLOR = "#947C65";
 
@@ -95,6 +100,9 @@ interface Props {
   onPingCreated: (pos: Pos2d) => void;
   onFloorCreated: (contents: TokenContents, pos: Pos2d) => void;
   onTokenDeleted: (id: string) => void;
+  onUndoPressed: () => void;
+  onUndoFenceHit: () => void;
+  onRedoPressed: () => void;
 }
 
 const mapStateToProps = (state: RootState) => ({
@@ -107,18 +115,33 @@ const dispatchProps = {
   onPingCreated: addPing,
   onFloorCreated: addFloor,
   onTokenDeleted: removeEntity,
+  onUndoPressed: undo,
+  onRedoPressed: redo,
+  onUndoFenceHit: undoFence,
 };
 
 const PureBoard: React.FC<Props> = ({
   isDragging,
   boardState,
   activeFloor,
+  onUndoPressed,
+  onUndoFenceHit,
+  onRedoPressed,
   onPingCreated,
   onFloorCreated,
   onTokenDeleted,
 }) => {
   const classes = useStyles();
   const container = useRef<HTMLDivElement>(null);
+
+  useHotkeys("ctrl+z", () => onUndoPressed());
+  useHotkeys("ctrl+y", () => onRedoPressed());
+
+  useEffect(() => {
+    const listener = () => onUndoFenceHit();
+    document.addEventListener("pointerup", listener);
+    return () => document.removeEventListener("pointerup", listener);
+  });
 
   const getLocation: LocationCollector = useCallback(
     (draggable, pos): TargetLocation | undefined => {

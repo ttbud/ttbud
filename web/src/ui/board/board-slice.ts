@@ -11,16 +11,23 @@ import { EntityType, Token, TokenContents } from "../../types";
 import {
   applyLocalAction,
   applyNetworkUpdate,
+  applyRedo,
+  applyUndo,
+  applyUndoFence,
   collectUpdate,
   MergeState,
 } from "./action-reconciliation";
-import { Action } from "../../network/BoardStateApiClient";
 import { AppThunk } from "../../store/createStore";
 import pause from "../../util/pause";
+import { Action } from "../../network/BoardStateApiClient";
 
 const INITIAL_STATE: MergeState = {
   unqueuedActions: [],
   queuedUpdates: [],
+  undoState: {
+    undoSets: [],
+    undoIdx: 0,
+  },
   local: {
     entityById: {},
     charIdsByContentId: {},
@@ -117,6 +124,15 @@ const boardSlice = createSlice({
         entityId: id,
       });
     },
+    undo(state) {
+      applyUndo(state);
+    },
+    undoFence(state) {
+      applyUndoFence(state);
+    },
+    redo(state) {
+      applyRedo(state);
+    },
   },
   extraReducers: {
     [dragEnded.type]: (state, action: PayloadAction<DragEndAction>) => {
@@ -208,6 +224,9 @@ const {
   receiveInitialState,
   receiveNetworkUpdate,
   batchUnqueuedActions,
+  undo,
+  undoFence,
+  redo,
 } = boardSlice.actions;
 
 export {
@@ -218,5 +237,8 @@ export {
   receiveInitialState,
   receiveNetworkUpdate,
   batchUnqueuedActions,
+  undo,
+  undoFence,
+  redo,
 };
 export default boardSlice.reducer;

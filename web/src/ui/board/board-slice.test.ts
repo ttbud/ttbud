@@ -44,6 +44,10 @@ const EMPTY_BOARD: MergeState = {
     tokenIdsByPosStr: {},
     charIdsByContentId: {},
   },
+  undoState: {
+    undoSets: [],
+    undoIdx: 0,
+  },
   queuedUpdates: [],
   unqueuedActions: [],
 };

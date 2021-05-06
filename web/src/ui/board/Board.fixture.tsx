@@ -33,6 +33,9 @@ const ExampleBoard: React.FC = () => {
         onFloorCreated={noop}
         onTokenDeleted={noop}
         onPingCreated={noop}
+        onUndoPressed={noop}
+        onUndoFenceHit={noop}
+        onRedoPressed={noop}
         boardState={{
           entityById: {},
           tokenIdsByPosStr: {},
