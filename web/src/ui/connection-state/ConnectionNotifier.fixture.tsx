@@ -15,7 +15,7 @@ const Disconnected: React.FC<{ error: ConnectionError }> = ({ error }) => (
   />
 );
 
-export default {
+const connectionFixtures = {
   Connecting: (
     <PureConnectionNotifier
       connectionState={{ type: ConnectionStateType.Connecting, numRetries: 0 }}
@@ -26,3 +26,5 @@ export default {
   "Invalid Room Id": <Disconnected error={ConnectionError.INVALID_ROOM_ID} />,
   Unknown: <Disconnected error={ConnectionError.UNKNOWN} />,
 };
+
+export default connectionFixtures;
