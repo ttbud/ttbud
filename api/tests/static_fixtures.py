@@ -37,11 +37,12 @@ ANOTHER_VALID_TOKEN = Token(
 )
 VALID_PING = Ping('ping_id', 'ping', 0, 0)
 UPDATED_TOKEN = Token(
-    VALID_TOKEN.id, VALID_TOKEN.type, VALID_TOKEN.contents, 7, 8, 9, 8, 9, 10
+    VALID_TOKEN.id, VALID_TOKEN.type, VALID_TOKEN.contents, 7, 8, 9, 8, 9, 10, colors[0],
 )
 VALID_ACTION = UpsertAction(data=VALID_TOKEN)
 DELETE_VALID_TOKEN = DeleteAction(data=VALID_TOKEN.id)
 ANOTHER_VALID_ACTION = UpsertAction(data=ANOTHER_VALID_TOKEN)
 PING_ACTION = PingAction(data=VALID_PING)
 VALID_REQUEST = Request('request_id', [VALID_ACTION])
+VALID_MOVE_REQUEST = Request('move_request_id', [UpsertAction(data=UPDATED_TOKEN)])
 DELETE_REQUEST = Request('delete-request-id', [DELETE_VALID_TOKEN])

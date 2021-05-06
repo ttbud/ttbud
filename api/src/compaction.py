@@ -1,7 +1,7 @@
 import asyncio
 from typing import List, NoReturn
 
-from room import Room
+from src.room import Room
 from src.api.api_structures import UpsertAction, DeleteAction, Action
 from src.game_components import Token
 from src.room_store.room_store import (
