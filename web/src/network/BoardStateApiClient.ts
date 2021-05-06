@@ -1,8 +1,7 @@
-import { Update } from "./board-state-diff";
-import { Entity } from "../types";
+import { Ping, Token } from "../types";
 
 export enum EventType {
-  TokenUpdate = "tokens",
+  Update = "update",
   Connecting = "connecting",
   Connected = "connected",
   InitialState = "initial state",
@@ -10,10 +9,27 @@ export enum EventType {
   Disconnected = "disconnected",
 }
 
-interface BoardStateEvent {
-  type: EventType.TokenUpdate;
+interface UpsertAction {
+  type: "upsert";
+  token: Token;
+}
+
+interface DeleteAction {
+  type: "delete";
+  entityId: string;
+}
+
+interface PingAction {
+  type: "ping";
+  ping: Ping;
+}
+
+export type Action = UpsertAction | DeleteAction | PingAction;
+
+interface UpdateEvent {
+  type: EventType.Update;
   requestId: string;
-  tokens: Entity[];
+  actions: Action[];
 }
 
 export enum ConnectionError {
@@ -35,7 +51,7 @@ export type ConnectionStatusEvent =
 
 interface InitialStateEvent {
   type: EventType.InitialState;
-  tokens: Entity[];
+  tokens: Token[];
 }
 
 interface ErrorEvent {
@@ -49,7 +65,7 @@ interface ErrorEvent {
 }
 
 export type Event =
-  | BoardStateEvent
+  | UpdateEvent
   | ConnectionStatusEvent
   | ErrorEvent
   | InitialStateEvent;
@@ -62,5 +78,5 @@ export default interface BoardStateApiClient {
   reconnect(): void;
   connected(): boolean;
   close(): void;
-  send(requestId: string, updates: Update[]): void;
+  send(requestId: string, actions: Action[]): void;
 }
