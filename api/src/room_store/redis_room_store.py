@@ -23,7 +23,7 @@ from src.room_store.room_store import (
     RoomStore,
     ReplacementData,
     UnexpectedReplacementId,
-    COMPACTION_LOCK_EXPIRATION_MINUTES,
+    COMPACTION_LOCK_EXPIRATION_SECONDS,
 )
 
 logger = logging.getLogger(__name__)
@@ -50,9 +50,13 @@ local replacer_id = ARGV[1]
 
 local success = redis.call("setnx", replacement_key, replacer_id)
 if success == 1 then
-    redis.call("expire", replacement_key, {COMPACTION_LOCK_EXPIRATION_MINUTES * 60})
+    redis.call("expire", replacement_key, {COMPACTION_LOCK_EXPIRATION_SECONDS})
     return true
 else
+    if replacer_id == redis.call("get", replacement_key) then
+        redis.call("expire", replacement_key, {COMPACTION_LOCK_EXPIRATION_SECONDS})
+        return true
+    end
     return false
 end
 """

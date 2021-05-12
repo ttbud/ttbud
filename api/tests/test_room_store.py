@@ -1,8 +1,10 @@
 import asyncio
+from datetime import timedelta
 from typing import Callable, Awaitable, AsyncIterator, List
 
 import fakeredis.aioredis
 import pytest
+import time_machine
 from aioredis import Redis
 
 from src.api.api_structures import Request, Action
@@ -11,7 +13,11 @@ from src.room_store.memory_room_store import (
     MemoryRoomStorage,
 )
 from src.room_store.redis_room_store import create_redis_room_store, RedisRoomStore
-from src.room_store.room_store import RoomStore, UnexpectedReplacementId
+from src.room_store.room_store import (
+    RoomStore,
+    UnexpectedReplacementId,
+    COMPACTION_LOCK_EXPIRATION_SECONDS,
+)
 from src.util.async_util import async_collect
 from tests.static_fixtures import (
     VALID_ACTION,
@@ -161,3 +167,19 @@ async def test_replace_invalid_lock(room_store: RoomStore) -> None:
             replace_data.replace_token,
             'invalid-compaction-id',
         )
+
+
+@any_room_store
+async def test_lock_expires(room_store: RoomStore) -> None:
+    with time_machine.travel('1970-01-01', tick=False) as traveller:
+        await room_store.acquire_replacement_lock('compaction_id')
+        replace_data = await room_store.read_for_replacement('room-id')
+        # Move forward in time to expire the server with all of the connections
+        traveller.shift(timedelta(seconds=COMPACTION_LOCK_EXPIRATION_SECONDS + 1))
+        with pytest.raises(UnexpectedReplacementId):
+            await room_store.replace(
+                'room-id',
+                [ANOTHER_VALID_ACTION],
+                replace_data.replace_token,
+                'compaction_id',
+            )
