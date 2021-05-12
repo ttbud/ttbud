@@ -9,7 +9,7 @@ from src.game_components import Token
 from src.room_store.room_store import (
     RoomStore,
     UnexpectedReplacementId,
-    COMPACTION_INTERVAL_MINUTES,
+    COMPACTION_INTERVAL_SECONDS,
 )
 
 logger = logging.getLogger(__name__)
@@ -21,26 +21,20 @@ class Compactor:
         self._compaction_id: str = compaction_id
 
     async def maintain_compaction(self) -> NoReturn:
-        acquired = False
         while True:
-            if not acquired:
-                acquired = await self._room_store.acquire_replacement_lock(
-                    self._compaction_id
-                )
-
-            if acquired:
+            if await self._room_store.acquire_replacement_lock(self._compaction_id):
                 start_time = time.monotonic()
                 try:
                     async for room_id in self._room_store.get_all_room_ids():
                         await self._compact_room(room_id)
                 except UnexpectedReplacementId:
-                    acquired = False
+                    logger.info('Lost replacement lock while compacting')
                 logger.info(
                     'Compaction cycle complete',
                     extra={'elapsed_time_secs': time.monotonic() - start_time},
                 )
 
-            await asyncio.sleep(COMPACTION_INTERVAL_MINUTES * 60)
+            await asyncio.sleep(COMPACTION_INTERVAL_SECONDS)
 
     async def _compact_room(self, room_id: str) -> None:
         replacement_data = await self._room_store.read_for_replacement(room_id)

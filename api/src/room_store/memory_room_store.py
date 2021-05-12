@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass, field
@@ -21,6 +22,7 @@ from src.room_store.room_store import (
     RoomStore,
     ReplacementData,
     UnexpectedReplacementId,
+    COMPACTION_LOCK_EXPIRATION_SECONDS,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,11 +35,17 @@ class MemoryRoomStorage:
     )
 
 
+@dataclass
+class ReplacementLock:
+    key: str
+    expire_time: float
+
+
 class MemoryRoomStore(RoomStore):
     def __init__(self, storage: MemoryRoomStorage) -> None:
         self.storage = storage
         self._changes: Dict[str, List[asyncio.Queue]] = defaultdict(list)
-        self._replacement_id: Optional[str] = None
+        self._replacement_lock: Optional[ReplacementLock] = None
 
     async def changes(self, room_id: str) -> AsyncGenerator[Request, None]:
         queue: asyncio.Queue[Request] = asyncio.Queue()
@@ -83,10 +91,16 @@ class MemoryRoomStore(RoomStore):
             await q.put(request)
 
     async def acquire_replacement_lock(self, replacement_id: str) -> bool:
-        if not self._replacement_id:
-            self._replacement_id = replacement_id
-            return True
-        return False
+        if (
+            self._replacement_lock
+            and self._replacement_lock.key != replacement_id
+            and self._replacement_lock.expire_time >= time.monotonic()
+        ):
+            return False
+        self._replacement_lock = ReplacementLock(
+            replacement_id, time.monotonic() + COMPACTION_LOCK_EXPIRATION_SECONDS
+        )
+        return True
 
     async def read_for_replacement(self, room_id: str) -> ReplacementData:
         actions = copy(self.storage.rooms_by_id[room_id])
@@ -99,7 +113,11 @@ class MemoryRoomStore(RoomStore):
         replace_token: Any,
         replacement_id: str,
     ) -> None:
-        if self._replacement_id == replacement_id:
+        if (
+            self._replacement_lock
+            and self._replacement_lock.key == replacement_id
+            and self._replacement_lock.expire_time >= time.monotonic()
+        ):
             self.storage.rooms_by_id[room_id][0:replace_token] = actions
         else:
             raise UnexpectedReplacementId()
