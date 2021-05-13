@@ -1,5 +1,6 @@
 import asyncio
 import random
+import time
 from typing import Any
 
 import pytest
@@ -18,6 +19,12 @@ def disable_sleep(mocker: MockerFixture) -> None:
         await original_sleep(0)
 
     mocker.patch('asyncio.sleep', sleep)
+
+
+@pytest.fixture(autouse=True)
+def fix_monotonic(mocker: MockerFixture) -> None:
+    """Time machine does not work with time.monotonic. Use time.time in tests instead"""
+    mocker.patch('time.monotonic', time.time)
 
 
 @pytest.fixture(autouse=True)
