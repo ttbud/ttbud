@@ -20,6 +20,7 @@ from src.api.api_structures import (
     ConnectionResponse,
 )
 from src.api.ws_close_codes import ERR_TOO_MANY_ROOMS_CREATED, ERR_INVALID_ROOM
+from .rate_limit.noop_rate_limit import NoopRateLimiter
 from .rate_limit.rate_limit import RateLimiter, TooManyRoomsCreatedException
 from .room import create_room
 from .room_store.room_store import RoomStore
@@ -54,10 +55,12 @@ class GameStateServer:
         room_store: RoomStore,
         apm_transaction: Callable[[str], ContextManager],
         rate_limiter: RateLimiter,
+        noop_rate_limiter: NoopRateLimiter,
     ):
         self.room_store = room_store
         self.apm_transaction = apm_transaction
         self._rate_limiter = rate_limiter
+        self._noop_rate_limiter = noop_rate_limiter
 
     async def _listen_for_changes(
         self,
@@ -76,15 +79,25 @@ class GameStateServer:
             await self.room_store.add_request(room_id, request)
 
     async def handle_connection(
-        self, room_id: str, client_ip: str, requests: AsyncIterator[Request]
+        self,
+        room_id: str,
+        client_ip: str,
+        requests: AsyncIterator[Request],
+        bypass_ratelimiter: bool = False,
     ) -> AsyncIterable[Response]:
         """Handle a new client connection
         :param client_ip: IP address of the client
         :param room_id: The UUID that identifies the room the client
         is trying to connect to
         :param requests: The stream of requests from the connection
+        :param bypass_ratelimiter: If true, rate limiting will not be enforced for
+        this connection
         :raise InvalidConnectionException: If the client connection should be rejected
         """
+        rate_limiter = (
+            self._noop_rate_limiter if bypass_ratelimiter else self._rate_limiter
+        )
+
         session_id = str(uuid4())
         with timber.context(
             connection={
@@ -94,12 +107,12 @@ class GameStateServer:
             }
         ):
             logger.info(f'Connected to {client_ip}')
-            async with self._rate_limiter.rate_limited_connection(client_ip, room_id):
+            async with rate_limiter.rate_limited_connection(client_ip, room_id):
                 room_changes = await self.room_store.changes(room_id)
 
                 with self.apm_transaction('connect'):
                     if not await self.room_store.room_exists(room_id):
-                        await self._acquire_room_slot(room_id, client_ip)
+                        await self._acquire_room_slot(room_id, client_ip, rate_limiter)
 
                     room = create_room(await self.room_store.read(room_id))
                     yield ConnectionResponse(list(room.game_state.values()))
@@ -131,9 +144,11 @@ class GameStateServer:
 
                     yield UpdateResponse(request.actions, request.request_id)
 
-    async def _acquire_room_slot(self, room_id: str, client_ip: str) -> None:
+    async def _acquire_room_slot(
+        self, room_id: str, client_ip: str, rate_limiter: RateLimiter
+    ) -> None:
         try:
-            await self._rate_limiter.acquire_new_room(client_ip)
+            await rate_limiter.acquire_new_room(client_ip)
         except TooManyRoomsCreatedException:
             logger.info(
                 f'Rejecting connection to {client_ip}, too many rooms'

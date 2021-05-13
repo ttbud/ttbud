@@ -47,7 +47,6 @@ You can render them nicely with this command ([jq](https://stedolan.github.io/jq
 docker-compose logs -f --no-color api | jq --raw-input 'split("|")| .[length  - 1]|fromjson'
 ```
 
-
 ### Redis
 
 Go to localhost:8001 to use redisinsight to inspect the dev redis database.
@@ -96,11 +95,13 @@ heroku plugins:install @heroku-cli/plugin-manifest
 heroku apps:create ttbud-staging --manifest --remote staging
 heroku config:set ENVIRONMENT=staging --remote staging
 heroku config:set JSON_LOGS=true --remote staging
+heroku config:set BYPASS_RATE_LIMITER_KEY=$(uuidgen) --remote staging
 
 # Create prod environment
 heroku apps:create ttbud --manifest --remote prod
 heroku config:set ENVIRONMENT=prod --remote prod
 heroku config:set JSON_LOGS=true --remote prod
+heroku config:set BYPASS_RATE_LIMITER_KEY=$(uuidgen) --remote prod
 ```
 
 ### Web

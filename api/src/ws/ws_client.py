@@ -1,6 +1,7 @@
 from typing import (
     Protocol,
     AsyncIterable,
+    Mapping,
 )
 
 
@@ -25,4 +26,7 @@ class WebsocketClient(Protocol):
         ...
 
     async def accept(self) -> None:
+        ...
+
+    def headers(self) -> Mapping[str, str]:
         ...

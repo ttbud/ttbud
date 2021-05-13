@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import random
+import secrets
 from dataclasses import asdict
 from typing import List, Tuple, Dict, Any, NoReturn, AsyncIterator
 from uuid import UUID
@@ -10,7 +11,7 @@ import dacite
 from dacite.exceptions import WrongTypeError, MissingValueError
 from websockets import ConnectionClosedError
 
-from src.api.api_structures import Request
+from src.api.api_structures import Request, BYPASS_RATE_LIMIT_HEADER
 from src.api.ws_close_codes import (
     ERR_INVALID_UUID,
     ERR_TOO_MANY_CONNECTIONS,
@@ -68,9 +69,15 @@ async def _requests(client: WebsocketClient) -> AsyncIterator[Request]:
 
 
 class WebsocketManager:
-    def __init__(self, gss: GameStateServer, rate_limiter: RateLimiter) -> None:
+    def __init__(
+        self,
+        gss: GameStateServer,
+        rate_limiter: RateLimiter,
+        bypass_rate_limiter_key: str,
+    ) -> None:
         self._gss = gss
         self._rate_limiter = rate_limiter
+        self._bypass_rate_limiter_key = bypass_rate_limiter_key
         self._clients: List[WebsocketClient] = []
 
     async def maintain_liveness(self) -> NoReturn:
@@ -103,10 +110,27 @@ class WebsocketManager:
 
         self._clients.append(client)
 
-        client_ip = client.ip()
+        try:
+            client_ip = client.ip()
+
+            key_provided = client.headers().get(BYPASS_RATE_LIMIT_HEADER)
+
+            if key_provided:
+                # The load tester needs to be able to ignore the rate limiter so we
+                # can actually load it without owning a bunch of IPs.
+                bypass_rate_limiter = secrets.compare_digest(
+                    self._bypass_rate_limiter_key,
+                    key_provided,
+                )
+            else:
+                bypass_rate_limiter = False
+        except Exception as e:
+            bypass_rate_limiter = False
+            print(e)
+
         try:
             async for response in self._gss.handle_connection(
-                room_id, client_ip, _requests(client)
+                room_id, client_ip, _requests(client), bypass_rate_limiter
             ):
                 await client.send(
                     json.dumps(asdict(response, dict_factory=ignore_none))

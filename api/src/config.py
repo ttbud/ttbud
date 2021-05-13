@@ -28,6 +28,7 @@ class Config:
     redis_address = os.environ['REDIS_URL']
     use_redis: bool = os.environ.get('USE_REDIS') == 'true'
     json_logs: bool = os.environ.get('JSON_LOGS') == 'true'
+    bypass_rate_limit_key: str = os.environ['BYPASS_RATE_LIMIT_KEY']
     cert_config: Optional[CertConfig] = (
         CertConfig(
             key_file_path=os.environ['SSL_KEY_FILE'],

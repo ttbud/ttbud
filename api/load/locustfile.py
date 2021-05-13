@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import ssl
 import time
@@ -16,6 +17,7 @@ from src.api.api_structures import (
     PingAction,
     DeleteAction,
     Action,
+    BYPASS_RATE_LIMIT_HEADER,
 )
 from src.game_components import Ping, Token, IconTokenContents
 
@@ -27,16 +29,20 @@ def milliseconds_since(time_seconds: float) -> int:
 
 
 class TTBudClient:
-    def __init__(self, locust_env: Environment, room_id: str):
+    def __init__(
+        self, locust_env: Environment, room_id: str, bypass_rate_limit_key: str
+    ):
         self._ttbud_addr = f'{locust_env.host}/{room_id}'
         self._locust = locust_env
         self._ws: Optional[WebSocket] = None
+        self._bypass_rate_limit_key = bypass_rate_limit_key
 
     def connect(self) -> None:
         start_time = time.time()
         try:
             self._ws = create_connection(
                 self._ttbud_addr,
+                header=[f'{BYPASS_RATE_LIMIT_HEADER}: {self._bypass_rate_limit_key}'],
                 timeout=CONNECTION_TIMEOUT_SECONDS,
                 sslopt={'cert_reqs': ssl.CERT_NONE},
             )
@@ -97,7 +103,9 @@ class TTBudUser(User):
 
     def __init__(self, environment: Environment):
         super().__init__(environment)
-        self.client = TTBudClient(environment, str(uuid.uuid4()))
+        self.client = TTBudClient(
+            environment, str(uuid.uuid4()), os.environ['BYPASS_RATE_LIMIT_KEY']
+        )
         self.tokens_ids_sent: List[str] = []
 
     def on_start(self) -> None:

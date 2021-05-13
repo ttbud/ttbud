@@ -17,6 +17,7 @@ from typing import (
     TypedDict,
     cast,
     AsyncIterator,
+    Mapping,
 )
 
 
@@ -236,13 +237,18 @@ async def connect(
     app: WebsocketAsgiApp,
     path: str,
     client_ip: str = '127.0.0.1',
+    headers: Optional[Mapping[str, str]] = None,
 ) -> AsyncIterator[EmulatedClient]:
     """Create an emulated client connected to the provided app"""
+    headers = {} if headers is None else headers
 
     scope = WebsocketScope(
         type='websocket',
         asgi=Asgi(version='3'),
-        headers=[],
+        headers=[
+            (key.lower().encode('latin-1'), value.encode('latin-1'))
+            for key, value in headers.items()
+        ],
         client=(client_ip, 65535),
         path=path,
     )
