@@ -110,23 +110,19 @@ class WebsocketManager:
 
         self._clients.append(client)
 
-        try:
-            client_ip = client.ip()
+        client_ip = client.ip()
 
-            key_provided = client.headers().get(BYPASS_RATE_LIMIT_HEADER)
+        key_provided = client.headers().get(BYPASS_RATE_LIMIT_HEADER)
 
-            if key_provided:
-                # The load tester needs to be able to ignore the rate limiter so we
-                # can actually load it without owning a bunch of IPs.
-                bypass_rate_limiter = secrets.compare_digest(
-                    self._bypass_rate_limiter_key,
-                    key_provided,
-                )
-            else:
-                bypass_rate_limiter = False
-        except Exception as e:
+        if key_provided:
+            # The load tester needs to be able to ignore the rate limiter so we
+            # can actually load it without owning a bunch of IPs.
+            bypass_rate_limiter = secrets.compare_digest(
+                self._bypass_rate_limiter_key,
+                key_provided,
+            )
+        else:
             bypass_rate_limiter = False
-            print(e)
 
         try:
             async for response in self._gss.handle_connection(

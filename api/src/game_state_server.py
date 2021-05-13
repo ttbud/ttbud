@@ -83,19 +83,19 @@ class GameStateServer:
         room_id: str,
         client_ip: str,
         requests: AsyncIterator[Request],
-        bypass_ratelimiter: bool = False,
+        bypass_rate_limiter: bool = False,
     ) -> AsyncIterable[Response]:
         """Handle a new client connection
         :param client_ip: IP address of the client
         :param room_id: The UUID that identifies the room the client
         is trying to connect to
         :param requests: The stream of requests from the connection
-        :param bypass_ratelimiter: If true, rate limiting will not be enforced for
+        :param bypass_rate_limiter: If true, rate limiting will not be enforced for
         this connection
         :raise InvalidConnectionException: If the client connection should be rejected
         """
         rate_limiter = (
-            self._noop_rate_limiter if bypass_ratelimiter else self._rate_limiter
+            self._noop_rate_limiter if bypass_rate_limiter else self._rate_limiter
         )
 
         session_id = str(uuid4())
