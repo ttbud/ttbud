@@ -14,6 +14,7 @@ from src import apm
 from src.api.wsmanager import WebsocketManager
 from src.config import config, Environment
 from src.game_state_server import GameStateServer
+from src.rate_limit.noop_rate_limit import NoopRateLimiter
 from src.rate_limit.redis_rate_limit import create_redis_rate_limiter
 from src.redis import create_redis_pool
 from src.room_store.redis_room_store import create_redis_room_store
@@ -34,8 +35,8 @@ async def make_app() -> Starlette:
 
     compactor = Compactor(room_store, worker_id)
 
-    gss = GameStateServer(room_store, apm.transaction, rate_limiter)
-    ws = WebsocketManager(gss, rate_limiter)
+    gss = GameStateServer(room_store, apm.transaction, rate_limiter, NoopRateLimiter())
+    ws = WebsocketManager(gss, rate_limiter, config.bypass_rate_limit_key)
 
     def liveness_failed(fut: Future) -> NoReturn:
         logger.critical(

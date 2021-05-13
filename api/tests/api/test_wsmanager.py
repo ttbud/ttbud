@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 from starlette.applications import Starlette
 
+from src.api.api_structures import BYPASS_RATE_LIMIT_HEADER
 from src.api.ws_close_codes import (
     ERR_INVALID_UUID,
     ERR_TOO_MANY_CONNECTIONS,
@@ -15,6 +16,7 @@ from src.api.ws_close_codes import (
 from src.api.wsmanager import WebsocketManager
 from src.game_state_server import GameStateServer
 from src.rate_limit.memory_rate_limit import MemoryRateLimiter, MemoryRateLimiterStorage
+from src.rate_limit.noop_rate_limit import NoopRateLimiter
 from src.rate_limit.rate_limit import (
     MAX_CONNECTIONS_PER_USER,
     MAX_CONNECTIONS_PER_ROOM,
@@ -48,6 +50,8 @@ TEST_UPSERT_TOKEN = {
     'action': 'upsert',
 }
 
+TEST_BYPASS_RATE_LIMIT_KEY = '1234'
+
 
 @pytest.fixture
 async def app() -> Starlette:
@@ -56,8 +60,8 @@ async def app() -> Starlette:
         'server-id',
         MemoryRateLimiterStorage(),
     )
-    gss = GameStateServer(room_store, fake_transaction, rate_limiter)
-    ws = WebsocketManager(gss, rate_limiter)
+    gss = GameStateServer(room_store, fake_transaction, rate_limiter, NoopRateLimiter())
+    ws = WebsocketManager(gss, rate_limiter, TEST_BYPASS_RATE_LIMIT_KEY)
     return Starlette(routes=routes(ws), debug=True)
 
 
@@ -157,3 +161,15 @@ async def test_too_many_rooms_created(app: Starlette) -> None:
             await client.receive_json()
 
     assert e.value.code == ERR_TOO_MANY_ROOMS_CREATED
+
+
+async def test_bypass_room_create_rate_limit(app: Starlette) -> None:
+    headers = {BYPASS_RATE_LIMIT_HEADER: TEST_BYPASS_RATE_LIMIT_KEY}
+    for i in range(MAX_ROOMS_PER_TEN_MINUTES):
+        async with emulated_client.connect(
+            app, f'/{uuid4()}', headers=headers
+        ) as client:
+            await client.receive_json()
+
+    async with emulated_client.connect(app, f'/{uuid4()}', headers=headers) as client:
+        assert await client.receive_json() == {'type': 'connected', 'data': []}

@@ -27,6 +27,7 @@ class Config:
     websocket_port: int = int(os.environ['PORT'])
     redis_address = os.environ['REDIS_URL']
     json_logs: bool = os.environ.get('JSON_LOGS') == 'true'
+    bypass_rate_limit_key: str = os.environ['BYPASS_RATE_LIMIT_KEY']
     cert_config: Optional[CertConfig] = (
         CertConfig(
             key_file_path=os.environ['SSL_KEY_FILE'],

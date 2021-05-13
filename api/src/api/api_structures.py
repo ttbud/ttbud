@@ -3,6 +3,8 @@ from typing import Union, Iterable, Literal, List
 
 from src.game_components import Ping, Token
 
+BYPASS_RATE_LIMIT_HEADER = 'X-BYPASS-RATE-LIMITER'
+
 
 @dataclass
 class UpsertAction:

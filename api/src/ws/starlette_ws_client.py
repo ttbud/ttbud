@@ -1,4 +1,4 @@
-from typing import cast, AsyncIterable, TypedDict, Tuple
+from typing import cast, AsyncIterable, TypedDict, Tuple, Mapping
 
 from starlette.websockets import WebSocket
 
@@ -31,6 +31,9 @@ class StarletteWebsocketClient(WebsocketClient):
 
     async def accept(self) -> None:
         await self._websocket.accept()
+
+    def headers(self) -> Mapping[str, str]:
+        return self._websocket.headers
 
 
 class WebsocketScope(TypedDict):

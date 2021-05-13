@@ -14,6 +14,7 @@ from src.api.api_structures import (
 from src.game_components import Ping
 from src.game_state_server import GameStateServer
 from src.rate_limit.memory_rate_limit import MemoryRateLimiterStorage, MemoryRateLimiter
+from src.rate_limit.noop_rate_limit import NoopRateLimiter
 from src.rate_limit.rate_limit import RateLimiter
 from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
 from src.room_store.room_store import RoomStore
@@ -44,7 +45,9 @@ def rate_limiter() -> RateLimiter:
 
 @pytest.fixture
 def gss(room_store: RoomStore, rate_limiter: RateLimiter) -> GameStateServer:
-    return GameStateServer(room_store, fake_transaction, rate_limiter)
+    return GameStateServer(
+        room_store, fake_transaction, rate_limiter, NoopRateLimiter()
+    )
 
 
 def errors(responses: List[Response]) -> List[Response]:
@@ -87,7 +90,9 @@ async def test_new_connection(gss: GameStateServer) -> None:
 async def test_room_data_is_stored(
     room_store: RoomStore, rate_limiter: RateLimiter
 ) -> None:
-    gss_one = GameStateServer(room_store, fake_transaction, rate_limiter)
+    gss_one = GameStateServer(
+        room_store, fake_transaction, rate_limiter, NoopRateLimiter()
+    )
     responses = await collect_responses(
         gss_one,
         requests=[
@@ -104,7 +109,9 @@ async def test_room_data_is_stored(
         UpdateResponse([VALID_ACTION, ANOTHER_VALID_ACTION], 'first-request-id'),
     ]
 
-    gss_two = GameStateServer(room_store, fake_transaction, rate_limiter)
+    gss_two = GameStateServer(
+        room_store, fake_transaction, rate_limiter, NoopRateLimiter()
+    )
     responses = await collect_responses(gss_two, requests=[], response_count=1)
     assert responses == [ConnectionResponse([VALID_TOKEN, ANOTHER_VALID_TOKEN])]
 
