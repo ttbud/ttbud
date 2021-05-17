@@ -78,6 +78,19 @@ else
 end
 """
 
+# language=lua
+_DELETE_ROOM = """
+local room_key = KEYS[1]
+local compaction_key = KEYS[2]
+local compactor_id = ARGV[1]
+
+if redis.call("get", compaction_key) == compactor_id then
+    redis.call("del", room_key)
+else
+    error("Unexpected value for compaction key")
+end
+"""
+
 
 def _room_key(room_id: str) -> str:
     return f'room:{room_id}'
@@ -101,11 +114,13 @@ class RedisRoomStore(RoomStore):
         append_to_room_sha: str,
         set_replacement_lock_sha: str,
         lreplace_sha: str,
+        delete_room_sha: str,
     ):
         self._redis = redis
         self._append_to_room_sha = append_to_room_sha
         self._set_replacement_lock_sha = set_replacement_lock_sha
         self._lreplace_sha = lreplace_sha
+        self._delete_room_sha = delete_room_sha
         self._listeners_by_room_id: Dict[str, ChangeListener] = dict()
 
     async def _listen_for_changes(self, room_id: str) -> None:
@@ -200,6 +215,15 @@ class RedisRoomStore(RoomStore):
             == 1
         )
 
+    async def force_acquire_replacement_lock(self, replacer_id: str) -> None:
+        """
+        Override the current replacement lock, and replace it with the provided
+        replacer id
+        :param replacer_id: The new replacer id that will hold the lock
+        :return:
+        """
+        await self._redis.set(REPLACEMENT_KEY, replacer_id)
+
     async def read_for_replacement(self, room_id: str) -> ReplacementData:
         updates = await self._redis.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
         actions = [action for action in _to_actions(updates)]
@@ -224,12 +248,37 @@ class RedisRoomStore(RoomStore):
         except ReplyError as e:
             raise UnexpectedReplacementId(e.args)
 
+    async def delete(self, room_id: str, replacer_id: str) -> None:
+        try:
+            await self._redis.evalsha(
+                self._delete_room_sha,
+                keys=[_room_key(room_id), REPLACEMENT_KEY],
+                args=[replacer_id],
+            )
+        except ReplyError as e:
+            raise UnexpectedReplacementId(e.args)
+
 
 async def create_redis_room_store(redis: Redis) -> RedisRoomStore:
-    append_to_room = await redis.script_load(_APPEND_TO_ROOM)
-    set_replacement_lock = await redis.script_load(_SET_REPLACEMENT_LOCK)
-    lreplace = await redis.script_load(_LREPLACE)
-    return RedisRoomStore(redis, append_to_room, set_replacement_lock, lreplace)
+    (
+        append_to_room,
+        set_replacement_lock,
+        lreplace,
+        delete_room,
+    ) = await asyncio.gather(
+        redis.script_load(_APPEND_TO_ROOM),
+        redis.script_load(_SET_REPLACEMENT_LOCK),
+        redis.script_load(_LREPLACE),
+        redis.script_load(_DELETE_ROOM),
+    )
+
+    return RedisRoomStore(
+        redis,
+        append_to_room,
+        set_replacement_lock,
+        lreplace,
+        delete_room,
+    )
 
 
 def _to_actions(raw_updates: List[str]) -> Iterator[Action]:

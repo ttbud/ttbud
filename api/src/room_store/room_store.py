@@ -63,7 +63,13 @@ class RoomStore(Protocol):
     async def acquire_replacement_lock(self, compaction_id: str) -> bool:
         ...
 
+    async def force_acquire_replacement_lock(self, compaction_id: str) -> None:
+        ...
+
     async def read_for_replacement(self, room_id: str) -> ReplacementData:
+        ...
+
+    async def delete(self, room_id: str, replacer_id: str) -> None:
         ...
 
     async def replace(
