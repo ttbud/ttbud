@@ -1,12 +1,9 @@
-import logging
 from copy import deepcopy
 from typing import Dict, List, Tuple, Iterable
 
 from src.api.api_structures import Action
 from src.colors import colors
 from src.game_components import Token, content_id
-
-logger = logging.getLogger(__name__)
 
 
 def _assign_colors(tokens: List[Token]) -> None:
@@ -20,9 +17,7 @@ def _assign_colors(tokens: List[Token]) -> None:
     for token in tokens:
         if not token.color_rgb:
             if not available_colors:
-                logger.info(f'Max colors reached for icon {content_id(token.contents)}')
                 return
-            logger.info(f'Add color {available_colors[0]} to token {token.id}')
             token.color_rgb = available_colors.pop(0)
 
 
