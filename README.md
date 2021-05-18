@@ -95,13 +95,15 @@ heroku plugins:install @heroku-cli/plugin-manifest
 heroku apps:create ttbud-staging --manifest --remote staging
 heroku config:set ENVIRONMENT=staging --remote staging
 heroku config:set JSON_LOGS=true --remote staging
-heroku config:set BYPASS_RATE_LIMITER_KEY=$(uuidgen) --remote staging
+heroku config:set BYPASS_RATE_LIMIT_KEY=$(uuidgen) --remote staging
+heroku config:set REDIS_SSL_VALIDATION=self_signed --remote staging
 
 # Create prod environment
 heroku apps:create ttbud --manifest --remote prod
 heroku config:set ENVIRONMENT=prod --remote prod
 heroku config:set JSON_LOGS=true --remote prod
-heroku config:set BYPASS_RATE_LIMITER_KEY=$(uuidgen) --remote prod
+heroku config:set BYPASS_RATE_LIMIT_KEY=$(uuidgen) --remote prod
+heroku config:set REDIS_SSL_VALIDATION=self_signed --remote prod
 ```
 
 ### Web
