@@ -11,6 +11,8 @@ from locust import User, task, between
 from locust.env import Environment
 from websocket import create_connection, WebSocket
 
+from load.constants import LOAD_TEST_ICON_ID
+
 from src.api.api_structures import (
     Request,
     UpsertAction,
@@ -22,8 +24,6 @@ from src.api.api_structures import (
 from src.game_components import Ping, Token, IconTokenContents
 
 CONNECTION_TIMEOUT_SECONDS = 10
-
-LOAD_TEST_ICON_ID = 'load_test_icon_id'
 
 
 def milliseconds_since(time_seconds: float) -> int:
