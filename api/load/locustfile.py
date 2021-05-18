@@ -23,6 +23,8 @@ from src.game_components import Ping, Token, IconTokenContents
 
 CONNECTION_TIMEOUT_SECONDS = 10
 
+LOAD_TEST_ICON_ID = 'load_test_icon_id'
+
 
 def milliseconds_since(time_seconds: float) -> int:
     return int((time.time() - time_seconds) * 1000)
@@ -114,20 +116,17 @@ class TTBudUser(User):
     def on_stop(self) -> None:
         # Delete all the tokens from the room to avoid saving load test rooms
         # to the store
-        actions: List[Action] = list(
-            map(
-                lambda token_id: DeleteAction(data=token_id),
-                self.tokens_ids_sent,
-            )
-        )
+        actions: List[Action] = [
+            DeleteAction(token_id) for token_id in self.tokens_ids_sent
+        ]
         self.client.send(Request(request_id=str(uuid.uuid4()), actions=actions))
-        self.client.disconnect()
 
     @task(10)
     def add_token(self) -> None:
         start_x = random.randint(0, 400)
         start_y = random.randint(0, 400)
         start_z = random.randint(0, 400)
+        token_id = str(uuid.uuid4())
 
         self.client.send(
             Request(
@@ -135,9 +134,9 @@ class TTBudUser(User):
                 actions=[
                     UpsertAction(
                         Token(
-                            id=str(uuid.uuid4()),
+                            id=token_id,
                             type='character',
-                            contents=IconTokenContents('load_test_icon_id'),
+                            contents=IconTokenContents(LOAD_TEST_ICON_ID),
                             start_x=start_x,
                             start_y=start_y,
                             start_z=start_z,
@@ -149,6 +148,8 @@ class TTBudUser(User):
                 ],
             )
         )
+
+        self.tokens_ids_sent.append(token_id)
 
     @task(1)
     def ping(self) -> None:
