@@ -3,7 +3,7 @@ import dataclasses
 import pytest
 
 from load.clear_load_test_rooms import clear_load_test_rooms
-from load.locustfile import LOAD_TEST_ICON_ID
+from load.constants import LOAD_TEST_ICON_ID
 from src.api.api_structures import Request, UpsertAction
 from src.game_components import IconTokenContents
 from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage

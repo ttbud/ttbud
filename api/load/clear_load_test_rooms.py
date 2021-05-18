@@ -1,6 +1,6 @@
 import uuid
 
-from load.locustfile import LOAD_TEST_ICON_ID
+from load.constants import LOAD_TEST_ICON_ID
 from src.game_components import IconTokenContents
 from src.room_store.room_store import RoomStore
 
