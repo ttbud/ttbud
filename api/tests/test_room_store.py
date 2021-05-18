@@ -170,11 +170,11 @@ async def test_replace_invalid_lock(room_store: RoomStore) -> None:
 
 
 @any_room_store
-async def test_lock_expires(room_store: RoomStore) -> None:
+async def test_replace_with_expired_replacer_id(room_store: RoomStore) -> None:
     with time_machine.travel('1970-01-01', tick=False) as traveller:
         await room_store.acquire_replacement_lock('compaction_id')
         replace_data = await room_store.read_for_replacement('room-id')
-        # Move forward in time to expire the server with all of the connections
+        # Move forward in time to expire the replacer_id
         traveller.shift(timedelta(seconds=COMPACTION_LOCK_EXPIRATION_SECONDS + 1))
         with pytest.raises(UnexpectedReplacementId):
             await room_store.replace(
@@ -183,3 +183,34 @@ async def test_lock_expires(room_store: RoomStore) -> None:
                 replace_data.replace_token,
                 'compaction_id',
             )
+
+
+@any_room_store
+async def test_delete_room(room_store: RoomStore) -> None:
+    await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
+    await room_store.acquire_replacement_lock('replacer_id')
+    await room_store.delete(TEST_ROOM_ID, 'replacer_id')
+    assert await room_store.room_exists(TEST_ROOM_ID) is False
+
+
+@any_room_store
+async def test_delete_with_expired_replacer_id(room_store: RoomStore) -> None:
+    with time_machine.travel('1970-01-01', tick=False) as traveller:
+        await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
+        await room_store.acquire_replacement_lock('replacer_id')
+
+        # Move forward in time to expire the replacer_id
+        traveller.shift(timedelta(seconds=COMPACTION_LOCK_EXPIRATION_SECONDS + 1))
+        with pytest.raises(UnexpectedReplacementId):
+            await room_store.delete(TEST_ROOM_ID, 'replacer_id')
+
+
+@any_room_store
+async def test_force_acquire_room_lock(room_store: RoomStore) -> None:
+    await room_store.acquire_replacement_lock('old-replacer-id')
+    await room_store.force_acquire_replacement_lock('new-replacer-id')
+
+    await room_store.delete(TEST_ROOM_ID, 'new-replacer-id')
+
+    with pytest.raises(UnexpectedReplacementId):
+        await room_store.delete(TEST_ROOM_ID, 'old-replacer-id')

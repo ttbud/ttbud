@@ -80,7 +80,8 @@ class MemoryRoomStore(RoomStore):
             self.storage.rooms_by_id[room_id].append(update)
 
     async def get_all_room_ids(self) -> AsyncIterator[str]:
-        for key in self.storage.rooms_by_id.keys():
+        # Make a copy so that deletions don't break iteration
+        for key in list(self.storage.rooms_by_id.keys()):
             yield key
 
     async def room_exists(self, room_id: str) -> bool:
@@ -102,6 +103,11 @@ class MemoryRoomStore(RoomStore):
         )
         return True
 
+    async def force_acquire_replacement_lock(self, replacement_id: str) -> None:
+        self._replacement_lock = ReplacementLock(
+            replacement_id, time.monotonic() + COMPACTION_LOCK_EXPIRATION_SECONDS
+        )
+
     async def read_for_replacement(self, room_id: str) -> ReplacementData:
         actions = copy(self.storage.rooms_by_id[room_id])
         return ReplacementData(actions, len(actions))
@@ -113,11 +119,21 @@ class MemoryRoomStore(RoomStore):
         replace_token: Any,
         replacement_id: str,
     ) -> None:
-        if (
-            self._replacement_lock
-            and self._replacement_lock.key == replacement_id
-            and self._replacement_lock.expire_time >= time.monotonic()
-        ):
+        if self._has_replacement_lock(replacement_id):
             self.storage.rooms_by_id[room_id][0:replace_token] = actions
         else:
             raise UnexpectedReplacementId()
+
+    async def delete(self, room_id: str, replacement_id: str) -> None:
+        if self._has_replacement_lock(replacement_id):
+            if self.storage.rooms_by_id.get(room_id):
+                del self.storage.rooms_by_id[room_id]
+        else:
+            raise UnexpectedReplacementId()
+
+    def _has_replacement_lock(self, replacement_id: str) -> bool:
+        return (
+            self._replacement_lock is not None
+            and self._replacement_lock.key == replacement_id
+            and self._replacement_lock.expire_time >= time.monotonic()
+        )
