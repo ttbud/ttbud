@@ -11,9 +11,10 @@ async def clear_load_test_rooms(room_store: RoomStore) -> None:
 
     async for room_id in room_store.get_all_room_ids():
         actions = await room_store.read(room_id)
-        first = next(iter(actions))
+        first = next(iter(actions), None)
         if (
-            first.action == 'upsert'
+            first
+            and first.action == 'upsert'
             and isinstance(first.data.contents, IconTokenContents)
             and first.data.contents.icon_id == LOAD_TEST_ICON_ID
         ):

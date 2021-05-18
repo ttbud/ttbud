@@ -12,6 +12,17 @@ from tests.static_fixtures import VALID_REQUEST, VALID_TOKEN
 
 pytestmark = pytest.mark.asyncio
 
+LOAD_TEST_REQUEST = Request(
+    'request-id',
+    actions=[
+        UpsertAction(
+            dataclasses.replace(
+                VALID_TOKEN, contents=IconTokenContents(LOAD_TEST_ICON_ID)
+            )
+        )
+    ],
+)
+
 
 @pytest.fixture
 def room_store():
@@ -20,20 +31,17 @@ def room_store():
 
 async def test_cleanup(room_store: RoomStore):
     await room_store.add_request('regular-room-id', VALID_REQUEST)
-    await room_store.add_request(
-        'load-room-id',
-        Request(
-            'request-id',
-            actions=[
-                UpsertAction(
-                    dataclasses.replace(
-                        VALID_TOKEN, contents=IconTokenContents(LOAD_TEST_ICON_ID)
-                    )
-                )
-            ],
-        ),
-    )
+    await room_store.add_request('load-room-id', LOAD_TEST_REQUEST)
 
     await clear_load_test_rooms(room_store)
     assert await room_store.room_exists('regular-room-id') is True
+    assert await room_store.room_exists('load-room-id') is False
+
+
+async def test_cleanup_empty_room(room_store: RoomStore):
+    """Verify that rooms with no actions do no break clear_load_test_rooms"""
+    await room_store.add_request('empty-room-id', Request('request-id', []))
+    await room_store.add_request('load-room-id', LOAD_TEST_REQUEST)
+
+    await clear_load_test_rooms(room_store)
     assert await room_store.room_exists('load-room-id') is False
