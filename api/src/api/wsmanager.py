@@ -9,7 +9,7 @@ from uuid import UUID
 
 import dacite
 from dacite.exceptions import WrongTypeError, MissingValueError
-from websockets import ConnectionClosedError
+from websockets.exceptions import ConnectionClosedError
 
 from src.api.api_structures import Request, BYPASS_RATE_LIMIT_HEADER
 from src.api.ws_close_codes import (

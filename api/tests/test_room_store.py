@@ -6,6 +6,7 @@ import fakeredis.aioredis
 import pytest
 import time_machine
 from aioredis import Redis
+from pytest_lazyfixture import lazy_fixture
 
 from src.api.api_structures import Request, Action
 from src.room_store.memory_room_store import (
@@ -80,10 +81,7 @@ async def memory_room_store(
 def any_room_store(func: Callable) -> Callable:
     return pytest.mark.parametrize(
         'room_store',
-        [
-            pytest.lazy_fixture('memory_room_store'),
-            pytest.lazy_fixture('redis_room_store'),
-        ],
+        [lazy_fixture('memory_room_store'), lazy_fixture('redis_room_store')],
     )(func)
 
 
