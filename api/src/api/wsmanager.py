@@ -4,7 +4,16 @@ import logging
 import random
 import secrets
 from dataclasses import asdict
-from typing import List, Tuple, Dict, Any, NoReturn, AsyncIterator
+from typing import (
+    List,
+    Tuple,
+    Dict,
+    Any,
+    NoReturn,
+    AsyncIterator,
+    Callable,
+    ContextManager,
+)
 from uuid import UUID
 
 import dacite
@@ -74,18 +83,20 @@ class WebsocketManager:
         gss: GameStateServer,
         rate_limiter: RateLimiter,
         bypass_rate_limiter_key: str,
+        background_transaction: Callable[[str], ContextManager],
     ) -> None:
         self._gss = gss
         self._rate_limiter = rate_limiter
         self._bypass_rate_limiter_key = bypass_rate_limiter_key
         self._clients: List[WebsocketClient] = []
+        self._background_transaction = background_transaction
 
     async def maintain_liveness(self) -> NoReturn:
         while True:
-            logger.info('Refreshing liveness')
-
-            ips = [client.ip() for client in self._clients]
-            await self._rate_limiter.refresh_server_liveness(iter(ips))
+            with self._background_transaction('liveness'):
+                logger.info('Refreshing liveness')
+                ips = [client.ip() for client in self._clients]
+                await self._rate_limiter.refresh_server_liveness(iter(ips))
 
             # Offset refresh interval by a random amount to avoid all hitting
             # redis to refresh keys at the same time.

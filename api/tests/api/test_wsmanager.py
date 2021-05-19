@@ -61,7 +61,9 @@ async def app() -> Starlette:
         MemoryRateLimiterStorage(),
     )
     gss = GameStateServer(room_store, fake_transaction, rate_limiter, NoopRateLimiter())
-    ws = WebsocketManager(gss, rate_limiter, TEST_BYPASS_RATE_LIMIT_KEY)
+    ws = WebsocketManager(
+        gss, rate_limiter, TEST_BYPASS_RATE_LIMIT_KEY, fake_transaction
+    )
     return Starlette(routes=routes(ws), debug=True)
 
 

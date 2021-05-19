@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from typing import List, NoReturn
+from typing import List, NoReturn, ContextManager, Callable
 
 from src.room import Room
 from src.api.api_structures import UpsertAction, DeleteAction, Action
@@ -16,23 +16,30 @@ logger = logging.getLogger(__name__)
 
 
 class Compactor:
-    def __init__(self, room_store: RoomStore, compaction_id: str):
+    def __init__(
+        self,
+        room_store: RoomStore,
+        compaction_id: str,
+        apm_transaction: Callable[[str], ContextManager],
+    ):
         self._room_store = room_store
-        self._compaction_id: str = compaction_id
+        self._compaction_id = compaction_id
+        self._apm_transaction = apm_transaction
 
     async def maintain_compaction(self) -> NoReturn:
         while True:
             if await self._room_store.acquire_replacement_lock(self._compaction_id):
-                start_time = time.monotonic()
-                try:
-                    async for room_id in self._room_store.get_all_room_ids():
-                        await self._compact_room(room_id)
-                except UnexpectedReplacementId:
-                    logger.info('Lost replacement lock while compacting')
-                logger.info(
-                    'Compaction cycle complete',
-                    extra={'elapsed_time_secs': time.monotonic() - start_time},
-                )
+                with self._apm_transaction('compaction'):
+                    start_time = time.monotonic()
+                    try:
+                        async for room_id in self._room_store.get_all_room_ids():
+                            await self._compact_room(room_id)
+                    except UnexpectedReplacementId:
+                        logger.info('Lost replacement lock while compacting')
+                    logger.info(
+                        'Compaction cycle complete',
+                        extra={'elapsed_time_secs': time.monotonic() - start_time},
+                    )
 
             await asyncio.sleep(COMPACTION_INTERVAL_SECONDS)
 
