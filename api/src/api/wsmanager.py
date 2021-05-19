@@ -11,8 +11,6 @@ from typing import (
     Any,
     NoReturn,
     AsyncIterator,
-    Callable,
-    ContextManager,
 )
 from uuid import UUID
 
@@ -27,6 +25,7 @@ from src.api.ws_close_codes import (
     ERR_ROOM_FULL,
     ERR_INVALID_REQUEST,
 )
+from src.apm import background_transaction
 from src.game_state_server import (
     InvalidConnectionException,
     GameStateServer,
@@ -83,17 +82,15 @@ class WebsocketManager:
         gss: GameStateServer,
         rate_limiter: RateLimiter,
         bypass_rate_limiter_key: str,
-        background_transaction: Callable[[str], ContextManager],
     ) -> None:
         self._gss = gss
         self._rate_limiter = rate_limiter
         self._bypass_rate_limiter_key = bypass_rate_limiter_key
         self._clients: List[WebsocketClient] = []
-        self._background_transaction = background_transaction
 
     async def maintain_liveness(self) -> NoReturn:
         while True:
-            with self._background_transaction('liveness'):
+            with background_transaction('liveness'):
                 logger.info('Refreshing liveness')
                 ips = [client.ip() for client in self._clients]
                 await self._rate_limiter.refresh_server_liveness(iter(ips))

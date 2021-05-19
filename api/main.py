@@ -7,14 +7,11 @@ from uuid import uuid4
 
 import timber
 import uvicorn
-from scout_apm.async_.starlette import ScoutMiddleware
 from scout_apm.api import Config as ScoutConfig
 from starlette.applications import Starlette
-from starlette.middleware import Middleware
 
-from src.compaction import Compactor
-from src import apm
 from src.api.wsmanager import WebsocketManager
+from src.compaction import Compactor
 from src.config import config, Environment
 from src.game_state_server import GameStateServer
 from src.rate_limit.noop_rate_limit import NoopRateLimiter
@@ -37,14 +34,10 @@ async def make_app() -> Starlette:
     room_store = await create_redis_room_store(redis)
     rate_limiter = await create_redis_rate_limiter(server_id, redis)
 
-    compactor = Compactor(room_store, worker_id, apm.background_transaction)
+    compactor = Compactor(room_store, worker_id)
 
-    gss = GameStateServer(
-        room_store, apm.foreground_transaction, rate_limiter, NoopRateLimiter()
-    )
-    ws = WebsocketManager(
-        gss, rate_limiter, config.bypass_rate_limit_key, apm.background_transaction
-    )
+    gss = GameStateServer(room_store, rate_limiter, NoopRateLimiter())
+    ws = WebsocketManager(gss, rate_limiter, config.bypass_rate_limit_key)
 
     def liveness_failed(fut: Future) -> NoReturn:
         logger.critical(
@@ -75,7 +68,6 @@ async def make_app() -> Starlette:
     return Starlette(
         routes=routes(ws),
         on_shutdown=[shutdown],
-        middleware=[Middleware(ScoutMiddleware)],
         debug=config.environment == Environment.DEV,
     )
 

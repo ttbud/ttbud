@@ -1,11 +1,12 @@
 import asyncio
 import logging
 import time
-from typing import List, NoReturn, ContextManager, Callable
+from typing import List, NoReturn
 
-from src.room import Room
 from src.api.api_structures import UpsertAction, DeleteAction, Action
+from src.apm import background_transaction
 from src.game_components import Token
+from src.room import Room
 from src.room_store.room_store import (
     RoomStore,
     UnexpectedReplacementId,
@@ -20,16 +21,14 @@ class Compactor:
         self,
         room_store: RoomStore,
         compaction_id: str,
-        apm_transaction: Callable[[str], ContextManager],
     ):
         self._room_store = room_store
         self._compaction_id = compaction_id
-        self._apm_transaction = apm_transaction
 
     async def maintain_compaction(self) -> NoReturn:
         while True:
             if await self._room_store.acquire_replacement_lock(self._compaction_id):
-                with self._apm_transaction('compaction'):
+                with background_transaction('compaction'):
                     start_time = time.monotonic()
                     try:
                         async for room_id in self._room_store.get_all_room_ids():

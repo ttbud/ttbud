@@ -19,6 +19,7 @@ from aioredis.errors import ReplyError
 from dacite import from_dict
 
 from src.api.api_structures import Request, Action, UpsertAction, DeleteAction
+from src.apm import instrument
 from src.room_store.room_store import (
     RoomStore,
     ReplacementData,
@@ -181,13 +182,16 @@ class RedisRoomStore(RoomStore):
             for key in keys:
                 yield str(key[len('room:') :], 'utf-8')
 
+    @instrument
     async def room_exists(self, room_id: str) -> bool:
         return bool(await self._redis.exists(_room_key(room_id)))
 
+    @instrument
     async def read(self, room_id: str) -> Iterable[Action]:
         data = await self._redis.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
         return _to_actions(data)
 
+    @instrument
     async def add_request(self, room_id: str, request: Request) -> None:
         await self._redis.evalsha(
             self._append_to_room_sha,
@@ -205,6 +209,7 @@ class RedisRoomStore(RoomStore):
             ],
         )
 
+    @instrument
     async def acquire_replacement_lock(self, replacer_id: str) -> bool:
         return (
             await self._redis.evalsha(
@@ -215,6 +220,7 @@ class RedisRoomStore(RoomStore):
             == 1
         )
 
+    @instrument
     async def force_acquire_replacement_lock(self, replacer_id: str) -> None:
         """
         Override the current replacement lock, and replace it with the provided
@@ -224,11 +230,13 @@ class RedisRoomStore(RoomStore):
         """
         await self._redis.set(REPLACEMENT_KEY, replacer_id)
 
+    @instrument
     async def read_for_replacement(self, room_id: str) -> ReplacementData:
         updates = await self._redis.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
         actions = [action for action in _to_actions(updates)]
         return ReplacementData(actions, len(updates))
 
+    @instrument
     async def replace(
         self, room_id: str, actions: List[Action], replace_token: Any, replacer_id: str
     ) -> None:
@@ -248,6 +256,7 @@ class RedisRoomStore(RoomStore):
         except ReplyError as e:
             raise UnexpectedReplacementId(e.args)
 
+    @instrument
     async def delete(self, room_id: str, replacer_id: str) -> None:
         try:
             await self._redis.evalsha(

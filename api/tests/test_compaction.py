@@ -9,7 +9,6 @@ from src.compaction import Compactor
 from src.game_components import Token
 from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
 from src.room_store.room_store import RoomStore
-from tests.fake_apm import fake_transaction
 from tests.static_fixtures import (
     TEST_ROOM_ID,
     VALID_TOKEN,
@@ -32,7 +31,7 @@ def room_store() -> RoomStore:
 
 @pytest.fixture
 def compactor(room_store: RoomStore) -> Compactor:
-    return Compactor(room_store, TEST_COMPACTOR_ID, fake_transaction)
+    return Compactor(room_store, TEST_COMPACTOR_ID)
 
 
 async def test_delete(compactor: Compactor, room_store: RoomStore) -> None:
