@@ -80,9 +80,8 @@ const PureSettings: React.FC<Props> = memo(
     const classes = useStyles();
     const [anchorEl, setAnchorEl] = useState<Element | null>(null);
     const [isConfirming, setConfirming] = useState(false);
-    const [isShowingCopyNotification, setShowingCopyNotification] = useState(
-      false
-    );
+    const [isShowingCopyNotification, setShowingCopyNotification] =
+      useState(false);
     const [isShowingAboutDialog, setIsShowingAboutDialog] = useState(false);
 
     const open = Boolean(anchorEl);

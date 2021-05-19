@@ -122,49 +122,44 @@ export default function SortableList<T extends DraggableItem>({
     }
   };
 
-  const {
-    isHovering,
-    isDragging,
-    hoverIdx,
-    dragStartIdx,
-    draggableId,
-  } = useSelector((state: RootState): SortState => {
-    const dragState = state.drag;
+  const { isHovering, isDragging, hoverIdx, dragStartIdx, draggableId } =
+    useSelector((state: RootState): SortState => {
+      const dragState = state.drag;
 
-    switch (dragState.type) {
-      case DragStateType.NotDragging:
-        return NOT_SORTING;
-      case DragStateType.Dragging:
-        if (dragState.source.id === id) {
-          assert(
-            dragState.source.logicalLocation?.type === LocationType.List,
-            "Drag started from sortable list but source location isn't of type list"
-          );
-        }
+      switch (dragState.type) {
+        case DragStateType.NotDragging:
+          return NOT_SORTING;
+        case DragStateType.Dragging:
+          if (dragState.source.id === id) {
+            assert(
+              dragState.source.logicalLocation?.type === LocationType.List,
+              "Drag started from sortable list but source location isn't of type list"
+            );
+          }
 
-        return {
-          isHovering: dragState.hoveredDroppableId === id,
-          isDragging: true,
-          hoverIdx: getHoverIdx({
-            pos: centerOf(dragState.bounds),
-            dragStartedHere: dragState.source.id === id,
+          return {
             isHovering: dragState.hoveredDroppableId === id,
-          }),
-          dragStartIdx: getListIdx(id, dragState.source),
-          draggableId: dragState.draggable?.id,
-        };
-      case DragStateType.DragEndAnimating:
-        return {
-          isHovering: dragState.destination.id === id,
-          isDragging: true,
-          hoverIdx: getListIdx(id, dragState.destination),
-          draggableId: dragState.draggable?.id,
-          dragStartIdx: getListIdx(id, dragState.source),
-        };
-      default:
-        throw new UnreachableCaseError(dragState);
-    }
-  }, shallowEqual);
+            isDragging: true,
+            hoverIdx: getHoverIdx({
+              pos: centerOf(dragState.bounds),
+              dragStartedHere: dragState.source.id === id,
+              isHovering: dragState.hoveredDroppableId === id,
+            }),
+            dragStartIdx: getListIdx(id, dragState.source),
+            draggableId: dragState.draggable?.id,
+          };
+        case DragStateType.DragEndAnimating:
+          return {
+            isHovering: dragState.destination.id === id,
+            isDragging: true,
+            hoverIdx: getListIdx(id, dragState.destination),
+            draggableId: dragState.draggable?.id,
+            dragStartIdx: getListIdx(id, dragState.source),
+          };
+        default:
+          throw new UnreachableCaseError(dragState);
+      }
+    }, shallowEqual);
 
   const onBeforeDragStart = useCallback(
     (draggable: DraggableDescriptor, bounds: Bounds) =>
