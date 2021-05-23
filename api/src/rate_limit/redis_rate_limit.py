@@ -4,6 +4,7 @@ from typing import AsyncGenerator, Iterator
 
 from aioredis import Redis
 
+from src.apm import instrument
 from src.rate_limit.rate_limit import (
     TooManyRoomsCreatedException,
     MAX_ROOMS_PER_TEN_MINUTES,
@@ -126,6 +127,7 @@ class RedisRateLimiter(RateLimiter):
         finally:
             await self.release_connection(user_id, room_id)
 
+    @instrument
     async def refresh_server_liveness(self, user_ids: Iterator[str]) -> None:
         await self._redis.expire(
             f'api-server:{self._server_id}', SERVER_LIVENESS_EXPIRATION_SECONDS
@@ -145,6 +147,7 @@ class RedisRateLimiter(RateLimiter):
         # Execute the last batch of refreshes regardless of size
         await transaction.execute()
 
+    @instrument
     async def acquire_connection(self, user_id: str, room_id: str) -> None:
         transaction = self._redis.multi_exec()
         transaction.evalsha(
@@ -164,6 +167,7 @@ class RedisRateLimiter(RateLimiter):
         if not open_room_slot:
             raise RoomFullException()
 
+    @instrument
     async def release_connection(self, user_id: str, room_id: str) -> None:
         transaction = self._redis.multi_exec()
         transaction.evalsha(
@@ -178,6 +182,7 @@ class RedisRateLimiter(RateLimiter):
         )
         await transaction.execute()
 
+    @instrument
     async def acquire_new_room(self, user_id: str) -> None:
         recent_room_creation_count = await self._redis.evalsha(
             self._incr_expire_sha,

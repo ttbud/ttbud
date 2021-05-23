@@ -26,7 +26,6 @@ from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
 from src.routes import routes
 from tests import emulated_client
 from tests.emulated_client import WebsocketClosed
-from tests.fake_apm import fake_transaction
 from tests.helpers import assert_matches
 from tests.static_fixtures import TEST_REQUEST_ID
 
@@ -60,7 +59,7 @@ async def app() -> Starlette:
         'server-id',
         MemoryRateLimiterStorage(),
     )
-    gss = GameStateServer(room_store, fake_transaction, rate_limiter, NoopRateLimiter())
+    gss = GameStateServer(room_store, rate_limiter, NoopRateLimiter())
     ws = WebsocketManager(gss, rate_limiter, TEST_BYPASS_RATE_LIMIT_KEY)
     return Starlette(routes=routes(ws), debug=True)
 
