@@ -35,6 +35,7 @@ import {
 import { connect } from "react-redux";
 import { EntityType, TokenContents } from "../../types";
 import { BoardState, pingAt, tokenIdAt } from "./board-state";
+import { Buttons } from "../util/Buttons";
 
 let GRID_COLOR = "#947C65";
 
@@ -82,9 +83,6 @@ const toGridPos = (pixelPos: Pos2d) => {
     y: snappedPixelPos.y / GRID_SIZE_PX,
   };
 };
-
-const LEFT_MOUSE = 1;
-const RIGHT_MOUSE = 2;
 
 const preventDefault: MouseEventHandler = (e) => e.preventDefault();
 
@@ -202,6 +200,7 @@ const PureBoard: React.FC<Props> = ({
             <Ping x={pixelPos.x} y={pixelPos.y} />
           </Fade>
         );
+      /* istanbul ignore next */
       default:
         throw new UnreachableCaseError(token);
     }
@@ -213,15 +212,17 @@ const PureBoard: React.FC<Props> = ({
     shiftKey,
     buttons,
   }) => {
+    if (isDragging) return;
+
     const gridPos = toGridPos({ x, y });
-    if (shiftKey && buttons === LEFT_MOUSE) {
+    if (shiftKey && buttons === Buttons.LEFT_MOUSE) {
       onPingCreated(gridPos);
     } else if (
-      buttons === LEFT_MOUSE &&
+      buttons === Buttons.LEFT_MOUSE &&
       !tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })
     ) {
       onFloorCreated(activeFloor, gridPos);
-    } else if (buttons === RIGHT_MOUSE) {
+    } else if (buttons === Buttons.RIGHT_MOUSE) {
       let id = tokenIdAt(boardState, { ...gridPos, z: CHARACTER_HEIGHT });
       if (!id) {
         id = tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT });
@@ -258,16 +259,16 @@ const PureBoard: React.FC<Props> = ({
         continue;
       }
 
-      if (buttons === LEFT_MOUSE && shiftKey) {
+      if (buttons === Buttons.LEFT_MOUSE && shiftKey) {
         if (!pingAt(boardState, gridPos)) {
           onPingCreated(gridPos);
         }
       } else if (
-        buttons === LEFT_MOUSE &&
+        buttons === Buttons.LEFT_MOUSE &&
         !tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })
       ) {
         onFloorCreated(activeFloor, gridPos);
-      } else if (buttons === RIGHT_MOUSE) {
+      } else if (buttons === Buttons.RIGHT_MOUSE) {
         let toDeleteId = tokenIdAt(boardState, {
           ...gridPos,
           z: CHARACTER_HEIGHT,

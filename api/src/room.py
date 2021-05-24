@@ -12,8 +12,6 @@ def _assign_colors(tokens: List[Token]) -> None:
         if token.color_rgb:
             if token.color_rgb in available_colors:
                 del available_colors[available_colors.index(token.color_rgb)]
-            else:
-                raise TypeError(f'Unknown color: {token.color_rgb}')
     for token in tokens:
         if not token.color_rgb:
             if not available_colors:

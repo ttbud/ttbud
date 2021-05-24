@@ -27,6 +27,7 @@ from tests.static_fixtures import (
     VALID_ACTION,
     ANOTHER_VALID_ACTION,
     PING_ACTION,
+    VALID_ACTION_WITH_DUPLICATE_COLOR,
 )
 
 pytestmark = pytest.mark.asyncio
@@ -138,4 +139,23 @@ async def test_multiple_pings(gss: GameStateServer) -> None:
     assert responses == [
         ConnectionResponse([]),
         UpdateResponse([ping1, ping2, ping3], 'ping-request-id'),
+    ]
+
+
+async def test_add_duplicate_color(gss: GameStateServer) -> None:
+    responses = await collect_responses(
+        gss,
+        requests=[
+            Request(
+                'same-color-request-id',
+                [VALID_ACTION, VALID_ACTION_WITH_DUPLICATE_COLOR],
+            )
+        ],
+        response_count=2,
+    )
+    assert responses == [
+        ConnectionResponse([]),
+        UpdateResponse(
+            [VALID_ACTION, VALID_ACTION_WITH_DUPLICATE_COLOR], 'same-color-request-id'
+        ),
     ]

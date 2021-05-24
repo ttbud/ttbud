@@ -42,14 +42,8 @@ function toCssColor(color: Color | undefined) {
 
 const Character: React.FC<Props> = memo((props) => {
   const classes = useStyles(props);
-  const {
-    isDragging,
-    contents,
-    className,
-    dragAttributes,
-    onDelete,
-    pos,
-  } = props;
+  const { isDragging, contents, className, dragAttributes, onDelete, pos } =
+    props;
 
   const renderContents = (contents: TokenContents) => {
     switch (contents.type) {
@@ -63,6 +57,7 @@ const Character: React.FC<Props> = memo((props) => {
         }
       case ContentType.Text:
         return contents.text.toLocaleUpperCase();
+      /* istanbul ignore next */
       default:
         throw new UnreachableCaseError(contents);
     }
