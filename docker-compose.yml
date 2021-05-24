@@ -15,6 +15,7 @@ services:
       SCOUT_KEY:
       SCOUT_MONITOR:
       USE_SSL: "true"
+      LOG_LEVEL:
       SSL_CRT_FILE: /certs/ttbud.local.pem
       SSL_KEY_FILE: /certs/ttbud.local-key.pem
       PORT: ${API_WEBSOCKET_PORT}
