@@ -42,14 +42,8 @@ function toCssColor(color: Color | undefined) {
 
 const Character: React.FC<Props> = memo((props) => {
   const classes = useStyles(props);
-  const {
-    isDragging,
-    contents,
-    className,
-    dragAttributes,
-    onDelete,
-    pos,
-  } = props;
+  const { isDragging, contents, className, dragAttributes, onDelete, pos } =
+    props;
 
   const renderContents = (contents: TokenContents) => {
     switch (contents.type) {

@@ -54,9 +54,6 @@ const connectionStateSlice = createSlice({
   },
 });
 
-export const {
-  connected,
-  connecting,
-  disconnected,
-} = connectionStateSlice.actions;
+export const { connected, connecting, disconnected } =
+  connectionStateSlice.actions;
 export default connectionStateSlice.reducer;

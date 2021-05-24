@@ -53,12 +53,12 @@ export default function useTrayItems(
             id: `${droppableId}-${blueprintId}`,
             contents: blueprint,
           } as TokenBlueprintDraggable,
-          makeRef: (dragRef: React.Ref<HTMLElement> | undefined) => (
-            el: HTMLElement
-          ) => {
-            assignRef(ref, el);
-            assignRef(dragRef, el);
-          },
+          makeRef:
+            (dragRef: React.Ref<HTMLElement> | undefined) =>
+            (el: HTMLElement) => {
+              assignRef(ref, el);
+              assignRef(dragRef, el);
+            },
           ref: ref,
         };
       }),

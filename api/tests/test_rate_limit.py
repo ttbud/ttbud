@@ -7,6 +7,7 @@ import fakeredis.aioredis
 import pytest
 import time_machine
 from aioredis import Redis
+from pytest_lazyfixture import lazy_fixture
 
 from src.rate_limit.rate_limit import (
     MAX_CONNECTIONS_PER_USER,
@@ -80,8 +81,8 @@ def any_rate_limiter(func: Callable) -> Callable:
     return pytest.mark.parametrize(
         'rate_limiter',
         [
-            pytest.lazy_fixture('memory_rate_limiter'),
-            pytest.lazy_fixture('redis_rate_limiter'),
+            lazy_fixture('memory_rate_limiter'),
+            lazy_fixture('redis_rate_limiter'),
         ],
     )(func)
 
@@ -90,8 +91,8 @@ def any_rate_limiter_factory(func: Callable) -> Callable:
     return pytest.mark.parametrize(
         'rate_limiter_factory',
         [
-            pytest.lazy_fixture('memory_rate_limiter_factory'),
-            pytest.lazy_fixture('redis_rate_limiter_factory'),
+            lazy_fixture('memory_rate_limiter_factory'),
+            lazy_fixture('redis_rate_limiter_factory'),
         ],
     )(func)
 
