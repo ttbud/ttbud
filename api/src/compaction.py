@@ -39,6 +39,8 @@ class Compactor:
                         'Compaction cycle complete',
                         extra={'elapsed_time_secs': time.monotonic() - start_time},
                     )
+            else:
+                logger.info('Failed to acquire compaction lock')
 
             await asyncio.sleep(COMPACTION_INTERVAL_SECONDS)
 
