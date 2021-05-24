@@ -23,6 +23,18 @@ VALID_TOKEN = Token(
     end_z=1,
     color_rgb=colors[0],
 )
+VALID_TOKEN_WITH_DUPLICATE_COLOR = Token(
+    'token_id',
+    'character',
+    IconTokenContents('some_icon_id'),
+    start_x=1,
+    start_y=1,
+    start_z=1,
+    end_x=2,
+    end_y=2,
+    end_z=2,
+    color_rgb=colors[0],
+)
 ANOTHER_VALID_TOKEN = Token(
     'another_id',
     'character',
@@ -49,6 +61,7 @@ UPDATED_TOKEN = Token(
     colors[0],
 )
 VALID_ACTION = UpsertAction(data=VALID_TOKEN)
+VALID_ACTION_WITH_DUPLICATE_COLOR = UpsertAction(data=VALID_TOKEN_WITH_DUPLICATE_COLOR)
 DELETE_VALID_TOKEN = DeleteAction(data=VALID_TOKEN.id)
 ANOTHER_VALID_ACTION = UpsertAction(data=ANOTHER_VALID_TOKEN)
 PING_ACTION = PingAction(data=VALID_PING)
