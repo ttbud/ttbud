@@ -3,7 +3,7 @@ import pytest
 from src.colors import colors
 from src.game_components import Token, IconTokenContents
 from src.room import Room
-from tests.static_fixtures import VALID_TOKEN
+from tests.static_fixtures import VALID_TOKEN, VALID_TOKEN_WITH_DUPLICATE_COLOR
 
 
 @pytest.fixture
@@ -80,3 +80,9 @@ def test_more_tokens_than_colors(room: Room) -> None:
         if not token.color_rgb:
             tokens_without_color.append(token)
     assert len(tokens_without_color) == 1
+
+
+def test_duplicate_colors(room: Room) -> None:
+    room.create_or_update_token(VALID_TOKEN)
+    room.create_or_update_token(VALID_TOKEN_WITH_DUPLICATE_COLOR)
+    assert VALID_TOKEN_WITH_DUPLICATE_COLOR in room.game_state.values()
