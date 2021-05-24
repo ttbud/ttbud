@@ -7,11 +7,11 @@ from uuid import uuid4
 
 import timber
 import uvicorn
+from scout_apm.api import Config as ScoutConfig
 from starlette.applications import Starlette
 
-from src.compaction import Compactor
-from src import apm
 from src.api.wsmanager import WebsocketManager
+from src.compaction import Compactor
 from src.config import config, Environment
 from src.game_state_server import GameStateServer
 from src.rate_limit.noop_rate_limit import NoopRateLimiter
@@ -23,6 +23,7 @@ from src.util.lazy_asgi import LazyASGI
 
 logger = logging.getLogger(__name__)
 server_id = str(uuid4())
+ScoutConfig.set(**config.scout_config)
 
 
 async def make_app() -> Starlette:
@@ -35,7 +36,7 @@ async def make_app() -> Starlette:
 
     compactor = Compactor(room_store, worker_id)
 
-    gss = GameStateServer(room_store, apm.transaction, rate_limiter, NoopRateLimiter())
+    gss = GameStateServer(room_store, rate_limiter, NoopRateLimiter())
     ws = WebsocketManager(gss, rate_limiter, config.bypass_rate_limit_key)
 
     def liveness_failed(fut: Future) -> NoReturn:

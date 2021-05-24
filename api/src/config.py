@@ -54,13 +54,18 @@ class Config:
         },
         'handlers': {
             'stdout': {
-                'level': 'INFO',
+                'level': os.environ.get('LOG_LEVEL', 'INFO'),
                 'class': 'logging.StreamHandler',
                 'formatter': 'json' if json_logs else 'simple',
             }
         },
         'loggers': {
             '': {'handlers': ['stdout'], 'level': 'INFO'},
+            'scout_apm': {
+                'level': 'INFO',
+                'handlers': ['stdout'],
+                'propagate': True,
+            },
             'gunicorn.error': {
                 'level': 'INFO',
                 'handlers': ['stdout'],

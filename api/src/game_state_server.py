@@ -4,8 +4,6 @@ import asyncio
 import logging
 from typing import (
     AsyncIterator,
-    Callable,
-    ContextManager,
     List,
     AsyncIterable,
 )
@@ -19,7 +17,8 @@ from src.api.api_structures import (
     UpdateResponse,
     ConnectionResponse,
 )
-from src.api.ws_close_codes import ERR_TOO_MANY_ROOMS_CREATED, ERR_INVALID_ROOM
+from src.api.ws_close_codes import ERR_TOO_MANY_ROOMS_CREATED
+from .apm import foreground_transaction
 from .rate_limit.noop_rate_limit import NoopRateLimiter
 from .rate_limit.rate_limit import RateLimiter, TooManyRoomsCreatedException
 from .room import create_room
@@ -53,12 +52,10 @@ class GameStateServer:
     def __init__(
         self,
         room_store: RoomStore,
-        apm_transaction: Callable[[str], ContextManager],
         rate_limiter: RateLimiter,
         noop_rate_limiter: NoopRateLimiter,
     ):
         self.room_store = room_store
-        self.apm_transaction = apm_transaction
         self._rate_limiter = rate_limiter
         self._noop_rate_limiter = noop_rate_limiter
 
@@ -68,7 +65,7 @@ class GameStateServer:
         queues: List[asyncio.Queue[Response]],
         updates: AsyncIterator[Request],
     ) -> None:
-        async for response in self._room_changes_to_messages(room_id, updates):
+        async for response in self._room_changes_to_messages(updates):
             for q in queues:
                 await q.put(response)
 
@@ -110,7 +107,7 @@ class GameStateServer:
             async with rate_limiter.rate_limited_connection(client_ip, room_id):
                 room_changes = await self.room_store.changes(room_id)
 
-                with self.apm_transaction('connect'):
+                with foreground_transaction('connect'):
                     if not await self.room_store.room_exists(room_id):
                         await self._acquire_room_slot(room_id, client_ip, rate_limiter)
 
@@ -129,19 +126,11 @@ class GameStateServer:
                     request_task.cancel()
 
     async def _room_changes_to_messages(
-        self,
-        room_id: str,
-        room_changes: AsyncIterator[Request],
+        self, room_changes: AsyncIterator[Request]
     ) -> AsyncIterator[Response]:
         async for request in room_changes:
             if request.request_id:
-                with self.apm_transaction('update'):
-                    if not self.room_store.room_exists(room_id):
-                        raise InvalidConnectionException(
-                            ERR_INVALID_ROOM,
-                            f'Tried to update room {room_id}, which does not exist',
-                        )
-
+                with foreground_transaction('update'):
                     yield UpdateResponse(request.actions, request.request_id)
 
     async def _acquire_room_slot(
