@@ -25,11 +25,11 @@ LOAD_TEST_REQUEST = Request(
 
 
 @pytest.fixture
-def room_store():
+def room_store() -> RoomStore:
     return MemoryRoomStore(MemoryRoomStorage())
 
 
-async def test_cleanup(room_store: RoomStore):
+async def test_cleanup(room_store: RoomStore) -> None:
     await room_store.add_request('regular-room-id', VALID_REQUEST)
     await room_store.add_request('load-room-id', LOAD_TEST_REQUEST)
 
@@ -38,7 +38,7 @@ async def test_cleanup(room_store: RoomStore):
     assert await room_store.room_exists('load-room-id') is False
 
 
-async def test_cleanup_empty_room(room_store: RoomStore):
+async def test_cleanup_empty_room(room_store: RoomStore) -> None:
     """Verify that rooms with no actions do no break clear_load_test_rooms"""
     await room_store.add_request('empty-room-id', Request('request-id', []))
     await room_store.add_request('load-room-id', LOAD_TEST_REQUEST)

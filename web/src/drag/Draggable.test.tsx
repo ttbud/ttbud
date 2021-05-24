@@ -25,7 +25,7 @@ function testDraggable() {
 
   return (
     <Provider store={store}>
-      <DndContext.Provider value={(monitor as unknown) as DomDroppableMonitor}>
+      <DndContext.Provider value={monitor as unknown as DomDroppableMonitor}>
         <Draggable
           descriptor={{
             type: DraggableType.TokenBlueprint,

@@ -133,13 +133,8 @@ const dragSlice = createSlice({
   },
 });
 
-const {
-  dragStarted,
-  dragReleased,
-  dragMoved,
-  dragEnded,
-  portalDrag,
-} = dragSlice.actions;
+const { dragStarted, dragReleased, dragMoved, dragEnded, portalDrag } =
+  dragSlice.actions;
 
 /**
  * A drag has started

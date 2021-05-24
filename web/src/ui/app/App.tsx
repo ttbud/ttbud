@@ -99,9 +99,10 @@ const App: React.FC<Props> = ({ apiClient }) => {
     return () => document.removeEventListener("keydown", onKeyPressed);
   }, [dispatch]);
 
-  const onSearchDialogClose = useCallback(() => dispatch(stopSearching()), [
-    dispatch,
-  ]);
+  const onSearchDialogClose = useCallback(
+    () => dispatch(stopSearching()),
+    [dispatch]
+  );
 
   const onClearMap = () => dispatch(clear());
 
