@@ -16,7 +16,7 @@ export interface FakeDroppable extends DroppableConfigApi {
  * Fake droppable that avoids interacting with layout since jsdom does not support it
  *
  * Droppables can be set up with bounds directly via setDroppables, but droppables
- * that add themselves dynamically with be zero-area elements at the origin
+ * that add themselves dynamically will be zero-area elements at the origin
  */
 export class FakeDroppableMonitor implements DroppableMonitor {
   private droppables: FakeDroppable[] = [];
