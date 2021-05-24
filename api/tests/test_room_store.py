@@ -206,7 +206,7 @@ async def test_delete_with_expired_replacer_id(room_store: RoomStore) -> None:
 @any_room_store
 async def test_force_acquire_room_lock(room_store: RoomStore) -> None:
     await room_store.acquire_replacement_lock('old-replacer-id')
-    await room_store.force_acquire_replacement_lock('new-replacer-id')
+    await room_store.acquire_replacement_lock('new-replacer-id', force=True)
 
     await room_store.delete(TEST_ROOM_ID, 'new-replacer-id')
 

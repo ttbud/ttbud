@@ -60,10 +60,9 @@ class RoomStore(Protocol):
     async def add_request(self, room_id: str, request: Request) -> None:
         ...
 
-    async def acquire_replacement_lock(self, compaction_id: str) -> bool:
-        ...
-
-    async def force_acquire_replacement_lock(self, compaction_id: str) -> None:
+    async def acquire_replacement_lock(
+        self, compaction_id: str, force: bool = False
+    ) -> bool:
         ...
 
     async def read_for_replacement(self, room_id: str) -> ReplacementData:

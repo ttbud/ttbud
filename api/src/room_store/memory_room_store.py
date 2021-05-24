@@ -91,13 +91,17 @@ class MemoryRoomStore(RoomStore):
         for q in self._changes[room_id]:
             await q.put(request)
 
-    async def acquire_replacement_lock(self, replacement_id: str) -> bool:
-        if (
+    async def acquire_replacement_lock(
+        self, replacement_id: str, force: bool = False
+    ) -> bool:
+        lock_already_held = (
             self._replacement_lock
             and self._replacement_lock.key != replacement_id
             and self._replacement_lock.expire_time >= time.monotonic()
-        ):
+        )
+        if not force and lock_already_held:
             return False
+
         self._replacement_lock = ReplacementLock(
             replacement_id, time.monotonic() + COMPACTION_LOCK_EXPIRATION_SECONDS
         )

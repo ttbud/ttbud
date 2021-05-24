@@ -7,7 +7,7 @@ from src.room_store.room_store import RoomStore
 
 async def clear_load_test_rooms(room_store: RoomStore) -> None:
     replacer_id = str(uuid.uuid4())
-    await room_store.force_acquire_replacement_lock(replacer_id)
+    await room_store.acquire_replacement_lock(replacer_id, force=True)
 
     async for room_id in room_store.get_all_room_ids():
         actions = await room_store.read(room_id)

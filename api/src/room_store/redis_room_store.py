@@ -43,26 +43,6 @@ redis.call("rpush", room_key, room_update)
 redis.call("publish", channel_key, publish_value)
 """
 
-
-# language=lua
-_SET_REPLACEMENT_LOCK = f"""
-local replacement_key = KEYS[1]
-local replacer_id = ARGV[1]
-
-local success = redis.call("setnx", replacement_key, replacer_id)
-if success == 1 then
-    redis.call("expire", replacement_key, {COMPACTION_LOCK_EXPIRATION_SECONDS})
-    return true
-else
-    if replacer_id == redis.call("get", replacement_key) then
-        redis.call("expire", replacement_key, {COMPACTION_LOCK_EXPIRATION_SECONDS})
-        return true
-    end
-    return false
-end
-"""
-
-
 # language=lua
 _LREPLACE = """
 local room_key = KEYS[1]
@@ -113,13 +93,11 @@ class RedisRoomStore(RoomStore):
         self,
         redis: Redis,
         append_to_room_sha: str,
-        set_replacement_lock_sha: str,
         lreplace_sha: str,
         delete_room_sha: str,
     ):
         self._redis = redis
         self._append_to_room_sha = append_to_room_sha
-        self._set_replacement_lock_sha = set_replacement_lock_sha
         self._lreplace_sha = lreplace_sha
         self._delete_room_sha = delete_room_sha
         self._listeners_by_room_id: Dict[str, ChangeListener] = dict()
@@ -210,25 +188,15 @@ class RedisRoomStore(RoomStore):
         )
 
     @instrument
-    async def acquire_replacement_lock(self, replacer_id: str) -> bool:
-        return (
-            await self._redis.evalsha(
-                self._set_replacement_lock_sha,
-                keys=[REPLACEMENT_KEY],
-                args=[replacer_id],
-            )
-            == 1
+    async def acquire_replacement_lock(
+        self, replacer_id: str, force: bool = False
+    ) -> bool:
+        return await self._redis.set(
+            REPLACEMENT_KEY,
+            replacer_id,
+            expire=COMPACTION_LOCK_EXPIRATION_SECONDS,
+            exist=None if force else Redis.SET_IF_NOT_EXIST,
         )
-
-    @instrument
-    async def force_acquire_replacement_lock(self, replacer_id: str) -> None:
-        """
-        Override the current replacement lock, and replace it with the provided
-        replacer id
-        :param replacer_id: The new replacer id that will hold the lock
-        :return:
-        """
-        await self._redis.set(REPLACEMENT_KEY, replacer_id)
 
     @instrument
     async def read_for_replacement(self, room_id: str) -> ReplacementData:
@@ -269,14 +237,8 @@ class RedisRoomStore(RoomStore):
 
 
 async def create_redis_room_store(redis: Redis) -> RedisRoomStore:
-    (
-        append_to_room,
-        set_replacement_lock,
-        lreplace,
-        delete_room,
-    ) = await asyncio.gather(
+    (append_to_room, lreplace, delete_room,) = await asyncio.gather(
         redis.script_load(_APPEND_TO_ROOM),
-        redis.script_load(_SET_REPLACEMENT_LOCK),
         redis.script_load(_LREPLACE),
         redis.script_load(_DELETE_ROOM),
     )
@@ -284,7 +246,6 @@ async def create_redis_room_store(redis: Redis) -> RedisRoomStore:
     return RedisRoomStore(
         redis,
         append_to_room,
-        set_replacement_lock,
         lreplace,
         delete_room,
     )
