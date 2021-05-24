@@ -13,7 +13,8 @@ import DndContext from "../../drag/DndContext";
 import { fireEvent } from "@testing-library/dom";
 import { BoardState, upsertEntity } from "./board-state";
 import { GRID_SIZE_PX } from "../../config";
-import { drag, RIGHT_MOUSE } from "../__test_util__/pointer";
+import { drag } from "../__test_util__/pointer";
+import { Buttons } from "../util/Buttons";
 
 const CHARACTER: Entity = {
   id: "character-id",
@@ -120,7 +121,7 @@ describe("Board", () => {
         { x: 0, y: 0 },
         { x: GRID_SIZE_PX + 1, y: GRID_SIZE_PX + 1 },
       ],
-      { buttons: RIGHT_MOUSE }
+      { buttons: Buttons.RIGHT_MOUSE }
     );
 
     expect(onTokenDeleted).toHaveBeenCalledTimes(2);
@@ -147,11 +148,12 @@ describe("Board", () => {
 
     // Right click in the top left
     fireEvent.pointerDown(getByLabelText("Board"), {
-      buttons: RIGHT_MOUSE,
+      buttons: Buttons.RIGHT_MOUSE,
       clientX: 0,
       clientY: 0,
     });
 
+    expect(onTokenDeleted).toBeCalledTimes(1);
     expect(onTokenDeleted).toBeCalledWith("character-id");
   });
 
@@ -166,7 +168,7 @@ describe("Board", () => {
 
     // Right click far off towards the bottom right
     fireEvent.pointerDown(getByLabelText("Board"), {
-      buttons: RIGHT_MOUSE,
+      buttons: Buttons.RIGHT_MOUSE,
       clientX: 1000,
       clientY: 1000,
     });

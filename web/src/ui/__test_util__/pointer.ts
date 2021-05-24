@@ -1,20 +1,18 @@
 import Pos2d from "../../util/shape-math";
 import { fireEvent } from "@testing-library/dom";
+import { Buttons } from "../util/Buttons";
 
 type NonEmptyArray<T> = { 0: T } & Array<T>;
 
-export const LEFT_MOUSE = 1;
-export const RIGHT_MOUSE = 2;
-
 interface DragOpts {
-  buttons?: number;
+  buttons?: Buttons;
   shiftKey?: boolean;
 }
 
 export function drag(
   el: HTMLElement,
   [first, ...rest]: NonEmptyArray<Pos2d>,
-  { buttons = LEFT_MOUSE, shiftKey = false }: DragOpts = {}
+  { buttons = Buttons.LEFT_MOUSE, shiftKey = false }: DragOpts = {}
 ) {
   fireEvent.pointerDown(el, {
     buttons,

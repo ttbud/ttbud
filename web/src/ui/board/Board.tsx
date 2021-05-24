@@ -35,7 +35,7 @@ import {
 import { connect } from "react-redux";
 import { EntityType, TokenContents } from "../../types";
 import { BoardState, pingAt, tokenIdAt } from "./board-state";
-import { LEFT_MOUSE, RIGHT_MOUSE } from "../__test_util__/pointer";
+import { Buttons } from "../util/Buttons";
 
 let GRID_COLOR = "#947C65";
 
@@ -215,14 +215,14 @@ const PureBoard: React.FC<Props> = ({
     if (isDragging) return;
 
     const gridPos = toGridPos({ x, y });
-    if (shiftKey && buttons === LEFT_MOUSE) {
+    if (shiftKey && buttons === Buttons.LEFT_MOUSE) {
       onPingCreated(gridPos);
     } else if (
-      buttons === LEFT_MOUSE &&
+      buttons === Buttons.LEFT_MOUSE &&
       !tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })
     ) {
       onFloorCreated(activeFloor, gridPos);
-    } else if (buttons === RIGHT_MOUSE) {
+    } else if (buttons === Buttons.RIGHT_MOUSE) {
       let id = tokenIdAt(boardState, { ...gridPos, z: CHARACTER_HEIGHT });
       if (!id) {
         id = tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT });
@@ -259,16 +259,16 @@ const PureBoard: React.FC<Props> = ({
         continue;
       }
 
-      if (buttons === LEFT_MOUSE && shiftKey) {
+      if (buttons === Buttons.LEFT_MOUSE && shiftKey) {
         if (!pingAt(boardState, gridPos)) {
           onPingCreated(gridPos);
         }
       } else if (
-        buttons === LEFT_MOUSE &&
+        buttons === Buttons.LEFT_MOUSE &&
         !tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })
       ) {
         onFloorCreated(activeFloor, gridPos);
-      } else if (buttons === RIGHT_MOUSE) {
+      } else if (buttons === Buttons.RIGHT_MOUSE) {
         let toDeleteId = tokenIdAt(boardState, {
           ...gridPos,
           z: CHARACTER_HEIGHT,

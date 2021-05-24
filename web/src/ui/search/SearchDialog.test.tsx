@@ -62,6 +62,14 @@ describe("SearchDialog", () => {
     expect(getByText("AB")).toBeVisible();
   });
 
+  it("shows capitalized text icons for one letter searches", () => {
+    const { getByText, getByLabelText } = renderSearchDialog();
+
+    const searchBar = getByLabelText("search");
+    userEvent.type(searchBar, "z");
+    expect(getByText("Z")).toBeVisible();
+  });
+
   it("only shows icons that match the search", () => {
     const { queryByLabelText, getByLabelText } = renderSearchDialog();
     const searchBar = getByLabelText("search");
