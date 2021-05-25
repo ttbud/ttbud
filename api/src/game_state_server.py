@@ -4,7 +4,6 @@ import asyncio
 import logging
 from typing import (
     AsyncIterator,
-    List,
     AsyncIterable,
 )
 from uuid import uuid4
@@ -44,8 +43,9 @@ async def _requests_to_messages(
     requests: AsyncIterator[Request],
 ) -> AsyncIterator[Response]:
     async for request in requests:
-        with timber.context(request={'request_id': request.request_id}):
-            yield UpdateResponse(request.actions, request.request_id)
+        with foreground_transaction('update_send'):
+            with timber.context(request={'request_id': request.request_id}):
+                yield UpdateResponse(request.actions, request.request_id)
 
 
 class GameStateServer:
@@ -59,21 +59,12 @@ class GameStateServer:
         self._rate_limiter = rate_limiter
         self._noop_rate_limiter = noop_rate_limiter
 
-    async def _listen_for_changes(
-        self,
-        room_id: str,
-        queues: List[asyncio.Queue[Response]],
-        updates: AsyncIterator[Request],
-    ) -> None:
-        async for response in self._room_changes_to_messages(updates):
-            for q in queues:
-                await q.put(response)
-
     async def _process_requests(
         self, room_id: str, requests: AsyncIterator[Request]
     ) -> None:
         async for request in requests:
-            await self.room_store.add_request(room_id, request)
+            with foreground_transaction('update_receive'):
+                await self.room_store.add_request(room_id, request)
 
     async def handle_connection(
         self,
@@ -124,14 +115,6 @@ class GameStateServer:
                         yield msg
                 finally:
                     request_task.cancel()
-
-    async def _room_changes_to_messages(
-        self, room_changes: AsyncIterator[Request]
-    ) -> AsyncIterator[Response]:
-        async for request in room_changes:
-            if request.request_id:
-                with foreground_transaction('update'):
-                    yield UpdateResponse(request.actions, request.request_id)
 
     async def _acquire_room_slot(
         self, room_id: str, client_ip: str, rate_limiter: RateLimiter
