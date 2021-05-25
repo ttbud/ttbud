@@ -1,5 +1,7 @@
 import asyncio
 import logging
+
+import scout_apm.core
 import sys
 from asyncio import Future
 from typing import NoReturn
@@ -24,6 +26,7 @@ from src.util.lazy_asgi import LazyASGI
 logger = logging.getLogger(__name__)
 server_id = str(uuid4())
 ScoutConfig.set(**config.scout_config)
+scout_apm.core.install()
 
 
 async def make_app() -> Starlette:
