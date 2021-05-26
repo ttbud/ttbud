@@ -78,3 +78,11 @@ async def test_color_persistence(compactor: Compactor, room_store: RoomStore) ->
     await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
     await compactor._compact_room(TEST_ROOM_ID)
     assert await room_store.read(TEST_ROOM_ID) == [UpsertAction(green_token)]
+
+
+async def test_deletes_empty_rooms(compactor: Compactor, room_store: RoomStore) -> None:
+    await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
+    await room_store.add_request(TEST_ROOM_ID, DELETE_REQUEST)
+    await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
+    await compactor._compact_room(TEST_ROOM_ID)
+    assert await room_store.room_exists(TEST_ROOM_ID) is False

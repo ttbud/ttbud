@@ -18,6 +18,7 @@ from src.room_store.room_store import (
     RoomStore,
     UnexpectedReplacementId,
     COMPACTION_LOCK_EXPIRATION_SECONDS,
+    UnexpectedReplacementToken,
 )
 from src.util.async_util import async_collect
 from tests.static_fixtures import (
@@ -28,6 +29,7 @@ from tests.static_fixtures import (
     VALID_REQUEST,
     ANOTHER_VALID_ACTION,
     DELETE_REQUEST,
+    VALID_MOVE_REQUEST,
 )
 
 pytestmark = pytest.mark.asyncio
@@ -187,8 +189,33 @@ async def test_replace_with_expired_replacer_id(room_store: RoomStore) -> None:
 async def test_delete_room(room_store: RoomStore) -> None:
     await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
     await room_store.acquire_replacement_lock('replacer_id')
-    await room_store.delete(TEST_ROOM_ID, 'replacer_id')
+    replace_data = await room_store.read_for_replacement(TEST_ROOM_ID)
+    await room_store.delete(TEST_ROOM_ID, 'replacer_id', replace_data.replace_token)
     assert await room_store.room_exists(TEST_ROOM_ID) is False
+
+
+@any_room_store
+async def test_delete_invalid_replacer_id(room_store: RoomStore) -> None:
+    await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
+    await room_store.acquire_replacement_lock('replacer_id')
+    replace_data = await room_store.read_for_replacement(TEST_ROOM_ID)
+    with pytest.raises(UnexpectedReplacementId):
+        await room_store.delete(
+            TEST_ROOM_ID, 'invalid_replacer_id', replace_data.replace_token
+        )
+
+
+@any_room_store
+async def test_delete_outdated_token(room_store: RoomStore) -> None:
+    await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
+    await room_store.acquire_replacement_lock('replacer_id')
+    replace_data = await room_store.read_for_replacement(TEST_ROOM_ID)
+
+    # Add another request to the list after we've read
+    await room_store.add_request(TEST_ROOM_ID, VALID_MOVE_REQUEST)
+
+    with pytest.raises(UnexpectedReplacementToken):
+        await room_store.delete(TEST_ROOM_ID, 'replacer_id', replace_data.replace_token)
 
 
 @any_room_store
@@ -196,19 +223,25 @@ async def test_delete_with_expired_replacer_id(room_store: RoomStore) -> None:
     with time_machine.travel('1970-01-01', tick=False) as traveller:
         await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
         await room_store.acquire_replacement_lock('replacer_id')
+        replace_data = await room_store.read_for_replacement(TEST_ROOM_ID)
 
         # Move forward in time to expire the replacer_id
         traveller.shift(timedelta(seconds=COMPACTION_LOCK_EXPIRATION_SECONDS + 1))
         with pytest.raises(UnexpectedReplacementId):
-            await room_store.delete(TEST_ROOM_ID, 'replacer_id')
+            await room_store.delete(
+                TEST_ROOM_ID, 'replacer_id', replace_data.replace_token
+            )
 
 
 @any_room_store
 async def test_force_acquire_room_lock(room_store: RoomStore) -> None:
     await room_store.acquire_replacement_lock('old-replacer-id')
     await room_store.acquire_replacement_lock('new-replacer-id', force=True)
+    replace_data = await room_store.read_for_replacement(TEST_ROOM_ID)
 
-    await room_store.delete(TEST_ROOM_ID, 'new-replacer-id')
+    await room_store.delete(TEST_ROOM_ID, 'new-replacer-id', replace_data.replace_token)
 
     with pytest.raises(UnexpectedReplacementId):
-        await room_store.delete(TEST_ROOM_ID, 'old-replacer-id')
+        await room_store.delete(
+            TEST_ROOM_ID, 'old-replacer-id', replace_data.replace_token
+        )

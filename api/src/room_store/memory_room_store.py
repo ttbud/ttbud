@@ -23,6 +23,7 @@ from src.room_store.room_store import (
     ReplacementData,
     UnexpectedReplacementId,
     COMPACTION_LOCK_EXPIRATION_SECONDS,
+    UnexpectedReplacementToken,
 )
 
 logger = logging.getLogger(__name__)
@@ -128,12 +129,17 @@ class MemoryRoomStore(RoomStore):
         else:
             raise UnexpectedReplacementId()
 
-    async def delete(self, room_id: str, replacement_id: str) -> None:
-        if self._has_replacement_lock(replacement_id):
-            if self.storage.rooms_by_id.get(room_id):
-                del self.storage.rooms_by_id[room_id]
-        else:
+    async def delete(
+        self, room_id: str, replacement_id: str, replace_token: Any
+    ) -> None:
+        if not self._has_replacement_lock(replacement_id):
             raise UnexpectedReplacementId()
+
+        room = self.storage.rooms_by_id.get(room_id)
+        if room is None or len(room) != replace_token:
+            raise UnexpectedReplacementToken()
+
+        del self.storage.rooms_by_id[room_id]
 
     def _has_replacement_lock(self, replacement_id: str) -> bool:
         return (
