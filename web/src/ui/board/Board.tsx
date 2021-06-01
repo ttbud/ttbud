@@ -206,23 +206,22 @@ const PureBoard: React.FC<Props> = ({
     }
   });
 
-  const onPointerDown: PointerEventHandler = ({
-    clientX: x,
-    clientY: y,
-    shiftKey,
-    buttons,
-  }) => {
+  const onPointerDown: PointerEventHandler = (e) => {
     if (isDragging) return;
 
-    const gridPos = toGridPos({ x, y });
-    if (shiftKey && buttons === Buttons.LEFT_MOUSE) {
+    if (e.pointerType === "touch") return;
+    // Stop pen users from scrolling with their pen
+    if (e.pointerType === "pen") e.preventDefault();
+
+    const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
+    if (e.shiftKey && e.buttons === Buttons.LEFT_MOUSE) {
       onPingCreated(gridPos);
     } else if (
-      buttons === Buttons.LEFT_MOUSE &&
+      e.buttons === Buttons.LEFT_MOUSE &&
       !tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })
     ) {
       onFloorCreated(activeFloor, gridPos);
-    } else if (buttons === Buttons.RIGHT_MOUSE) {
+    } else if (e.buttons === Buttons.RIGHT_MOUSE) {
       let id = tokenIdAt(boardState, { ...gridPos, z: CHARACTER_HEIGHT });
       if (!id) {
         id = tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT });
@@ -234,9 +233,11 @@ const PureBoard: React.FC<Props> = ({
   };
 
   const onPointerMove: PointerEventHandler = (e) => {
-    if (isDragging) {
-      return;
-    }
+    if (isDragging) return;
+    // Allow touchscreen users to scroll around the page without drawing on it
+    if (e.pointerType === "touch") return;
+    // Stop pen users from scrolling with their pen
+    if (e.pointerType === "pen") e.preventDefault();
 
     // Pointer events are only triggered once per frame, but if the mouse is
     // moving quickly it can actually move over an entire grid square in less
