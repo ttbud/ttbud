@@ -182,13 +182,27 @@ jobs:
             DOMAIN: https://ttbud-staging.netlify.app
             API_DOMAIN: wss://ttbud-staging.herokuapp.com
           command: yarn test
+
+default-filter: &DEFAULT_FILTER
+  filters:
+    branches:
+      # bors ng uses these branches to stage merges for pending PRs, they
+      # shouldn't be built until bors moves them to the "staging" branch
+      # https://bors.tech/documentation/getting-started/
+      ignore:
+        - staging.tmp
+        - trying.tmp
+        - staging-squash-merge.tmp
 workflows:
   version: 2
   all:
     jobs:
-      - api
-      - web
-      - e2e-lint
+      - api:
+          <<: *DEFAULT_FILTER
+      - web:
+          <<: *DEFAULT_FILTER
+      - e2e-lint:
+          <<: *DEFAULT_FILTER
       - release-staging-web:
           requires:
             - web

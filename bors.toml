@@ -1,0 +1,7 @@
+# Configure bors to check for our circleci job statuses
+# https://bors.tech/
+status = [
+    "ci/circleci: api",
+    "ci/circleci: web",
+    "ci/circleci: e2e-lint",
+]
