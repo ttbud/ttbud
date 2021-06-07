@@ -165,7 +165,7 @@ class RedisRoomStore(RoomStore):
         # A cursor of '0' tells redis.scan to start at the beginning
         cursor = b'0'
         while cursor:
-            with instrument('scan_rooms'):
+            with instrument('RedisRoomStore.get_all_room_ids.scan'):
                 cursor, keys = await self._redis.scan(cursor, 'room:*')
             for key in keys:
                 yield str(key[len('room:') :], 'utf-8')
