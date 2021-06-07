@@ -5,3 +5,6 @@ status = [
     "ci/circleci: web",
     "ci/circleci: e2e-lint",
 ]
+use_squash_merge = true
+required_approvals = 1
+delete_merged_branches = true
