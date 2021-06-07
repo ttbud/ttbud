@@ -1,5 +1,6 @@
 import asyncio
-from contextlib import AsyncExitStack
+from contextlib import AsyncExitStack, asynccontextmanager
+from typing import AsyncIterator, Optional, Dict
 from uuid import uuid4
 
 import pytest
@@ -25,7 +26,7 @@ from src.rate_limit.rate_limit import (
 from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
 from src.routes import routes
 from tests import emulated_client
-from tests.emulated_client import WebsocketClosed
+from tests.emulated_client import WebsocketClosed, EmulatedClient
 from tests.helpers import assert_matches
 from tests.static_fixtures import TEST_REQUEST_ID
 
@@ -65,6 +66,32 @@ async def app() -> Starlette:
 
 
 pytestmark = pytest.mark.asyncio
+
+
+@asynccontextmanager
+async def num_active_connections(
+    app: Starlette,
+    num_connections: int,
+    *,
+    headers: Optional[Dict] = None,
+    unique_ips: bool = True,
+    unique_rooms: bool = True,
+) -> AsyncIterator[None]:
+    async with AsyncExitStack() as stack:
+
+        async def connect(i: int) -> EmulatedClient:
+            ip = f'127.0.0.{i}' if unique_ips else '127.0.0.1'
+            room_id = uuid4() if unique_rooms else ROOM_ID
+            return await stack.enter_async_context(
+                emulated_client.connect(
+                    app, f'/{room_id}', client_ip=ip, headers=headers
+                )
+            )
+
+        clients = [await connect(i) for i in range(num_connections)]
+        first_msgs = [client.receive_json() for client in clients]
+        await asyncio.gather(*first_msgs)
+        yield
 
 
 async def test_invalid_uuid(app: Starlette) -> None:
@@ -113,34 +140,20 @@ async def test_invalid_request(app: Starlette) -> None:
 
 
 async def test_too_many_user_connections(app: Starlette) -> None:
-    async with AsyncExitStack() as stack:
-        clients = [
-            await stack.enter_async_context(emulated_client.connect(app, f'/{uuid4()}'))
-            for _ in range(MAX_CONNECTIONS_PER_USER)
-        ]
-
-        first_msgs = [client.receive_json() for client in clients]
-        await asyncio.gather(*first_msgs)
-
+    async with num_active_connections(app, MAX_CONNECTIONS_PER_USER, unique_ips=False):
         with pytest.raises(WebsocketClosed) as e:
-            async with emulated_client.connect(app, f'/{uuid4()}') as websocket:
+            async with emulated_client.connect(
+                app, f'/{uuid4()}', client_ip='127.0.0.1'
+            ) as websocket:
                 await websocket.receive_json()
 
-        assert e.value.code == ERR_TOO_MANY_CONNECTIONS
+    assert e.value.code == ERR_TOO_MANY_CONNECTIONS
 
 
 async def test_too_many_room_connections(app: Starlette) -> None:
-    async with AsyncExitStack() as stack:
-        clients = [
-            await stack.enter_async_context(
-                emulated_client.connect(app, f'/{ROOM_ID}', client_ip=f'127.0.0.{i}')
-            )
-            for i in range(MAX_CONNECTIONS_PER_ROOM)
-        ]
-
-        first_msgs = [client.receive_json() for client in clients]
-        await asyncio.gather(*first_msgs)
-
+    async with num_active_connections(
+        app, MAX_CONNECTIONS_PER_ROOM, unique_rooms=False
+    ):
         with pytest.raises(WebsocketClosed) as e:
             async with emulated_client.connect(
                 app, f'/{ROOM_ID}', client_ip='127.0.0.255'
@@ -172,3 +185,45 @@ async def test_bypass_room_create_rate_limit(app: Starlette) -> None:
 
     async with emulated_client.connect(app, f'/{uuid4()}', headers=headers) as client:
         assert await client.receive_json() == {'type': 'connected', 'data': []}
+
+
+async def test_bypass_max_connections_rate_limit(app: Starlette) -> None:
+    headers = {BYPASS_RATE_LIMIT_HEADER: TEST_BYPASS_RATE_LIMIT_KEY}
+    async with num_active_connections(
+        app, MAX_CONNECTIONS_PER_USER, unique_ips=False, headers=headers
+    ):
+        async with emulated_client.connect(
+            app, f'/{uuid4()}', headers=headers
+        ) as client:
+            assert await client.receive_json() == {'type': 'connected', 'data': []}
+
+
+async def test_bypass_room_create_rate_limit_invalid_key(app: Starlette) -> None:
+    headers = {BYPASS_RATE_LIMIT_HEADER: "invalid-key"}
+    for i in range(MAX_ROOMS_PER_TEN_MINUTES):
+        async with emulated_client.connect(
+            app, f'/{uuid4()}', headers=headers
+        ) as client:
+            await client.receive_json()
+
+    with pytest.raises(WebsocketClosed) as e:
+        async with emulated_client.connect(
+            app, f'/{uuid4()}', headers=headers
+        ) as client:
+            await client.receive_json()
+
+    assert e.value.code == ERR_TOO_MANY_ROOMS_CREATED
+
+
+async def test_bypass_max_connections_rate_limit_invalid_key(app: Starlette) -> None:
+    headers = {BYPASS_RATE_LIMIT_HEADER: "invalid-key"}
+    async with num_active_connections(
+        app, MAX_CONNECTIONS_PER_USER, unique_ips=False, headers=headers
+    ):
+        with pytest.raises(WebsocketClosed) as e:
+            async with emulated_client.connect(
+                app, f'/{uuid4()}', headers=headers
+            ) as websocket:
+                await websocket.receive_json()
+
+        assert e.value.code == ERR_TOO_MANY_CONNECTIONS

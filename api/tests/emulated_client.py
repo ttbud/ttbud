@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from asyncio import CancelledError
 from contextlib import asynccontextmanager
 from typing import (
     Any,
@@ -275,4 +276,7 @@ async def connect(
             raise UnexpectedResponse(response)
     finally:
         app_task.cancel()
-        await app_task
+        try:
+            await app_task
+        except CancelledError:
+            pass
