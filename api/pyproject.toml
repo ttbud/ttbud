@@ -20,7 +20,7 @@ scout-apm = "^2.19.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
-black = "^21.5b1"
+black = "^21.5b2"
 pytest-mock = "^3.6.1"
 pytest-asyncio = "^0.15.1"
 mypy = "^0.812"
