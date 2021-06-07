@@ -1,7 +1,15 @@
 FROM python:3.9
 
-WORKDIR /app
 RUN pip install poetry
+
+RUN useradd --create-home appuser
+RUN mkdir /app
+RUN chown appuser:appuser /app
+WORKDIR /app
+USER appuser
+
+ENV PATH="/home/appuser/.local/bin:${PATH}"
+
 RUN poetry config virtualenvs.create false
 ADD pyproject.toml .
 
