@@ -5,7 +5,7 @@ import {
   makeStyles,
   TextField,
 } from "@material-ui/core";
-import React, { memo, useCallback, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Icon, ICONS_BY_ID } from "../icons";
 import Draggable from "../../drag/Draggable";
 import {
@@ -115,7 +115,7 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
   };
 
   const renderDialog = () => (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={open} onClose={onClose} disableScrollLock={true}>
       <DialogTitle>
         <TextField
           id="search"

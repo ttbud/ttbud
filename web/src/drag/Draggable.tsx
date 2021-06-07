@@ -77,6 +77,7 @@ const getStyle = (
 ): CSSProperties => {
   const style: CSSProperties = {
     userSelect: "none",
+    touchAction: "none",
     cursor: state.type === DragStateType.Dragging ? "grabbing" : "grab",
   };
 

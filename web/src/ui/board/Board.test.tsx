@@ -229,4 +229,21 @@ describe("Board", () => {
     ]);
     expect(onFloorCreated).not.toHaveBeenCalled();
   });
+
+  it("ignores touches from touchscreens", () => {
+    const onFloorCreated = jest.fn();
+
+    const { getByLabelText } = renderBoard({
+      props: { onFloorCreated },
+    });
+
+    // Right click far off towards the bottom right
+    fireEvent.pointerDown(getByLabelText("Board"), {
+      clientX: 0,
+      clientY: 0,
+      pointerType: "touch",
+    });
+
+    expect(onFloorCreated).not.toHaveBeenCalled();
+  });
 });

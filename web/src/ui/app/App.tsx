@@ -25,19 +25,15 @@ const useStyles = makeStyles((theme) => ({
   characterTray: {
     position: "fixed",
     zIndex: 3,
-    // Same location whether the scrollbar is visible or not
-    // (Scrollbar width = 100vh - 100%)
-    bottom: `calc(${theme.spacing(3)}px - (100vh - 100%))`,
+    bottom: theme.spacing(3),
     left: theme.spacing(1),
   },
   floorTray: {
     display: "inline-flex",
     position: "fixed",
     zIndex: 2,
-    // Same location whether the scrollbar is visible or not
-    // (Scrollbar width = 100vh - 100%)
-    bottom: `calc(${theme.spacing(3)}px - (100vh - 100%))`,
-    left: "calc(50% + (100vw - 100%)/2)",
+    bottom: theme.spacing(3),
+    left: "50%",
     transform: "translateX(-50%)",
   },
   connectionNotifier: {
@@ -48,8 +44,8 @@ const useStyles = makeStyles((theme) => ({
   },
   settings: {
     position: "fixed",
-    bottom: `calc(${theme.spacing(3)}px - (100vh - 100%))`,
-    right: `calc(${theme.spacing(3)}px - (100vw - 100%))`,
+    bottom: theme.spacing(3),
+    right: theme.spacing(3),
   },
 }));
 
