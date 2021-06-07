@@ -28,7 +28,11 @@ class TransactionFailedException(Exception):
     pass
 
 
-class UnexpectedReplacementId(BaseException):
+class UnexpectedReplacementId(Exception):
+    pass
+
+
+class UnexpectedReplacementToken(Exception):
     pass
 
 
@@ -68,7 +72,7 @@ class RoomStore(Protocol):
     async def read_for_replacement(self, room_id: str) -> ReplacementData:
         ...
 
-    async def delete(self, room_id: str, replacer_id: str) -> None:
+    async def delete(self, room_id: str, replacer_id: str, replace_token: Any) -> None:
         ...
 
     async def replace(

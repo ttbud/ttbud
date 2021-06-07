@@ -11,6 +11,7 @@ from src.room_store.room_store import (
     RoomStore,
     UnexpectedReplacementId,
     COMPACTION_INTERVAL_SECONDS,
+    UnexpectedReplacementToken,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,7 +53,20 @@ class Compactor:
                 room.create_or_update_token(action.data)
             elif isinstance(action, DeleteAction):
                 room.delete_token(action.data)
+
         compacted_actions = _tokens_to_actions(list(room.game_state.values()))
+
+        if not compacted_actions:
+            try:
+                await self._room_store.delete(
+                    room_id, self._compaction_id, replacement_data.replace_token
+                )
+                return
+            except UnexpectedReplacementToken:
+                # Something was added to the room after we started compacting,
+                # so just fall back to regular compacting
+                pass
+
         await self._room_store.replace(
             room_id,
             compacted_actions,

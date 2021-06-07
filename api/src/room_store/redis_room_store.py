@@ -25,12 +25,16 @@ from src.room_store.room_store import (
     ReplacementData,
     UnexpectedReplacementId,
     COMPACTION_LOCK_EXPIRATION_SECONDS,
+    UnexpectedReplacementToken,
 )
 
 logger = logging.getLogger(__name__)
 
 NO_REQUEST_ID = "NO_REQUEST_ID"
 REPLACEMENT_KEY = 'replacement_lock'
+ERR_INVALID_COMPACTION_KEY = "INVALID_COMPACTION_KEY"
+ERR_INVALID_ROOM_LENGTH = "INVALID_ROOM_LENGTH"
+
 
 # language=lua
 _APPEND_TO_ROOM = """
@@ -44,7 +48,7 @@ redis.call("publish", channel_key, publish_value)
 """
 
 # language=lua
-_LREPLACE = """
+_LREPLACE = f"""
 local room_key = KEYS[1]
 local compaction_key = KEYS[2]
 local replace_item = ARGV[1]
@@ -55,21 +59,26 @@ if redis.call("get", compaction_key) == compactor_id then
     redis.call("ltrim", room_key, replace_until, -1)
     redis.call("lpush", room_key, replace_item)
 else
-    error("Unexpected value for compaction key")
+    return redis.error_reply("{ERR_INVALID_COMPACTION_KEY}")
 end
 """
 
 # language=lua
-_DELETE_ROOM = """
+_DELETE_ROOM = f"""
 local room_key = KEYS[1]
 local compaction_key = KEYS[2]
 local compactor_id = ARGV[1]
+local expected_length = tonumber(ARGV[2])
 
-if redis.call("get", compaction_key) == compactor_id then
-    redis.call("del", room_key)
-else
-    error("Unexpected value for compaction key")
+if redis.call("get", compaction_key) ~= compactor_id then
+    return redis.error_reply("{ERR_INVALID_COMPACTION_KEY}")
 end
+
+if redis.call("llen", room_key) ~= expected_length then
+    return redis.error_reply("{ERR_INVALID_ROOM_LENGTH}")
+end
+
+redis.call("del", room_key)
 """
 
 
@@ -177,12 +186,11 @@ class RedisRoomStore(RoomStore):
             keys=[_room_key(room_id), _channel_key(room_id)],
             args=[
                 json.dumps(
-                    list(
-                        map(
-                            asdict,
-                            filter(lambda x: x.action != 'ping', request.actions),
-                        )
-                    )
+                    [
+                        asdict(action)
+                        for action in request.actions
+                        if action.action != 'ping'
+                    ]
                 ),
                 json.dumps(asdict(request)),
             ],
@@ -223,33 +231,44 @@ class RedisRoomStore(RoomStore):
                 ],
             )
         except ReplyError as e:
-            raise UnexpectedReplacementId(e.args)
+            # The error message is only exposed as the first element in the args
+            # tuple :(
+            (msg,) = e.args
+
+            if msg == ERR_INVALID_COMPACTION_KEY:
+                raise UnexpectedReplacementId() from e
+            else:
+                raise
 
     @instrument
-    async def delete(self, room_id: str, replacer_id: str) -> None:
+    async def delete(self, room_id: str, replacer_id: str, replace_token: Any) -> None:
         try:
             await self._redis.evalsha(
                 self._delete_room_sha,
                 keys=[_room_key(room_id), REPLACEMENT_KEY],
-                args=[replacer_id],
+                args=[replacer_id, replace_token],
             )
         except ReplyError as e:
-            raise UnexpectedReplacementId(e.args)
+            # The error message is only exposed as the first element in the args
+            # tuple :(
+            (msg,) = e.args
+
+            if msg == ERR_INVALID_ROOM_LENGTH:
+                raise UnexpectedReplacementToken() from e
+            elif msg == ERR_INVALID_COMPACTION_KEY:
+                raise UnexpectedReplacementId() from e
+            else:
+                raise
 
 
 async def create_redis_room_store(redis: Redis) -> RedisRoomStore:
-    (append_to_room, lreplace, delete_room,) = await asyncio.gather(
+    (append_to_room, lreplace, delete_room) = await asyncio.gather(
         redis.script_load(_APPEND_TO_ROOM),
         redis.script_load(_LREPLACE),
         redis.script_load(_DELETE_ROOM),
     )
 
-    return RedisRoomStore(
-        redis,
-        append_to_room,
-        lreplace,
-        delete_room,
-    )
+    return RedisRoomStore(redis, append_to_room, lreplace, delete_room)
 
 
 def _to_actions(raw_updates: List[str]) -> Iterator[Action]:
