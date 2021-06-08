@@ -55,7 +55,7 @@
     "eject": "react-scripts eject",
     "checkstyle": "prettier src public package.json tsconfig.json --check",
     "fixstyle": "prettier src public package.json tsconfig.json --write",
-    "lint": "eslint 'src/**/*.ts' 'src/**/*.tsx'",
+    "lint": "eslint 'src/**/*.ts' 'src/**/*.tsx' --max-warnings=0",
     "storyboard": "FAST_REFRESH=false cosmos"
   },
   "eslintConfig": {
