@@ -5,7 +5,7 @@ import {
   makeStyles,
   TextField,
 } from "@material-ui/core";
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import { Icon, ICONS_BY_ID } from "../icons";
 import Draggable from "../../drag/Draggable";
 import {

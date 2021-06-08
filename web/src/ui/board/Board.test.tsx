@@ -1,4 +1,4 @@
-import Board, { PureBoard } from "./Board";
+import { PureBoard } from "./Board";
 import { render } from "@testing-library/react";
 import { ContentType, Entity, EntityType } from "../../types";
 import { WALL_ICON } from "../icons";

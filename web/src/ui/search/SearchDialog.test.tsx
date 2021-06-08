@@ -1,8 +1,4 @@
-import {
-  getByLabelText,
-  queryByLabelText,
-  render,
-} from "@testing-library/react";
+import { render } from "@testing-library/react";
 import SearchDialog from "./SearchDialog";
 import noop from "../../util/noop";
 import { DEFAULT_FLOOR_ICONS, WALL_ICON } from "../icons";
