@@ -1,12 +1,11 @@
 FROM python:3.9
 
-RUN pip install poetry
-
 RUN useradd --create-home appuser
 RUN mkdir /app
 WORKDIR /app
 USER appuser
 
+RUN pip install poetry
 ENV PATH="/home/appuser/.local/bin:${PATH}"
 
 RUN poetry config virtualenvs.create false
