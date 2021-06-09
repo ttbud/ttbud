@@ -15,7 +15,7 @@
     "@types/jest": "26.0.23",
     "@types/node": "15.12.1",
     "@types/react": "17.0.9",
-    "@types/react-dom": "17.0.5",
+    "@types/react-dom": "17.0.7",
     "@types/react-redux": "^7.1.16",
     "@types/react-transition-group": "^4.4.1",
     "@types/reactour": "^1.18.1",
