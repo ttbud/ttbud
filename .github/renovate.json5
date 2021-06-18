@@ -1,0 +1,27 @@
+{
+  branchPrefix: "deps/",
+  packageRules: [
+    {
+      matchPaths: ["web", "e2e"],
+      // If the tests pass, automerge packages that only have effects on lint/test
+      matchPackagePatterns: [
+        "@babel",
+        "@testing-library",
+        "@types",
+        "jest",
+        "lint",
+        "mock-socket",
+        "prettier",
+      ],
+      automerge: true,
+    },
+    {
+      matchPaths: ["api"],
+      matchDepTypes: ["dev-dependencies"],
+      // Automerging locust or websocket_client could break e2e tests which only run after merge
+      excludePackageNames: ["locust", "websocket_client"],
+      automerge: true,
+    },
+  ],
+  extends: ["config:base"],
+}
