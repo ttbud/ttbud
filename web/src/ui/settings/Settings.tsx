@@ -186,6 +186,7 @@ const PureSettings: React.FC<Props> = memo(
           anchorEl={anchorEl}
           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
           transformOrigin={{ vertical: "bottom", horizontal: "right" }}
+          disableScrollLock={true}
         >
           <div className={classes.popoverContainer}>
             <List
