@@ -6,7 +6,6 @@ services:
       context: api
       args:
         DEV: "true"
-    working_dir: /app/
     command: python main.py
     environment:
       ENVIRONMENT:
@@ -24,7 +23,7 @@ services:
       REDIS_SSL_VALIDATION: none
       REDIS_URL: redis://db
     volumes:
-      - ./api:/app
+      - ./api:/home/appuser/app
       - ./certs:/certs
     ports:
       - ${API_WEBSOCKET_PORT}:${API_WEBSOCKET_PORT}
