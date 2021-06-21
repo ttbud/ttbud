@@ -146,6 +146,7 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
         assert(icon, `Icon id ${contents.iconId} is invalid`);
         return (
           <img
+            aria-label={`Floor: ${icon.desc}`}
             src={icon.img}
             className={classes.contents}
             alt={icon.img}
@@ -153,7 +154,14 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
           />
         );
       case ContentType.Text:
-        return <div className={classes.contents}>{contents.text}</div>;
+        return (
+          <div
+            aria-label={`Floor: ${contents.text}`}
+            className={classes.contents}
+          >
+            {contents.text}
+          </div>
+        );
       /* istanbul ignore next */
       default:
         throw new UnreachableCaseError(contents);
@@ -168,7 +176,7 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
   };
 
   return (
-    <Paper ref={containerRef} data-tour="floor-tray">
+    <Paper ref={containerRef} data-tour="floor-tray" aria-label="Floor Tray">
       <SortableList
         id={DROPPABLE_IDS.FLOOR_TRAY}
         items={items}

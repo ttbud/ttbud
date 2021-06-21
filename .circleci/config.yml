@@ -2,12 +2,9 @@ version: 2.1
 orbs:
   heroku: circleci/heroku@1.0.1
 executors:
-  web-executor:
+  node-executor:
     docker:
       - image: node:14
-  e2e-executor:
-    docker:
-      - image: circleci/node:14-browsers
 commands:
   install_yarn_deps:
     description: "Install all yarn dependencies"
@@ -18,14 +15,14 @@ commands:
       - restore_cache:
           keys:
             # Restore the cache with the exact dependencies,
-            - << parameters.cache_prefix >>-deps-v2-{{ checksum "yarn.lock" }}
+            - << parameters.cache_prefix >>-deps-v3-{{ checksum "yarn.lock" }}
             # or, failing that, just the most recent cache entry
-            - << parameters.cache_prefix >>-deps-v2
+            - << parameters.cache_prefix >>-deps-v3
       - run:
           name: Install Deps
           command: yarn install
       - save_cache:
-          key: << parameters.cache_prefix >>-deps-v2-{{ checksum "yarn.lock" }}
+          key: << parameters.cache_prefix >>-deps-v3-{{ checksum "yarn.lock" }}
           paths:
             - node_modules
   release_web:
@@ -99,7 +96,7 @@ jobs:
       - store_test_results:
           path: test-results
   web:
-    executor: web-executor
+    executor: node-executor
     working_directory: ~/repo/web
     steps:
       - checkout:
@@ -128,7 +125,7 @@ jobs:
       - store_test_results:
           path: test-results
   release-staging-web:
-    executor: web-executor
+    executor: node-executor
     working_directory: ~/repo/web
     environment:
       REACT_APP_DOMAIN: ttbud-staging.herokuapp.com
@@ -138,7 +135,7 @@ jobs:
           target_name: Staging
           site_id: NETLIFY_STAGING_SITE_ID
   release-prod-web:
-    executor: web-executor
+    executor: node-executor
     working_directory: ~/repo/web
     environment:
       REACT_APP_DOMAIN: ttbud.herokuapp.com
@@ -158,7 +155,7 @@ jobs:
       - release_api:
           app_name: ttbud
   e2e-lint:
-    executor: e2e-executor
+    executor: node-executor
     working_directory: ~/repo/e2e
     steps:
       - checkout:
@@ -172,7 +169,7 @@ jobs:
           name: Check Style
           command: yarn run checkstyle
   e2e-staging:
-    executor: e2e-executor
+    executor: node-executor
     working_directory: ~/repo/e2e
     steps:
       - checkout:
@@ -180,11 +177,19 @@ jobs:
       - install_yarn_deps:
           cache_prefix: e2e
       - run:
+          name: Install browsers
+          command: yarn playwright install
+      - run:
           name: Run Integration Tests
           environment:
             DOMAIN: https://ttbud-staging.netlify.app
             API_DOMAIN: wss://ttbud-staging.herokuapp.com
-          command: yarn test
+          # Have to manually set max workers because jest detects the wrong
+          # number of cpu cores in circleci
+          # https://github.com/facebook/jest/issues/5239#issuecomment-355867359
+          command: yarn test --workers=2 --forbid-only
+      - store_artifacts:
+          path: ~/repo/e2e/test-results
 
 default-filter: &DEFAULT_FILTER
   filters:

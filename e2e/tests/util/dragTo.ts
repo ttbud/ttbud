@@ -1,4 +1,4 @@
-import { Page } from "puppeteer";
+import { Page } from "@playwright/test";
 import { assert } from "./invariants";
 
 export interface Pos {
@@ -7,12 +7,9 @@ export interface Pos {
 }
 
 export default async function dragTo(page: Page, selector: string, dest: Pos) {
-  const element = await expect(page).toMatchElement(selector);
+  const element = await page.waitForSelector(selector);
   const boundingBox = await element.boundingBox();
-  assert(
-    boundingBox,
-    `Unable to get bounding box for element found by selector ${selector}`
-  );
+  assert(boundingBox, `Element ${selector} is not visible`);
 
   await page.mouse.move(
     boundingBox.x + boundingBox.width / 2,
