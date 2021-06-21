@@ -7,7 +7,7 @@ executors:
       - image: node:14
   e2e-executor:
     docker:
-      - image: circleci/node:14-browsers
+      - image: circleci/node:16-browsers
 commands:
   install_yarn_deps:
     description: "Install all yarn dependencies"
