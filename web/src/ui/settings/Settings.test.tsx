@@ -6,10 +6,8 @@ import userEvent from "@testing-library/user-event";
 
 const DEFAULT_PROPS = {
   showTourPrompt: false,
-  debugEnabled: false,
   tutorialPrompt: false,
   onTutorialDismissed: noop,
-  onDebugToggled: noop,
   onClearMap: noop,
   onTourClicked: noop,
   onTourPromptDismissed: noop,
@@ -22,40 +20,7 @@ describe("Settings", () => {
     );
 
     getByLabelText("Settings").click();
-    expect(getByText("Settings")).toBeVisible();
-  });
-
-  it("shows the debug toggle switched to off when debugEnabled is false", () => {
-    const { getByLabelText, getByRole } = render(
-      <PureSettings {...DEFAULT_PROPS} debugEnabled={false} />
-    );
-
-    getByLabelText("Settings").click();
-    expect(
-      getByRole("checkbox", { name: "Enable Debug Logs" })
-    ).not.toBeChecked();
-  });
-
-  it("shows the debug toggle switched to on when debugEnabled is true", () => {
-    const { getByLabelText, getByRole } = render(
-      <PureSettings {...DEFAULT_PROPS} debugEnabled={true} />
-    );
-
-    getByLabelText("Settings").click();
-    expect(getByRole("checkbox", { name: "Enable Debug Logs" })).toBeChecked();
-  });
-
-  it("calls onDebugToggled when the debug switch is clicked", () => {
-    const onDebugToggled = jest.fn();
-
-    const { getByLabelText, getByRole } = render(
-      <PureSettings {...DEFAULT_PROPS} onDebugToggled={onDebugToggled} />
-    );
-
-    getByLabelText("Settings").click();
-    getByRole("checkbox", { name: "Enable Debug Logs" }).click();
-
-    expect(onDebugToggled).toBeCalledTimes(1);
+    expect(getByText("about")).toBeVisible();
   });
 
   it("calls onClearMap when the clear action is confirmed", () => {

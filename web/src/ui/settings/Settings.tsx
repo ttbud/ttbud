@@ -8,7 +8,6 @@ import {
   makeStyles,
   Popover,
   Snackbar,
-  Switch,
   Tooltip,
   Typography,
 } from "@material-ui/core";
@@ -19,7 +18,7 @@ import ConfirmationDialog from "../confirm/ConfirmationDialog";
 import isMac from "../../util/isMac";
 import { connect } from "react-redux";
 import { RootState } from "../../store/rootReducer";
-import { toggleDebug, dismissTourPrompt } from "./settings-slice";
+import { dismissTourPrompt } from "./settings-slice";
 import AboutDialog from "../about/About";
 
 const FIVE_SECONDS_MS = 5000;
@@ -57,9 +56,7 @@ const useStyles = makeStyles((theme) => ({
 
 interface Props {
   className?: string;
-  debugEnabled: boolean;
   showTourPrompt: boolean;
-  onDebugToggled: () => void;
   onClearMap: () => void;
   onTourClicked: () => void;
   onTourPromptDismissed: () => void;
@@ -71,9 +68,7 @@ const PureSettings: React.FC<Props> = memo(
   ({
     className,
     showTourPrompt,
-    debugEnabled,
     onClearMap,
-    onDebugToggled,
     onTourClicked,
     onTourPromptDismissed,
   }) => {
@@ -189,36 +184,6 @@ const PureSettings: React.FC<Props> = memo(
         >
           <div className={classes.popoverContainer}>
             <List
-              subheader={
-                <ListSubheader color="primary">Settings</ListSubheader>
-              }
-            >
-              <ListItem dense={true}>
-                <ListItemText
-                  primary="Initiative Tracker"
-                  secondary="(Coming Soon!)"
-                  className={classes.settingMainText}
-                />
-                <Switch edge="end" disabled={true} />
-              </ListItem>
-              <ListItem dense={true}>
-                <ListItemText
-                  id="settings-debug-logs-label"
-                  primary="Enable Debug Logs"
-                  className={classes.settingMainText}
-                />
-                <Switch
-                  color={"primary"}
-                  edge="end"
-                  inputProps={{
-                    "aria-labelledby": "settings-debug-logs-label",
-                  }}
-                  checked={debugEnabled}
-                  onChange={onDebugToggled}
-                />
-              </ListItem>
-            </List>
-            <List
               subheader={<ListSubheader color="primary">Tour</ListSubheader>}
             >
               <ListItem
@@ -288,11 +253,9 @@ const PureSettings: React.FC<Props> = memo(
 
 const mapStateToProps = (state: RootState) => ({
   showTourPrompt: state.settings.showTourPrompt,
-  debugEnabled: state.settings.debug,
 });
 
 const dispatchProps = {
-  onDebugToggled: toggleDebug,
   onTourPromptDismissed: dismissTourPrompt,
 };
 
