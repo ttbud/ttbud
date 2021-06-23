@@ -107,6 +107,13 @@ const dispatchProps = {
   onTokenDeleted: removeEntity,
 };
 
+interface HandleMouseEventParams {
+  buttons: number;
+  shiftKey: boolean;
+  gridPos: Pos2d;
+  allowDuplicatePings?: boolean;
+}
+
 const PureBoard: React.FC<Props> = ({
   isDragging,
   boardState,
@@ -214,22 +221,12 @@ const PureBoard: React.FC<Props> = ({
     if (e.pointerType === "pen") e.preventDefault();
 
     const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
-    if (e.shiftKey && e.buttons === Buttons.LEFT_MOUSE) {
-      onPingCreated(gridPos);
-    } else if (
-      e.buttons === Buttons.LEFT_MOUSE &&
-      !tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })
-    ) {
-      onFloorCreated(activeFloor, gridPos);
-    } else if (e.buttons === Buttons.RIGHT_MOUSE) {
-      let id = tokenIdAt(boardState, { ...gridPos, z: CHARACTER_HEIGHT });
-      if (!id) {
-        id = tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT });
-      }
-      if (id) {
-        onTokenDeleted(id);
-      }
-    }
+    handleMouseEvent({
+      buttons: e.buttons,
+      shiftKey: e.shiftKey,
+      gridPos,
+      allowDuplicatePings: true,
+    });
   };
 
   const onPointerMove: PointerEventHandler = (e) => {
@@ -260,32 +257,40 @@ const PureBoard: React.FC<Props> = ({
         continue;
       }
 
-      if (buttons === Buttons.LEFT_MOUSE && shiftKey) {
-        if (!pingAt(boardState, gridPos)) {
-          onPingCreated(gridPos);
-        }
-      } else if (
-        buttons === Buttons.LEFT_MOUSE &&
-        !tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })
-      ) {
-        onFloorCreated(activeFloor, gridPos);
-      } else if (buttons === Buttons.RIGHT_MOUSE) {
-        let toDeleteId = tokenIdAt(boardState, {
-          ...gridPos,
-          z: CHARACTER_HEIGHT,
-        });
-        if (!toDeleteId) {
-          toDeleteId = tokenIdAt(boardState, {
-            ...gridPos,
-            z: FLOOR_HEIGHT,
-          });
-        }
-        if (toDeleteId) {
-          onTokenDeleted(toDeleteId);
-        }
-      }
-
+      handleMouseEvent({ buttons, shiftKey, gridPos });
       processedPositions.push(gridPos);
+    }
+  };
+
+  const handleMouseEvent = ({
+    buttons,
+    shiftKey,
+    gridPos,
+    allowDuplicatePings = false,
+  }: HandleMouseEventParams) => {
+    if (buttons === Buttons.LEFT_MOUSE && shiftKey) {
+      if (allowDuplicatePings || !pingAt(boardState, gridPos)) {
+        onPingCreated(gridPos);
+      }
+    } else if (
+      buttons === Buttons.LEFT_MOUSE &&
+      !tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })
+    ) {
+      onFloorCreated(activeFloor, gridPos);
+    } else if (buttons === Buttons.RIGHT_MOUSE) {
+      let toDeleteId = tokenIdAt(boardState, {
+        ...gridPos,
+        z: CHARACTER_HEIGHT,
+      });
+      if (!toDeleteId) {
+        toDeleteId = tokenIdAt(boardState, {
+          ...gridPos,
+          z: FLOOR_HEIGHT,
+        });
+      }
+      if (toDeleteId) {
+        onTokenDeleted(toDeleteId);
+      }
     }
   };
 
