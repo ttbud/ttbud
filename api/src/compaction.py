@@ -3,10 +3,10 @@ import logging
 import time
 from typing import List, NoReturn
 
-from src.api.api_structures import UpsertAction, DeleteAction, Action
+from src.api.api_structures import UpsertAction, Action
 from src.apm import background_transaction
 from src.game_components import Token
-from src.room import Room
+from src.room import create_room
 from src.room_store.room_store import (
     RoomStore,
     UnexpectedReplacementId,
@@ -47,13 +47,7 @@ class Compactor:
 
     async def _compact_room(self, room_id: str) -> None:
         replacement_data = await self._room_store.read_for_replacement(room_id)
-        room = Room()
-        for action in replacement_data.actions:
-            if isinstance(action, UpsertAction):
-                room.create_or_update_token(action.data)
-            elif isinstance(action, DeleteAction):
-                room.delete_token(action.data)
-
+        room = create_room(replacement_data.actions)
         compacted_actions = _tokens_to_actions(list(room.game_state.values()))
 
         if not compacted_actions:
