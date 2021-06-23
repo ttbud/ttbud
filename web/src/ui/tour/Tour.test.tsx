@@ -1,4 +1,4 @@
-import { findByText, getByText, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import Tour from "./Tour";
 import noop from "../../util/noop";
 
