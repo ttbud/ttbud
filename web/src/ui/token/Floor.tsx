@@ -1,4 +1,3 @@
-import React from "react";
 import Pos2d from "../../util/shape-math";
 import { ContentType, TokenContents } from "../../types";
 import FloorIcon from "./FloorIcon";

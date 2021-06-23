@@ -1,4 +1,3 @@
-import React from "react";
 import Draggable from "./Draggable";
 import DraggableSquare from "../ui/__stories__/DragAwareSquare";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";

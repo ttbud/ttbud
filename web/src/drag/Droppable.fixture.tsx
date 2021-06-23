@@ -1,4 +1,3 @@
-import React from "react";
 import Draggable from "./Draggable";
 import Droppable from "./Droppable";
 import Square from "../ui/__stories__/Square";

@@ -1,5 +1,3 @@
-import React from "react";
-
 import Floor from "./Floor";
 import { ContentType } from "../../types";
 import { WALL_ICON } from "../icons";

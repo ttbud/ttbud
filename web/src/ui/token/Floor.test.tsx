@@ -1,4 +1,3 @@
-import React from "react";
 import { render } from "@testing-library/react";
 import { ContentType } from "../../types";
 import { WALL_ICON } from "../icons";

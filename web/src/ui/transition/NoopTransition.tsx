@@ -1,6 +1,4 @@
 import { Transition } from "react-transition-group";
-import React from "react";
-
 interface Props {
   in?: boolean;
 }
