@@ -1,4 +1,3 @@
-import React from "react";
 import { DEFAULT_CHARACTER_ICONS } from "../icons";
 import Character from "./Character";
 import { ContentType, IconContents } from "../../types";

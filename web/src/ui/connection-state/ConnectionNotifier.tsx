@@ -3,7 +3,6 @@ import {
   ConnectionStateType,
   Disconnected,
 } from "./connection-state-slice";
-import React from "react";
 import Alert from "@material-ui/lab/Alert";
 import RefreshIcon from "@material-ui/icons/Cached";
 import { connect } from "react-redux";

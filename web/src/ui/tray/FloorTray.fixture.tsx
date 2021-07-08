@@ -1,5 +1,4 @@
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
-import React from "react";
 import { Provider } from "react-redux";
 import DndContext from "../../drag/DndContext";
 import dragReducer from "../../drag/drag-slice";

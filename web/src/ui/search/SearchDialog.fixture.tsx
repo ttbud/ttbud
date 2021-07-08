@@ -1,6 +1,5 @@
 import SearchDialog from "./SearchDialog";
 import { ICONS } from "../icons";
-import React from "react";
 import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 import dragReducer from "../../drag/drag-slice";

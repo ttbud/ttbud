@@ -1,5 +1,4 @@
 import { render } from "@testing-library/react";
-import React from "react";
 import { PureSettings } from "./Settings";
 import noop from "../../util/noop";
 import userEvent from "@testing-library/user-event";

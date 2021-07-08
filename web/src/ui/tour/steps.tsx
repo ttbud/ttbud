@@ -1,6 +1,5 @@
 import { ReactourStep } from "reactour";
 import isMac from "../../util/isMac";
-import React from "react";
 import ShortcutText from "./ShortcutText";
 import TourPopupContent from "./TourPopupContent";
 

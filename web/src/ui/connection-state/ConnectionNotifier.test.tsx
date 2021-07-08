@@ -1,6 +1,5 @@
 import { render } from "@testing-library/react";
 import { ConnectionStateType } from "./connection-state-slice";
-import React from "react";
 import { PureConnectionNotifier } from "./ConnectionNotifier";
 import "@testing-library/jest-dom";
 import noop from "../../util/noop";

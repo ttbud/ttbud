@@ -1,6 +1,5 @@
 import { render } from "@testing-library/react";
 import TourPopup from "./TourPopup";
-import React from "react";
 import noop from "../../util/noop";
 import userEvent from "@testing-library/user-event";
 

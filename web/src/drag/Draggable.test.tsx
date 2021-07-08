@@ -1,4 +1,3 @@
-import React from "react";
 import Draggable from "./Draggable";
 import { ContentType } from "../types";
 import { DraggableType } from "./DragStateTypes";

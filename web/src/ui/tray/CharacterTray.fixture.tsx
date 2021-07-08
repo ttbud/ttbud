@@ -1,4 +1,3 @@
-import React from "react";
 import dragReducer from "../../drag/drag-slice";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 import { DomDroppableMonitor } from "../../drag/DroppableMonitor";

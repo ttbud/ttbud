@@ -1,4 +1,3 @@
-import React from "react";
 import Reactour from "reactour";
 import steps from "./steps";
 import TourPopup from "./TourPopup";
