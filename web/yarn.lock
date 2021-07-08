@@ -2885,10 +2885,10 @@
     "@types/scheduler" "*"
     csstype "^3.0.2"
 
-"@types/reactour@1.18.1":
-  version "1.18.1"
-  resolved "https://registry.yarnpkg.com/@types/reactour/-/reactour-1.18.1.tgz#eed134dc77f8c5e91cb14daaa4d50bada649f6c2"
-  integrity sha512-gb9KzKkG0kmgE+A5eBfDa4ldGOr9b6jb1A0Xp1J7rh6toHG1/eb5u7kVcdmKuG33S4ZGXZCpx/rkz330R19tLg==
+"@types/reactour@1.18.2":
+  version "1.18.2"
+  resolved "https://registry.yarnpkg.com/@types/reactour/-/reactour-1.18.2.tgz#7b17529be743c3abae61b51e7d435a25b7df3f97"
+  integrity sha512-WFZ+RjmzZG8QzhW0NI0FQ3GsFxcn2kLIEak5R1NAW6PWkIJRCano1nLv81iFxA4qCneXSD1dwSbE6iuWVwCafw==
   dependencies:
     "@types/react" "*"
 
