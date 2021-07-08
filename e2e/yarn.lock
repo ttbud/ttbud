@@ -430,7 +430,7 @@
     "@types/yargs" "^15.0.0"
     chalk "^4.0.0"
 
-"@playwright/test@^1.12.2":
+"@playwright/test@1.12.2":
   version "1.12.2"
   resolved "https://registry.yarnpkg.com/@playwright/test/-/test-1.12.2.tgz#f71977e489292f5625c69a4eae41d25e5032cf15"
   integrity sha512-F2I5C/7P/UKAoFMR0Pc1GCh1zrvu2s2x5U7uYwKOjSBrzbVfPl5GLAYlIspW8wBSeXLk5US/Zz5aIng6+4KJlA==
