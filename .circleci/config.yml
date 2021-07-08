@@ -4,7 +4,7 @@ orbs:
 executors:
   node-executor:
     docker:
-      - image: node:14
+      - image: mcr.microsoft.com/playwright:focal
 commands:
   install_yarn_deps:
     description: "Install all yarn dependencies"
@@ -176,9 +176,6 @@ jobs:
           path: ~/repo
       - install_yarn_deps:
           cache_prefix: e2e
-      - run:
-          name: Install browsers
-          command: yarn playwright install
       - run:
           name: Run Integration Tests
           environment:
