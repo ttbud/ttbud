@@ -1,23 +1,21 @@
-const { setup: setupPuppeteer } = require("jest-environment-puppeteer");
-const config = require("./config");
-const WebSocket = require("ws");
+import config from "./tests/config";
+import WebSocket from "ws";
 
 const MAX_WAIT_TIME_MS = 600_000;
 const TEST_ROOM_ID = "1292b25e-ffbf-4b77-b5e4-df854b81487b";
 
-module.exports = async (globalConfig) => {
-  await setupPuppeteer(globalConfig);
+export default async function globalSetup() {
   await waitForBackend();
-};
+}
 
-async function waitForBackend() {
+export async function waitForBackend() {
   const startTimeMs = Date.now();
   let success = false;
   let error = null;
   while (!success && Date.now() - startTimeMs < MAX_WAIT_TIME_MS) {
     const websocket = new WebSocket(`${config.apiDomain}/${TEST_ROOM_ID}`);
 
-    const connection = new Promise((resolve, reject) => {
+    const connection = new Promise<void>((resolve, reject) => {
       websocket.onopen = () => resolve();
       websocket.onerror = (e) => reject(e);
     });
