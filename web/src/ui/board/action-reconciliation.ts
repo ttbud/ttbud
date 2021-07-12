@@ -1,5 +1,6 @@
 import { Action } from "../../network/BoardStateApiClient";
 import { applyAction, BoardState } from "./board-state";
+import produce from "immer";
 
 export interface Update {
   updateId: string;
@@ -11,19 +12,6 @@ export interface MergeState {
   local: BoardState;
   queuedUpdates: Update[];
   unqueuedActions: Action[];
-}
-
-function cloneBoard(state: BoardState): BoardState {
-  const charIdsByContentId: { [contentId: string]: string[] } = {};
-  for (const [contentId, charIds] of Object.entries(state.charIdsByContentId)) {
-    charIdsByContentId[contentId] = [...charIds];
-  }
-
-  return {
-    charIdsByContentId,
-    tokenIdsByPosStr: { ...state.tokenIdsByPosStr },
-    entityById: { ...state.entityById },
-  };
 }
 
 export function applyNetworkUpdate(
@@ -47,24 +35,25 @@ export function applyNetworkUpdate(
   }
 
   // New local state is the network state + pending and unqueued actions
-  state.local = cloneBoard(state.network);
-  for (const update of state.queuedUpdates) {
-    for (const action of update.actions) {
+  state.local = produce(state.network, (draft) => {
+    for (const update of state.queuedUpdates) {
+      for (const action of update.actions) {
+        applyAction({
+          boardState: draft,
+          action,
+          isConfirmed: false,
+        });
+      }
+    }
+
+    for (const action of state.unqueuedActions) {
       applyAction({
-        boardState: state.local,
+        boardState: draft,
         action,
         isConfirmed: false,
       });
     }
-  }
-
-  for (const action of state.unqueuedActions) {
-    applyAction({
-      boardState: state.local,
-      action,
-      isConfirmed: false,
-    });
-  }
+  });
 }
 
 export function applyLocalAction(state: MergeState, action: Action) {
