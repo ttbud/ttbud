@@ -730,7 +730,7 @@ python-versions = "*"
 
 [[package]]
 name = "starlette"
-version = "0.15.0"
+version = "0.16.0"
 description = "The little ASGI library that shines."
 category = "main"
 optional = false
@@ -901,7 +901,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "b6ae5d78ef32748c103e19da1221ea143f464035227d81d2ba991313e2cd95f8"
+content-hash = "cc421959e17cf6519ef41bffa03b16eb4d8f3ba1256130d4c630ba4d7f1408ac"
 
 [metadata.files]
 aioredis = [
@@ -1594,8 +1594,8 @@ sortedcontainers = [
     {file = "sortedcontainers-2.2.2.tar.gz", hash = "sha256:4e73a757831fc3ca4de2859c422564239a31d8213d09a2a666e375807034d2ba"},
 ]
 starlette = [
-    {file = "starlette-0.15.0-py3-none-any.whl", hash = "sha256:66dc8464dc4380f591f33248d23913830f501027ac26839329c99177cf119128"},
-    {file = "starlette-0.15.0.tar.gz", hash = "sha256:5c6e71fe8a11f690f78ab13363b0993eb7e5446986d3549902a81505afdaa08b"},
+    {file = "starlette-0.16.0-py3-none-any.whl", hash = "sha256:38eb24bf705a2c317e15868e384c1b8a12ca396e5a3c3a003db7e667c43f939f"},
+    {file = "starlette-0.16.0.tar.gz", hash = "sha256:e1904b5d0007aee24bdd3c43994be9b3b729f4f58e740200de1d623f8c3a8870"},
 ]
 timber = [
     {file = "timber-2.1.0-py2.py3-none-any.whl", hash = "sha256:f5e5ab52f36a92b5eb54352c1ddef3fcd4d699cbc260ce2e68a65890a11c9c79"},
