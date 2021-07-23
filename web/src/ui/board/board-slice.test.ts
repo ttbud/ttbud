@@ -73,12 +73,6 @@ function getEntities(store: EnhancedStore<{ board: MergeState }>) {
   return Object.values(store.getState().board.local.entityById);
 }
 
-beforeEach(() => jest.useFakeTimers());
-afterEach(() => {
-  jest.runOnlyPendingTimers();
-  jest.useRealTimers();
-});
-
 it("adds floors", () => {
   const store = createTestStore();
   store.dispatch(

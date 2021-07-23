@@ -56,6 +56,8 @@ describe("BoardStateApiClient", () => {
   let client: RealBoardStateApiClient;
 
   beforeEach(async () => {
+    // TODO The fake WS library uses timers in a way I haven't investigated, so we can't use fake timers
+    jest.useRealTimers();
     WS.clean();
 
     api = new WS("ws://ttbud.local/roomId", { jsonProtocol: true });
@@ -66,6 +68,10 @@ describe("BoardStateApiClient", () => {
 
     eventHandler = jest.fn();
     client.setEventHandler(eventHandler);
+  });
+
+  afterEach(() => {
+    jest.useFakeTimers();
   });
 
   it("notifies listeners of connections", async () => {

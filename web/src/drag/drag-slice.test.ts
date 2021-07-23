@@ -78,9 +78,8 @@ function createTestStore(initialState: DragState): EnhancedStore<any, any> {
 
 it("refuses to start a new drag when a drag is already started", () => {
   const store = createTestStore(DRAGGING);
-  expect(() => {
-    store.dispatch(startDrag(DRAGGABLE, undefined, ORIGIN_POS, ORIGIN_BOUNDS));
-  }).toThrow("attempted to start a drag during an existing drag");
+  store.dispatch(startDrag(DRAGGABLE, undefined, ORIGIN_POS, ORIGIN_BOUNDS));
+  expect(store.getState().drag).toEqual(DRAGGING);
 });
 
 it("can start a drag outside of a droppable", () => {

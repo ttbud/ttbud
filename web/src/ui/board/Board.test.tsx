@@ -13,8 +13,10 @@ import DndContext from "../../drag/DndContext";
 import { fireEvent } from "@testing-library/dom";
 import { BoardState, upsertEntity } from "./board-state";
 import { GRID_SIZE_PX } from "../../config";
-import { drag } from "../__test_util__/pointer";
+import { drag, tap } from "../__test_util__/pointer";
 import { Buttons } from "../util/Buttons";
+import { advanceByTime } from "../__test_util__/time";
+import { LONG_TAP_MS } from "../util/useLongTap";
 
 const CHARACTER: Entity = {
   id: "character-id",
@@ -129,6 +131,44 @@ describe("Board", () => {
     expect(onTokenDeleted).toHaveBeenCalledWith("floor-id-two");
   });
 
+  it("deletes floors when double tapped", async () => {
+    const onTokenDeleted = jest.fn();
+
+    // Create a board with a floor in the top left
+    const { getByLabelText } = renderBoard({
+      entities: [
+        {
+          id: "floor-id-one",
+          type: EntityType.Floor,
+          pos: { x: 0, y: 0, z: 0 },
+          contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
+        },
+        {
+          id: "floor-id-two",
+          type: EntityType.Floor,
+          pos: { x: 1, y: 1, z: 0 },
+          contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
+        },
+      ],
+      props: { onTokenDeleted },
+    });
+
+    // Double tap on the top left square, drag diagonally down and to the right
+    const board = getByLabelText("Board");
+    await tap(board, { pos: { x: 0, y: 0 } });
+    drag(
+      board,
+      [
+        { x: 0, y: 0 },
+        { x: GRID_SIZE_PX + 1, y: GRID_SIZE_PX + 1 },
+      ],
+      { pointerType: "touch" }
+    );
+
+    expect(onTokenDeleted).toHaveBeenCalledWith("floor-id-one");
+    expect(onTokenDeleted).toHaveBeenCalledWith("floor-id-two");
+  });
+
   it("deletes the character covering the floor when right-clicked", () => {
     const onTokenDeleted = jest.fn();
 
@@ -195,6 +235,16 @@ describe("Board", () => {
     expect(onPingCreated).toHaveBeenCalledWith({ x: 1, y: 1 });
   });
 
+  it("creates pings with long tap", () => {
+    const onPingCreated = jest.fn();
+    const { getByLabelText } = renderBoard({ props: { onPingCreated } });
+    const board = getByLabelText("Board");
+
+    tap(board, { action: "down", pos: { x: 0, y: 0 } });
+    advanceByTime(LONG_TAP_MS + 1);
+    expect(onPingCreated).toHaveBeenCalledWith({ x: 0, y: 0 });
+  });
+
   it("creates floors with left click", () => {
     const onFloorCreated = jest.fn();
     const { getByLabelText } = renderBoard({ props: { onFloorCreated } });
@@ -203,6 +253,54 @@ describe("Board", () => {
       { x: 0, y: 0 },
       { x: GRID_SIZE_PX + 1, y: GRID_SIZE_PX + 1 },
     ]);
+
+    expect(onFloorCreated).toHaveBeenCalledTimes(2);
+    expect(onFloorCreated).toBeCalledWith(DEFAULT_PROPS.activeFloor, {
+      x: 0,
+      y: 0,
+    });
+    expect(onFloorCreated).toBeCalledWith(DEFAULT_PROPS.activeFloor, {
+      x: 1,
+      y: 1,
+    });
+  });
+
+  it("creates floors when you double tap", async () => {
+    const onFloorCreated = jest.fn();
+    const { getByLabelText } = renderBoard({ props: { onFloorCreated } });
+    const board = getByLabelText("Board");
+    // Double tap on the top left square, drag diagonally down and to the right
+    await tap(board, { pos: { x: 0, y: 0 } });
+    drag(
+      board,
+      [
+        { x: 0, y: 0 },
+        { x: GRID_SIZE_PX + 1, y: GRID_SIZE_PX + 1 },
+      ],
+      { pointerType: "touch" }
+    );
+
+    expect(onFloorCreated).toBeCalledWith(DEFAULT_PROPS.activeFloor, {
+      x: 0,
+      y: 0,
+    });
+    expect(onFloorCreated).toBeCalledWith(DEFAULT_PROPS.activeFloor, {
+      x: 1,
+      y: 1,
+    });
+  });
+
+  it("creates floors with a pen", () => {
+    const onFloorCreated = jest.fn();
+    const { getByLabelText } = renderBoard({ props: { onFloorCreated } });
+    drag(
+      getByLabelText("Board"),
+      [
+        { x: 0, y: 0 },
+        { x: GRID_SIZE_PX + 1, y: GRID_SIZE_PX + 1 },
+      ],
+      { pointerType: "pen" }
+    );
 
     expect(onFloorCreated).toHaveBeenCalledTimes(2);
     expect(onFloorCreated).toBeCalledWith(DEFAULT_PROPS.activeFloor, {
@@ -230,19 +328,11 @@ describe("Board", () => {
     expect(onFloorCreated).not.toHaveBeenCalled();
   });
 
-  it("ignores touches from touchscreens", () => {
+  it("ignores single taps from touchscreens", () => {
     const onFloorCreated = jest.fn();
 
-    const { getByLabelText } = renderBoard({
-      props: { onFloorCreated },
-    });
-
-    // Right click far off towards the bottom right
-    fireEvent.pointerDown(getByLabelText("Board"), {
-      clientX: 0,
-      clientY: 0,
-      pointerType: "touch",
-    });
+    const { getByLabelText } = renderBoard({ props: { onFloorCreated } });
+    tap(getByLabelText("Board"), { pos: { x: 0, y: 0 } });
 
     expect(onFloorCreated).not.toHaveBeenCalled();
   });

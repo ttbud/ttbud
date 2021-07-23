@@ -13,6 +13,7 @@ const useStyles = makeStyles({
   media: {
     width: GRID_SIZE_PX,
     height: GRID_SIZE_PX,
+    userDrag: "none",
     userSelect: "none",
   },
 });
