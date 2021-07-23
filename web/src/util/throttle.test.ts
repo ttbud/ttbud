@@ -6,10 +6,7 @@ let fn: jest.Mock, throttledFn: (...args: any[]) => void;
 beforeEach(() => {
   fn = jest.fn();
   throttledFn = throttle(fn, THROTTLE_MS);
-  jest.useFakeTimers();
 });
-
-afterEach(() => jest.useRealTimers());
 
 it("Should call functions immediately the first time", () => {
   throttledFn();

@@ -3,6 +3,7 @@ import React, {
   PointerEventHandler,
   useCallback,
   useRef,
+  useState,
 } from "react";
 import { makeStyles } from "@material-ui/core";
 import { GRID_SIZE_PX } from "../../config";
@@ -17,8 +18,8 @@ import { assert } from "../../util/invariants";
 import { LocationCollector, TargetLocation } from "../../drag/DroppableMonitor";
 import {
   DraggableType,
-  LocationType,
   DragStateType,
+  LocationType,
 } from "../../drag/DragStateTypes";
 import { DROPPABLE_IDS } from "../DroppableIds";
 import { TransitionGroup } from "react-transition-group";
@@ -26,16 +27,19 @@ import Fade from "../transition/Fade";
 import NoopTransition from "../transition/NoopTransition";
 import { RootState } from "../../store/rootReducer";
 import {
-  addPing,
   addFloor,
-  removeEntity,
+  addPing,
   CHARACTER_HEIGHT,
   FLOOR_HEIGHT,
+  removeEntity,
 } from "./board-slice";
 import { connect } from "react-redux";
 import { EntityType, TokenContents } from "../../types";
 import { BoardState, pingAt, tokenIdAt } from "./board-state";
 import { Buttons } from "../util/Buttons";
+import useDoubleTap, { DoubleTapState } from "../util/useDoubleTap";
+import useLongTap from "../util/useLongTap";
+import mergeRefs from "../../util/mergeRefs";
 
 let GRID_COLOR = "#947C65";
 
@@ -45,6 +49,8 @@ const useStyles = makeStyles((theme) => ({
     height: "100%",
   },
   board: {
+    // Otherwise safari will try to "select" the empty text next to each floor icon
+    userSelect: "none",
     backgroundColor: theme.palette.background.default,
     backgroundImage: `repeating-linear-gradient(
       0deg,
@@ -68,6 +74,8 @@ const useStyles = makeStyles((theme) => ({
     zIndex: 0,
   },
 }));
+
+type PointerAction = "delete" | "ping" | "draw" | "ignore";
 
 const scrolledPos = (pixelPos: Pos2d) => {
   return {
@@ -107,6 +115,22 @@ const dispatchProps = {
   onTokenDeleted: removeEntity,
 };
 
+function topTokenIdAt(boardState: BoardState, gridPos: Pos2d) {
+  let tokenId = tokenIdAt(boardState, {
+    ...gridPos,
+    z: CHARACTER_HEIGHT,
+  });
+  if (!tokenId) {
+    tokenId = tokenIdAt(boardState, {
+      ...gridPos,
+      z: FLOOR_HEIGHT,
+    });
+  }
+  return tokenId;
+}
+
+type Mode = "draw" | "delete";
+
 const PureBoard: React.FC<Props> = ({
   isDragging,
   boardState,
@@ -116,7 +140,69 @@ const PureBoard: React.FC<Props> = ({
   onTokenDeleted,
 }) => {
   const classes = useStyles();
+
+  const [mode, setMode] = useState<Mode>("draw");
+
+  const handlePointerAction = useCallback(
+    (action: PointerAction, gridPos: Pos2d, allowDuplicatePings: boolean) => {
+      switch (action) {
+        case "ping":
+          if (allowDuplicatePings || !pingAt(boardState, gridPos)) {
+            onPingCreated(gridPos);
+          }
+          break;
+        case "draw":
+          if (!tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })) {
+            onFloorCreated(activeFloor, gridPos);
+          }
+          break;
+        case "delete":
+          let toDeleteId = topTokenIdAt(boardState, gridPos);
+          if (toDeleteId) {
+            onTokenDeleted(toDeleteId);
+          }
+          break;
+        case "ignore":
+          break;
+        /* istanbul ignore next */
+        default:
+          throw new UnreachableCaseError(action);
+      }
+    },
+    [activeFloor, boardState, onFloorCreated, onPingCreated, onTokenDeleted]
+  );
+
+  const onDoubleTap = useCallback(
+    (e: PointerEvent) => {
+      if (isDragging) return;
+
+      const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
+      const tokenId = topTokenIdAt(boardState, gridPos);
+      if (tokenId) {
+        onTokenDeleted(tokenId);
+        setMode("delete");
+      } else {
+        onFloorCreated(activeFloor, gridPos);
+      }
+    },
+    [isDragging, activeFloor, boardState, onFloorCreated, onTokenDeleted]
+  );
+
+  const [doubleTapRef, doubleTapState] =
+    useDoubleTap<HTMLDivElement>(onDoubleTap);
+
+  const onLongTap = useCallback(
+    (e: PointerEvent) => {
+      if (isDragging || doubleTapState === DoubleTapState.Active) return;
+
+      const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
+      onPingCreated(gridPos);
+    },
+    [isDragging, onPingCreated, doubleTapState]
+  );
+
   const container = useRef<HTMLDivElement>(null);
+  const longTapRef = useLongTap<HTMLDivElement>(onLongTap);
 
   const getLocation: LocationCollector = useCallback(
     (draggable, pos): TargetLocation | undefined => {
@@ -206,36 +292,50 @@ const PureBoard: React.FC<Props> = ({
     }
   });
 
-  const onPointerDown: PointerEventHandler = (e) => {
-    if (isDragging) return;
+  const getTouchAction = (): PointerAction => {
+    if (doubleTapState !== DoubleTapState.Active) {
+      return "ignore";
+    }
 
-    if (e.pointerType === "touch") return;
+    return mode;
+  };
+
+  const getMouseAction = (e: React.PointerEvent): PointerAction => {
+    if (e.shiftKey && e.buttons === Buttons.LEFT_MOUSE) {
+      return "ping";
+    } else if (e.buttons === Buttons.LEFT_MOUSE) {
+      return "draw";
+    } else if (e.buttons === Buttons.RIGHT_MOUSE) {
+      return "delete";
+    } else {
+      return "ignore";
+    }
+  };
+
+  const getPointerAction = (e: React.PointerEvent): PointerAction => {
+    if (isDragging) return "ignore";
+
+    switch (e.pointerType) {
+      case "pen":
+        return "draw";
+      case "touch":
+        return getTouchAction();
+      default:
+        return getMouseAction(e);
+    }
+  };
+
+  const onPointerDown: PointerEventHandler = (e) => {
+    const action = getPointerAction(e);
+
     // Stop pen users from scrolling with their pen
     if (e.pointerType === "pen") e.preventDefault();
 
     const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
-    if (e.shiftKey && e.buttons === Buttons.LEFT_MOUSE) {
-      onPingCreated(gridPos);
-    } else if (
-      e.buttons === Buttons.LEFT_MOUSE &&
-      !tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })
-    ) {
-      onFloorCreated(activeFloor, gridPos);
-    } else if (e.buttons === Buttons.RIGHT_MOUSE) {
-      let id = tokenIdAt(boardState, { ...gridPos, z: CHARACTER_HEIGHT });
-      if (!id) {
-        id = tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT });
-      }
-      if (id) {
-        onTokenDeleted(id);
-      }
-    }
+    handlePointerAction(action, gridPos, true);
   };
 
   const onPointerMove: PointerEventHandler = (e) => {
-    if (isDragging) return;
-    // Allow touchscreen users to scroll around the page without drawing on it
-    if (e.pointerType === "touch") return;
     // Stop pen users from scrolling with their pen
     if (e.pointerType === "pen") e.preventDefault();
 
@@ -247,56 +347,62 @@ const PureBoard: React.FC<Props> = ({
     let events: PointerEvent[];
     if (e.nativeEvent.getCoalescedEvents) {
       events = e.nativeEvent.getCoalescedEvents();
+      // Firefox has a bug where sometimes coalesced events is empty
+      if (events.length === 0) {
+        events = [e.nativeEvent];
+      }
     } else {
       events = [e.nativeEvent];
     }
 
     const processedPositions: Pos2d[] = [];
     for (const event of events) {
-      const { clientX: x, clientY: y, buttons, shiftKey } = event;
+      const action = getPointerAction(e);
+      const { clientX: x, clientY: y } = event;
       const gridPos = toGridPos({ x, y });
       // Skip mouse events that result in the same grid position
       if (processedPositions.some((pos) => posAreEqual(pos, gridPos))) {
         continue;
       }
-
-      if (buttons === Buttons.LEFT_MOUSE && shiftKey) {
-        if (!pingAt(boardState, gridPos)) {
-          onPingCreated(gridPos);
-        }
-      } else if (
-        buttons === Buttons.LEFT_MOUSE &&
-        !tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })
-      ) {
-        onFloorCreated(activeFloor, gridPos);
-      } else if (buttons === Buttons.RIGHT_MOUSE) {
-        let toDeleteId = tokenIdAt(boardState, {
-          ...gridPos,
-          z: CHARACTER_HEIGHT,
-        });
-        if (!toDeleteId) {
-          toDeleteId = tokenIdAt(boardState, {
-            ...gridPos,
-            z: FLOOR_HEIGHT,
-          });
-        }
-        if (toDeleteId) {
-          onTokenDeleted(toDeleteId);
-        }
-      }
-
+      handlePointerAction(action, gridPos, false);
       processedPositions.push(gridPos);
     }
   };
 
+  const onPointerUp = () => {
+    setMode("draw");
+  };
+
+  // If we're going to touch draw, disable touch scrolling
+  // We disable touch scrolling before even getting to the second tap because for some browsers once the gesture has
+  // started we can no longer interrupt the panning.
+  const touchAction =
+    doubleTapState === DoubleTapState.Active ||
+    doubleTapState === DoubleTapState.WaitingForSecondTap
+      ? "none"
+      : "auto";
+
+  // I apologize for future readers, this is a massive hack
+  // Safari doesn't notice that we've changed the touchAction back to "auto" after a long draw _unless_ you also change
+  // another css property at the same time
+  // Before you ask, yes it's only in mobile safari and yes I have no idea why it happens or why this fixes it. And
+  // finally, yes I realize I have committed an unforgivable sin
+  const borderHack =
+    touchAction === "none" ? "0px solid red" : "0px solid blue";
+
   return (
     <div
-      ref={container}
+      ref={mergeRefs(container, doubleTapRef, longTapRef)}
       className={classes.container}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
       onContextMenu={preventDefault}
       aria-label={"Board"}
+      style={{
+        touchAction,
+        border: borderHack,
+      }}
     >
       <Droppable id={DROPPABLE_IDS.BOARD} getLocation={getLocation}>
         {(attributes) => (

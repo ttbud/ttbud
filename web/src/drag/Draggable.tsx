@@ -223,7 +223,7 @@ const Draggable: React.FC<Props> = ({
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
     };
-  }, [descriptor, dragState, dispatch]);
+  }, [descriptor, dragState.type, dispatch]);
 
   const onTransitionEnd = useCallback(() => {
     if (dragState.type !== DragStateType.DragEndAnimating) {

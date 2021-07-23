@@ -53,10 +53,12 @@ const dragSlice = createSlice({
   reducers: {
     dragStarted(state, action: PayloadAction<DragStartAction>) {
       const { draggable, source, mousePos, dragBounds } = action.payload;
-      assert(
-        state.type === DragStateType.NotDragging,
-        `Draggable ${draggable.id} attempted to start a drag during an existing drag`
-      );
+      if (state.type !== DragStateType.NotDragging) {
+        console.warn(
+          `Draggable ${draggable.id} attempted to start a drag during an existing drag`
+        );
+        return;
+      }
 
       const mouseOffset = {
         x: source.bounds.left - mousePos.x,

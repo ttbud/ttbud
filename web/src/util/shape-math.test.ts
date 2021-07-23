@@ -1,4 +1,14 @@
-import { constrainBoxTo, contains, snapToGrid } from "./shape-math";
+import { constrainBoxTo, contains, distance, snapToGrid } from "./shape-math";
+
+describe("distance", () => {
+  it.each([
+    { a: { x: 0, y: 0 }, b: { x: 0, y: 1 }, expected: 1 },
+    { a: { x: 0, y: 0 }, b: { x: 1, y: 0 }, expected: 1 },
+    { a: { x: 0, y: 3 }, b: { x: 4, y: 3 }, expected: 4 },
+  ])(".distance($a + $b)", ({ a, b, expected }) => {
+    expect(distance(a, b)).toEqual(expected);
+  });
+});
 
 describe("contains", () => {
   it("returns true for points inside the box", () => {
