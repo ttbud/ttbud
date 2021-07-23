@@ -42,7 +42,15 @@ const MobileWarningDialog: React.FC = () => {
       <DialogTitle>Warning</DialogTitle>
       <DialogContent>
         <DialogContentText variant="body1">
-          TTBud doesn't work well on mobile yet, we're working on it
+          TTBud doesn't work perfectly on mobile yet, we're working on it.
+          <br />
+          <br />
+          If you want to try it out:
+          <ul>
+            <li>Double tap to draw/delete</li>
+            <li>Long tap to ping</li>
+            <li>Search doesn't work, sorry :(</li>
+          </ul>
         </DialogContentText>
       </DialogContent>
       <DialogActions>
@@ -55,11 +63,11 @@ const MobileWarningDialog: React.FC = () => {
             onClick={closeDialog}
             color="primary"
           >
-            <ListItemText>Email me when it works on mobile</ListItemText>
+            <ListItemText>Email me when it works well on mobile</ListItemText>
           </ListItem>
           <Divider />
           <ListItem button onClick={closeDialog}>
-            <ListItemText>View the broken-ness</ListItemText>
+            <ListItemText>Try it out</ListItemText>
           </ListItem>
         </List>
       </DialogActions>
