@@ -181,10 +181,8 @@ jobs:
           environment:
             DOMAIN: https://ttbud-staging.netlify.app
             API_DOMAIN: wss://ttbud-staging.herokuapp.com
-          # Have to manually set max workers because jest detects the wrong
-          # number of cpu cores in circleci
-          # https://github.com/facebook/jest/issues/5239#issuecomment-355867359
-          command: yarn test --workers=2 --forbid-only
+          # Sometimes both browsers fail to start if we start more than one at a time
+          command: yarn test --workers=1 --forbid-only
       - store_artifacts:
           path: ~/repo/e2e/test-results
 
