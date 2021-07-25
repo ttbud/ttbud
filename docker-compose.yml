@@ -46,7 +46,7 @@ services:
       - ./web:/app
       - ./certs:/certs
   db:
-    image: redis:6.2.4
+    image: redis:6.2.5
     command: redis-server --appendonly yes
     ports:
       - 6379:6379
