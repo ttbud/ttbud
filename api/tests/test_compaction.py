@@ -7,6 +7,7 @@ from src.api.api_structures import (
 from src.colors import colors
 from src.compaction import Compactor
 from src.game_components import Token
+from src.room_store.memory_room_archive import MemoryRoomArchive
 from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
 from src.room_store.room_store import RoomStore
 from tests.static_fixtures import (
@@ -31,7 +32,7 @@ def room_store() -> RoomStore:
 
 @pytest.fixture
 def compactor(room_store: RoomStore) -> Compactor:
-    return Compactor(room_store, TEST_COMPACTOR_ID)
+    return Compactor(room_store, MemoryRoomArchive(), TEST_COMPACTOR_ID)
 
 
 async def test_delete(compactor: Compactor, room_store: RoomStore) -> None:

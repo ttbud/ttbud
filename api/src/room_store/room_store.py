@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import (
     Protocol,
@@ -61,6 +59,11 @@ class RoomStore(Protocol):
     async def read(self, room_id: str) -> Iterable[Action]:
         ...
 
+    async def write_if_does_not_exist(
+        self, room_id: str, actions: Iterable[Action]
+    ) -> None:
+        ...
+
     async def add_request(self, room_id: str, request: Request) -> None:
         ...
 
@@ -82,4 +85,7 @@ class RoomStore(Protocol):
         replace_token: Any,
         compaction_id: str,
     ) -> None:
+        ...
+
+    async def get_room_idle_seconds(self, room_id: str) -> int:
         ...

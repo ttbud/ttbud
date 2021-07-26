@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import time
 from dataclasses import asdict, dataclass, field
 from typing import (
     List,
@@ -88,6 +89,10 @@ def _room_key(room_id: str) -> str:
 
 def _channel_key(room_id: str) -> str:
     return f'channel:{room_id}'
+
+
+def _last_activity_key(room_id: str) -> str:
+    return f'last-room-activity:{room_id}'
 
 
 @dataclass
@@ -176,12 +181,16 @@ class RedisRoomStore(RoomStore):
 
     @instrument
     async def read(self, room_id: str) -> Iterable[Action]:
-        data = await self._redis.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
+        transaction = self._redis.multi_exec()
+        transaction.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
+        transaction.set(_last_activity_key(room_id), str(int(time.time())))
+        data, _ = await transaction.execute()
         return _to_actions(data)
 
     @instrument
     async def add_request(self, room_id: str, request: Request) -> None:
-        await self._redis.evalsha(
+        transaction = self._redis.multi_exec()
+        transaction.evalsha(
             self._append_to_room_sha,
             keys=[_room_key(room_id), _channel_key(room_id)],
             args=[
@@ -195,6 +204,14 @@ class RedisRoomStore(RoomStore):
                 json.dumps(asdict(request)),
             ],
         )
+        transaction.set(_last_activity_key(room_id), str(int(time.time())))
+        await transaction.execute()
+
+    @instrument
+    async def write_if_does_not_exist(
+        self, room_id: str, actions: Iterable[Action]
+    ) -> None:
+        await self._redis.setnx(_room_key(room_id), json.dumps(list(map(asdict, actions))))
 
     @instrument
     async def acquire_replacement_lock(
@@ -242,23 +259,36 @@ class RedisRoomStore(RoomStore):
 
     @instrument
     async def delete(self, room_id: str, replacer_id: str, replace_token: Any) -> None:
-        try:
-            await self._redis.evalsha(
-                self._delete_room_sha,
-                keys=[_room_key(room_id), REPLACEMENT_KEY],
-                args=[replacer_id, replace_token],
-            )
-        except ReplyError as e:
-            # The error message is only exposed as the first element in the args
-            # tuple :(
-            (msg,) = e.args
+        transaction = self._redis.multi_exec()
+        transaction.evalsha(
+            self._delete_room_sha,
+            keys=[_room_key(room_id), REPLACEMENT_KEY],
+            args=[replacer_id, replace_token],
+        )
+        transaction.delete(_last_activity_key(room_id))
+        delete_room_error, delete_activity_error = await transaction.execute(
+            return_exceptions=True
+        )
 
+        if isinstance(delete_room_error, ReplyError):
+            (msg,) = delete_room_error.args
             if msg == ERR_INVALID_ROOM_LENGTH:
-                raise UnexpectedReplacementToken() from e
+                raise UnexpectedReplacementToken() from delete_room_error
             elif msg == ERR_INVALID_COMPACTION_KEY:
-                raise UnexpectedReplacementId() from e
-            else:
-                raise
+                raise UnexpectedReplacementId() from delete_room_error
+
+        if isinstance(delete_room_error, BaseException):
+            raise delete_room_error
+        if isinstance(delete_activity_error, BaseException):
+            raise delete_activity_error
+
+    async def get_room_idle_seconds(self, room_id: str) -> int:
+        last_edited = await self._redis.get(_last_activity_key(room_id))
+        if last_edited is None:
+            await self._redis.set(_last_activity_key(room_id), str(int(time.time())))
+            return 0
+        else:
+            return int(time.time()) - int(last_edited)
 
 
 async def create_redis_room_store(redis: Redis) -> RedisRoomStore:

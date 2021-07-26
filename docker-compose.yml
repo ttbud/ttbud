@@ -22,6 +22,11 @@ services:
       # We don't set up ssl certs for redis local dev
       REDIS_SSL_VALIDATION: none
       REDIS_URL: redis://db
+      AWS_REGION: us-east-1
+      AWS_KEY_ID: test
+      AWS_SECRET_KEY: test
+      AWS_BUCKET: ttbud-staging
+      AWS_ENDPOINT: http://localstack:4566
     volumes:
       - ./api:/home/appuser/app
       - ./certs:/certs
@@ -58,6 +63,30 @@ services:
       - redisinsight:/db
     ports:
       - 8001:8001
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "127.0.0.1:53:53"
+      - "127.0.0.1:53:53/udp"
+      - "127.0.0.1:443:443"
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:4571:4571"
+      - "127.0.0.1:${PORT_WEB_UI-8080}:${PORT_WEB_UI-8080}"
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - DATA_DIR=/data
+      - PORT_WEB_UI=${PORT_WEB_UI- }
+      - LAMBDA_EXECUTOR=${LAMBDA_EXECUTOR- }
+      - LOCALSTACK_API_KEY=${LOCALSTACK_API_KEY- }
+      - KINESIS_ERROR_PROBABILITY=${KINESIS_ERROR_PROBABILITY- }
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - HOST_TMP_FOLDER=${TMPDIR}
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./infra:/docker-entrypoint-initaws.d"
 volumes:
   redisinsight:
   db:
+  archive:

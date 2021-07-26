@@ -1,4 +1,4 @@
-FROM python:3.9-slim as base
+FROM python:3.9 as base
 RUN useradd --create-home appuser
 USER appuser
 
