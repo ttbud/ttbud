@@ -3,12 +3,12 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import time
 from dataclasses import asdict, dataclass, field
 from typing import (
     List,
     AsyncGenerator,
     AsyncIterator,
-    Iterator,
     Iterable,
     Dict,
     Any,
@@ -18,8 +18,10 @@ from aioredis import Redis
 from aioredis.errors import ReplyError
 from dacite import from_dict
 
-from src.api.api_structures import Request, Action, UpsertAction, DeleteAction
+from src.api.api_structures import Request, Action
 from src.apm import instrument
+from src.room_store.common import ARCHIVE_WHEN_IDLE_SECONDS, NoSuchRoomError
+from src.room_store.json_to_actions import json_to_actions
 from src.room_store.room_store import (
     RoomStore,
     ReplacementData,
@@ -81,6 +83,16 @@ end
 redis.call("del", room_key)
 """
 
+# language=lua
+_WRITE_IF_MISSING = """
+local room_key = KEYS[1]
+local room_data = ARGV[1]
+
+if redis.call("exists", room_key) == 0 then
+    redis.call("rpush", room_key, room_data)
+end
+"""
+
 
 def _room_key(room_id: str) -> str:
     return f'room:{room_id}'
@@ -88,6 +100,10 @@ def _room_key(room_id: str) -> str:
 
 def _channel_key(room_id: str) -> str:
     return f'channel:{room_id}'
+
+
+def _last_activity_key(room_id: str) -> str:
+    return f'last-room-activity:{room_id}'
 
 
 @dataclass
@@ -104,11 +120,13 @@ class RedisRoomStore(RoomStore):
         append_to_room_sha: str,
         lreplace_sha: str,
         delete_room_sha: str,
+        write_if_missing_sha: str,
     ):
         self._redis = redis
         self._append_to_room_sha = append_to_room_sha
         self._lreplace_sha = lreplace_sha
         self._delete_room_sha = delete_room_sha
+        self._write_if_missing_sha = write_if_missing_sha
         self._listeners_by_room_id: Dict[str, ChangeListener] = dict()
 
     async def _listen_for_changes(self, room_id: str) -> None:
@@ -176,12 +194,20 @@ class RedisRoomStore(RoomStore):
 
     @instrument
     async def read(self, room_id: str) -> Iterable[Action]:
-        data = await self._redis.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
-        return _to_actions(data)
+        transaction = self._redis.multi_exec()
+        transaction.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
+        transaction.set(
+            _last_activity_key(room_id),
+            str(int(time.time())),
+            expire=ARCHIVE_WHEN_IDLE_SECONDS * 2,
+        )
+        data, _ = await transaction.execute()
+        return json_to_actions(data)
 
     @instrument
     async def add_request(self, room_id: str, request: Request) -> None:
-        await self._redis.evalsha(
+        transaction = self._redis.multi_exec()
+        transaction.evalsha(
             self._append_to_room_sha,
             keys=[_room_key(room_id), _channel_key(room_id)],
             args=[
@@ -195,6 +221,27 @@ class RedisRoomStore(RoomStore):
                 json.dumps(asdict(request)),
             ],
         )
+        transaction.set(
+            _last_activity_key(room_id),
+            str(int(time.time())),
+            expire=ARCHIVE_WHEN_IDLE_SECONDS * 2,
+        )
+        await transaction.execute()
+
+    @instrument
+    async def write_if_missing(self, room_id: str, actions: Iterable[Action]) -> None:
+        transaction = self._redis.multi_exec()
+        transaction.evalsha(
+            self._write_if_missing_sha,
+            keys=[_room_key(room_id)],
+            args=[json.dumps(list(map(asdict, actions)))],
+        )
+        transaction.set(
+            _last_activity_key(room_id),
+            str(int(time.time())),
+            expire=ARCHIVE_WHEN_IDLE_SECONDS * 2,
+        )
+        await transaction.execute()
 
     @instrument
     async def acquire_replacement_lock(
@@ -210,7 +257,7 @@ class RedisRoomStore(RoomStore):
     @instrument
     async def read_for_replacement(self, room_id: str) -> ReplacementData:
         updates = await self._redis.lrange(_room_key(room_id), 0, -1, encoding='utf-8')
-        actions = [action for action in _to_actions(updates)]
+        actions = [action for action in json_to_actions(updates)]
         return ReplacementData(actions, len(updates))
 
     @instrument
@@ -242,43 +289,57 @@ class RedisRoomStore(RoomStore):
 
     @instrument
     async def delete(self, room_id: str, replacer_id: str, replace_token: Any) -> None:
-        try:
-            await self._redis.evalsha(
-                self._delete_room_sha,
-                keys=[_room_key(room_id), REPLACEMENT_KEY],
-                args=[replacer_id, replace_token],
-            )
-        except ReplyError as e:
-            # The error message is only exposed as the first element in the args
-            # tuple :(
-            (msg,) = e.args
+        transaction = self._redis.multi_exec()
+        transaction.evalsha(
+            self._delete_room_sha,
+            keys=[_room_key(room_id), REPLACEMENT_KEY],
+            args=[replacer_id, replace_token],
+        )
+        transaction.delete(_last_activity_key(room_id))
+        delete_room_error, delete_activity_error = await transaction.execute(
+            return_exceptions=True
+        )
 
+        if isinstance(delete_room_error, ReplyError):
+            (msg,) = delete_room_error.args
             if msg == ERR_INVALID_ROOM_LENGTH:
-                raise UnexpectedReplacementToken() from e
+                raise UnexpectedReplacementToken() from delete_room_error
             elif msg == ERR_INVALID_COMPACTION_KEY:
-                raise UnexpectedReplacementId() from e
-            else:
-                raise
+                raise UnexpectedReplacementId() from delete_room_error
+
+        if isinstance(delete_room_error, BaseException):
+            raise delete_room_error
+        if isinstance(delete_activity_error, BaseException):
+            raise delete_activity_error
+
+    async def get_room_idle_seconds(self, room_id: str) -> int:
+        transaction = self._redis.multi_exec()
+        transaction.exists(_room_key(room_id))
+        transaction.get(_last_activity_key(room_id))
+        room_exists, last_edited = await transaction.execute()
+        if not room_exists:
+            raise NoSuchRoomError
+        # If a room does not have a last edited time, add one here so the room
+        # can be moved to the archive later
+        if last_edited is None:
+            await self._redis.set(
+                _last_activity_key(room_id),
+                str(int(time.time())),
+                expire=ARCHIVE_WHEN_IDLE_SECONDS * 2,
+            )
+            return 0
+        else:
+            return int(time.time()) - int(last_edited)
 
 
 async def create_redis_room_store(redis: Redis) -> RedisRoomStore:
-    (append_to_room, lreplace, delete_room) = await asyncio.gather(
+    (append_to_room, lreplace, delete_room, write_if_missing) = await asyncio.gather(
         redis.script_load(_APPEND_TO_ROOM),
         redis.script_load(_LREPLACE),
         redis.script_load(_DELETE_ROOM),
+        redis.script_load(_WRITE_IF_MISSING),
     )
 
-    return RedisRoomStore(redis, append_to_room, lreplace, delete_room)
-
-
-def _to_actions(raw_updates: List[str]) -> Iterator[Action]:
-    for raw_update_group in raw_updates:
-        update_group = json.loads(raw_update_group)
-        for update in update_group:
-            action = update['action']
-            # Older version uses "update" or "create" instead of upsert
-            if action in ['upsert', 'update', 'create']:
-                update['action'] = 'upsert'
-                yield from_dict(UpsertAction, update)
-            elif action == 'delete':
-                yield from_dict(DeleteAction, update)
+    return RedisRoomStore(
+        redis, append_to_room, lreplace, delete_room, write_if_missing
+    )

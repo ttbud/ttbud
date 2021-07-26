@@ -1,19 +1,13 @@
 import asyncio
 from datetime import timedelta
-from typing import Callable, Awaitable, AsyncIterator, List
+from typing import Callable, List
 
-import fakeredis.aioredis
 import pytest
 import time_machine
-from aioredis import Redis
 from pytest_lazyfixture import lazy_fixture
 
 from src.api.api_structures import Request, Action
-from src.room_store.memory_room_store import (
-    MemoryRoomStore,
-    MemoryRoomStorage,
-)
-from src.room_store.redis_room_store import create_redis_room_store, RedisRoomStore
+from src.room_store.common import NoSuchRoomError
 from src.room_store.room_store import (
     RoomStore,
     UnexpectedReplacementId,
@@ -35,55 +29,14 @@ from tests.static_fixtures import (
 pytestmark = pytest.mark.asyncio
 
 
-# If we don't depend on event_loop (even though it isn't explicitly used), then it
-# won't be set up early enough for create_redis_pool to find it, and tests and redis
-# will get two different event loops that will deadlock waiting for each other
-@pytest.fixture
-async def redis(event_loop: asyncio.AbstractEventLoop) -> AsyncIterator[Redis]:
-    redis_instance = await fakeredis.aioredis.create_redis_pool()
-    yield redis_instance
-    redis_instance.close()
-    await redis_instance.wait_closed()
-
-
-@pytest.fixture
-def redis_room_store_factory(redis: Redis) -> Callable[[], Awaitable[RedisRoomStore]]:
-    return lambda: create_redis_room_store(redis)
-
-
-@pytest.fixture
-async def redis_room_store(
-    redis_room_store_factory: Callable[[], Awaitable[RedisRoomStore]]
-) -> RedisRoomStore:
-    return await redis_room_store_factory()
-
-
-@pytest.fixture
-def memory_room_storage() -> MemoryRoomStorage:
-    return MemoryRoomStorage()
-
-
-@pytest.fixture
-def memory_room_store_factory(
-    memory_room_storage: MemoryRoomStorage,
-) -> Callable[[], Awaitable[MemoryRoomStore]]:
-    async def fn() -> MemoryRoomStore:
-        return MemoryRoomStore(memory_room_storage)
-
-    return fn
-
-
-@pytest.fixture
-async def memory_room_store(
-    memory_room_store_factory: Callable[[], Awaitable[MemoryRoomStore]]
-) -> MemoryRoomStore:
-    return await memory_room_store_factory()
-
-
 def any_room_store(func: Callable) -> Callable:
     return pytest.mark.parametrize(
         'room_store',
-        [lazy_fixture('memory_room_store'), lazy_fixture('redis_room_store')],
+        [
+            lazy_fixture('memory_room_store'),
+            lazy_fixture('redis_room_store'),
+            lazy_fixture('merged_room_store'),
+        ],
     )(func)
 
 
@@ -245,3 +198,30 @@ async def test_force_acquire_room_lock(room_store: RoomStore) -> None:
         await room_store.delete(
             TEST_ROOM_ID, 'old-replacer-id', replace_data.replace_token
         )
+
+
+@any_room_store
+async def test_get_room_idle_seconds(room_store: RoomStore) -> None:
+    with time_machine.travel('1970-01-01', tick=False) as traveller:
+        await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
+        traveller.shift(timedelta(seconds=100))
+        assert await room_store.get_room_idle_seconds(TEST_ROOM_ID) == 100
+
+
+@any_room_store
+async def test_get_nonexistent_room_idle_seconds(room_store: RoomStore) -> None:
+    with pytest.raises(NoSuchRoomError):
+        await room_store.get_room_idle_seconds('nonexistent_room')
+
+
+@any_room_store
+async def test_write_if_missing(room_store: RoomStore) -> None:
+    await room_store.write_if_missing(TEST_ROOM_ID, [VALID_ACTION])
+    assert list(await room_store.read(TEST_ROOM_ID)) == [VALID_ACTION]
+
+
+@any_room_store
+async def test_write_if_missing_does_not_overwrite(room_store: RoomStore) -> None:
+    await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
+    await room_store.write_if_missing(TEST_ROOM_ID, [ANOTHER_VALID_ACTION])
+    assert list(await room_store.read(TEST_ROOM_ID)) == [VALID_ACTION]

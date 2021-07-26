@@ -1,8 +1,20 @@
-FROM python:3.9-slim as base
+ARG BUILD_ENV="prod"
+
+FROM python:3.9 as base
 RUN useradd --create-home appuser
+WORKDIR /home/appuser/app
+RUN chown appuser:appuser /home/appuser/app
 USER appuser
 
-WORKDIR /home/appuser/app
+# ONBUILD COPY --from doesn't work unless it's a named stage in the build
+FROM docker:20.10.8 as ttbud_docker
+
+# In dev, base needs to have the docker cli installed so that localstack can do its thing
+FROM base as base_dev
+ONBUILD COPY --from=ttbud_docker /usr/local/bin/docker /usr/local/bin
+
+# In prod, we don't need the docker cli
+FROM base as base_prod
 
 FROM base as builder
 
@@ -12,6 +24,7 @@ RUN apt-get update \
         g++ \
         gcc \
         libffi-dev \
+        libsasl2-dev \
     && rm -rf /var/lib/apt/lists/*
 USER appuser
 
@@ -29,13 +42,13 @@ RUN pip install --user poetry
 RUN python -m venv /home/appuser/venv
 
 COPY --chown=appuser:appuser pyproject.toml poetry.lock ./
-ARG DEV=false
+ARG BUILD_ENV
 RUN . /home/appuser/venv/bin/activate && \
-    poetry install --no-root --no-interaction --no-ansi $(test "$DEV" != "true" && echo "--no-dev")
+    poetry install --no-root --no-interaction --no-ansi $(test "$BUILD_ENV" != "dev" && echo "--no-dev")
 
 COPY --chown=appuser:appuser . ./
 
-FROM base
+FROM base_${BUILD_ENV}
 
 COPY --chown=appuser:appuser --from=builder /home/appuser/venv /home/appuser/venv/
 COPY --chown=appuser:appuser --from=builder /home/appuser/app /home/appuser/app/
