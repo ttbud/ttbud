@@ -13,14 +13,18 @@
         "mock-socket",
         "prettier",
       ],
+      // Use bors to merge dependency updates
       automerge: true,
+      automergeType: "pr-comment",
+      automergeComment: "bors merge",
     },
     {
       matchPaths: ["api"],
       matchDepTypes: ["dev-dependencies"],
-      // Automerging locust or websocket_client could break e2e tests which only run after merge
-      excludePackageNames: ["locust", "websocket_client"],
+      // Use bors to merge dependency updates
       automerge: true,
+      automergeType: "pr-comment",
+      automergeComment: "bors merge",
     },
   ],
   extends: ["config:base"],
