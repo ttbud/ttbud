@@ -36,8 +36,6 @@ commands:
           path: ~/repo
       - install_yarn_deps:
           cache_prefix: web
-      # Build the bundle each time we release instead of sharing the results across jobs via a workspace because job
-      # may be paused for 15 days awaiting approval and then workspace would be cleared and build would fail
       - run:
           name: Build Bundle
           command: yarn build
@@ -54,8 +52,7 @@ commands:
       - heroku/install
       - heroku/deploy-via-git:
           app-name: << parameters.app_name >>
-          # Not that we should ever be rebasing the master branch, but it doesn't make any sense to fail the build if
-          # we do.
+          # Bors force pushes to the staging branch for each build, so we have to push force to heroku
           force: true
 jobs:
   api:
@@ -211,24 +208,26 @@ workflows:
             - web
           filters:
             branches:
-              only: master
+              only:
+                - staging
+                - trying
       - release-staging-api:
           requires:
             - api
           filters:
             branches:
-              only: master
+              only:
+               - staging
+               - trying
       - e2e-staging:
           requires:
             - release-staging-api
             - release-staging-web
-      - await-approval:
-          type: approval
-          requires:
-            - e2e-staging
       - release-prod-web:
-          requires:
-            - await-approval
+          filters:
+            branches:
+              only: master
       - release-prod-api:
-          requires:
-            - await-approval
+          filters:
+            branches:
+              only: master

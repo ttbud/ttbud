@@ -124,11 +124,6 @@ Set up the following API keys:
 - `NETLIFY_STAGING_SITE_ID`: The site id returned when creating the staging Netlify site above
 - `NETLIFY_PROD_SITE_ID`: The site id returned when creating the prod Netlify site above
 
-## Deploy
-
-All code in master automatically deploys to staging. To deploy to prod, navigate to the circleci UI for the build you
-want to deploy, and click approve on the await-approval step
-
 ## Licenses
 
 - icons in web/src/icon - Licensed from [game-icons.net](https://game-icons.net) under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)
