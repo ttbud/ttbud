@@ -10,8 +10,8 @@ from src.config import config
 
 async def main() -> None:
     redis = await create_redis_pool(config.redis_address, config.redis_ssl_validation)
-    room_store = await create_redis_room_store(redis)
-    await clear_load_test_rooms(room_store)
+    async with create_redis_room_store(redis) as room_store:
+        await clear_load_test_rooms(room_store)
 
 
 if __name__ == "__main__":

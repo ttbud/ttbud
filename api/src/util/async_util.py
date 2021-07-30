@@ -1,10 +1,21 @@
 from __future__ import annotations
 
 import asyncio
-from asyncio import Future, CancelledError
+from asyncio import Future, CancelledError, Task
 from typing import TypeVar, AsyncIterable, AsyncIterator, Optional, List, cast
 
 _T = TypeVar('_T')
+
+
+async def end_task(task: Task) -> None:
+    """
+    Cancel a task and wait for it to complete cancellation
+    """
+    try:
+        task.cancel()
+        await task
+    except CancelledError:
+        pass
 
 
 async def anext(iterator: AsyncIterator[_T]) -> _T:

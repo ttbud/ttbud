@@ -21,6 +21,32 @@ def _jsonable_traceback(tb: Optional[TracebackType]) -> List[Dict[str, str]]:
     ]
 
 
+_DEFAULT_KEYS = {
+    'args',
+    'asctime',
+    'created',
+    'exc_info',
+    'exc_text',
+    'filename',
+    'funcName',
+    'levelname',
+    'levelno',
+    'lineno',
+    'module',
+    'msecs',
+    'message',
+    'msg',
+    'name',
+    'pathname',
+    'process',
+    'processName',
+    'relativeCreated',
+    'thread',
+    'threadName',
+    'stack_info',
+}
+
+
 class DetailedFormatter(TimberFormatter):
     """TimberFormatter that includes exception stack traces"""
 
@@ -32,4 +58,14 @@ class DetailedFormatter(TimberFormatter):
                 'msg': str(msg),
                 'traceback': _jsonable_traceback(tb),
             }
+
+        # Skip keys that may not be json-encodable
+        for key, value in list(record.__dict__.items()):
+            if (
+                key not in _DEFAULT_KEYS
+                and value is not None
+                and not isinstance(value, (dict, str, int))
+            ):
+                del record.__dict__[key]
+
         return super().format(record)
