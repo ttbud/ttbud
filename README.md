@@ -2,6 +2,9 @@
 
 Your virtual table friend
 
+We made TTBud so we can play DnD with our friends across the globe. It's a replacement for the classic physical dry-erase map for in-person DnD sessions. Everyone with the unique url can make changes, and other players will see the changes in real-time.
+
+Try it out here:
 [ttbud.app](https://ttbud.app)
 
 ## Requirements
