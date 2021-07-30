@@ -37,10 +37,9 @@ pytestmark = pytest.mark.asyncio
 
 @pytest.fixture
 async def redis(event_loop: AbstractEventLoop) -> AsyncIterator[Redis]:
-    redis_instance = await fakeredis.aioredis.create_redis_pool()
+    redis_instance = fakeredis.aioredis.FakeRedis(decode_responses=True)
     yield redis_instance
-    redis_instance.close()
-    await redis_instance.wait_closed()
+    await redis_instance.close()
 
 
 @pytest.fixture

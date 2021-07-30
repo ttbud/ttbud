@@ -65,8 +65,7 @@ async def make_app() -> Starlette:
     compaction_task.add_done_callback(compaction_failed)
 
     async def shutdown() -> None:
-        redis.close()
-        await redis.wait_closed()
+        await redis.close()
 
     return Starlette(
         routes=routes(ws),

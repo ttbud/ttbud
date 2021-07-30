@@ -40,10 +40,9 @@ pytestmark = pytest.mark.asyncio
 # will get two different event loops that will deadlock waiting for each other
 @pytest.fixture
 async def redis(event_loop: asyncio.AbstractEventLoop) -> AsyncIterator[Redis]:
-    redis_instance = await fakeredis.aioredis.create_redis_pool()
+    redis_instance = fakeredis.aioredis.FakeRedis(decode_responses=True)
     yield redis_instance
-    redis_instance.close()
-    await redis_instance.wait_closed()
+    await redis_instance.close()
 
 
 @pytest.fixture
@@ -113,6 +112,24 @@ async def test_change_notifications(room_store: RoomStore) -> None:
     await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
     reply = await sub_task
     assert reply == [VALID_REQUEST]
+
+
+async def test_change_notification_error(
+    redis: Redis, redis_room_store: RoomStore
+) -> None:
+    """
+    Verify that errors receiving pub/sub messages bubble out to consumers
+
+    This test only runs against the redis implementation because it's impossible to
+    trigger an error in the memory implementation
+    """
+
+    changes = await redis_room_store.changes(TEST_ROOM_ID)
+    sub_task = asyncio.create_task(async_collect(changes, count=1))
+
+    await redis.publish(f"channel:{TEST_ROOM_ID}", "INVALID REQUEST")
+    with pytest.raises(BaseException):
+        await sub_task
 
 
 @any_room_store

@@ -1,10 +1,6 @@
-import ssl
 from enum import Enum
-from ssl import SSLContext
-from typing import Union
 
-import aioredis
-from aioredis import Redis
+from aioredis import Redis, ConnectionPool
 
 
 class SSLValidation(Enum):
@@ -21,14 +17,17 @@ class SSLValidation(Enum):
 
 
 async def create_redis_pool(address: str, ssl_validation: SSLValidation) -> Redis:
-    ssl_context: Union[SSLContext, bool]
+    ssl_args: dict
     if ssl_validation == SSLValidation.SELF_SIGNED:
-        ssl_context = SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.VerifyMode.CERT_NONE
+        ssl_args = {
+            "ssl": True,
+            "ssl_check_hostname": False,
+            "ssl_validation": "none",
+        }
     elif ssl_validation == SSLValidation.NONE:
-        ssl_context = False
+        ssl_args = {"ssl": False}
     else:
-        ssl_context = ssl.create_default_context()
+        ssl_args = {"ssl": True}
 
-    return await aioredis.create_redis_pool(address, ssl=ssl_context)
+    pool = ConnectionPool.from_url(address)
+    return Redis(connection_pool=pool, decode_responses=True, **ssl_args)
