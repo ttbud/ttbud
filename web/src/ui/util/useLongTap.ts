@@ -3,7 +3,7 @@ import { assert } from "../../util/invariants";
 import Pos2d, { distance } from "../../util/shape-math";
 
 // Maximum distance in pixels your finger can move to still be considered a long tap
-export const MAX_MOVE_LONG_TAP_PX = 10;
+export const MAX_MOVE_LONG_TAP_PX = 5;
 export const LONG_TAP_MS = 250;
 
 interface State {

@@ -35,7 +35,7 @@ it("does not trigger for drags", async () => {
   const { getByText } = render(<LongTapTest onLongTap={cb} />);
   const target = getByText("Touch Target");
   await tap(target, { action: "down", pos: { x: 0, y: 0 } });
-  await fireEvent.pointerMove(target, {
+  fireEvent.pointerMove(target, {
     pointerType: "touch",
     isPrimary: true,
     clientX: MAX_MOVE_LONG_TAP_PX + 1,
