@@ -14,7 +14,7 @@ scout_apm = "^2.14.2"
 starlette = "^0.16.0"
 uvicorn = "^0.14.0"
 httptools = "^0.2.0"
-uvloop = "^0.15.2"
+uvloop = "^0.16.0"
 gunicorn = "^20.1.0"
 scout-apm = "^2.19.0"
 
