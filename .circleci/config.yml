@@ -6,25 +6,6 @@ executors:
     docker:
       - image: mcr.microsoft.com/playwright:focal
 commands:
-  install_yarn_deps:
-    description: "Install all yarn dependencies"
-    parameters:
-      cache_prefix:
-        type: string
-    steps:
-      - restore_cache:
-          keys:
-            # Restore the cache with the exact dependencies,
-            - << parameters.cache_prefix >>-deps-v3-{{ checksum "yarn.lock" }}
-            # or, failing that, just the most recent cache entry
-            - << parameters.cache_prefix >>-deps-v3
-      - run:
-          name: Install Deps
-          command: yarn install
-      - save_cache:
-          key: << parameters.cache_prefix >>-deps-v3-{{ checksum "yarn.lock" }}
-          paths:
-            - node_modules
   release_web:
     parameters:
       target_name:
@@ -34,8 +15,6 @@ commands:
     steps:
       - checkout:
           path: ~/repo
-      - install_yarn_deps:
-          cache_prefix: web
       - run:
           name: Build Bundle
           command: yarn build
@@ -98,8 +77,6 @@ jobs:
     steps:
       - checkout:
           path: ~/repo
-      - install_yarn_deps:
-          cache_prefix: web
       - run:
           name: Check Style
           command: yarn run checkstyle
@@ -157,8 +134,6 @@ jobs:
     steps:
       - checkout:
           path: ~/repo
-      - install_yarn_deps:
-          cache_prefix: e2e
       - run:
           name: Typecheck
           command: yarn run typecheck
@@ -171,8 +146,6 @@ jobs:
     steps:
       - checkout:
           path: ~/repo
-      - install_yarn_deps:
-          cache_prefix: e2e
       - run:
           name: Run Integration Tests
           environment:

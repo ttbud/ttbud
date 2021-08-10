@@ -30,8 +30,6 @@ echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo s
 cp .env.example .env
 # Build all the images
 docker-compose build
-# Install web dependencies
-docker-compose run --rm web yarn install
 # Start the development server in the background
 docker-compose up -d
 
