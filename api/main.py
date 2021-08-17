@@ -3,7 +3,7 @@ import logging
 
 import scout_apm.core
 import sys
-from asyncio import Future
+from asyncio import Future, AbstractEventLoop
 from typing import NoReturn
 from uuid import uuid4
 
@@ -29,9 +29,18 @@ ScoutConfig.set(**config.scout_config)
 scout_apm.core.install()
 
 
+def exception_handler(_: AbstractEventLoop, context: dict) -> NoReturn:
+    with timber.context(exc=context):
+        logger.critical('Uncaught exception occurred, shutting down')
+    sys.exit(1)
+
+
 async def make_app() -> Starlette:
     worker_id = str(uuid4())
     timber.context(server={'server_id': server_id, 'worker_id': worker_id})
+
+    loop = asyncio.get_running_loop()
+    loop.set_exception_handler(exception_handler)
 
     redis = await create_redis_pool(config.redis_address, config.redis_ssl_validation)
     room_store = await create_redis_room_store(redis)
