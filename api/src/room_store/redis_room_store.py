@@ -176,9 +176,8 @@ class RedisRoomStore(RoomStore):
                     del self._listeners_by_room_id[room_id]
 
     async def get_all_room_ids(self) -> AsyncGenerator[str, None]:
-        prefix_length = len('room:')
         async for room_key in self._redis.scan_iter('room:*'):
-            yield room_key[prefix_length:]
+            yield room_key.removeprefix('room:')
 
     @instrument
     async def room_exists(self, room_id: str) -> bool:
