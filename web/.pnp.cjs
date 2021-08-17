@@ -23563,9 +23563,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         ["npm:5.6.0", {
           "packageLocation": "./.yarn/cache/react-cosmos-plugin-npm-5.6.0-ba3d550e04-f48d641446.zip/node_modules/react-cosmos-plugin/",
           "packageDependencies": [
-            ["react-cosmos-plugin", "npm:5.6.0"],
-            ["glob", "npm:7.1.7"],
-            ["resolve-from", "npm:5.0.0"]
+            ["react-cosmos-plugin", "npm:5.6.0"]
           ],
           "linkType": "HARD",
         }]
