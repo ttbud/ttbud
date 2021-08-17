@@ -16,6 +16,9 @@ commands:
       - checkout:
           path: ~/repo
       - run:
+          name: Install Deps
+          command: yarn install
+      - run:
           name: Build Bundle
           command: yarn build
       - run:
@@ -78,6 +81,9 @@ jobs:
       - checkout:
           path: ~/repo
       - run:
+          name: Install Deps
+          command: yarn install
+      - run:
           name: Check Style
           command: yarn run checkstyle
       - run:
@@ -135,6 +141,9 @@ jobs:
       - checkout:
           path: ~/repo
       - run:
+          name: Install Deps
+          command: yarn install
+      - run:
           name: Typecheck
           command: yarn run typecheck
       - run:
@@ -146,6 +155,9 @@ jobs:
     steps:
       - checkout:
           path: ~/repo
+      - run:
+          name: Install Deps
+          command: yarn install
       - run:
           name: Run Integration Tests
           environment:
