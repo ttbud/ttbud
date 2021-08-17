@@ -99,5 +99,6 @@
   "devDependencies": {
     "@testing-library/dom": "8.1.0",
     "@testing-library/user-event": "13.2.1"
-  }
+  },
+  "packageManager": "yarn@3.0.1"
 }
