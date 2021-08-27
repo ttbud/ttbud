@@ -20,12 +20,6 @@ def aiter(iterable: AsyncIterable[_T]) -> AsyncIterator[_T]:
     return iterable.__aiter__()
 
 
-async def all_items(q: asyncio.Queue[_T]) -> AsyncIterator[_T]:
-    """Create an indefinite iterator that contains all items the queue contains"""
-    while True:
-        yield await q.get()
-
-
 async def items_until(it: AsyncIterable[_T], stop: asyncio.Future) -> AsyncIterator[_T]:
     """Yield items from the iterator until the stop future is completed"""
     it = aiter(it)

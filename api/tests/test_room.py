@@ -1,9 +1,16 @@
+from copy import copy
+
 import pytest
 
+from src.api.api_structures import UpsertAction, DeleteAction
 from src.colors import colors
 from src.game_components import Token, IconTokenContents
-from src.room import Room
-from tests.static_fixtures import VALID_TOKEN, VALID_TOKEN_WITH_DUPLICATE_COLOR
+from src.room import Room, create_room
+from tests.static_fixtures import (
+    VALID_TOKEN,
+    VALID_TOKEN_WITH_DUPLICATE_COLOR,
+    UPDATED_TOKEN,
+)
 
 
 @pytest.fixture
@@ -16,9 +23,17 @@ def test_create_valid_token(room: Room) -> None:
     assert list(room.game_state.values()) == [VALID_TOKEN]
 
 
-def test_delete_token(room: Room) -> None:
+def test_delete_character(room: Room) -> None:
     room.create_or_update_token(VALID_TOKEN)
     room.delete_token(VALID_TOKEN.id)
+    assert list(room.game_state.values()) == []
+
+
+def test_delete_floor(room: Room) -> None:
+    floor = copy(VALID_TOKEN)
+    floor.type = "floor"
+    room.create_or_update_token(floor)
+    room.delete_token(floor.id)
     assert list(room.game_state.values()) == []
 
 
@@ -86,3 +101,19 @@ def test_duplicate_colors(room: Room) -> None:
     room.create_or_update_token(VALID_TOKEN)
     room.create_or_update_token(VALID_TOKEN_WITH_DUPLICATE_COLOR)
     assert VALID_TOKEN_WITH_DUPLICATE_COLOR in room.game_state.values()
+
+
+def test_create_room() -> None:
+    room = create_room([UpsertAction(VALID_TOKEN), UpsertAction(UPDATED_TOKEN)])
+    assert list(room.game_state.values()) == [UPDATED_TOKEN]
+
+
+def test_create_empty_room() -> None:
+    room = create_room(
+        [
+            UpsertAction(VALID_TOKEN),
+            DeleteAction(VALID_TOKEN.id),
+            UpsertAction(UPDATED_TOKEN),
+        ]
+    )
+    assert list(room.game_state.values()) == [UPDATED_TOKEN]

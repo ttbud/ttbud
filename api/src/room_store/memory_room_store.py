@@ -108,11 +108,6 @@ class MemoryRoomStore(RoomStore):
         )
         return True
 
-    async def force_acquire_replacement_lock(self, replacement_id: str) -> None:
-        self._replacement_lock = ReplacementLock(
-            replacement_id, time.monotonic() + COMPACTION_LOCK_EXPIRATION_SECONDS
-        )
-
     async def read_for_replacement(self, room_id: str) -> ReplacementData:
         actions = copy(self.storage.rooms_by_id[room_id])
         return ReplacementData(actions, len(actions))
