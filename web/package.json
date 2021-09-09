@@ -86,7 +86,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@testing-library/dom": "8.2.0",
+    "@testing-library/dom": "8.3.0",
     "@testing-library/user-event": "13.2.1"
   }
 }
