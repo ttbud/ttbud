@@ -1,13 +1,18 @@
+from datetime import timedelta
+
 import pytest
+import time_machine
 
 from src.api.api_structures import (
     Request,
     UpsertAction,
 )
 from src.colors import colors
-from src.compaction import Compactor
+from src.compaction import Compactor, ARCHIVE_WHEN_IDLE_SECONDS
 from src.game_components import Token
+from src.room_store.memory_room_archive import MemoryRoomArchive
 from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
+from src.room_store.room_archive import RoomArchive
 from src.room_store.room_store import RoomStore
 from tests.static_fixtures import (
     TEST_ROOM_ID,
@@ -30,8 +35,13 @@ def room_store() -> RoomStore:
 
 
 @pytest.fixture
-def compactor(room_store: RoomStore) -> Compactor:
-    return Compactor(room_store, TEST_COMPACTOR_ID)
+def room_archive() -> RoomArchive:
+    return MemoryRoomArchive()
+
+
+@pytest.fixture
+def compactor(room_store: RoomStore, room_archive: RoomArchive) -> Compactor:
+    return Compactor(room_store, room_archive, TEST_COMPACTOR_ID)
 
 
 async def test_delete(compactor: Compactor, room_store: RoomStore) -> None:
@@ -85,4 +95,42 @@ async def test_deletes_empty_rooms(compactor: Compactor, room_store: RoomStore) 
     await room_store.add_request(TEST_ROOM_ID, DELETE_REQUEST)
     await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
     await compactor._compact_room(TEST_ROOM_ID)
-    assert await room_store.room_exists(TEST_ROOM_ID) is False
+    assert not await room_store.room_exists(TEST_ROOM_ID)
+
+
+async def test_archives_old_room(
+    compactor: Compactor, room_store: RoomStore, room_archive: RoomArchive
+) -> None:
+    with time_machine.travel('1970-01-01') as traveller:
+        await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
+        traveller.shift(timedelta(seconds=ARCHIVE_WHEN_IDLE_SECONDS + 1))
+        await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
+        await compactor._compact_room(TEST_ROOM_ID)
+        assert not await room_store.room_exists(TEST_ROOM_ID)
+        assert await room_archive.room_exists(TEST_ROOM_ID)
+
+
+async def test_deletes_old_empty_room(
+    compactor: Compactor, room_store: RoomStore, room_archive: RoomArchive
+) -> None:
+    with time_machine.travel('1970-01-01') as traveller:
+        await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
+        await room_store.add_request(TEST_ROOM_ID, DELETE_REQUEST)
+        traveller.shift(timedelta(seconds=ARCHIVE_WHEN_IDLE_SECONDS + 1))
+        await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
+        await compactor._compact_room(TEST_ROOM_ID)
+        assert not await room_store.room_exists(TEST_ROOM_ID)
+        assert not await room_archive.room_exists(TEST_ROOM_ID)
+
+
+async def test_compacts_room_before_archiving(
+    compactor: Compactor, room_store: RoomStore, room_archive: RoomArchive
+) -> None:
+    with time_machine.travel('1970-01-01') as traveller:
+        await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
+        await room_store.add_request(TEST_ROOM_ID, VALID_MOVE_REQUEST)
+        traveller.shift(timedelta(seconds=ARCHIVE_WHEN_IDLE_SECONDS + 1))
+        await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
+        await compactor._compact_room(TEST_ROOM_ID)
+        assert not await room_store.room_exists(TEST_ROOM_ID)
+        assert await room_archive.read(TEST_ROOM_ID) == [UpsertAction(UPDATED_TOKEN)]

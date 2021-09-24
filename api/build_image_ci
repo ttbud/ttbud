@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Build api docker image, using the cache stored in docker hub to speedup builds
+# Then, publish each stage under its own tag so that they can be used as a cache for
+# future builds
+
+# Usage:
+# ./build_image_ci <image_name>
+set -euo pipefail
+
+image_name=$1
+# Extract all of the stages from the dockerfile
+# They should be in the from FROM blah as stage_name
+mapfile -t stages < <(sed -rn "s/FROM .* as (.*)/\1/p" < Dockerfile)
+
+export DOCKER_BUILDKIT=1
+
+# Add tags for the checksum of the lockfile so that builds with different dependencies
+# can still make use of the cache without overwriting each other
+lockfile_checksum=$(shasum -a256 poetry.lock | cut -d " " -f1)
+for stage in "${stages[@]}"
+do
+  docker build \
+    --target "${stage}" \
+    --cache-from "${image_name}:${stage}" \
+    --cache-from "${image_name}:${stage}-${lockfile_checksum}" \
+    --build-arg BUILD_ENV=dev \
+    --build-arg BUILDKIT_INLINE_CACHE=1 \
+    -t "${image_name}:${stage}" \
+    -t "${image_name}:${stage}-${lockfile_checksum}" \
+    .
+done
+
+docker build \
+  --cache-from "${image_name}:latest" \
+  --cache-from "${image_name}:latest-${lockfile_checksum}" \
+  --build-arg BUILD_ENV=dev \
+  -t "${image_name}:latest" \
+  -t "${image_name}:latest-${lockfile_checksum}" \
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
+  .
+
+docker push "${image_name}" --all-tags

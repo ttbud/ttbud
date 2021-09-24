@@ -5,4 +5,5 @@
 coverage
 .coverage
 __pycache__
+build_image_ci
 

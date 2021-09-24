@@ -18,6 +18,7 @@ from typing import (
 )
 
 from src.api.api_structures import Request, Action
+from src.room_store.common import NoSuchRoomError
 from src.room_store.room_store import (
     RoomStore,
     ReplacementData,
@@ -34,6 +35,9 @@ class MemoryRoomStorage:
     rooms_by_id: DefaultDict[str, List[Action]] = field(
         default_factory=lambda: defaultdict(list)
     )
+    last_room_activity_by_id: DefaultDict[str, int] = field(
+        default_factory=lambda: defaultdict(lambda: int(time.time()))
+    )
 
 
 @dataclass
@@ -43,7 +47,7 @@ class ReplacementLock:
 
 
 class MemoryRoomStore(RoomStore):
-    def __init__(self, storage: MemoryRoomStorage) -> None:
+    def __init__(self, storage: MemoryRoomStorage):
         self.storage = storage
         self._changes: Dict[str, List[asyncio.Queue]] = defaultdict(list)
         self._replacement_lock: Optional[ReplacementLock] = None
@@ -72,13 +76,21 @@ class MemoryRoomStore(RoomStore):
     async def read(self, room_id: str) -> Iterable[Action]:
         # Yield the event loop at least once so reading is truly async
         await asyncio.sleep(0)
+        self.storage.last_room_activity_by_id[room_id] = int(time.time())
         return copy(self.storage.rooms_by_id.get(room_id, []))
 
     async def _write(self, room_id: str, updates: Iterable[Action]) -> None:
         # Yield the event loop at least once so writing is truly async
         await asyncio.sleep(0)
+        self.storage.last_room_activity_by_id[room_id] = int(time.time())
         for update in updates:
             self.storage.rooms_by_id[room_id].append(update)
+
+    async def write_if_missing(self, room_id: str, actions: Iterable[Action]) -> None:
+        # Yield the event loop at least once so writing is truly async
+        await asyncio.sleep(0)
+        if not self.storage.rooms_by_id.get(room_id):
+            self.storage.rooms_by_id[room_id] = list(actions)
 
     async def get_all_room_ids(self) -> AsyncIterator[str]:
         # Make a copy so that deletions don't break iteration
@@ -140,6 +152,7 @@ class MemoryRoomStore(RoomStore):
             raise UnexpectedReplacementToken()
 
         del self.storage.rooms_by_id[room_id]
+        self.storage.last_room_activity_by_id.pop(room_id, None)
 
     def _has_replacement_lock(self, replacement_id: str) -> bool:
         return (
@@ -147,3 +160,8 @@ class MemoryRoomStore(RoomStore):
             and self._replacement_lock.key == replacement_id
             and self._replacement_lock.expire_time >= time.monotonic()
         )
+
+    async def get_room_idle_seconds(self, room_id: str) -> int:
+        if room_id not in self.storage.rooms_by_id:
+            raise NoSuchRoomError
+        return int(time.time()) - self.storage.last_room_activity_by_id[room_id]

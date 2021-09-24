@@ -16,7 +16,9 @@ from src.game_state_server import GameStateServer
 from src.rate_limit.memory_rate_limit import MemoryRateLimiterStorage, MemoryRateLimiter
 from src.rate_limit.noop_rate_limit import NoopRateLimiter
 from src.rate_limit.rate_limit import RateLimiter
+from src.room_store.memory_room_archive import MemoryRoomArchive
 from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
+from src.room_store.merged_room_store import MergedRoomStore
 from src.room_store.room_store import RoomStore
 from src.util.async_util import async_collect
 from tests.helpers import to_async_until
@@ -35,7 +37,10 @@ pytestmark = pytest.mark.asyncio
 
 @pytest.fixture
 def room_store() -> RoomStore:
-    return MemoryRoomStore(MemoryRoomStorage())
+    return MergedRoomStore(
+        MemoryRoomStore(MemoryRoomStorage()),
+        MemoryRoomArchive(),
+    )
 
 
 @pytest.fixture

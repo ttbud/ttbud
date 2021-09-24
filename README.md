@@ -88,6 +88,12 @@ docker-compose run --rm web yarn test
 - [heroku cli](https://devcenter.heroku.com/articles/heroku-cli#download-and-install)
 - [netlify cli](https://docs.netlify.com/cli/get-started/#installation)
 
+### S3 Setup
+
+- Make ttbud-prod and ttbud-staging buckets
+- Create one IAM user for each bucket with access key credentials
+- Add an inline policy to allow each user ListBucket, GetObject, PutObject, and DeleteObject permissions for the appropriate bucket and all objects
+
 ### API
 
 ```bash
@@ -100,6 +106,10 @@ heroku config:set ENVIRONMENT=staging --remote staging
 heroku config:set JSON_LOGS=true --remote staging
 heroku config:set BYPASS_RATE_LIMIT_KEY=$(uuidgen) --remote staging
 heroku config:set REDIS_SSL_VALIDATION=self_signed --remote staging
+heroku config:set AWS_KEY_ID=<staging_key_id> --remote staging
+heroku config:set AWS_SECRET_KEY=<staging_secret_key> --remote staging
+heroku config:set AWS_REGION=<aws_region> --remote staging
+heroku config:set AWS_BUCKET=<staging_bucket_name> --remote staging
 
 # Create prod environment
 heroku apps:create ttbud --manifest --remote prod
@@ -107,6 +117,10 @@ heroku config:set ENVIRONMENT=prod --remote prod
 heroku config:set JSON_LOGS=true --remote prod
 heroku config:set BYPASS_RATE_LIMIT_KEY=$(uuidgen) --remote prod
 heroku config:set REDIS_SSL_VALIDATION=self_signed --remote prod
+heroku config:set AWS_KEY_ID=<prod_key_id> --remote prod
+heroku config:set AWS_SECRET_KEY=<prod_secret_key> --remote prod
+heroku config:set AWS_REGION=<aws_region> --remote prod
+heroku config:set AWS_BUCKET=<prod_bucket_name> --remote prod
 ```
 
 ### Web

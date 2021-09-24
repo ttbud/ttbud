@@ -28,6 +28,11 @@ class Config:
     redis_address = os.environ['REDIS_URL']
     json_logs: bool = os.environ.get('JSON_LOGS') == 'true'
     bypass_rate_limit_key: str = os.environ['BYPASS_RATE_LIMIT_KEY']
+    aws_region: str = os.environ['AWS_REGION']
+    aws_key_id: str = os.environ['AWS_KEY_ID']
+    aws_secret_key: str = os.environ['AWS_SECRET_KEY']
+    aws_bucket: str = os.environ['AWS_BUCKET']
+    aws_endpoint: Optional[str] = os.environ.get('AWS_ENDPOINT')
     cert_config: Optional[CertConfig] = (
         CertConfig(
             key_file_path=os.environ['SSL_KEY_FILE'],
