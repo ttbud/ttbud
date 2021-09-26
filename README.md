@@ -7,14 +7,16 @@ We made TTBud so we can play DnD with our friends across the globe. It's a repla
 Try it out here:
 [ttbud.app](https://ttbud.app)
 
-## Requirements
+
+## Development
+
+### Requirements
 
 - [mkcert](https://github.com/FiloSottile/mkcert)
 - [docker](https://docs.docker.com/v17.09/engine/installation/)
 - [docker-compose](https://docs.docker.com/compose/install/)
 
-## Development
-
+### Setup
 ```bash
 # Create a dev ssl cert
 mkcert -install
@@ -28,9 +30,9 @@ echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo s
 
 # Configure your environment
 cp .env.example .env
-# Build all the images
+# Build all the images (Needs to re-run each time api dependencies change)
 docker-compose build
-# Install web dependencies
+# Install web dependencies (Needs to re-run each time web dependencies change)
 docker-compose run --rm web yarn install
 # Start the development server in the background
 docker-compose up -d
@@ -80,66 +82,6 @@ docker-compose run --rm api pytest --cov=src --cov-report=html tests
 ```
 docker-compose run --rm web yarn test
 ```
-
-## Infrastructure setup
-
-### Requirements
-
-- [heroku cli](https://devcenter.heroku.com/articles/heroku-cli#download-and-install)
-- [netlify cli](https://docs.netlify.com/cli/get-started/#installation)
-
-### S3 Setup
-
-- Make ttbud-prod and ttbud-staging buckets
-- Create one IAM user for each bucket with access key credentials
-- Add an inline policy to allow each user ListBucket, GetObject, PutObject, and DeleteObject permissions for the appropriate bucket and all objects
-
-### API
-
-```bash
-heroku update beta
-heroku plugins:install @heroku-cli/plugin-manifest
-
-# Create staging environment
-heroku apps:create ttbud-staging --manifest --remote staging
-heroku config:set ENVIRONMENT=staging --remote staging
-heroku config:set JSON_LOGS=true --remote staging
-heroku config:set BYPASS_RATE_LIMIT_KEY=$(uuidgen) --remote staging
-heroku config:set REDIS_SSL_VALIDATION=self_signed --remote staging
-heroku config:set AWS_KEY_ID=<staging_key_id> --remote staging
-heroku config:set AWS_SECRET_KEY=<staging_secret_key> --remote staging
-heroku config:set AWS_REGION=<aws_region> --remote staging
-heroku config:set AWS_BUCKET=<staging_bucket_name> --remote staging
-
-# Create prod environment
-heroku apps:create ttbud --manifest --remote prod
-heroku config:set ENVIRONMENT=prod --remote prod
-heroku config:set JSON_LOGS=true --remote prod
-heroku config:set BYPASS_RATE_LIMIT_KEY=$(uuidgen) --remote prod
-heroku config:set REDIS_SSL_VALIDATION=self_signed --remote prod
-heroku config:set AWS_KEY_ID=<prod_key_id> --remote prod
-heroku config:set AWS_SECRET_KEY=<prod_secret_key> --remote prod
-heroku config:set AWS_REGION=<aws_region> --remote prod
-heroku config:set AWS_BUCKET=<prod_bucket_name> --remote prod
-```
-
-### Web
-
-```bash
-netlify sites:create -n ttbud
-netlify sites:create -n ttbud-staging
-```
-
-### CI
-
-Connect circleci to the github repository
-
-Set up the following API keys:
-
-- `HEROKU_API_KEY`: An API key that has access to your heroku apps
-- `NETLIFY_AUTH_TOKEN`: An API key that has access to your Netlify sites
-- `NETLIFY_STAGING_SITE_ID`: The site id returned when creating the staging Netlify site above
-- `NETLIFY_PROD_SITE_ID`: The site id returned when creating the prod Netlify site above
 
 ## Licenses
 

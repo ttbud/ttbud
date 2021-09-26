@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# Get the URL to the specified build artifact
+
+set -euo pipefail
+
+# Required args
+
+# CIRCLE_BUILD_NUM for the job that produced the artifact
+build_number=$1
+# Name of the published artifact
+artifact_name=$2
+
+curl --silent --show-error \
+  --request GET --url "https://circleci.com/api/v2/project/gh/ttbud/ttbud/${build_number}/artifacts" \
+  | jq --raw-output ".items[] | select(.path == \"${artifact_name}\").url"

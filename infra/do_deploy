@@ -1,0 +1,39 @@
+#!/usr/bin/env sh
+
+# Deploy TTBud to the specified environment
+
+set -eu
+
+# Required environment variables
+
+# URL to a .tar.gz of the compiled fronted sources
+web_tarball_url=$DEPLOY_WEB_TARBALL_URL
+# URL to a .tar.gz of a directory containing a heroku.yml file
+api_tarball_url=$DEPLOY_API_TARBALL_URL
+# Release commit hash
+commit_hash=$DEPLOY_COMMIT_HASH
+# Terraform workspace to deploy to
+workspace=$DEPLOY_WORKSPACE
+# Access token to connect to terraform cloud
+tf_token=$DEPLOY_TF_TOKEN
+
+# Specify required terraform parameters
+cat >deploy.auto.tfvars <<EOF
+web_deploy_tarball_url="${web_tarball_url}"
+api_deploy_tarball_url="${api_tarball_url}"
+commit_hash="${commit_hash}"
+EOF
+
+# Specify terraform credentials
+cat >"$HOME/.terraformrc" <<EOF
+{
+  "credentials": {
+    "app.terraform.io": {
+      "token": "$tf_token"
+    }
+  }
+}
+EOF
+
+TF_WORKSPACE="$workspace" TF_IN_AUTOMATION=true terraform init -input=false
+TF_WORKSPACE="$workspace" TF_IN_AUTOMATION=true terraform apply -input=false -auto-approve

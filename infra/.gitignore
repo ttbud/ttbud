@@ -1,0 +1,4 @@
+.terraform
+
+# Automatically generated at build time to specify deploy config
+deploy.auto.tfvars

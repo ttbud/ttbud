@@ -3,13 +3,60 @@ orbs:
   heroku: circleci/heroku@1.2.6
 executors:
   web-executor:
-    resource_class: medium
     docker:
-      - image: cimg/node:14.17.3
+      - image: cimg/node:14.17.6
   e2e-executor:
     docker:
       - image: mcr.microsoft.com/playwright:focal
+  terraform-executor:
+    docker:
+      - image: hashicorp/terraform:1.0.8
 commands:
+  build_web:
+    parameters:
+      api_domain:
+        type: string
+        description: ttbud backend API domain
+    steps:
+      - install_yarn_deps:
+          cache_prefix: web
+      - run:
+          name: Build
+          environment:
+            REACT_APP_DOMAIN: << parameters.api_domain >>
+            REACT_APP_API_WEBSOCKET_PORT: 443
+          command: yarn build
+      - run:
+          name: Package
+          command: tar -czvf /tmp/ttbud-web.tar.gz --directory=build .
+      - store_artifacts:
+          path: /tmp/ttbud-web.tar.gz
+          destination: ttbud-web.tar.gz
+      - run:
+          name: Save build tarball URL
+          command: ../infra/get_ci_artifact $CIRCLE_BUILD_NUM ttbud-web.tar.gz > /tmp/web-tarball-url
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - web-tarball-url
+  release:
+    parameters:
+      workspace:
+        type: string
+        description: Terraform workspace to deploy
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - run:
+          name: Apply Release
+          environment:
+            DEPLOY_WORKSPACE: << parameters.workspace >>
+          command: |
+            DEPLOY_COMMIT_HASH="$CIRCLE_SHA1" \
+            DEPLOY_TF_TOKEN="$TERRAFORM_TOKEN" \
+            DEPLOY_WEB_TARBALL_URL="$(cat /tmp/workspace/web-tarball-url)" \
+            DEPLOY_API_TARBALL_URL="https://api.github.com/repos/ttbud/ttbud/tarball/${CIRCLE_SHA1}" \
+            ./do_deploy
   install_yarn_deps:
     description: "Install all yarn dependencies"
     parameters:
@@ -29,35 +76,6 @@ commands:
           key: << parameters.cache_prefix >>-deps-v5-{{ checksum "yarn.lock" }}
           paths:
             - node_modules
-  release_web:
-    parameters:
-      target_name:
-        type: string
-      site_id:
-        type: env_var_name
-    steps:
-      - checkout:
-          path: ~/repo
-      - install_yarn_deps:
-          cache_prefix: web
-      - run:
-          name: Build Bundle
-          command: yarn build
-      - run:
-          name: Release to << parameters.target_name >>
-          command: web/node_modules/.bin/netlify deploy --site $<< parameters.site_id >> --auth $NETLIFY_AUTH_TOKEN --prod
-          working_directory: ~/repo
-  release_api:
-    parameters:
-      app_name:
-        type: string
-    steps:
-      - checkout
-      - heroku/install
-      - heroku/deploy-via-git:
-          app-name: << parameters.app_name >>
-          # Bors force pushes to the staging branch for each build, so we have to push force to heroku
-          force: true
 jobs:
   api:
     docker:
@@ -125,36 +143,47 @@ jobs:
           command: yarn run test --reporters=default --reporters=jest-junit --maxWorkers=2
       - store_test_results:
           path: test-results
-  release-staging-web:
+  build-staging-web:
     executor: web-executor
     working_directory: ~/repo/web
-    environment:
-      REACT_APP_DOMAIN: ttbud-staging.herokuapp.com
-      REACT_APP_API_WEBSOCKET_PORT: 443
     steps:
-      - release_web:
-          target_name: Staging
-          site_id: NETLIFY_STAGING_SITE_ID
-  release-prod-web:
+      - checkout:
+          path: ~/repo
+      - build_web:
+          api_domain: ttbud-staging.herokuapp.com
+  build-prod-web:
     executor: web-executor
     working_directory: ~/repo/web
-    environment:
-      REACT_APP_DOMAIN: ttbud-prod.herokuapp.com
-      REACT_APP_API_WEBSOCKET_PORT: 443
     steps:
-      - release_web:
-          target_name: Prod
-          site_id: NETLIFY_PROD_SITE_ID
-  release-staging-api:
-    executor: heroku/default
+      - checkout:
+          path: ~/repo
+      - build_web:
+          api_domain: ttbud-prod.herokuapp.com
+  release-staging:
+    executor: terraform-executor
+    working_directory: ~/repo/infra
     steps:
-      - release_api:
-          app_name: ttbud-staging
-  release-prod-api:
-    executor: heroku/default
+      - checkout:
+          path: ~/repo
+      - release:
+          workspace: staging
+  release-prod:
+    executor: terraform-executor
+    working_directory: ~/repo/infra
     steps:
-      - release_api:
-          app_name: ttbud-prod
+      - checkout:
+          path: ~/repo
+      - release:
+          workspace: prod
+  terraform-lint:
+    executor: terraform-executor
+    working_directory: ~/repo/infra
+    steps:
+      - checkout:
+          path: ~/repo
+      - run:
+          name: Check Style
+          command: terraform fmt -check -recursive
   e2e-lint:
     executor: e2e-executor
     working_directory: ~/repo/e2e
@@ -210,31 +239,34 @@ workflows:
           <<: *DEFAULT_FILTER
       - e2e-lint:
           <<: *DEFAULT_FILTER
-      - release-staging-web:
-          requires:
-            - web
+      - terraform-lint:
+          <<: *DEFAULT_FILTER
+      - build-staging-web:
           filters:
             branches:
               only:
                 - staging
                 - trying
-      - release-staging-api:
+      - release-staging:
           requires:
+            - web
             - api
+            - build-staging-web
           filters:
             branches:
               only:
-               - staging
-               - trying
+                - staging
+                - trying
       - e2e-staging:
           requires:
-            - release-staging-api
-            - release-staging-web
-      - release-prod-web:
+            - release-staging
+      - build-prod-web:
           filters:
             branches:
               only: master
-      - release-prod-api:
+      - release-prod:
+          requires:
+            - build-prod-web
           filters:
             branches:
               only: master
