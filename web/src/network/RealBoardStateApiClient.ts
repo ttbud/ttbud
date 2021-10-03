@@ -255,7 +255,7 @@ export class RealBoardStateApiClient {
     } catch (e) {
       this.eventHandler({
         type: EventType.Error,
-        error: e,
+        error: e as Error,
         rawMessage: event.data,
       });
       return;
