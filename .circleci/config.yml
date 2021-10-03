@@ -59,6 +59,12 @@ jobs:
     docker:
       - image: cimg/base:2021.07
     working_directory: ~/repo/api
+    environment:
+      # Enable the legacy docker client for localstack
+      # The Sdk docker client crashes if docker isn't available, even though it's just checking for a container name,
+      # which is not necessary to run the tests
+      # https://github.com/localstack/localstack/issues/4692
+      LEGACY_DOCKER_CLIENT: "true"
     steps:
       - checkout:
           path: ~/repo
@@ -81,7 +87,8 @@ jobs:
           command: docker run ttbud/api flake8 src tests load main.py
       - run:
           name: Run Tests
-          command: docker run --name api-tests ttbud/api pytest tests --junitxml=test-results/junit.xml
+          command: |
+            docker run --env LEGACY_DOCKER_CLIENT --name api-tests ttbud/api pytest tests --junitxml=test-results/junit.xml
       - run:
           name: Extract Test Results
           command: |
