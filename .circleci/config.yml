@@ -2,7 +2,11 @@ version: 2.1
 orbs:
   heroku: circleci/heroku@1.2.6
 executors:
-  node-executor:
+  web-executor:
+    resource_class: medium
+    docker:
+      - image: cimg/node:14.17.3
+  e2e-executor:
     docker:
       - image: mcr.microsoft.com/playwright:focal
 commands:
@@ -15,14 +19,14 @@ commands:
       - restore_cache:
           keys:
             # Restore the cache with the exact dependencies,
-            - << parameters.cache_prefix >>-deps-v4-{{ checksum "yarn.lock" }}
+            - << parameters.cache_prefix >>-deps-v5-{{ checksum "yarn.lock" }}
             # or, failing that, just the most recent cache entry
-            - << parameters.cache_prefix >>-deps-v4
+            - << parameters.cache_prefix >>-deps-v5
       - run:
           name: Install Deps
           command: yarn install
       - save_cache:
-          key: << parameters.cache_prefix >>-deps-v4-{{ checksum "yarn.lock" }}
+          key: << parameters.cache_prefix >>-deps-v5-{{ checksum "yarn.lock" }}
           paths:
             - node_modules
   release_web:
@@ -97,7 +101,7 @@ jobs:
       - store_test_results:
           path: test-results
   web:
-    executor: node-executor
+    executor: web-executor
     working_directory: ~/repo/web
     steps:
       - checkout:
@@ -126,7 +130,7 @@ jobs:
       - store_test_results:
           path: test-results
   release-staging-web:
-    executor: node-executor
+    executor: web-executor
     working_directory: ~/repo/web
     environment:
       REACT_APP_DOMAIN: ttbud-staging.herokuapp.com
@@ -136,7 +140,7 @@ jobs:
           target_name: Staging
           site_id: NETLIFY_STAGING_SITE_ID
   release-prod-web:
-    executor: node-executor
+    executor: web-executor
     working_directory: ~/repo/web
     environment:
       REACT_APP_DOMAIN: ttbud.herokuapp.com
@@ -156,7 +160,7 @@ jobs:
       - release_api:
           app_name: ttbud
   e2e-lint:
-    executor: node-executor
+    executor: e2e-executor
     working_directory: ~/repo/e2e
     steps:
       - checkout:
@@ -170,7 +174,7 @@ jobs:
           name: Check Style
           command: yarn run checkstyle
   e2e-staging:
-    executor: node-executor
+    executor: e2e-executor
     working_directory: ~/repo/e2e
     steps:
       - checkout:
