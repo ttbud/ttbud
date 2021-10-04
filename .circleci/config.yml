@@ -3,10 +3,10 @@ orbs:
   heroku: circleci/heroku@1.2.6
 executors:
   web-executor:
-    resource_class: medium
     docker:
       - image: cimg/node:14.17.3
   e2e-executor:
+    resource_class: medium+
     docker:
       - image: mcr.microsoft.com/playwright:focal
 commands:
