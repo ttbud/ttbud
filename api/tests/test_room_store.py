@@ -4,6 +4,7 @@ from typing import Callable, List
 
 import pytest
 import time_machine
+from aioredis import Redis
 from pytest_lazyfixture import lazy_fixture
 
 from src.api.api_structures import Request, Action
@@ -66,6 +67,24 @@ async def test_change_notifications(room_store: RoomStore) -> None:
     await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
     reply = await sub_task
     assert reply == [VALID_REQUEST]
+
+
+async def test_change_notification_error(
+    redis: Redis, redis_room_store: RoomStore
+) -> None:
+    """
+    Verify that errors thrown while processing pub/sub messages bubble out to consumers
+
+    This test only runs against the redis implementation because it's impossible to
+    trigger an error in the memory implementation
+    """
+
+    changes = await redis_room_store.changes(TEST_ROOM_ID)
+    sub_task = asyncio.create_task(async_collect(changes, count=1))
+
+    await redis.publish(f'channel:{TEST_ROOM_ID}', 'INVALID REQUEST')
+    with pytest.raises(BaseException):
+        await sub_task
 
 
 @any_room_store

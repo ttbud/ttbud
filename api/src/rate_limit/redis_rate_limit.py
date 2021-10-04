@@ -1,8 +1,8 @@
-import asyncio
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Iterator
 
 from aioredis import Redis
+from aioredis.client import Script
 
 from src.apm import instrument
 from src.rate_limit.rate_limit import (
@@ -107,15 +107,15 @@ class RedisRateLimiter(RateLimiter):
         self,
         server_id: str,
         redis: Redis,
-        acquire_connection_sha: bytes,
-        release_connection_sha: bytes,
-        incr_expire_sha: bytes,
+        acquire_connection: Script,
+        release_connection: Script,
+        incr_expire: Script,
     ):
         self._server_id = server_id
         self._redis = redis
-        self._acquire_connection_sha = acquire_connection_sha
-        self._release_connection_sha = release_connection_sha
-        self._incr_expire_sha = incr_expire_sha
+        self._acquire_connection = acquire_connection
+        self._release_connection = release_connection
+        self._incr_expire = incr_expire
 
     @asynccontextmanager
     async def rate_limited_connection(
@@ -135,57 +135,54 @@ class RedisRateLimiter(RateLimiter):
 
         # Update user liveness in batches so we don't block redis updating
         # every connected user at once
-        transaction = self._redis.multi_exec()
-        for i, user_id in enumerate(user_ids):
-            if i % _USER_LIVENESS_REFRESH_BATCH_SIZE == 0 and i != 0:
-                await transaction.execute()
-                transaction = self._redis.multi_exec()
-            transaction.expire(
-                f'user-connections:{user_id}', SERVER_LIVENESS_EXPIRATION_SECONDS
-            )
-
-        # Execute the last batch of refreshes regardless of size
-        await transaction.execute()
+        async with self._redis.pipeline(transaction=False) as pipeline:
+            for i, user_id in enumerate(user_ids):
+                if i % _USER_LIVENESS_REFRESH_BATCH_SIZE == 0 and i != 0:
+                    await pipeline.execute()
+                await pipeline.expire(
+                    f'user-connections:{user_id}', SERVER_LIVENESS_EXPIRATION_SECONDS
+                )
+            # Execute the last batch of refreshes regardless of size
+            await pipeline.execute()
 
     @instrument
     async def acquire_connection(self, user_id: str, room_id: str) -> None:
-        transaction = self._redis.multi_exec()
-        transaction.evalsha(
-            self._acquire_connection_sha,
-            keys=[f'user-connections:{user_id}'],
-            args=[self._server_id, MAX_CONNECTIONS_PER_USER],
-        )
-        transaction.evalsha(
-            self._acquire_connection_sha,
-            keys=[f'room-connections:{room_id}'],
-            args=[self._server_id, MAX_CONNECTIONS_PER_ROOM],
-        )
+        async with self._redis.pipeline() as pipeline:
+            await self._acquire_connection(
+                keys=[f'user-connections:{user_id}'],
+                args=[self._server_id, MAX_CONNECTIONS_PER_USER],
+                client=pipeline,
+            )
+            await self._acquire_connection(
+                keys=[f'room-connections:{room_id}'],
+                args=[self._server_id, MAX_CONNECTIONS_PER_ROOM],
+                client=pipeline,
+            )
 
-        [open_connection_slot, open_room_slot] = await transaction.execute()
-        if not open_connection_slot:
-            raise TooManyConnectionsException()
-        if not open_room_slot:
-            raise RoomFullException()
+            [open_connection_slot, open_room_slot] = await pipeline.execute()
+            if not open_connection_slot:
+                raise TooManyConnectionsException()
+            if not open_room_slot:
+                raise RoomFullException()
 
     @instrument
     async def release_connection(self, user_id: str, room_id: str) -> None:
-        transaction = self._redis.multi_exec()
-        transaction.evalsha(
-            self._release_connection_sha,
-            keys=[f'user-connections:{user_id}'],
-            args=[self._server_id],
-        )
-        transaction.evalsha(
-            self._release_connection_sha,
-            keys=[f'room-connections:{room_id}'],
-            args=[self._server_id],
-        )
-        await transaction.execute()
+        async with self._redis.pipeline() as pipeline:
+            await self._release_connection(
+                keys=[f'user-connections:{user_id}'],
+                args=[self._server_id],
+                client=pipeline,
+            )
+            await self._release_connection(
+                keys=[f'room-connections:{room_id}'],
+                args=[self._server_id],
+                client=pipeline,
+            )
+            await pipeline.execute()
 
     @instrument
     async def acquire_new_room(self, user_id: str) -> None:
-        recent_room_creation_count = await self._redis.evalsha(
-            self._incr_expire_sha,
+        recent_room_creation_count = await self._incr_expire(
             keys=[f'rate-limit:room-create:{user_id}'],
             args=[str(_TEN_MINUTES_IN_SECONDS)],
         )
@@ -195,21 +192,15 @@ class RedisRateLimiter(RateLimiter):
 
 async def create_redis_rate_limiter(server_id: str, redis: Redis) -> RedisRateLimiter:
     server_key = f'api-server:{server_id}'
-    initialize_futures = [
-        redis.script_load(_ACQUIRE_CONNECTION_SLOT),
-        redis.script_load(_RELEASE_CONNECTION_SLOT),
-        redis.script_load(_INCR_AND_EXPIRE_IF_NEW),
-        redis.set(server_key, 'true'),
-        redis.expire(server_key, SERVER_LIVENESS_EXPIRATION_SECONDS),
-    ]
-    [acquire_sha, release_sha, incr_expire_sha, *_] = await asyncio.gather(
-        *initialize_futures
-    )
+    await redis.set(server_key, 'true', ex=SERVER_LIVENESS_EXPIRATION_SECONDS)
+    acquire_connection = redis.register_script(_ACQUIRE_CONNECTION_SLOT)
+    release_connection = redis.register_script(_RELEASE_CONNECTION_SLOT)
+    incr_expire = redis.register_script(_INCR_AND_EXPIRE_IF_NEW)
 
     return RedisRateLimiter(
         server_id,
         redis,
-        acquire_connection_sha=acquire_sha,
-        release_connection_sha=release_sha,
-        incr_expire_sha=incr_expire_sha,
+        acquire_connection=acquire_connection,
+        release_connection=release_connection,
+        incr_expire=incr_expire,
     )

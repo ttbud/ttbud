@@ -1,11 +1,11 @@
 import asyncio
 import random
 import time
-from typing import Any, AsyncIterator, Callable, Awaitable
+from typing import Any, AsyncIterator
 
-import fakeredis
 import pytest
 from aioredis import Redis
+from fakeredis.aioredis import FakeRedis
 from pytest_mock import MockerFixture
 
 from src.room_store.memory_room_archive import MemoryRoomArchive
@@ -40,27 +40,17 @@ def fix_random() -> None:
     random.seed(1)
 
 
-# If we don't depend on event_loop (even though it isn't explicitly used), then it
-# won't be set up early enough for create_redis_pool to find it, and tests and redis
-# will get two different event loops that will deadlock waiting for each other
 @pytest.fixture
-async def redis(event_loop: asyncio.AbstractEventLoop) -> AsyncIterator[Redis]:
-    redis_instance = await fakeredis.aioredis.create_redis_pool()
+async def redis() -> AsyncIterator[Redis]:
+    redis_instance = FakeRedis()
     yield redis_instance
-    redis_instance.close()
-    await redis_instance.wait_closed()
+    await redis_instance.close()
 
 
 @pytest.fixture
-def redis_room_store_factory(redis: Redis) -> Callable[[], Awaitable[RedisRoomStore]]:
-    return lambda: create_redis_room_store(redis)
-
-
-@pytest.fixture
-async def redis_room_store(
-    redis_room_store_factory: Callable[[], Awaitable[RedisRoomStore]]
-) -> RedisRoomStore:
-    return await redis_room_store_factory()
+async def redis_room_store(redis: Redis) -> AsyncIterator[RedisRoomStore]:
+    async with create_redis_room_store(redis) as room_store:
+        yield room_store
 
 
 @pytest.fixture
@@ -71,25 +61,8 @@ async def merged_room_store(
 
 
 @pytest.fixture
-def memory_room_storage() -> MemoryRoomStorage:
-    return MemoryRoomStorage()
-
-
-@pytest.fixture
-def memory_room_store_factory(
-    memory_room_storage: MemoryRoomStorage,
-) -> Callable[[], Awaitable[MemoryRoomStore]]:
-    async def fn() -> MemoryRoomStore:
-        return MemoryRoomStore(memory_room_storage)
-
-    return fn
-
-
-@pytest.fixture
-async def memory_room_store(
-    memory_room_store_factory: Callable[[], Awaitable[MemoryRoomStore]]
-) -> MemoryRoomStore:
-    return await memory_room_store_factory()
+def memory_room_store() -> MemoryRoomStore:
+    return MemoryRoomStore(MemoryRoomStorage())
 
 
 @pytest.fixture
