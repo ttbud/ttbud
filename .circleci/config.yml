@@ -5,7 +5,7 @@ executors:
   web-executor:
     resource_class: medium
     docker:
-      - image: cimg/node:14.17.3
+      - image: cimg/node:14.18.0
   e2e-executor:
     docker:
       - image: mcr.microsoft.com/playwright:focal
