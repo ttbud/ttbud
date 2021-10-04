@@ -7,7 +7,7 @@ RUN chown appuser:appuser /home/appuser/app
 USER appuser
 
 # ONBUILD COPY --from doesn't work unless it's a named stage in the build
-FROM docker:20.10.8 as ttbud_docker
+FROM docker:20.10.9 as ttbud_docker
 
 # In dev, base needs to have the docker cli installed so that localstack can do its thing
 FROM base as base_dev
