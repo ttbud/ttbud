@@ -61,7 +61,7 @@ commands:
 jobs:
   api:
     docker:
-      - image: cimg/base:2021.07
+      - image: cimg/base:2021.10
     working_directory: ~/repo/api
     environment:
       # Enable the legacy docker client for localstack
