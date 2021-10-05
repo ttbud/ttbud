@@ -25,7 +25,13 @@ class CertConfig:
 class Config:
     environment: Environment = Environment[os.environ['ENVIRONMENT'].upper()]
     websocket_port: int = int(os.environ['PORT'])
-    redis_address = os.environ['REDIS_URL']
+    # When you use the cheapest heroku redis plan, the "REDIS_URL" environment variable
+    # is a plaintext URI for backwards-compatibility reasons, so you have to use
+    # "REDIS_TLS_URL" to get a TLS connection if it's available
+    # In production we use a slightly more expensive plan, which provides a TLS
+    # connection for the "REDIS_URL" environment variable, but doesn't provide a
+    # REDIS_TLS_URL environment variable
+    redis_address = os.environ.get('REDIS_TLS_URL', os.environ['REDIS_URL'])
     json_logs: bool = os.environ.get('JSON_LOGS') == 'true'
     bypass_rate_limit_key: str = os.environ['BYPASS_RATE_LIMIT_KEY']
     aws_region: str = os.environ['AWS_REGION']
