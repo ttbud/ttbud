@@ -26,7 +26,7 @@
     "fp-ts": "2.11.4",
     "immer": "9.0.6",
     "io-ts": "2.2.16",
-    "jest-junit": "12.3.0",
+    "jest-junit": "13.0.0",
     "jest-websocket-mock": "2.2.1",
     "mock-socket": "9.0.5",
     "netlify-cli": "6.9.28",
