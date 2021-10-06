@@ -9,7 +9,7 @@
     "fixstyle": "prettier tests *.ts *.json --write"
   },
   "dependencies": {
-    "@playwright/test": "1.15.1",
+    "@playwright/test": "1.15.2",
     "@types/ws": "8.2.0",
     "prettier": "2.4.1",
     "typescript": "4.4.3",
