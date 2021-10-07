@@ -6,16 +6,6 @@ WORKDIR /home/appuser/app
 RUN chown appuser:appuser /home/appuser/app
 USER appuser
 
-# ONBUILD COPY --from doesn't work unless it's a named stage in the build
-FROM docker:20.10.8 as ttbud_docker
-
-# In dev, base needs to have the docker cli installed so that localstack can do its thing
-FROM base as base_dev
-ONBUILD COPY --from=ttbud_docker /usr/local/bin/docker /usr/local/bin
-
-# In prod, we don't need the docker cli
-FROM base as base_prod
-
 FROM base as builder
 
 USER root
@@ -48,7 +38,7 @@ RUN . /home/appuser/venv/bin/activate && \
 
 COPY --chown=appuser:appuser . ./
 
-FROM base_${BUILD_ENV}
+FROM base
 
 COPY --chown=appuser:appuser --from=builder /home/appuser/venv /home/appuser/venv/
 COPY --chown=appuser:appuser --from=builder /home/appuser/app /home/appuser/app/

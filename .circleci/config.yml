@@ -61,43 +61,39 @@ commands:
 jobs:
   api:
     docker:
-      - image: cimg/base:2021.07
+      - image: circleci/python:3.9
     working_directory: ~/repo/api
-    environment:
-      # Enable the legacy docker client for localstack
-      # The Sdk docker client crashes if docker isn't available, even though it's just checking for a container name,
-      # which is not necessary to run the tests
-      # https://github.com/localstack/localstack/issues/4692
-      LEGACY_DOCKER_CLIENT: "true"
     steps:
       - checkout:
           path: ~/repo
-      - setup_remote_docker:
-          version: 20.10.6
+      - restore_cache:
+          keys:
+            # Restore the cache with the exact dependencies,
+            - api-deps-v3-{{ checksum "poetry.lock" }}
+            # or, failing that, just the most recent cache entry
+            - api-deps-v3
       - run:
-          name: Sign in to Docker Hub
-          command: docker login -u ${DOCKER_USERNAME} -p ${DOCKER_ACCESS_TOKEN}
+          name: Configure Poetry
+          command: poetry config virtualenvs.in-project true && poetry config virtualenvs.path .venv
       - run:
-          name: Build api Docker image
-          command: ./build_image_ci ttbud/api
+          name: Install Deps
+          command: poetry install
+      - save_cache:
+          key: api-deps-v3-{{ checksum "poetry.lock" }}
+          paths:
+            - .venv
       - run:
           name: Check Code Format
-          command: docker run ttbud/api black -S src tests load main.py --check
+          command: poetry run black -S src tests load main.py --check
       - run:
           name: Typecheck
-          command: docker run ttbud/api mypy src tests load main.py
+          command: poetry run mypy src tests load main.py
       - run:
           name: Lint
-          command: docker run ttbud/api flake8 src tests load main.py
+          command: poetry run flake8 src tests load main.py
       - run:
           name: Run Tests
-          command: |
-            docker run --env LEGACY_DOCKER_CLIENT --name api-tests ttbud/api pytest tests --junitxml=test-results/junit.xml
-      - run:
-          name: Extract Test Results
-          command: |
-            mkdir -p test-results
-            docker cp api-tests:/home/appuser/app/test-results/junit.xml test-results/junit.xml
+          command: poetry run pytest tests --junitxml=test-results/junit.xml
       - store_test_results:
           path: test-results
   web:

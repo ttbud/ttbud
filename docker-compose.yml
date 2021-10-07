@@ -15,11 +15,6 @@ services:
       SCOUT_MONITOR:
       USE_SSL: "true"
       LOG_LEVEL:
-      # Enable the legacy docker client for localstack
-      # The Sdk docker client crashes if docker isn't available, even though it's just checking for a container name,
-      # which is not necessary to run the tests
-      # https://github.com/localstack/localstack/issues/4692
-      LEGACY_DOCKER_CLIENT: "true"
       SSL_CRT_FILE: /certs/ttbud.local.pem
       SSL_KEY_FILE: /certs/ttbud.local-key.pem
       PORT: ${API_WEBSOCKET_PORT}
