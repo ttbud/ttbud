@@ -87,6 +87,6 @@
   "license": "ISC",
   "devDependencies": {
     "@testing-library/dom": "8.7.2",
-    "@testing-library/user-event": "13.2.1"
+    "@testing-library/user-event": "13.3.0"
   }
 }
