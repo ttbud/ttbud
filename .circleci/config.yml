@@ -154,7 +154,7 @@ jobs:
     executor: heroku/default
     steps:
       - release_api:
-          app_name: ttbud
+          app_name: ttbud-prod
   e2e-lint:
     executor: e2e-executor
     working_directory: ~/repo/e2e
