@@ -13246,10 +13246,10 @@ react-cosmos-shared2@^5.6.3:
     react-is "^17.0.2"
     socket.io-client "2.2.0"
 
-react-cosmos@5.6.3:
-  version "5.6.3"
-  resolved "https://registry.yarnpkg.com/react-cosmos/-/react-cosmos-5.6.3.tgz#bd2c0e1334b2c9992ddb3a5d8dfcbe5fc723cbc8"
-  integrity sha512-FG6VIc4prnqnNQ9ToBq2cNPkPxZcZRauL0tMkbi01aoS90c3sNoQt6koL/IsntSpPcR67KRe+OtJspq9OtBjxg==
+react-cosmos@5.6.4:
+  version "5.6.4"
+  resolved "https://registry.yarnpkg.com/react-cosmos/-/react-cosmos-5.6.4.tgz#381ac6807e657cc4a47d4d7fcfb0a278f3c344af"
+  integrity sha512-vhAxpZ98ej1qvQl1o4GMhw7OYGjQS4paDKyTJqisry6wXJY3osiYZ9UE84HQveyUVQwAv9fJ7Ku0LNbLzpE4ew==
   dependencies:
     "@skidding/launch-editor" "^2.2.3"
     "@skidding/webpack-hot-middleware" "^2.25.0"
