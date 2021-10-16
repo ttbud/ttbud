@@ -23,7 +23,7 @@
     "@types/testing-library__jest-dom": "5.14.1",
     "@types/uuid": "8.3.1",
     "@types/webpack-env": "1.16.3",
-    "fp-ts": "2.11.4",
+    "fp-ts": "2.11.5",
     "immer": "9.0.6",
     "io-ts": "2.2.16",
     "jest-junit": "13.0.0",
