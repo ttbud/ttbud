@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+# Create the terraform-ttbud aws user and add/update the policy required to run terraform with that users credentials
+
+set -euo pipefail
+
+
+account_id=$(aws sts get-caller-identity --query 'Account' --output text)
+
+policy=$(cat <<HEREDOC_EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ManageTtbudUser",
+      "Effect": "Allow",
+      "Action": [
+        "iam:DeleteAccessKey",
+        "iam:ListGroupsForUser",
+        "iam:UpdateAccessKey",
+        "iam:DeleteUser",
+        "iam:GetUser",
+        "iam:CreateUser",
+        "iam:CreateAccessKey",
+        "iam:ListAccessKeys"
+      ],
+      "Resource": "arn:aws:iam::${account_id}:user/ttbud/*"
+    },
+    {
+      "Sid": "ManageTtbudS3Buckets",
+      "Effect": "Allow",
+      "Action": ["s3:*"],
+      "Resource": "arn:aws:s3:::*.ttbud"
+    }
+  ]
+}
+HEREDOC_EOF
+)
+
+
+set +e
+if result=$(aws iam get-user --user-name ttbud-terraform 2>&1); then
+  rc=$?
+else
+  rc=$?
+  stderr=$result
+fi
+set -e
+
+echo "$policy" > tmp.txt
+
+# aws cli exits with error code 254 and and error message of NoSuchEntity if the user doesn't exist
+if [[ $rc -eq 254 && $stderr =~ "NoSuchEntity" ]]; then
+  echo "Creating user ttbud-terraform"
+  aws iam create-user --user-name ttbud-terraform
+  echo "Creating access key for user ttbud-terraform, use these credentials for your aws user in terraform cloud:"
+  aws iam create-access-key --user-name ttbud-terraform
+  echo ""
+elif [[ $rc -ne 0 ]]; then
+  # Otherwise, some other type of error occurred that we don't know how to handle
+  echo "Unexpected error checking if user ttbud-terraform exists"
+  echo "$stderr"
+  exit $rc
+else
+  echo "User ttbud-terraform already exists, skipping access key creation"
+fi
+
+echo "Creating/Updating ttbud-terraform policy"
+aws iam put-user-policy --user-name ttbud-terraform --policy-name manage-ttbud-infra --policy-document "$policy"
