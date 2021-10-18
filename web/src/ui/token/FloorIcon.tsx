@@ -1,5 +1,5 @@
 import React, { CSSProperties } from "react";
-import { makeStyles } from "@material-ui/core";
+import makeStyles from "@mui/styles/makeStyles";
 import { GRID_SIZE_PX } from "../../config";
 import Pos2d from "../../util/shape-math";
 import { Icon } from "../icons";

@@ -2,6 +2,7 @@ import { render } from "@testing-library/react";
 import { PureSettings } from "./Settings";
 import noop from "../../util/noop";
 import userEvent from "@testing-library/user-event";
+import TtbudTheme from "../TtbudTheme";
 
 const DEFAULT_PROPS = {
   showTourPrompt: false,
@@ -15,7 +16,9 @@ const DEFAULT_PROPS = {
 describe("Settings", () => {
   it("opens the settings menu when the fab is clicked", () => {
     const { getByText, getByLabelText } = render(
-      <PureSettings {...DEFAULT_PROPS} />
+      <TtbudTheme>
+        <PureSettings {...DEFAULT_PROPS} />
+      </TtbudTheme>
     );
 
     getByLabelText("Settings").click();
@@ -26,7 +29,9 @@ describe("Settings", () => {
     const onClearMap = jest.fn();
 
     const { getByLabelText, getByText } = render(
-      <PureSettings {...DEFAULT_PROPS} onClearMap={onClearMap} />
+      <TtbudTheme>
+        <PureSettings {...DEFAULT_PROPS} onClearMap={onClearMap} />
+      </TtbudTheme>
     );
 
     getByLabelText("Settings").click();
@@ -40,7 +45,9 @@ describe("Settings", () => {
     const onClearMap = jest.fn();
 
     const { getByLabelText, getByText } = render(
-      <PureSettings {...DEFAULT_PROPS} onClearMap={onClearMap} />
+      <TtbudTheme>
+        <PureSettings {...DEFAULT_PROPS} onClearMap={onClearMap} />
+      </TtbudTheme>
     );
 
     getByLabelText("Settings").click();
@@ -52,7 +59,9 @@ describe("Settings", () => {
 
   it("copies url to clipboard", async () => {
     const { getByLabelText, getByText, findByText } = render(
-      <PureSettings {...DEFAULT_PROPS} />
+      <TtbudTheme>
+        <PureSettings {...DEFAULT_PROPS} />
+      </TtbudTheme>
     );
 
     const clipboardWriteFn = jest.fn();
@@ -72,7 +81,9 @@ describe("Settings", () => {
 
   it("shows tour prompt when enabled", async () => {
     const { getByText } = render(
-      <PureSettings {...DEFAULT_PROPS} showTourPrompt={true} />
+      <TtbudTheme>
+        <PureSettings {...DEFAULT_PROPS} showTourPrompt={true} />
+      </TtbudTheme>
     );
 
     expect(getByText("Click here for a tour")).toBeVisible();
@@ -81,11 +92,13 @@ describe("Settings", () => {
   it("calls onTourPromptDismissed when prompt close button is clicked", async () => {
     const onTourPromptDismissed = jest.fn();
     const { getByLabelText } = render(
-      <PureSettings
-        {...DEFAULT_PROPS}
-        showTourPrompt={true}
-        onTourPromptDismissed={onTourPromptDismissed}
-      />
+      <TtbudTheme>
+        <PureSettings
+          {...DEFAULT_PROPS}
+          showTourPrompt={true}
+          onTourPromptDismissed={onTourPromptDismissed}
+        />
+      </TtbudTheme>
     );
 
     userEvent.click(getByLabelText("dismiss"));
@@ -95,11 +108,13 @@ describe("Settings", () => {
   it("dismisses tour prompt when settings are opened", async () => {
     const onTourPromptDismissed = jest.fn();
     const { getByLabelText } = render(
-      <PureSettings
-        {...DEFAULT_PROPS}
-        showTourPrompt={true}
-        onTourPromptDismissed={onTourPromptDismissed}
-      />
+      <TtbudTheme>
+        <PureSettings
+          {...DEFAULT_PROPS}
+          showTourPrompt={true}
+          onTourPromptDismissed={onTourPromptDismissed}
+        />
+      </TtbudTheme>
     );
 
     userEvent.click(getByLabelText("Settings"));
@@ -110,7 +125,9 @@ describe("Settings", () => {
     const onTourClicked = jest.fn();
 
     const { getByLabelText, getByText, queryByText } = render(
-      <PureSettings {...DEFAULT_PROPS} onTourClicked={onTourClicked} />
+      <TtbudTheme>
+        <PureSettings {...DEFAULT_PROPS} onTourClicked={onTourClicked} />
+      </TtbudTheme>
     );
 
     userEvent.click(getByLabelText("Settings"));
@@ -122,7 +139,9 @@ describe("Settings", () => {
 
   it("shows the about dialog when clicked", () => {
     const { getByText, getByLabelText } = render(
-      <PureSettings {...DEFAULT_PROPS} />
+      <TtbudTheme>
+        <PureSettings {...DEFAULT_PROPS} />
+      </TtbudTheme>
     );
 
     userEvent.click(getByLabelText("Settings"));

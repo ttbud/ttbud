@@ -1,5 +1,6 @@
-import { makeStyles, Paper } from "@material-ui/core";
-import ToggleButton from "@material-ui/lab/ToggleButton";
+import { Paper } from "@mui/material";
+import makeStyles from "@mui/styles/makeStyles";
+import ToggleButton from "@mui/material/ToggleButton";
 import React, { memo, useCallback, useRef, MouseEvent } from "react";
 import { CARD_SIZE } from "../../config";
 import { DraggableDescriptor } from "../../drag/DragStateTypes";
@@ -47,7 +48,7 @@ const PureFloorTray: React.FC<Props> = memo(function FloorTray({
 }) {
   const classes = useStyles();
 
-  const containerRef = useRef<HTMLElement>();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const items = useTrayItems(DROPPABLE_IDS.FLOOR_TRAY, blueprints);
 

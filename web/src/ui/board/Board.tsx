@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { makeStyles } from "@material-ui/core";
+import makeStyles from "@mui/styles/makeStyles";
 import { GRID_SIZE_PX } from "../../config";
 import Floor from "../token/Floor";
 import Character from "../token/Character";

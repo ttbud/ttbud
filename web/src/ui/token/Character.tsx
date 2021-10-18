@@ -1,5 +1,6 @@
 import React, { memo, MouseEvent } from "react";
-import { Card, CardMedia, makeStyles, Theme } from "@material-ui/core";
+import { Card, CardMedia, Theme } from "@mui/material";
+import makeStyles from "@mui/styles/makeStyles";
 import clsx from "clsx";
 import { Icon, ICONS_BY_ID } from "../icons";
 import { GRID_SIZE_PX } from "../../config";

@@ -1,4 +1,5 @@
-import { makeStyles, Paper } from "@material-ui/core";
+import { Paper } from "@mui/material";
+import makeStyles from "@mui/styles/makeStyles";
 import React, { memo, useRef, useCallback } from "react";
 import { DROPPABLE_IDS } from "../DroppableIds";
 import SortableList, { Targets, Target } from "../sort/SortableList";
@@ -43,7 +44,7 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
 }) {
   const classes = useStyles();
 
-  const containerRef = useRef<HTMLElement>();
+  const containerRef = useRef<HTMLDivElement>(null);
   const items = useTrayItems(DROPPABLE_ID, blueprints);
 
   const getTargets = useCallback((): Targets => {

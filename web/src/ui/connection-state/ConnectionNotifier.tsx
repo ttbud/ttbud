@@ -3,13 +3,15 @@ import {
   ConnectionStateType,
   Disconnected,
 } from "./connection-state-slice";
-import Alert from "@material-ui/lab/Alert";
-import RefreshIcon from "@material-ui/icons/Cached";
+import Alert from "@mui/material/Alert";
+import RefreshIcon from "@mui/icons-material/Cached";
 import { connect } from "react-redux";
 import { RootState } from "../../store/rootReducer";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
-import { IconButton, makeStyles } from "@material-ui/core";
+import { IconButton } from "@mui/material";
+import makeStyles from "@mui/styles/makeStyles";
 import { ConnectionError } from "../../network/BoardStateApiClient";
+import React from "react";
 
 interface Props {
   connectionState: ConnectionState;

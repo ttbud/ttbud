@@ -17,6 +17,7 @@ import { drag, tap } from "../__test_util__/pointer";
 import { Buttons } from "../util/Buttons";
 import { advanceByTime } from "../__test_util__/time";
 import { LONG_TAP_MS } from "../util/useLongTap";
+import TtbudTheme from "../TtbudTheme";
 
 const CHARACTER: Entity = {
   id: "character-id",
@@ -67,7 +68,9 @@ function renderBoard({ entities = [], props = {} }: RenderBoardProps = {}) {
   return render(
     <Provider store={store}>
       <DndContext.Provider value={monitor as unknown as DomDroppableMonitor}>
-        <PureBoard boardState={boardState} {...DEFAULT_PROPS} {...props} />
+        <TtbudTheme>
+          <PureBoard boardState={boardState} {...DEFAULT_PROPS} {...props} />
+        </TtbudTheme>
       </DndContext.Provider>
     </Provider>
   );

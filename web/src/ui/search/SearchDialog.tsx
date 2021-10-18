@@ -1,10 +1,5 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  makeStyles,
-  TextField,
-} from "@material-ui/core";
+import { Dialog, DialogContent, DialogTitle, TextField } from "@mui/material";
+import makeStyles from "@mui/styles/makeStyles";
 import React, { memo, useCallback, useMemo, useState } from "react";
 import { Icon, ICONS_BY_ID } from "../icons";
 import Draggable from "../../drag/Draggable";

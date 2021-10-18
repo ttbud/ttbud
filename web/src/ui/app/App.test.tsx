@@ -5,6 +5,7 @@ import createStore from "../../store/createStore";
 import { Provider } from "react-redux";
 import DndContext from "../../drag/DndContext";
 import FakeApiClient from "../../network/__test_util__/FakeApiClient";
+import TtbudTheme from "../TtbudTheme";
 
 jest.mock("../../network/BoardStateApiClient");
 
@@ -18,7 +19,9 @@ it("renders without crashing", () => {
   ReactDOM.render(
     <Provider store={store}>
       <DndContext.Provider value={monitor}>
-        <App apiClient={apiClient} />
+        <TtbudTheme>
+          <App apiClient={apiClient} />
+        </TtbudTheme>
       </DndContext.Provider>
     </Provider>,
     div
