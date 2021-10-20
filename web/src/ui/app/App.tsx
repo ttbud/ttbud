@@ -17,6 +17,8 @@ import BoardStateApiClient from "../../network/BoardStateApiClient";
 import Tour from "../tour/Tour";
 import MobileWarningDialog from "../mobile-warning/MobileWarningDialog";
 
+const SEARCH_BAR_WIDTH = 300;
+
 const useStyles = makeStyles((theme) => ({
   app: {
     width: 4000,
@@ -24,11 +26,18 @@ const useStyles = makeStyles((theme) => ({
     // Otherwise safari will try to select the connection notifier text even when you're long pressing no where near it
     userSelect: "none",
   },
+  searchBar: {
+    position: "fixed",
+    left: 0,
+    top: 0,
+    height: "100%",
+    width: SEARCH_BAR_WIDTH,
+  },
   characterTray: {
     position: "fixed",
     zIndex: 3,
     bottom: theme.spacing(3),
-    left: theme.spacing(1),
+    left: SEARCH_BAR_WIDTH + 8,
   },
   floorTray: {
     display: "inline-flex",
@@ -112,11 +121,13 @@ const App: React.FC<Props> = ({ apiClient }) => {
       <Tour isOpen={touring} onCloseClicked={() => setTouring(false)} />
       <div className={classes.app}>
         <Board />
-        <SearchDialog
-          open={searching}
-          icons={ICONS}
-          onClose={onSearchDialogClose}
-        />
+        <div className={classes.searchBar}>
+          <SearchDialog
+            open={searching}
+            icons={ICONS}
+            onClose={onSearchDialogClose}
+          />
+        </div>
         <div className={classes.characterTray}>
           <CharacterTray />
         </div>

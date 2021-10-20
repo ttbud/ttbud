@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogTitle, TextField } from "@mui/material";
+import { Paper, TextField } from "@mui/material";
 import makeStyles from "@mui/styles/makeStyles";
 import React, { memo, useCallback, useMemo, useState } from "react";
 import { Icon, ICONS_BY_ID } from "../icons";
@@ -14,19 +14,24 @@ import Character from "../token/Character";
 import { assert } from "../../util/invariants";
 import { RootState } from "../../store/rootReducer";
 import { contentId, ContentType, TokenContents } from "../../types";
+import { GRID_SIZE_PX } from "../../config";
 
 const useStyles = makeStyles((theme) => ({
-  content: {
-    width: "300px",
-    height: "300px",
+  root: {
+    width: "100%",
+    height: "100%",
+    overflowY: "scroll",
+    padding: theme.spacing(1),
   },
   tokenList: {
-    display: "flex",
-    flexWrap: "wrap",
+    display: "grid",
+    gridTemplateColumns: `repeat(auto-fit, minmax(${GRID_SIZE_PX}px, 1fr))`,
+    gridGap: theme.spacing(1),
+    alignItems: "center",
+    justifyContent: "center",
+    justifyItems: "center",
   },
-  token: {
-    margin: theme.spacing(1),
-  },
+  token: {},
   search: {},
   icon: {
     color: "white",
@@ -54,14 +59,6 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
     [icons]
   );
 
-  const activeDraggable = useSelector((state: RootState) => {
-    if (!open || state.drag.type === DragStateType.NotDragging) {
-      return;
-    }
-
-    return state.drag.draggable;
-  });
-
   const visibleIconItems = useMemo(() => {
     return search
       ? items.filter(
@@ -85,79 +82,52 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
         id: `search-dialog-${contentId(textContents)}`,
       };
 
-  const renderDraggable = () => {
-    assert(
-      activeDraggable,
-      "Cannot render draggable when there is no active draggable"
-    );
-
-    return (
-      <Draggable
-        key={`search-dialog-${contentId(activeDraggable.contents)}`}
-        descriptor={activeDraggable}
-        usePortal={true}
-      >
-        {(isDragging, attributes) => (
-          <Character
-            dragAttributes={attributes}
-            className={classes.token}
-            contents={activeDraggable.contents}
-            isDragging={isDragging}
-          />
-        )}
-      </Draggable>
-    );
-  };
-
   const renderDialog = () => (
-    <Dialog open={open} onClose={onClose} disableScrollLock={true}>
-      <DialogTitle>
-        <TextField
-          id="search"
-          fullWidth
-          autoFocus
-          className={classes.search}
-          variant="filled"
-          margin="normal"
-          label="search"
-          onChange={onChange}
-          onFocus={(e) => e.target.select()}
-          value={search}
-        />
-      </DialogTitle>
-      <DialogContent className={classes.content}>
-        <div className={classes.tokenList}>
-          {textItem && (
-            <Draggable key={textItem.id} descriptor={textItem}>
-              {(isDragging, attributes) => (
-                <Character
-                  dragAttributes={attributes}
-                  className={classes.token}
-                  contents={textItem.contents}
-                  isDragging={isDragging}
-                />
-              )}
-            </Draggable>
-          )}
+    <Paper className={classes.root} elevation={5}>
+      <TextField
+        id="search"
+        autoComplete="off"
+        fullWidth
+        autoFocus
+        className={classes.search}
+        variant="filled"
+        margin="normal"
+        label="search"
+        onChange={onChange}
+        onFocus={(e) => e.target.select()}
+        value={search}
+      />
+      <div className={classes.tokenList}>
+        {textItem && (
+          <Draggable key={textItem.id} descriptor={textItem}>
+            {(isDragging, attributes) => (
+              <Character
+                dragAttributes={attributes}
+                className={classes.token}
+                contents={textItem.contents}
+                isDragging={isDragging}
+              />
+            )}
+          </Draggable>
+        )}
 
-          {visibleIconItems.map((item) => (
-            <Draggable key={item.id} descriptor={item}>
-              {(isDragging, attributes) => (
-                <Character
-                  dragAttributes={attributes}
-                  className={classes.token}
-                  contents={item.contents}
-                  isDragging={isDragging}
-                />
-              )}
-            </Draggable>
-          ))}
-        </div>
-      </DialogContent>
-    </Dialog>
+        {visibleIconItems.map((item) => (
+          <Draggable key={item.id} descriptor={item}>
+            {(isDragging, attributes) => (
+              <Character
+                dragAttributes={attributes}
+                className={classes.token}
+                contents={item.contents}
+                isDragging={isDragging}
+              />
+            )}
+          </Draggable>
+        ))}
+      </div>
+    </Paper>
   );
 
-  return activeDraggable ? renderDraggable() : renderDialog();
+  return open ? renderDialog() : null;
 });
 
 export default SearchDialog;

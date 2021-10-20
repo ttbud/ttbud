@@ -6,6 +6,7 @@ import dragReducer from "../../drag/drag-slice";
 import { Provider } from "react-redux";
 import DndContext from "../../drag/DndContext";
 import noop from "../../util/noop";
+import TtbudTheme from "../TtbudTheme";
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
@@ -22,7 +23,11 @@ const store = configureStore({
 export default (
   <Provider store={store}>
     <DndContext.Provider value={monitor}>
-      <SearchDialog icons={ICONS} open={true} onClose={noop} />
+      <TtbudTheme>
+        <div style={{ position: "fixed", right: 0, height: "100vh" }}>
+          <SearchDialog icons={ICONS} open={true} onClose={noop} />
+        </div>
+      </TtbudTheme>
     </DndContext.Provider>
   </Provider>
 );
