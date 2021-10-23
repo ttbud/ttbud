@@ -144,3 +144,17 @@ export function pingAt(boardState: BoardState, pos: Pos2d): string | undefined {
     (entity) => entity.type === EntityType.Ping && posAreEqual(entity.pos, pos)
   )?.id;
 }
+
+export function createBoardState(entities: Entity[] = []) {
+  const boardState: BoardState = {
+    entityById: {},
+    tokenIdsByPosStr: {},
+    charIdsByContentId: {},
+  };
+
+  for (const entity of entities) {
+    upsertEntity(boardState, entity, true);
+  }
+
+  return boardState;
+}

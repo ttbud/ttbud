@@ -1,12 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DragEndAction, dragEnded } from "../../drag/drag-slice";
-import { DROPPABLE_IDS } from "../DroppableIds";
-import { assert } from "../../util/invariants";
-import { DraggableType, LocationType } from "../../drag/DragStateTypes";
 import { v4 as uuid } from "uuid";
-import getDragResult, { DragResult } from "../../drag/getDragResult";
-import UnreachableCaseError from "../../util/UnreachableCaseError";
-import Pos2d from "../../util/shape-math";
+import Pos2d, { Pos3d } from "../../util/shape-math";
 import { EntityType, Token, TokenContents } from "../../types";
 import {
   applyLocalAction,
@@ -18,7 +12,7 @@ import { Action } from "../../network/BoardStateApiClient";
 import { AppThunk } from "../../store/createStore";
 import pause from "../../util/pause";
 
-const INITIAL_STATE: MergeState = {
+export const INITIAL_STATE: MergeState = {
   unqueuedActions: [],
   queuedUpdates: [],
   local: {
@@ -38,12 +32,6 @@ interface NetworkUpdateAction {
   updateId: string;
 }
 
-interface AddTokenAction {
-  id: string;
-  contents: TokenContents;
-  pos: Pos2d;
-}
-
 interface AddPingAction {
   id: string;
   pos: Pos2d;
@@ -51,6 +39,13 @@ interface AddPingAction {
 
 interface BatchUnqueuedAction {
   updateId: string;
+}
+
+interface UpsertTokenAction {
+  id: string;
+  type: EntityType.Floor | EntityType.Character;
+  contents: TokenContents;
+  pos: Pos3d;
 }
 
 export const FLOOR_HEIGHT = 0;
@@ -78,26 +73,13 @@ const boardSlice = createSlice({
         applyLocalAction(state, { type: "delete", entityId: id });
       }
     },
-    addFloor: {
-      reducer: (state, action: PayloadAction<AddTokenAction>) => {
-        const { id, contents, pos } = action.payload;
+    upsertToken(state, action: PayloadAction<UpsertTokenAction>) {
+      const { id, contents, pos, type } = action.payload;
 
-        applyLocalAction(state, {
-          type: "upsert",
-          token: {
-            id,
-            contents,
-            type: EntityType.Floor,
-            pos: {
-              ...pos,
-              z: FLOOR_HEIGHT,
-            },
-          },
-        });
-      },
-      prepare: (contents: TokenContents, pos: Pos2d) => ({
-        payload: { id: uuid(), contents, pos },
-      }),
+      applyLocalAction(state, {
+        type: "upsert",
+        token: { id, contents, type, pos },
+      });
     },
     pingAdded: (state, action: PayloadAction<AddPingAction>) => {
       const { id, pos } = action.payload;
@@ -118,83 +100,20 @@ const boardSlice = createSlice({
       });
     },
   },
-  extraReducers: {
-    [dragEnded.type]: (state, action: PayloadAction<DragEndAction>) => {
-      const { draggable, destination } = action.payload;
-
-      const dragResult = getDragResult(DROPPABLE_IDS.BOARD, action.payload);
-
-      switch (dragResult) {
-        case DragResult.MovedInside:
-          const loc = destination.logicalLocation;
-          assert(
-            draggable.type === DraggableType.Token,
-            "Dragged from board but draggable type was not token"
-          );
-          assert(
-            loc?.type === LocationType.Grid,
-            "Dropped in board but drop type was not grid"
-          );
-
-          const token = state.local.entityById[draggable.tokenId];
-          // The token was deleted before the drag completed
-          if (!token) return;
-          assert(
-            token.type === "character",
-            "Draggable had the id of a non-character token"
-          );
-
-          const newToken = {
-            ...token,
-            pos: { x: loc.x, y: loc.y, z: CHARACTER_HEIGHT },
-          } as Token;
-
-          applyLocalAction(state, {
-            type: "upsert",
-            token: newToken,
-          });
-          break;
-        case DragResult.DraggedOutOf:
-          // Dragging a token to a tray from the board should not remove the token from the board
-          break;
-        case DragResult.DraggedInto:
-          assert(
-            destination.logicalLocation?.type === LocationType.Grid,
-            "Dropped in board but drop type was not grid"
-          );
-
-          const { x, y } = destination.logicalLocation;
-          applyLocalAction(state, {
-            type: "upsert",
-            token: {
-              type: EntityType.Character,
-              id: uuid(),
-              contents: draggable.contents,
-              pos: { x, y, z: CHARACTER_HEIGHT },
-            },
-          });
-          break;
-        case DragResult.None:
-          break;
-        /* istanbul ignore next */
-        default:
-          throw new UnreachableCaseError(dragResult);
-      }
-    },
-  },
 });
 
+const PING_LENGTH_MS = 3000;
 function addPing(pos: Pos2d): AppThunk {
   return async (dispatch) => {
     const id = uuid();
     dispatch(pingAdded({ id, pos }));
-    await pause(3000);
+    await pause(PING_LENGTH_MS);
     dispatch(removeEntity(id));
   };
 }
 
 const {
-  addFloor,
+  upsertToken,
   removeEntity,
   clear,
   pingAdded,
@@ -204,7 +123,7 @@ const {
 } = boardSlice.actions;
 
 export {
-  addFloor,
+  upsertToken,
   addPing,
   removeEntity,
   clear,

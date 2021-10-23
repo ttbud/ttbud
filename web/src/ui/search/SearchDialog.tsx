@@ -1,33 +1,28 @@
-import { Dialog, DialogContent, DialogTitle, TextField } from "@mui/material";
+import { Paper, TextField } from "@mui/material";
 import makeStyles from "@mui/styles/makeStyles";
 import React, { memo, useCallback, useMemo, useState } from "react";
 import { Icon, ICONS_BY_ID } from "../icons";
-import Draggable from "../../drag/Draggable";
-import {
-  DraggableDescriptor,
-  DraggableType,
-  DragStateType,
-  TokenBlueprintDraggable,
-} from "../../drag/DragStateTypes";
-import { useSelector } from "react-redux";
 import Character from "../token/Character";
-import { assert } from "../../util/invariants";
-import { RootState } from "../../store/rootReducer";
-import { contentId, ContentType, TokenContents } from "../../types";
+import { ContentType, TokenContents } from "../../types";
+import Draggable from "../drag/Draggable";
+import { v4 as uuid } from "uuid";
+import { GRID_SIZE_PX } from "../../config";
 
 const useStyles = makeStyles((theme) => ({
-  content: {
-    width: "300px",
-    height: "300px",
+  root: {
+    width: "100%",
+    height: "100%",
+    overflowY: "scroll",
+    padding: theme.spacing(1),
   },
   tokenList: {
-    display: "flex",
-    flexWrap: "wrap",
+    display: "grid",
+    gridTemplateColumns: `repeat(auto-fit, minmax(${GRID_SIZE_PX}px, 1fr))`,
+    gridGap: theme.spacing(1),
+    alignItems: "center",
+    justifyContent: "center",
+    justifyItems: "center",
   },
-  token: {
-    margin: theme.spacing(1),
-  },
-  search: {},
   icon: {
     color: "white",
   },
@@ -42,25 +37,19 @@ interface Props {
 const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
   const classes = useStyles();
   const [search, setSearch] = useState("");
-  const onChange = useCallback((e) => setSearch(e.target.value), [setSearch]);
+  const onChange = useCallback((e) => setSearch(e.target.value), []);
 
-  const items: TokenBlueprintDraggable[] = useMemo(
-    () =>
-      icons.map((icon) => ({
-        type: DraggableType.TokenBlueprint,
-        contents: { type: ContentType.Icon, iconId: icon.id },
-        id: `search-dialog-${icon.id}`,
-      })),
-    [icons]
-  );
-
-  const activeDraggable = useSelector((state: RootState) => {
-    if (!open || state.drag.type === DragStateType.NotDragging) {
-      return;
-    }
-
-    return state.drag.draggable;
-  });
+  const items = useMemo(() => {
+    return icons.map(
+      (icon) =>
+        ({
+          id: uuid(),
+          type: "character",
+          contents: { type: ContentType.Icon, iconId: icon.id },
+          source: "search tray",
+        } as const)
+    );
+  }, [icons]);
 
   const visibleIconItems = useMemo(() => {
     return search
@@ -77,87 +66,44 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
       ? { type: ContentType.Text, text: search }
       : undefined;
 
-  const textItem: DraggableDescriptor | undefined = !textContents
+  const textItem = !textContents
     ? undefined
-    : {
-        type: DraggableType.TokenBlueprint,
+    : ({
+        type: "character",
         contents: textContents,
-        id: `search-dialog-${contentId(textContents)}`,
-      };
+        id: uuid(),
+        source: "search tray",
+      } as const);
 
-  const renderDraggable = () => {
-    assert(
-      activeDraggable,
-      "Cannot render draggable when there is no active draggable"
-    );
-
-    return (
-      <Draggable
-        key={`search-dialog-${contentId(activeDraggable.contents)}`}
-        descriptor={activeDraggable}
-        usePortal={true}
-      >
-        {(isDragging, attributes) => (
-          <Character
-            dragAttributes={attributes}
-            className={classes.token}
-            contents={activeDraggable.contents}
-            isDragging={isDragging}
-          />
+  return (
+    <Paper className={classes.root} elevation={5}>
+      <TextField
+        id="search"
+        fullWidth
+        autoFocus
+        variant="filled"
+        margin="normal"
+        label="search"
+        autoComplete="off"
+        onChange={onChange}
+        onFocus={(e) => e.target.select()}
+        value={search}
+      />
+      <div className={classes.tokenList}>
+        {textItem && (
+          <Draggable id={textItem.id} key={textItem.id} descriptor={textItem}>
+            <Character contents={textItem.contents} />
+          </Draggable>
         )}
-      </Draggable>
-    );
-  };
 
-  const renderDialog = () => (
-    <Dialog open={open} onClose={onClose} disableScrollLock={true}>
-      <DialogTitle>
-        <TextField
-          id="search"
-          fullWidth
-          autoFocus
-          className={classes.search}
-          variant="filled"
-          margin="normal"
-          label="search"
-          onChange={onChange}
-          onFocus={(e) => e.target.select()}
-          value={search}
-        />
-      </DialogTitle>
-      <DialogContent className={classes.content}>
-        <div className={classes.tokenList}>
-          {textItem && (
-            <Draggable key={textItem.id} descriptor={textItem}>
-              {(isDragging, attributes) => (
-                <Character
-                  dragAttributes={attributes}
-                  className={classes.token}
-                  contents={textItem.contents}
-                  isDragging={isDragging}
-                />
-              )}
-            </Draggable>
-          )}
-
-          {visibleIconItems.map((item) => (
-            <Draggable key={item.id} descriptor={item}>
-              {(isDragging, attributes) => (
-                <Character
-                  dragAttributes={attributes}
-                  className={classes.token}
-                  contents={item.contents}
-                  isDragging={isDragging}
-                />
-              )}
-            </Draggable>
-          ))}
-        </div>
-      </DialogContent>
-    </Dialog>
+        {visibleIconItems.map((item) => (
+          <Draggable id={item.id} key={item.id} descriptor={item}>
+            <Character contents={item.contents} />
+          </Draggable>
+        ))}
+      </div>
+    </Paper>
   );
-
-  return activeDraggable ? renderDraggable() : renderDialog();
 });
 
 export default SearchDialog;

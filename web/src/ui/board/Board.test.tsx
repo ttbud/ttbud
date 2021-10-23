@@ -9,9 +9,9 @@ import dragReducer from "../../drag/drag-slice";
 import { Provider } from "react-redux";
 import { FakeDroppableMonitor } from "../../drag/__test_util__/FakeDroppableMonitor";
 import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
-import DndContext from "../../drag/DndContext";
+import OldDndContext from "../../drag/OldDndContext";
 import { fireEvent } from "@testing-library/dom";
-import { BoardState, upsertEntity } from "./board-state";
+import { createBoardState } from "./board-state";
 import { GRID_SIZE_PX } from "../../config";
 import { drag, tap } from "../__test_util__/pointer";
 import { Buttons } from "../util/Buttons";
@@ -35,7 +35,6 @@ const FLOOR: Entity = {
 
 const DEFAULT_PROPS: Omit<ComponentProps<typeof PureBoard>, "boardState"> = {
   activeFloor: { type: ContentType.Icon, iconId: WALL_ICON.id },
-  isDragging: false,
   onFloorCreated: noop,
   onPingCreated: noop,
   onTokenDeleted: noop,
@@ -55,23 +54,14 @@ function renderBoard({ entities = [], props = {} }: RenderBoardProps = {}) {
     }),
   });
 
-  const boardState: BoardState = {
-    entityById: {},
-    tokenIdsByPosStr: {},
-    charIdsByContentId: {},
-  };
-
-  for (const entity of entities) {
-    upsertEntity(boardState, entity, true);
-  }
-
+  const boardState = createBoardState(entities);
   return render(
     <Provider store={store}>
-      <DndContext.Provider value={monitor as unknown as DomDroppableMonitor}>
+      <OldDndContext.Provider value={monitor as unknown as DomDroppableMonitor}>
         <TtbudTheme>
           <PureBoard boardState={boardState} {...DEFAULT_PROPS} {...props} />
         </TtbudTheme>
-      </DndContext.Provider>
+      </OldDndContext.Provider>
     </Provider>
   );
 }

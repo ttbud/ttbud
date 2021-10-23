@@ -1,212 +1,114 @@
 import { Paper } from "@mui/material";
-import makeStyles from "@mui/styles/makeStyles";
-import ToggleButton from "@mui/material/ToggleButton";
-import React, { memo, useCallback, useRef, MouseEvent } from "react";
-import { CARD_SIZE } from "../../config";
-import { DraggableDescriptor } from "../../drag/DragStateTypes";
-import { assert } from "../../util/invariants";
-import { Bounds } from "../../util/shape-math";
-import { DROPPABLE_IDS } from "../DroppableIds";
-import { ICONS_BY_ID } from "../icons";
-import SortableList, { Target, Targets } from "../sort/SortableList";
+import React, { memo, useRef, useMemo } from "react";
+import { contentId, TokenContents } from "../../types";
+import {
+  horizontalListSortingStrategy,
+  SortableContext,
+} from "@dnd-kit/sortable";
+import FloorButton from "./FloorButton";
+import Sortable from "../drag/Sortable";
+import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/rootReducer";
-import { removeIcon, setActiveFloor } from "./floor-tray-slice";
-import { connect } from "react-redux";
-import { contentId, ContentType, TokenContents } from "../../types";
+import { TokenBlueprint } from "./types";
+import {
+  addFloor,
+  moveFloor,
+  removeFloor,
+  setActiveFloor,
+} from "./floor-tray-slice";
+import useDropMonitor from "../drag/useDropMonitor";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
-import useTrayItems from "./useTrayItems";
+import { assert } from "../../util/invariants";
+import { useDroppable } from "@dnd-kit/core";
 
-interface Props {
-  blueprints: TokenContents[];
-  activeFloor: TokenContents;
-  onFloorSelected: (blueprint: TokenContents) => void;
-  onFloorRemoved: (blueprint: TokenContents) => void;
-}
+const FloorTray: React.FC = memo(() => {
+  const { setNodeRef } = useDroppable({ id: "floor tray" });
+  const { activeFloor, floorBlueprints: blueprints } = useSelector<
+    RootState,
+    { activeFloor: TokenContents; floorBlueprints: TokenBlueprint[] }
+  >((state) => state.floorTray, shallowEqual);
+  const dispatch = useDispatch();
 
-const mapStateToProps = (state: RootState) => ({
-  blueprints: state.floorTray.floorBlueprints,
-  activeFloor: state.floorTray.activeFloor,
-});
-
-const dispatchProps = {
-  onFloorSelected: setActiveFloor,
-  onFloorRemoved: removeIcon,
-};
-
-const useStyles = makeStyles({
-  contents: {
-    width: CARD_SIZE,
-    height: CARD_SIZE,
-  },
-});
-
-const PureFloorTray: React.FC<Props> = memo(function FloorTray({
-  blueprints,
-  activeFloor,
-  onFloorSelected,
-  onFloorRemoved,
-}) {
-  const classes = useStyles();
-
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const items = useTrayItems(DROPPABLE_IDS.FLOOR_TRAY, blueprints);
-
-  const getTargets = useCallback(
-    (draggable: DraggableDescriptor, bounds: Bounds): Targets => {
-      const existingElementsBounds = [];
-      for (const item of items) {
-        assert(
-          item.ref?.current,
-          "Floor tray item refs not set up correctly before drag"
+  useDropMonitor("floor tray", (event) => {
+    switch (event.type) {
+      case "dropped into":
+        dispatch(
+          addFloor({
+            idx: event.toIdx!,
+            blueprint: {
+              id: event.dragId,
+              contents: event.descriptor.contents,
+            },
+          })
         );
-        existingElementsBounds.push(item.ref.current.getBoundingClientRect());
-      }
-
-      assert(
-        containerRef.current,
-        "Floor tray container ref not set up correctly before drag"
-      );
-      const innerDragBounds: Target[] = [];
-      for (let i = 0; i < existingElementsBounds.length; i++) {
-        const current = existingElementsBounds[i];
-
-        innerDragBounds.push({
-          dropBounds: {
-            top: current.top,
-            left: current.left,
-            bottom: current.bottom,
-            right: current.right,
-          },
-          destination: {
-            top: current.top,
-            left: current.left,
-            bottom: current.bottom,
-            right: current.right,
-          },
-        });
-      }
-
-      const firstChildBounds = existingElementsBounds[0];
-      assert(
-        firstChildBounds,
-        "Must always have at least one element in floor tray"
-      );
-
-      const childWidth = firstChildBounds.right - firstChildBounds.left;
-      const childHeight = firstChildBounds.bottom - firstChildBounds.top;
-      const widthDiff = childWidth - (bounds.right - bounds.left);
-      const heightDiff = childHeight - (bounds.bottom - bounds.top);
-
-      const outerDragBounds = innerDragBounds.map(
-        ({ dropBounds, destination }) => ({
-          dropBounds: {
-            top: dropBounds.top,
-            left: dropBounds.left + childWidth / 2,
-            bottom: dropBounds.bottom,
-            right: dropBounds.right + childWidth / 2,
-          },
-          destination: {
-            top: destination.top + heightDiff / 2,
-            left: destination.left + childWidth / 2 + widthDiff / 2,
-            bottom: destination.bottom,
-            right: destination.right + childWidth / 2,
-          },
-        })
-      );
-
-      const { dropBounds, destination } = outerDragBounds[0];
-
-      outerDragBounds.unshift({
-        dropBounds: {
-          top: dropBounds.top,
-          left: dropBounds.left - childWidth,
-          bottom: dropBounds.bottom,
-          right: dropBounds.right - childWidth,
-        },
-        destination: {
-          top: destination.top,
-          left: destination.left - childWidth,
-          bottom: destination.bottom,
-          right: destination.left,
-        },
-      });
-
-      return {
-        innerDrag: innerDragBounds,
-        outerDrag: outerDragBounds,
-      };
-    },
-    [items]
-  );
-
-  const renderButtonContents = (contents: TokenContents) => {
-    switch (contents.type) {
-      case ContentType.Icon:
-        const icon = ICONS_BY_ID.get(contents.iconId);
-        assert(icon, `Icon id ${contents.iconId} is invalid`);
-        return (
-          <img
-            aria-label={`Floor: ${icon.desc}`}
-            src={icon.img}
-            className={classes.contents}
-            alt={icon.img}
-            draggable={false}
-          />
+        break;
+      case "moved inside":
+        dispatch(
+          moveFloor({
+            toIdx: event.toIdx!,
+            fromIdx: event.fromIdx!,
+          })
         );
-      case ContentType.Text:
-        return (
-          <div
-            aria-label={`Floor: ${contents.text}`}
-            className={classes.contents}
-          >
-            {contents.text}
-          </div>
-        );
-      /* istanbul ignore next */
+        break;
+      case "dragged from":
+        assert(false, "AHHHHH");
+        break;
       default:
-        throw new UnreachableCaseError(contents);
+        throw new UnreachableCaseError(event);
     }
-  };
+  });
 
-  const onContextMenu = (blueprint: TokenContents) => (e: MouseEvent) => {
+  const items = useMemo(() => {
+    return blueprints.map((bp) => ({
+      id: bp.id,
+      descriptor: {
+        type: "floor",
+        contents: bp.contents,
+        source: "floor tray",
+      } as const,
+    }));
+  }, [blueprints]);
+
+  const onDelete = (idx: number) => {
     if (blueprints.length > 2) {
-      onFloorRemoved(blueprint);
+      dispatch(removeFloor(idx));
     }
-    e.preventDefault();
   };
 
   return (
-    <Paper ref={containerRef} data-tour="floor-tray" aria-label="Floor Tray">
-      <SortableList
-        id={DROPPABLE_IDS.FLOOR_TRAY}
+    <Paper ref={setNodeRef} data-tour="floor-tray" aria-label="Floor Tray">
+      <SortableContext
+        id="floor tray"
         items={items}
-        getTargets={getTargets}
-        constrainDragsToContainer={true}
-        style={{
-          display: "flex",
-          flexDirection: "row",
-        }}
+        strategy={horizontalListSortingStrategy}
       >
-        {(item, isDragging, attributes) => (
-          <ToggleButton
-            value={item.blueprint}
-            key={contentId(item.blueprint)}
-            selected={contentId(activeFloor) === contentId(item.blueprint)}
-            onChange={() => onFloorSelected(item.blueprint)}
-            onContextMenu={onContextMenu(item.blueprint)}
-            {...attributes}
-            ref={item.makeRef(attributes.ref)}
-          >
-            {renderButtonContents(item.blueprint)}
-          </ToggleButton>
-        )}
-      </SortableList>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+          }}
+        >
+          {items.map((item, idx) => {
+            return (
+              <Sortable key={item.id} id={item.id} data={item.descriptor}>
+                <FloorButton
+                  selected={
+                    contentId(activeFloor) ===
+                    contentId(item.descriptor.contents)
+                  }
+                  content={item.descriptor.contents}
+                  onFloorSelected={() =>
+                    dispatch(setActiveFloor(item.descriptor.contents))
+                  }
+                  onDelete={() => onDelete(idx)}
+                />
+              </Sortable>
+            );
+          })}
+        </div>
+      </SortableContext>
     </Paper>
   );
 });
 
-const FloorTray = connect(mapStateToProps, dispatchProps)(PureFloorTray);
-
 export default FloorTray;
-export { PureFloorTray };

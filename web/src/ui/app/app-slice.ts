@@ -1,5 +1,4 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { dragEnded } from "../../drag/drag-slice";
 
 export interface AppState {
   searching: boolean;
@@ -17,11 +16,6 @@ const appSlice = createSlice({
       state.searching = true;
     },
     stopSearching(state) {
-      state.searching = false;
-    },
-  },
-  extraReducers: {
-    [dragEnded.type]: (state) => {
       state.searching = false;
     },
   },

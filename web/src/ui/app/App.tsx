@@ -16,6 +16,12 @@ import { v4 as uuid } from "uuid";
 import BoardStateApiClient from "../../network/BoardStateApiClient";
 import Tour from "../tour/Tour";
 import MobileWarningDialog from "../mobile-warning/MobileWarningDialog";
+import { DndContext, DragStartEvent } from "@dnd-kit/core";
+import TokenDragOverlay from "../drag/TokenDragOverlay";
+import { DragDescriptor } from "../drag/types";
+import { restrictToWindowEdges } from "@dnd-kit/modifiers";
+import { containFloorsModifier } from "../tray/containFloorsModifier";
+import ttbudCollisionDetector from "../drag/ttbudCollisionDetector";
 
 const useStyles = makeStyles((theme) => ({
   app: {
@@ -26,17 +32,24 @@ const useStyles = makeStyles((theme) => ({
   },
   characterTray: {
     position: "fixed",
-    zIndex: 3,
     bottom: theme.spacing(3),
     left: theme.spacing(1),
   },
+  searchTray: {
+    position: "absolute",
+    width: 300,
+    height: "100%",
+    left: 0,
+    top: 0,
+  },
   floorTray: {
-    display: "inline-flex",
     position: "fixed",
-    zIndex: 2,
-    bottom: theme.spacing(3),
-    left: "50%",
-    transform: "translateX(-50%)",
+    bottom: 0,
+    left: 0,
+    margin: "0 8px 8px 0",
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
   },
   connectionNotifier: {
     position: "fixed",
@@ -57,6 +70,8 @@ interface Props {
   apiClient: BoardStateApiClient;
 }
 
+const modifiers = [restrictToWindowEdges, containFloorsModifier];
+
 const App: React.FC<Props> = ({ apiClient }) => {
   const classes = useStyles();
   const dispatch = useDispatch();
@@ -65,13 +80,22 @@ const App: React.FC<Props> = ({ apiClient }) => {
   }));
   const [touring, setTouring] = useState(false);
 
+  const [activeItem, setActiveItem] = useState<DragDescriptor>();
+
+  const onDragStart = (event: DragStartEvent) => {
+    const contents = event.active.data.current as DragDescriptor;
+    setActiveItem(contents);
+  };
+
+  const onDragEnd = useCallback(() => setActiveItem(undefined), []);
+
   useEffect(() => {
     const path = window.location.pathname.split("/room/")[1];
-    const roomId = path ? atob(path) : uuid();
+    const roomId = path ? window.atob(path) : uuid();
     window.history.replaceState(
       {},
       "Your special room",
-      `/room/${btoa(roomId)}`
+      `/room/${window.btoa(roomId)}`
     );
 
     apiClient.connect(roomId);
@@ -107,32 +131,41 @@ const App: React.FC<Props> = ({ apiClient }) => {
   const reconnect = () => apiClient.reconnect();
 
   return (
-    <>
+    <DndContext
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      autoScroll={false}
+      modifiers={modifiers}
+      collisionDetection={ttbudCollisionDetector}
+    >
       <MobileWarningDialog />
       <Tour isOpen={touring} onCloseClicked={() => setTouring(false)} />
       <div className={classes.app}>
         <Board />
-        <SearchDialog
-          open={searching}
-          icons={ICONS}
-          onClose={onSearchDialogClose}
-        />
-        <div className={classes.characterTray}>
-          <CharacterTray />
+        <div className={classes.searchTray}>
+          <SearchDialog
+            open={searching}
+            icons={ICONS}
+            onClose={onSearchDialogClose}
+          />
         </div>
         <div className={classes.floorTray}>
           <FloorTray />
+        </div>
+        <div className={classes.characterTray}>
+          <CharacterTray />
         </div>
         <Settings
           className={classes.settings}
           onClearMap={onClearMap}
           onTourClicked={() => setTouring(true)}
         />
-        <div className={classes.connectionNotifier}>
-          <ConnectionNotifier onReconnectClick={reconnect} />
-        </div>
+        {/*<div className={classes.connectionNotifier}>*/}
+        {/*  <ConnectionNotifier onReconnectClick={reconnect} />*/}
+        {/*</div>*/}
       </div>
-    </>
+      <TokenDragOverlay activeItem={activeItem} />
+    </DndContext>
   );
 };
 

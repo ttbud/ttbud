@@ -1,46 +1,67 @@
-import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
-import { Provider } from "react-redux";
-import DndContext from "../../drag/DndContext";
-import dragReducer from "../../drag/drag-slice";
-import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
-import noop from "../../util/noop";
+import floorTrayReducer from "./floor-tray-slice";
 import { DEFAULT_FLOOR_ICONS } from "../icons";
-import { PureFloorTray as FloorTray } from "./FloorTray";
+import FloorTray from "./FloorTray";
 import { ContentType, TokenContents } from "../../types";
-
-const monitor = new DomDroppableMonitor();
-const store = configureStore({
-  reducer: { drag: dragReducer },
-  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
-});
+import React, { useState } from "react";
+import { DndContext } from "@dnd-kit/core";
+import TokenDragOverlay from "../drag/TokenDragOverlay";
+import { DragStartEvent } from "@dnd-kit/core/dist/types";
+import { DragDescriptor } from "../drag/types";
+import { restrictToWindowEdges } from "@dnd-kit/modifiers";
+import { configureStore } from "@reduxjs/toolkit";
+import { Provider } from "react-redux";
+import { containFloorsModifier } from "./containFloorsModifier";
 
 const blueprints: TokenContents[] = DEFAULT_FLOOR_ICONS.map((icon) => ({
   type: ContentType.Icon,
   iconId: icon.id,
 }));
 
+const modifiers = [containFloorsModifier, restrictToWindowEdges];
+
+const ExampleFloorTray: React.FC = () => {
+  const [activeItem, setActiveItem] = useState<DragDescriptor>();
+
+  const onDragStart = (event: DragStartEvent) => {
+    const contents = event.active.data.current as DragDescriptor;
+    setActiveItem(contents);
+  };
+
+  const onDragEnd = () => setActiveItem(undefined);
+
+  return (
+    <DndContext
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      modifiers={modifiers}
+    >
+      <div style={{ width: "100vw", height: "100vh" }}>
+        <div
+          style={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            margin: "0 8px 8px 0",
+            width: "100%",
+            zIndex: 2,
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <FloorTray />
+        </div>
+      </div>
+      <TokenDragOverlay activeItem={activeItem} />
+    </DndContext>
+  );
+};
+
+const store = configureStore({
+  reducer: { floorTray: floorTrayReducer },
+});
+
 export default (
   <Provider store={store}>
-    <DndContext.Provider value={monitor}>
-      <div
-        style={{
-          display: "inline-flex",
-          position: "fixed",
-          zIndex: 2,
-          // Same location whether the scrollbar is visible or not
-          // (Scrollbar width = 100vh - 100%)
-          bottom: `calc(10px - (100vh - 100%))`,
-          left: "calc(50% + (100vw - 100%)/2)",
-          transform: "translateX(-50%)",
-        }}
-      >
-        <FloorTray
-          blueprints={blueprints}
-          activeFloor={blueprints[0]}
-          onFloorSelected={noop}
-          onFloorRemoved={noop}
-        />
-      </div>
-    </DndContext.Provider>
+    <ExampleFloorTray />
   </Provider>
 );

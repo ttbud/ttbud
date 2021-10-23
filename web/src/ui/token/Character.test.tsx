@@ -8,7 +8,7 @@ describe("Character", () => {
   it("Capitalizes text for text characters", () => {
     const { getByText } = render(
       <Character
-        isDragging={false}
+        raise={false}
         contents={{ type: ContentType.Text, text: "lp" }}
       />
     );
@@ -19,7 +19,7 @@ describe("Character", () => {
   it("Shows a question mark when the icon id is invalid", () => {
     const { getByText } = render(
       <Character
-        isDragging={false}
+        raise={false}
         contents={{ type: ContentType.Icon, iconId: "invalid-id.svg" }}
       />
     );
@@ -30,7 +30,7 @@ describe("Character", () => {
   it("Provides an appropriate aria label for icon characters", () => {
     const { getByLabelText } = render(
       <Character
-        isDragging={false}
+        raise={false}
         contents={{ type: ContentType.Icon, iconId: WALL_ICON.id }}
       />
     );
@@ -42,7 +42,7 @@ describe("Character", () => {
     const onDelete = jest.fn();
     const { getByText } = render(
       <Character
-        isDragging={false}
+        raise={false}
         contents={{ type: ContentType.Text, text: "TS" }}
         onDelete={onDelete}
       />

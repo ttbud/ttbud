@@ -6,10 +6,28 @@ import { Icon, ICONS_BY_ID } from "../icons";
 import { GRID_SIZE_PX } from "../../config";
 import { Color, ContentType, TokenContents } from "../../types";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
-import { DragAttributes } from "../../drag/Draggable";
 import { Pos3d } from "../../util/shape-math";
 
-const useStyles = makeStyles<Theme, Props>({
+const useStyles = makeStyles<Theme, Props>((_) => ({
+  "@keyframes raise": {
+    from: {
+      boxShadow: `
+        0px 2px 1px -1px rgb(0 0 0 / 20%),
+        0px 1px 1px 0px rgb(0 0 0 / 14%),
+        0px 1px 3px 0px rgb(0 0 0 / 12%)
+      `,
+    },
+    to: {
+      boxShadow: `
+        0px 5px 5px -3px rgb(0 0 0 / 20%),
+        0px 8px 10px 1px rgb(0 0 0 / 12%),
+        0px 3px 14px 2px rgb(0 0 0 / 12%)
+      `,
+    },
+  },
+  raising: {
+    animation: "$raise 300ms both cubic-bezier(0.4, 0, 0.2, 1) 0ms",
+  },
   character: ({ color }) => ({
     display: "flex",
     alignItems: "center",
@@ -25,7 +43,7 @@ const useStyles = makeStyles<Theme, Props>({
     width: "70%",
     height: "70%",
   },
-});
+}));
 
 interface Props {
   contents: TokenContents;
@@ -33,8 +51,7 @@ interface Props {
   onDelete?: () => void;
   className?: string;
   pos?: Pos3d;
-  isDragging?: boolean;
-  dragAttributes?: DragAttributes;
+  raise?: boolean;
 }
 
 function toCssColor(color: Color | undefined) {
@@ -45,8 +62,7 @@ function toCssColor(color: Color | undefined) {
 
 const Character: React.FC<Props> = memo((props) => {
   const classes = useStyles(props);
-  const { isDragging, contents, className, dragAttributes, onDelete, pos } =
-    props;
+  const { raise, contents, className, onDelete } = props;
 
   const renderContents = (contents: TokenContents) => {
     switch (contents.type) {
@@ -84,20 +100,16 @@ const Character: React.FC<Props> = memo((props) => {
     }
   };
 
+  const cardClasses = clsx(classes.character, className, {
+    [classes.raising]: raise,
+  });
+
+  if (!contents) {
+    debugger;
+  }
+
   return (
-    <Card
-      onContextMenu={onContextMenu}
-      raised={isDragging}
-      className={clsx(classes.character, className)}
-      {...dragAttributes}
-      style={{
-        position: pos ? "absolute" : "static",
-        top: pos?.y,
-        left: pos?.x,
-        zIndex: pos?.z,
-        ...dragAttributes?.style,
-      }}
-    >
+    <Card onContextMenu={onContextMenu} className={cardClasses}>
       {renderContents(contents)}
     </Card>
   );

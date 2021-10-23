@@ -8,38 +8,37 @@ import React, {
 import makeStyles from "@mui/styles/makeStyles";
 import { GRID_SIZE_PX } from "../../config";
 import Floor from "../token/Floor";
-import Character from "../token/Character";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import Ping from "../token/Ping";
-import Draggable from "../../drag/Draggable";
-import Droppable from "../../drag/Droppable";
-import Pos2d, { posAreEqual, snapToGrid } from "../../util/shape-math";
-import { assert } from "../../util/invariants";
-import { LocationCollector, TargetLocation } from "../../drag/DroppableMonitor";
-import {
-  DraggableType,
-  DragStateType,
-  LocationType,
-} from "../../drag/DragStateTypes";
+import Pos2d, {
+  centerOf,
+  posAreEqual,
+  snapToGrid,
+} from "../../util/shape-math";
 import { DROPPABLE_IDS } from "../DroppableIds";
 import { TransitionGroup } from "react-transition-group";
 import Fade from "../transition/Fade";
 import NoopTransition from "../transition/NoopTransition";
-import { RootState } from "../../store/rootReducer";
 import {
-  addFloor,
   addPing,
   CHARACTER_HEIGHT,
   FLOOR_HEIGHT,
   removeEntity,
+  upsertToken,
 } from "./board-slice";
-import { connect } from "react-redux";
 import { EntityType, TokenContents } from "../../types";
 import { BoardState, pingAt, tokenIdAt } from "./board-state";
 import { Buttons } from "../util/Buttons";
 import useDoubleTap, { DoubleTapState } from "../util/useDoubleTap";
 import useLongTap from "../util/useLongTap";
 import mergeRefs from "../../util/mergeRefs";
+import { useDroppable } from "@dnd-kit/core";
+import Draggable from "../drag/Draggable";
+import Character from "../token/Character";
+import useDropMonitor from "../drag/useDropMonitor";
+import { v4 as uuid } from "uuid";
+import { shallowEqual, useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../store/rootReducer";
 
 let GRID_COLOR = "#947C65";
 
@@ -95,25 +94,9 @@ const toGridPos = (pixelPos: Pos2d) => {
 const preventDefault: MouseEventHandler = (e) => e.preventDefault();
 
 interface Props {
+  droppableRef: DivRef;
   isDragging: boolean;
-  boardState: BoardState;
-  activeFloor: TokenContents;
-  onPingCreated: (pos: Pos2d) => void;
-  onFloorCreated: (contents: TokenContents, pos: Pos2d) => void;
-  onTokenDeleted: (id: string) => void;
 }
-
-const mapStateToProps = (state: RootState) => ({
-  isDragging: state.drag.type === DragStateType.Dragging,
-  boardState: state.board.local,
-  activeFloor: state.floorTray.activeFloor,
-});
-
-const dispatchProps = {
-  onPingCreated: addPing,
-  onFloorCreated: addFloor,
-  onTokenDeleted: removeEntity,
-};
 
 function topTokenIdAt(boardState: BoardState, gridPos: Pos2d) {
   let tokenId = tokenIdAt(boardState, {
@@ -131,291 +114,318 @@ function topTokenIdAt(boardState: BoardState, gridPos: Pos2d) {
 
 type Mode = "draw" | "delete";
 
-const PureBoard: React.FC<Props> = ({
-  isDragging,
-  boardState,
-  activeFloor,
-  onPingCreated,
-  onFloorCreated,
-  onTokenDeleted,
-}) => {
-  const classes = useStyles();
+interface SelectedState {
+  boardState: BoardState;
+  activeFloor: TokenContents;
+}
 
-  const [mode, setMode] = useState<Mode>("draw");
+const PureBoard: React.FC<Props> = React.memo(
+  ({ droppableRef, isDragging }) => {
+    const classes = useStyles();
 
-  const handlePointerAction = useCallback(
-    (action: PointerAction, gridPos: Pos2d, allowDuplicatePings: boolean) => {
-      switch (action) {
-        case "ping":
-          if (allowDuplicatePings || !pingAt(boardState, gridPos)) {
-            onPingCreated(gridPos);
-          }
+    const [mode, setMode] = useState<Mode>("draw");
+
+    const { boardState, activeFloor } = useSelector<RootState, SelectedState>(
+      (state) => ({
+        boardState: state.board.local,
+        activeFloor: state.floorTray.activeFloor,
+      }),
+      shallowEqual
+    );
+
+    const dispatch = useDispatch();
+
+    useDropMonitor("board", (event) => {
+      switch (event.type) {
+        case "dragged from":
+          dispatch(removeEntity(event.dragId));
           break;
-        case "draw":
-          if (!tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })) {
-            onFloorCreated(activeFloor, gridPos);
-          }
+        case "dropped into":
+        case "moved inside":
+          const pos = {
+            ...toGridPos(centerOf(event.rect)),
+            z: CHARACTER_HEIGHT,
+          };
+          dispatch(
+            upsertToken({
+              type: EntityType.Character,
+              pos,
+              id: event.dragId,
+              contents: event.descriptor.contents,
+            })
+          );
           break;
-        case "delete":
-          let toDeleteId = topTokenIdAt(boardState, gridPos);
-          if (toDeleteId) {
-            onTokenDeleted(toDeleteId);
-          }
-          break;
-        case "ignore":
-          break;
+        default:
+          throw new UnreachableCaseError(event);
+      }
+    });
+
+    const handlePointerAction = useCallback(
+      (action: PointerAction, gridPos: Pos2d, allowDuplicatePings: boolean) => {
+        switch (action) {
+          case "ping":
+            if (allowDuplicatePings || !pingAt(boardState, gridPos)) {
+              dispatch(addPing(gridPos));
+            }
+            break;
+          case "draw":
+            const pos = { ...gridPos, z: FLOOR_HEIGHT };
+            if (!tokenIdAt(boardState, pos)) {
+              dispatch(
+                upsertToken({
+                  id: uuid(),
+                  pos,
+                  type: EntityType.Floor,
+                  contents: activeFloor,
+                })
+              );
+            }
+            break;
+          case "delete":
+            let toDeleteId = topTokenIdAt(boardState, gridPos);
+            if (toDeleteId) {
+              dispatch(removeEntity(toDeleteId));
+            }
+            break;
+          case "ignore":
+            break;
+          /* istanbul ignore next */
+          default:
+            throw new UnreachableCaseError(action);
+        }
+      },
+      [activeFloor, boardState, dispatch]
+    );
+
+    const onDoubleTap = useCallback(
+      (e: PointerEvent) => {
+        if (isDragging) return;
+
+        const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
+        const tokenId = topTokenIdAt(boardState, gridPos);
+        if (tokenId) {
+          dispatch(removeEntity(tokenId));
+          setMode("delete");
+        } else {
+          dispatch(
+            upsertToken({
+              id: uuid(),
+              type: EntityType.Floor,
+              pos: { ...gridPos, z: FLOOR_HEIGHT },
+              contents: activeFloor,
+            })
+          );
+        }
+      },
+      [isDragging, activeFloor, boardState, dispatch]
+    );
+
+    const [doubleTapRef, doubleTapState] =
+      useDoubleTap<HTMLDivElement>(onDoubleTap);
+
+    const onLongTap = useCallback(
+      (e: PointerEvent) => {
+        if (isDragging || doubleTapState === DoubleTapState.Active) return;
+
+        const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
+        dispatch(addPing(gridPos));
+      },
+      [isDragging, doubleTapState, dispatch]
+    );
+
+    const container = useRef<HTMLDivElement>(null);
+    const longTapRef = useLongTap<HTMLDivElement>(onLongTap);
+
+    const tokenIcons = Object.values(boardState.entityById).map((token) => {
+      const pixelPos = {
+        x: token.pos.x * GRID_SIZE_PX,
+        y: token.pos.y * GRID_SIZE_PX,
+      };
+
+      switch (token.type) {
+        case EntityType.Floor:
+          return (
+            <Fade lengthMs={50} key={token.id}>
+              <Floor key={token.id} contents={token.contents} pos={pixelPos} />
+            </Fade>
+          );
+        case EntityType.Character:
+          return (
+            // Need to have some sort of transition otherwise the element will
+            // never be removed from the dom :(
+            <NoopTransition key={token.id}>
+              <div
+                style={{
+                  position: "absolute",
+                  top: pixelPos.y,
+                  left: pixelPos.x,
+                }}
+              >
+                <Draggable
+                  id={token.id}
+                  descriptor={{
+                    type: "character",
+                    contents: token.contents,
+                    source: "board",
+                  }}
+                >
+                  <Character
+                    contents={token.contents}
+                    color={token.color}
+                    pos={{
+                      x: pixelPos.x,
+                      y: pixelPos.y,
+                      z: token.pos.z,
+                    }}
+                  />
+                </Draggable>
+              </div>
+            </NoopTransition>
+          );
+        case EntityType.Ping:
+          return (
+            <Fade key={token.id} lengthMs={1000}>
+              <Ping x={pixelPos.x} y={pixelPos.y} />
+            </Fade>
+          );
         /* istanbul ignore next */
         default:
-          throw new UnreachableCaseError(action);
+          throw new UnreachableCaseError(token);
       }
-    },
-    [activeFloor, boardState, onFloorCreated, onPingCreated, onTokenDeleted]
-  );
+    });
 
-  const onDoubleTap = useCallback(
-    (e: PointerEvent) => {
-      if (isDragging) return;
-
-      const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
-      const tokenId = topTokenIdAt(boardState, gridPos);
-      if (tokenId) {
-        onTokenDeleted(tokenId);
-        setMode("delete");
-      } else {
-        onFloorCreated(activeFloor, gridPos);
-      }
-    },
-    [isDragging, activeFloor, boardState, onFloorCreated, onTokenDeleted]
-  );
-
-  const [doubleTapRef, doubleTapState] =
-    useDoubleTap<HTMLDivElement>(onDoubleTap);
-
-  const onLongTap = useCallback(
-    (e: PointerEvent) => {
-      if (isDragging || doubleTapState === DoubleTapState.Active) return;
-
-      const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
-      onPingCreated(gridPos);
-    },
-    [isDragging, onPingCreated, doubleTapState]
-  );
-
-  const container = useRef<HTMLDivElement>(null);
-  const longTapRef = useLongTap<HTMLDivElement>(onLongTap);
-
-  const getLocation: LocationCollector = useCallback(
-    (draggable, pos): TargetLocation | undefined => {
-      assert(container.current, "Board ref not assigned properly");
-      const gridPos = toGridPos(pos);
-
-      const existingTokenId = tokenIdAt(boardState, {
-        ...gridPos,
-        z: CHARACTER_HEIGHT,
-      });
-      const draggedTokenId =
-        draggable.type === DraggableType.Token ? draggable.tokenId : undefined;
-      if (existingTokenId && existingTokenId !== draggedTokenId) {
-        return;
+    const getTouchAction = (): PointerAction => {
+      if (doubleTapState !== DoubleTapState.Active) {
+        return "ignore";
       }
 
-      const containerRect = container.current.getBoundingClientRect();
-      const snappedPixelPos = snapToGrid(scrolledPos(pos));
-      return {
-        logicalLocation: {
-          type: LocationType.Grid,
-          ...gridPos,
-        },
-        bounds: {
-          top: snappedPixelPos.y + containerRect.y,
-          left: snappedPixelPos.x + containerRect.x,
-          bottom: snappedPixelPos.y + containerRect.y + GRID_SIZE_PX,
-          right: snappedPixelPos.x + containerRect.x + GRID_SIZE_PX,
-        },
-      };
-    },
-    [boardState]
-  );
-
-  const tokenIcons = Object.values(boardState.entityById).map((token) => {
-    const pixelPos = {
-      x: token.pos.x * GRID_SIZE_PX,
-      y: token.pos.y * GRID_SIZE_PX,
+      return mode;
     };
 
-    switch (token.type) {
-      case EntityType.Floor:
-        return (
-          <Fade lengthMs={50} key={token.id}>
-            <Floor key={token.id} contents={token.contents} pos={pixelPos} />
-          </Fade>
-        );
-      case EntityType.Character:
-        return (
-          // Need to have some sort of transition otherwise the element will
-          // never be removed from the dom :(
-          <NoopTransition key={token.id}>
-            <Draggable
-              droppableId={DROPPABLE_IDS.BOARD}
-              descriptor={{
-                id: `${DROPPABLE_IDS.BOARD}-${token.id}`,
-                type: DraggableType.Token,
-                contents: token.contents,
-                tokenId: token.id,
-              }}
-            >
-              {(isDragging, attributes) => (
-                <Character
-                  dragAttributes={attributes}
-                  contents={token.contents}
-                  isDragging={isDragging}
-                  color={token.color}
-                  pos={{
-                    x: pixelPos.x,
-                    y: pixelPos.y,
-                    z: token.pos.z,
-                  }}
-                />
-              )}
-            </Draggable>
-          </NoopTransition>
-        );
-      case EntityType.Ping:
-        return (
-          <Fade key={token.id} lengthMs={1000}>
-            <Ping x={pixelPos.x} y={pixelPos.y} />
-          </Fade>
-        );
-      /* istanbul ignore next */
-      default:
-        throw new UnreachableCaseError(token);
-    }
-  });
-
-  const getTouchAction = (): PointerAction => {
-    if (doubleTapState !== DoubleTapState.Active) {
-      return "ignore";
-    }
-
-    return mode;
-  };
-
-  const getMouseAction = (e: React.PointerEvent): PointerAction => {
-    if (e.shiftKey && e.buttons === Buttons.LEFT_MOUSE) {
-      return "ping";
-    } else if (e.buttons === Buttons.LEFT_MOUSE) {
-      return "draw";
-    } else if (e.buttons === Buttons.RIGHT_MOUSE) {
-      return "delete";
-    } else {
-      return "ignore";
-    }
-  };
-
-  const getPointerAction = (e: React.PointerEvent): PointerAction => {
-    if (isDragging) return "ignore";
-
-    switch (e.pointerType) {
-      case "pen":
+    const getMouseAction = (e: React.PointerEvent): PointerAction => {
+      if (e.shiftKey && e.buttons === Buttons.LEFT_MOUSE) {
+        return "ping";
+      } else if (e.buttons === Buttons.LEFT_MOUSE) {
         return "draw";
-      case "touch":
-        return getTouchAction();
-      default:
-        return getMouseAction(e);
-    }
-  };
+      } else if (e.buttons === Buttons.RIGHT_MOUSE) {
+        return "delete";
+      } else {
+        return "ignore";
+      }
+    };
 
-  const onPointerDown: PointerEventHandler = (e) => {
-    const action = getPointerAction(e);
+    const getPointerAction = (e: React.PointerEvent): PointerAction => {
+      if (isDragging) return "ignore";
 
-    // Stop pen users from scrolling with their pen
-    if (e.pointerType === "pen") e.preventDefault();
+      switch (e.pointerType) {
+        case "pen":
+          return "draw";
+        case "touch":
+          return getTouchAction();
+        default:
+          return getMouseAction(e);
+      }
+    };
 
-    const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
-    handlePointerAction(action, gridPos, true);
-  };
+    const onPointerDown: PointerEventHandler = (e) => {
+      const action = getPointerAction(e);
 
-  const onPointerMove: PointerEventHandler = (e) => {
-    // Stop pen users from scrolling with their pen
-    if (e.pointerType === "pen") e.preventDefault();
+      // Stop pen users from scrolling with their pen
+      if (e.pointerType === "pen") e.preventDefault();
 
-    // Pointer events are only triggered once per frame, but if the mouse is
-    // moving quickly it can actually move over an entire grid square in less
-    // than a frame's time, so we'll miss drawing walls in certain places. In
-    // browsers that support it, we can request all of the mouse move events
-    // since the last frame, and then batch process those
-    let events: PointerEvent[];
-    if (e.nativeEvent.getCoalescedEvents) {
-      events = e.nativeEvent.getCoalescedEvents();
-      // Firefox has a bug where sometimes coalesced events is empty
-      if (events.length === 0) {
+      const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
+      handlePointerAction(action, gridPos, true);
+    };
+
+    const onPointerMove: PointerEventHandler = (e) => {
+      // Stop pen users from scrolling with their pen
+      if (e.pointerType === "pen") e.preventDefault();
+
+      // Pointer events are only triggered once per frame, but if the mouse is
+      // moving quickly it can actually move over an entire grid square in less
+      // than a frame's time, so we'll miss drawing walls in certain places. In
+      // browsers that support it, we can request all of the mouse move events
+      // since the last frame, and then batch process those
+      let events: PointerEvent[];
+      if (e.nativeEvent.getCoalescedEvents) {
+        events = e.nativeEvent.getCoalescedEvents();
+        // Firefox has a bug where sometimes coalesced events is empty
+        if (events.length === 0) {
+          events = [e.nativeEvent];
+        }
+      } else {
         events = [e.nativeEvent];
       }
-    } else {
-      events = [e.nativeEvent];
-    }
 
-    const processedPositions: Pos2d[] = [];
-    for (const event of events) {
-      const action = getPointerAction(e);
-      const { clientX: x, clientY: y } = event;
-      const gridPos = toGridPos({ x, y });
-      // Skip mouse events that result in the same grid position
-      if (processedPositions.some((pos) => posAreEqual(pos, gridPos))) {
-        continue;
+      const processedPositions: Pos2d[] = [];
+      for (const event of events) {
+        const action = getPointerAction(e);
+        const { clientX: x, clientY: y } = event;
+        const gridPos = toGridPos({ x, y });
+        // Skip mouse events that result in the same grid position
+        if (processedPositions.some((pos) => posAreEqual(pos, gridPos))) {
+          continue;
+        }
+        handlePointerAction(action, gridPos, false);
+        processedPositions.push(gridPos);
       }
-      handlePointerAction(action, gridPos, false);
-      processedPositions.push(gridPos);
-    }
-  };
+    };
 
-  const onPointerUp = () => {
-    setMode("draw");
-  };
+    const onPointerUp = () => {
+      setMode("draw");
+    };
 
-  // If we're going to touch draw, disable touch scrolling
-  // We disable touch scrolling before even getting to the second tap because for some browsers once the gesture has
-  // started we can no longer interrupt the panning.
-  const touchAction =
-    doubleTapState === DoubleTapState.Active ||
-    doubleTapState === DoubleTapState.WaitingForSecondTap
-      ? "none"
-      : "auto";
+    // If we're going to touch draw, disable touch scrolling
+    // We disable touch scrolling before even getting to the second tap because for some browsers once the gesture has
+    // started we can no longer interrupt the panning.
+    const touchAction =
+      doubleTapState === DoubleTapState.Active ||
+      doubleTapState === DoubleTapState.WaitingForSecondTap
+        ? "none"
+        : "auto";
 
-  // I apologize for future readers, this is a massive hack
-  // Safari doesn't notice that we've changed the touchAction back to "auto" after a long draw _unless_ you also change
-  // another css property at the same time
-  // Before you ask, yes it's only in mobile safari and yes I have no idea why it happens or why this fixes it. And
-  // finally, yes I realize I have committed an unforgivable sin
-  const borderHack =
-    touchAction === "none" ? "0px solid red" : "0px solid blue";
+    // I apologize for future readers, this is a massive hack
+    // Safari doesn't notice that we've changed the touchAction back to "auto" after a long draw _unless_ you also change
+    // another css property at the same time
+    // Before you ask, yes it's only in mobile safari and yes I have no idea why it happens or why this fixes it. And
+    // finally, yes I realize I have committed an unforgivable sin
+    const borderHack =
+      touchAction === "none" ? "0px solid red" : "0px solid blue";
 
-  return (
-    <div
-      ref={mergeRefs(container, doubleTapRef, longTapRef)}
-      className={classes.container}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onContextMenu={preventDefault}
-      aria-label={"Board"}
-      style={{
-        touchAction,
-        border: borderHack,
-      }}
-    >
-      <Droppable id={DROPPABLE_IDS.BOARD} getLocation={getLocation}>
-        {(attributes) => (
-          <div {...attributes} className={classes.board}>
-            <TransitionGroup>{tokenIcons}</TransitionGroup>
-          </div>
-        )}
-      </Droppable>
-    </div>
-  );
+    return (
+      <div
+        ref={mergeRefs(container, doubleTapRef, longTapRef, droppableRef)}
+        className={classes.container}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onContextMenu={preventDefault}
+        aria-label={"Board"}
+        style={{
+          touchAction,
+          border: borderHack,
+        }}
+      >
+        <div className={classes.board}>
+          <TransitionGroup>{tokenIcons}</TransitionGroup>
+        </div>
+      </div>
+    );
+  }
+);
+
+PureBoard.displayName = "PureBoard";
+
+// This exists because rendering the entire board is expensive, and useDroppable causes unnecessary re-renders multiple
+// times per pickup and drop
+const Board: React.FC = () => {
+  const { active, setNodeRef } = useDroppable({
+    id: DROPPABLE_IDS.BOARD,
+  });
+
+  return <PureBoard isDragging={active !== null} droppableRef={setNodeRef} />;
 };
 
-const Board = connect(mapStateToProps, dispatchProps)(PureBoard);
+type DivRef = (element: HTMLDivElement | null) => void;
 
-export { PureBoard };
 export default Board;
