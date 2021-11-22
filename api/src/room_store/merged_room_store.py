@@ -84,3 +84,6 @@ class MergedRoomStore(RoomStore):
 
     async def get_room_idle_seconds(self, room_id: str) -> int:
         return await self._room_store.get_room_idle_seconds(room_id)
+
+    async def seconds_since_last_activity(self) -> int:
+        return await self._room_store.seconds_since_last_activity()

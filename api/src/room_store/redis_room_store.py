@@ -246,6 +246,7 @@ class RedisRoomStore:
             else:
                 raise
 
+    @instrument
     async def get_room_idle_seconds(self, room_id: str) -> int:
         async with self._redis.pipeline() as pipeline:
             await pipeline.exists(_room_key(room_id))
@@ -265,6 +266,15 @@ class RedisRoomStore:
             return 0
         else:
             return int(time.time()) - int(last_edited)
+
+    @instrument
+    async def seconds_since_last_activity(self) -> int:
+        most_recent_activity = 0
+        async for entry in self._redis.scan_iter(match='last-room-activity:*'):
+            last_activity_time = int(await self._redis.get(entry))
+            if last_activity_time > most_recent_activity:
+                most_recent_activity = last_activity_time
+        return int(time.time() - most_recent_activity)
 
 
 @asynccontextmanager

@@ -98,3 +98,6 @@ class RoomStore(Protocol):
         :return: Number of seconds since the room was read or written to by a user
         """
         ...
+
+    async def seconds_since_last_activity(self) -> int:
+        ...

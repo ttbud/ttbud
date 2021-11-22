@@ -72,3 +72,6 @@ class RateLimiter(Protocol):
         many rooms recently
         """
         ...
+
+    async def get_total_num_connections(self) -> int:
+        ...
