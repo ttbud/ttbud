@@ -13,6 +13,7 @@ from typing import (
     Iterable,
     Any,
     Union,
+    Optional,
 )
 
 from aioredis import Redis, ResponseError
@@ -268,12 +269,14 @@ class RedisRoomStore:
             return int(time.time()) - int(last_edited)
 
     @instrument
-    async def seconds_since_last_activity(self) -> int:
+    async def seconds_since_last_activity(self) -> Optional[int]:
         most_recent_activity = 0
         async for entry in self._redis.scan_iter(match='last-room-activity:*'):
             last_activity_time = int(await self._redis.get(entry))
             if last_activity_time > most_recent_activity:
                 most_recent_activity = last_activity_time
+        if most_recent_activity == 0:
+            return None
         return int(time.time() - most_recent_activity)
 
 

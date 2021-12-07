@@ -74,4 +74,7 @@ class RateLimiter(Protocol):
         ...
 
     async def get_total_num_connections(self) -> int:
+        """
+        :return: Total number of active user connections
+        """
         ...

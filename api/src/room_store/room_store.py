@@ -99,5 +99,9 @@ class RoomStore(Protocol):
         """
         ...
 
-    async def seconds_since_last_activity(self) -> int:
+    async def seconds_since_last_activity(self) -> Optional[int]:
+        """
+        :return: How many seconds have passed since the last room update,
+        or None if there is no recorded activity in Redis
+        """
         ...

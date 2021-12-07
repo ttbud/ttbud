@@ -411,6 +411,21 @@ async def test_release_connection_on_exception(rate_limiter: RateLimiter) -> Non
 @any_rate_limiter
 @time_machine.travel('1970-01-01', tick=False)
 async def test_get_num_connections(rate_limiter: RateLimiter) -> None:
+    assert await rate_limiter.get_total_num_connections() == 0
     for i in range(0, MAX_CONNECTIONS_PER_USER):
         await rate_limiter.acquire_connection('user-1', 'room-1')
     assert await rate_limiter.get_total_num_connections() == MAX_CONNECTIONS_PER_USER
+    for i in range(0, MAX_CONNECTIONS_PER_USER):
+        await rate_limiter.acquire_connection('user-2', 'room-2')
+    assert (
+        await rate_limiter.get_total_num_connections() == 2 * MAX_CONNECTIONS_PER_USER
+    )
+
+
+@any_rate_limiter
+@time_machine.travel('1970-01-01', tick=False)
+async def test_no_connections(rate_limiter: RateLimiter) -> None:
+    assert await rate_limiter.get_total_num_connections() == 0
+    await rate_limiter.acquire_connection('user-1', 'room-1')
+    await rate_limiter.release_connection('user-1', 'room-1')
+    assert await rate_limiter.get_total_num_connections() == 0

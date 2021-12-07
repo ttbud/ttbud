@@ -166,9 +166,11 @@ class MemoryRoomStore(RoomStore):
             raise NoSuchRoomError
         return int(time.time()) - self.storage.last_room_activity_by_id[room_id]
 
-    async def seconds_since_last_activity(self) -> int:
+    async def seconds_since_last_activity(self) -> Optional[int]:
         most_recent_activity = 0
-        for _, last_acitivty_time in self.storage.last_room_activity_by_id.items():
-            if last_acitivty_time > most_recent_activity:
-                most_recent_activity = last_acitivty_time
+        for _, last_activity_time in self.storage.last_room_activity_by_id.items():
+            if last_activity_time > most_recent_activity:
+                most_recent_activity = last_activity_time
+        if most_recent_activity == 0:
+            return None
         return int(time.time() - most_recent_activity)

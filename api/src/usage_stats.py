@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from src.rate_limit.rate_limit import RateLimiter
 from src.room_store.room_store import RoomStore
@@ -6,7 +7,7 @@ from src.room_store.room_store import RoomStore
 
 @dataclass
 class UsageStats:
-    seconds_since_last_activity: int
+    seconds_since_last_activity: Optional[int]
     num_connections: int
 
 

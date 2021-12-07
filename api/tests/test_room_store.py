@@ -254,3 +254,8 @@ async def test_get_last_activity_time(room_store: RoomStore) -> None:
         await room_store.add_request(TEST_ROOM_ID, VALID_MOVE_REQUEST)
         traveller.shift(timedelta(seconds=500))
         assert await room_store.seconds_since_last_activity() == 500
+
+
+@any_room_store
+async def test_unknown_last_activity(room_store: RoomStore) -> None:
+    assert await room_store.seconds_since_last_activity() is None
