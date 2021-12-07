@@ -108,3 +108,9 @@ class MemoryRateLimiter(RateLimiter):
 
         user.room_creation_times.append(now)
         self._storage.users_by_id[user_id] = user
+
+    async def get_total_num_connections(self) -> int:
+        total_connections = 0
+        for _, connections in self._storage.room_connections_by_server_id.items():
+            total_connections += len(connections)
+        return total_connections
