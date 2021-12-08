@@ -33,7 +33,7 @@ locust = "^1.5.3"
 # Need a synchronous websocket client for interacting with the API via locust
 # locust does not support asyncio
 websocket_client = "^1.1.0"
-pytest-cov = "^2.12.1"
+pytest-cov = "^3.0.0"
 time-machine = "^2.1.0"
 localstack = {extras = ["full"], version = "^0.12.18"}
 
