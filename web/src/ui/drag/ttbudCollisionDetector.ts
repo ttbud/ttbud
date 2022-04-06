@@ -1,13 +1,18 @@
-import { closestCenter, CollisionDetection, LayoutRect } from "@dnd-kit/core";
+import {
+  closestCenter,
+  CollisionDetection,
+  ClientRect,
+  Collision,
+} from "@dnd-kit/core";
 import { DroppableId, isSortableData } from "./types";
 import Pos2d, { centerOf } from "../../util/shape-math";
 
-function contains(layoutRect: LayoutRect, pos: Pos2d) {
+function contains(layoutRect: ClientRect, pos: Pos2d) {
   return (
-    pos.x >= layoutRect.offsetLeft &&
-    pos.y >= layoutRect.offsetTop &&
-    pos.x <= layoutRect.offsetLeft + layoutRect.width &&
-    pos.y <= layoutRect.offsetTop + layoutRect.height
+    pos.x >= layoutRect.left &&
+    pos.y >= layoutRect.top &&
+    pos.x <= layoutRect.right &&
+    pos.y <= layoutRect.bottom
   );
 }
 
@@ -20,12 +25,12 @@ const droppableZIndexes: Map<string, number> = new Map<DroppableId, number>([
 const ttbudCollisionDetector: CollisionDetection = (args) => {
   const { active, droppableContainers } = args;
   if (!active.rect.current.translated) {
-    return null;
+    return [];
   }
 
   const center = centerOf(active.rect.current.translated);
   const sortableContainers = new Set<string>();
-  let highestDroppable: string | null = null;
+  let highestDroppable: Collision | null = null;
   let maxHeight = -1;
   for (const droppable of droppableContainers) {
     if (!droppable.rect.current) continue;
@@ -35,23 +40,26 @@ const ttbudCollisionDetector: CollisionDetection = (args) => {
     } else if (contains(droppable.rect.current, center)) {
       const height = droppableZIndexes.get(droppable.id) ?? 3;
       if (height > maxHeight) {
-        highestDroppable = droppable.id;
+        highestDroppable = droppable;
         maxHeight = height;
       }
     }
   }
 
-  if (highestDroppable && sortableContainers.has(highestDroppable)) {
+  if (highestDroppable && sortableContainers.has(highestDroppable.id)) {
     const droppables = droppableContainers.filter(
       (droppable) =>
         isSortableData(droppable.data.current) &&
-        droppable.data.current.sortable?.containerId === highestDroppable
+        droppable.data.current.sortable?.containerId === highestDroppable!.id
     );
 
     return closestCenter({ ...args, droppableContainers: droppables });
   }
 
-  return highestDroppable;
+  //TODO: DO droplocation or some sort of equivalent for all returns in this function
+  return highestDroppable
+    ? [{ ...highestDroppable, dropLocation: active.rect.current.translated }]
+    : [];
 };
 
 export default ttbudCollisionDetector;

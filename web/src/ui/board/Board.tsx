@@ -32,13 +32,19 @@ import { Buttons } from "../util/Buttons";
 import useDoubleTap, { DoubleTapState } from "../util/useDoubleTap";
 import useLongTap from "../util/useLongTap";
 import mergeRefs from "../../util/mergeRefs";
-import { useDroppable } from "@dnd-kit/core";
+import {
+  DragEndEvent,
+  DragMoveEvent,
+  useDndMonitor,
+  useDroppable,
+} from "@dnd-kit/core";
 import Draggable from "../drag/Draggable";
 import Character from "../token/Character";
-import useDropMonitor from "../drag/useDropMonitor";
+import useDropMonitor, { DropEvent } from "../drag/useDropMonitor";
 import { v4 as uuid } from "uuid";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/rootReducer";
+import { DragStartEvent } from "@dnd-kit/core/dist/types";
 
 let GRID_COLOR = "#947C65";
 
@@ -328,6 +334,8 @@ const PureBoard: React.FC<Props> = React.memo(
     };
 
     const onPointerDown: PointerEventHandler = (e) => {
+      //TODO: DO I really want to solve drawing behind what you pick up this way?
+      if (e.target !== container.current) return;
       const action = getPointerAction(e);
 
       // Stop pen users from scrolling with their pen

@@ -2,7 +2,7 @@ import {
   DragEndEvent,
   DragMoveEvent,
   useDndMonitor,
-  ViewRect,
+  ClientRect,
 } from "@dnd-kit/core";
 import { DragDescriptor, DroppableId } from "./types";
 import { assert } from "../../util/invariants";
@@ -12,7 +12,7 @@ interface DroppedInto {
   type: "dropped into";
   dragId: string;
   descriptor: DragDescriptor;
-  rect: ViewRect;
+  rect: ClientRect;
   toIdx?: number;
 }
 
@@ -27,18 +27,18 @@ interface MovedInside {
   type: "moved inside";
   dragId: string;
   descriptor: DragDescriptor;
-  rect: ViewRect;
+  rect: ClientRect;
   fromIdx?: number;
   toIdx?: number;
 }
 
-type DropEvent = DroppedInto | DraggedFrom | MovedInside;
+export type DropEvent = DroppedInto | DraggedFrom | MovedInside;
 
 export default function useDropMonitor(
   droppableId: DroppableId,
   onDrop: (event: DropEvent) => void
 ) {
-  const lastRect = useRef<ViewRect>();
+  const lastRect = useRef<ClientRect>();
 
   useDndMonitor({
     onDragMove(event: DragMoveEvent) {

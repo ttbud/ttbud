@@ -16,7 +16,7 @@ import { v4 as uuid } from "uuid";
 import BoardStateApiClient from "../../network/BoardStateApiClient";
 import Tour from "../tour/Tour";
 import MobileWarningDialog from "../mobile-warning/MobileWarningDialog";
-import { DndContext, DragStartEvent } from "@dnd-kit/core";
+import { closestCenter, DndContext, DragStartEvent } from "@dnd-kit/core";
 import TokenDragOverlay from "../drag/TokenDragOverlay";
 import { DragDescriptor } from "../drag/types";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
@@ -87,7 +87,10 @@ const App: React.FC<Props> = ({ apiClient }) => {
     setActiveItem(contents);
   };
 
-  const onDragEnd = useCallback(() => setActiveItem(undefined), []);
+  const onDragEnd = useCallback((event) => {
+    setActiveItem(undefined);
+    console.log(event);
+  }, []);
 
   useEffect(() => {
     const path = window.location.pathname.split("/room/")[1];
@@ -142,13 +145,13 @@ const App: React.FC<Props> = ({ apiClient }) => {
       <Tour isOpen={touring} onCloseClicked={() => setTouring(false)} />
       <div className={classes.app}>
         <Board />
-        <div className={classes.searchTray}>
-          <SearchDialog
-            open={searching}
-            icons={ICONS}
-            onClose={onSearchDialogClose}
-          />
-        </div>
+        {/*<div className={classes.searchTray}>*/}
+        {/*  <SearchDialog*/}
+        {/*    open={searching}*/}
+        {/*    icons={ICONS}*/}
+        {/*    onClose={onSearchDialogClose}*/}
+        {/*  />*/}
+        {/*</div>*/}
         <div className={classes.floorTray}>
           <FloorTray />
         </div>
