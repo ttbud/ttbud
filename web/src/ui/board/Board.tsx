@@ -33,6 +33,7 @@ import useDoubleTap, { DoubleTapState } from "../util/useDoubleTap";
 import useLongTap from "../util/useLongTap";
 import mergeRefs from "../../util/mergeRefs";
 import {
+  ClientRect,
   DragEndEvent,
   DragMoveEvent,
   useDndMonitor,
@@ -334,8 +335,6 @@ const PureBoard: React.FC<Props> = React.memo(
     };
 
     const onPointerDown: PointerEventHandler = (e) => {
-      //TODO: DO I really want to solve drawing behind what you pick up this way?
-      if (e.target !== container.current) return;
       const action = getPointerAction(e);
 
       // Stop pen users from scrolling with their pen

@@ -1,27 +1,47 @@
 import makeStyles from "@mui/styles/makeStyles";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { clear } from "../board/board-slice";
-import Board from "../board/Board";
-import { ICONS } from "../icons";
-import SearchDialog from "../search/SearchDialog";
+import {
+  addPing,
+  clear,
+  FLOOR_HEIGHT,
+  removeEntity,
+  upsertToken,
+} from "../board/board-slice";
 import Settings from "../settings/Settings";
 import CharacterTray from "../tray/CharacterTray";
 import FloorTray from "../tray/FloorTray";
 import { RootState } from "../../store/rootReducer";
 import isMac from "../../util/isMac";
 import { startSearching, stopSearching } from "./app-slice";
-import ConnectionNotifier from "../connection-state/ConnectionNotifier";
 import { v4 as uuid } from "uuid";
 import BoardStateApiClient from "../../network/BoardStateApiClient";
 import Tour from "../tour/Tour";
 import MobileWarningDialog from "../mobile-warning/MobileWarningDialog";
-import { closestCenter, DndContext, DragStartEvent } from "@dnd-kit/core";
+import {
+  ClientRect,
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+} from "@dnd-kit/core";
 import TokenDragOverlay from "../drag/TokenDragOverlay";
 import { DragDescriptor } from "../drag/types";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { containFloorsModifier } from "../tray/containFloorsModifier";
 import ttbudCollisionDetector from "../drag/ttbudCollisionDetector";
+import Pos2d, { centerOf } from "../../util/shape-math";
+import PureBoard from "../board/PureBoard";
+import { useBoardActions } from "../board/useBoardActions";
+import { DROPPABLE_IDS } from "../DroppableIds";
+import { toGridPos } from "../board/useBoardInputMonitor";
+import PureCharacterTray from "../tray/PureCharacterTray";
+import {
+  addCharacter,
+  removeCharacter,
+  renewCharacter,
+} from "../tray/character-tray-slice";
+import { assert } from "../../util/invariants";
 
 const useStyles = makeStyles((theme) => ({
   app: {
@@ -75,22 +95,105 @@ const modifiers = [restrictToWindowEdges, containFloorsModifier];
 const App: React.FC<Props> = ({ apiClient }) => {
   const classes = useStyles();
   const dispatch = useDispatch();
-  const { searching } = useSelector((state: RootState) => ({
-    searching: state.app.searching,
-  }));
+  const { searching, boardState, activeFloor, characterBlueprints } =
+    useSelector((state: RootState) => ({
+      searching: state.app.searching,
+      activeFloor: state.floorTray.activeFloor,
+      boardState: state.board.local,
+      characterBlueprints: state.characterTray.characterBlueprints,
+    }));
+
   const [touring, setTouring] = useState(false);
-
   const [activeItem, setActiveItem] = useState<DragDescriptor>();
+  const boardActions = useBoardActions(activeFloor);
+  const lastOverContainerIdRef = useRef<string>();
 
-  const onDragStart = (event: DragStartEvent) => {
+  const onDragStart = useCallback((event: DragStartEvent) => {
     const contents = event.active.data.current as DragDescriptor;
     setActiveItem(contents);
-  };
-
-  const onDragEnd = useCallback((event) => {
-    setActiveItem(undefined);
-    console.log(event);
+    lastOverContainerIdRef.current = contents.source;
   }, []);
+
+  const onDragEnd = useCallback((event: DragEndEvent) => {
+    setActiveItem(undefined);
+    const descriptor = event.active.data.current as DragDescriptor;
+    const src = descriptor.source;
+    const rect: ClientRect | undefined = (event.collisions?.[0] as any)
+      ?.dropLocation;
+
+    if (!rect) return;
+
+    // Ignore anything but board for now
+    if (event.over?.id !== DROPPABLE_IDS.BOARD) return;
+    boardActions.onDrop(
+      event.active.id,
+      rect,
+      event.active.data.current!.contents
+    );
+
+    if (
+      event.active.data.current?.sortable?.containerId ===
+      DROPPABLE_IDS.CHARACTER_TRAY
+    ) {
+      const idx = event.active.data.current.sortable.index;
+      dispatch(renewCharacter(idx));
+    }
+  }, [dispatch, boardActions]);
+
+  const onDragOver = useCallback(({ active, over }: DragOverEvent) => {
+    const overId = over?.id;
+    if (!overId) {
+      lastOverContainerIdRef.current = undefined;
+      return;
+    }
+
+    const descriptor = active.data.current as DragDescriptor;
+    const src = descriptor.source;
+    const overContainer = over?.data.current?.sortable?.containerId ?? overId;
+    const lastOverContainer = lastOverContainerIdRef.current;
+    lastOverContainerIdRef.current = overContainer;
+
+    if (!overContainer || overContainer === lastOverContainer) return;
+
+    console.log({ lastOverContainer, src });
+    if (
+      overContainer === DROPPABLE_IDS.CHARACTER_TRAY &&
+      src !== DROPPABLE_IDS.CHARACTER_TRAY
+    ) {
+      const overIndex = characterBlueprints.findIndex((bp) => bp.id === overId);
+
+      assert(active.rect.current.translated, "No active translated rect?");
+      assert(active.data.current?.contents, "No draggable contents");
+      const activeCenter = centerOf(active.rect.current.translated);
+      const overCenter = centerOf(over.rect);
+
+      const newIndex = activeCenter > overCenter ? overIndex + 1 : overIndex;
+      dispatch(
+        addCharacter({
+          idx: newIndex,
+          blueprint: {
+            id: active.id,
+            contents: active.data.current.contents,
+          },
+        })
+      );
+    } else if (
+      lastOverContainer === DROPPABLE_IDS.CHARACTER_TRAY &&
+      src !== DROPPABLE_IDS.CHARACTER_TRAY
+    ) {
+      const idx = characterBlueprints.findIndex((bp) => bp.id === active.id);
+      dispatch(removeCharacter(idx));
+    }
+  }, [dispatch, characterBlueprints]);
+
+  const onRemoveCharacterBlueprint = useCallback(
+    (id: string) => {
+      dispatch(
+        removeCharacter(characterBlueprints.findIndex((bp) => bp.id === id))
+      );
+    },
+    [dispatch, characterBlueprints]
+  );
 
   useEffect(() => {
     const path = window.location.pathname.split("/room/")[1];
@@ -137,14 +240,15 @@ const App: React.FC<Props> = ({ apiClient }) => {
     <DndContext
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      onDragMove={onDragOver}
       autoScroll={false}
       modifiers={modifiers}
       collisionDetection={ttbudCollisionDetector}
     >
-      <MobileWarningDialog />
+      {/*<MobileWarningDialog />*/}
       <Tour isOpen={touring} onCloseClicked={() => setTouring(false)} />
       <div className={classes.app}>
-        <Board />
+        <PureBoard boardState={boardState} {...boardActions} />
         {/*<div className={classes.searchTray}>*/}
         {/*  <SearchDialog*/}
         {/*    open={searching}*/}
@@ -156,7 +260,10 @@ const App: React.FC<Props> = ({ apiClient }) => {
           <FloorTray />
         </div>
         <div className={classes.characterTray}>
-          <CharacterTray />
+          <PureCharacterTray
+            blueprints={characterBlueprints}
+            onRemoveBlueprint={onRemoveCharacterBlueprint}
+          />
         </div>
         <Settings
           className={classes.settings}

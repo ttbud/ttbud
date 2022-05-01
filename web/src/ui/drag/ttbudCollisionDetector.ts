@@ -53,10 +53,22 @@ const ttbudCollisionDetector: CollisionDetection = (args) => {
         droppable.data.current.sortable?.containerId === highestDroppable!.id
     );
 
-    return closestCenter({ ...args, droppableContainers: droppables });
+    const closest = closestCenter({
+      ...args,
+      droppableContainers: droppables,
+    })[0];
+
+    return [
+      {
+        ...closest,
+        data: {
+          ...closest.data,
+          dropLocation: active.rect.current.translated,
+        },
+      },
+    ];
   }
 
-  //TODO: DO droplocation or some sort of equivalent for all returns in this function
   return highestDroppable
     ? [{ ...highestDroppable, dropLocation: active.rect.current.translated }]
     : [];
