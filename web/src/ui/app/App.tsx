@@ -42,8 +42,17 @@ import {
   renewCharacter,
 } from "../tray/character-tray-slice";
 import { assert } from "../../util/invariants";
+import SearchDialog from "../search/SearchDialog"
+import { ICONS } from "../icons"
+import { Theme } from "@mui/material";
 
-const useStyles = makeStyles((theme) => ({
+interface StyleProps {
+  searching: boolean;
+}
+
+const spacing = 8;
+
+const useStyles = makeStyles<Theme, StyleProps>((theme) => ({
   app: {
     width: 4000,
     height: 2000,
@@ -53,13 +62,13 @@ const useStyles = makeStyles((theme) => ({
   characterTray: {
     position: "fixed",
     bottom: theme.spacing(3),
-    left: theme.spacing(1),
+    left: (props) => props.searching ? 300 + spacing : spacing,
   },
   searchTray: {
-    position: "absolute",
+    position: "fixed",
     width: 300,
     height: "100%",
-    left: 0,
+    left: (props) => props.searching ? 0 : -300,
     top: 0,
   },
   floorTray: {
@@ -73,14 +82,14 @@ const useStyles = makeStyles((theme) => ({
   },
   connectionNotifier: {
     position: "fixed",
-    top: theme.spacing(1),
+    top: spacing,
     left: "50%",
     transform: "translateX(-50%)",
   },
   settings: {
     position: "fixed",
-    bottom: theme.spacing(3),
-    right: theme.spacing(3),
+    bottom: spacing * 3,
+    right: spacing * 3,
   },
 }));
 
@@ -93,7 +102,6 @@ interface Props {
 const modifiers = [restrictToWindowEdges, containFloorsModifier];
 
 const App: React.FC<Props> = ({ apiClient }) => {
-  const classes = useStyles();
   const dispatch = useDispatch();
   const { searching, boardState, activeFloor, characterBlueprints } =
     useSelector((state: RootState) => ({
@@ -102,6 +110,7 @@ const App: React.FC<Props> = ({ apiClient }) => {
       boardState: state.board.local,
       characterBlueprints: state.characterTray.characterBlueprints,
     }));
+  const classes = useStyles({searching: searching});
 
   const [touring, setTouring] = useState(false);
   const [activeItem, setActiveItem] = useState<DragDescriptor>();
@@ -218,14 +227,18 @@ const App: React.FC<Props> = ({ apiClient }) => {
   useEffect(() => {
     const onKeyPressed = (e: KeyboardEvent) => {
       if (e.getModifierState(searchModifier) && e.key === "f") {
-        dispatch(startSearching());
+        if(searching) {
+          dispatch(stopSearching());
+        } else {
+          dispatch(startSearching());
+        }
         e.preventDefault();
       }
     };
 
     document.addEventListener("keydown", onKeyPressed);
     return () => document.removeEventListener("keydown", onKeyPressed);
-  }, [dispatch]);
+  }, [dispatch, searching]);
 
   const onSearchDialogClose = useCallback(
     () => dispatch(stopSearching()),
@@ -249,21 +262,21 @@ const App: React.FC<Props> = ({ apiClient }) => {
       <Tour isOpen={touring} onCloseClicked={() => setTouring(false)} />
       <div className={classes.app}>
         <PureBoard boardState={boardState} {...boardActions} />
-        {/*<div className={classes.searchTray}>*/}
-        {/*  <SearchDialog*/}
-        {/*    open={searching}*/}
-        {/*    icons={ICONS}*/}
-        {/*    onClose={onSearchDialogClose}*/}
-        {/*  />*/}
-        {/*</div>*/}
-        <div className={classes.floorTray}>
-          <FloorTray />
+        <div className={classes.searchTray}>
+          <SearchDialog
+            open={searching}
+            icons={ICONS}
+            onClose={onSearchDialogClose}
+          />
         </div>
         <div className={classes.characterTray}>
           <PureCharacterTray
             blueprints={characterBlueprints}
             onRemoveBlueprint={onRemoveCharacterBlueprint}
           />
+        </div>
+        <div className={classes.floorTray}>
+          <FloorTray />
         </div>
         <Settings
           className={classes.settings}
