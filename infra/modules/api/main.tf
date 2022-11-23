@@ -53,7 +53,7 @@ resource "heroku_build" "api" {
 resource "heroku_formation" "api" {
   app      = heroku_app.api.name
   quantity = 1
-  size     = var.dyno_size
+  size     = "hobby"
   type     = "web"
 
   depends_on = [heroku_build.api]
