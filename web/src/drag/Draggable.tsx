@@ -40,7 +40,7 @@ interface Props {
   ) => ReactElement | null;
 }
 
-const MODIFIER_KEYS = ["Alt", "Control", "Meta", "Shift"];
+const MODIFIER_KEYS = ["Alt", "Control", "Meta", "Shift"] as const;
 
 const modifierKeyPressed = (e: React.MouseEvent): boolean => {
   return MODIFIER_KEYS.some((key) => e.getModifierState(key));
