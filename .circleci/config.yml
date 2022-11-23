@@ -212,7 +212,7 @@ jobs:
             DOMAIN: https://ttbud-staging.netlify.app
             API_DOMAIN: wss://ttbud-staging.herokuapp.com
           # Sometimes both browsers fail to start if we start more than one at a time
-          command: yarn test --workers=1 --forbid-on
+          command: yarn test --workers=1 --forbid-only
       - store_artifacts:
           path: ~/repo/e2e/test-results
 
