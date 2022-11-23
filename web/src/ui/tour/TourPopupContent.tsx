@@ -1,6 +1,6 @@
-import { Typography } from "@material-ui/core";
+import { Typography } from "@mui/material";
 import React, { ReactNode } from "react";
-import { makeStyles } from "@material-ui/core/styles";
+import makeStyles from "@mui/styles/makeStyles";
 
 const useStyles = makeStyles({
   notes: {

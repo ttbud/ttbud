@@ -5,14 +5,14 @@ import {
   ListItem,
   ListItemText,
   ListSubheader,
-  makeStyles,
   Popover,
   Snackbar,
   Tooltip,
   Typography,
-} from "@material-ui/core";
-import CloseIcon from "@material-ui/icons/Close";
-import MoreVertIcon from "@material-ui/icons/MoreVert";
+} from "@mui/material";
+import makeStyles from "@mui/styles/makeStyles";
+import CloseIcon from "@mui/icons-material/Close";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import React, { memo, MouseEvent, useState } from "react";
 import ConfirmationDialog from "../confirm/ConfirmationDialog";
 import isMac from "../../util/isMac";
@@ -142,7 +142,6 @@ const PureSettings: React.FC<Props> = memo(
             </div>
           }
           arrow
-          interactive
           placement={"top-end"}
         >
           <Fab

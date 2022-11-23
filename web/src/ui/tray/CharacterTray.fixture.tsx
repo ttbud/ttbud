@@ -1,27 +1,26 @@
-import dragReducer from "../../drag/drag-slice";
-import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
-import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
+import characterTrayReducer from "./character-tray-slice";
+import CharacterTray from "./CharacterTray";
+import { DndContext } from "@dnd-kit/core";
+import TtbudTheme from "../TtbudTheme";
+import TokenDragOverlay from "../drag/TokenDragOverlay";
+import React, { useState } from "react";
+import { DragStartEvent } from "@dnd-kit/core/dist/types";
+import { DragDescriptor } from "../drag/types";
+import { configureStore } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
-import DndContext from "../../drag/DndContext";
-import { DEFAULT_CHARACTER_ICONS } from "../icons";
-import noop from "../../util/noop";
-import { PureCharacterTray as CharacterTray } from "./CharacterTray";
-import { ContentType, TokenContents } from "../../types";
 
-const monitor = new DomDroppableMonitor();
-const store = configureStore({
-  reducer: { drag: dragReducer },
-  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
-});
+const ExampleCharacterTray: React.FC = () => {
+  const [activeItem, setActiveItem] = useState<DragDescriptor>();
 
-const blueprints: TokenContents[] = DEFAULT_CHARACTER_ICONS.map((icon) => ({
-  type: ContentType.Icon,
-  iconId: icon.id,
-}));
+  const onDragStart = (event: DragStartEvent) => {
+    const contents = event.active.data.current as DragDescriptor;
+    setActiveItem(contents);
+  };
 
-export default (
-  <Provider store={store}>
-    <DndContext.Provider value={monitor}>
+  const onDragEnd = () => setActiveItem(undefined);
+
+  return (
+    <DndContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div
         style={{
           display: "inline-block",
@@ -30,8 +29,22 @@ export default (
           top: 0,
         }}
       >
-        <CharacterTray blueprints={blueprints} onCharacterRemoved={noop} />
+        <CharacterTray />
       </div>
-    </DndContext.Provider>
+
+      <TokenDragOverlay activeItem={activeItem} />
+    </DndContext>
+  );
+};
+
+const store = configureStore({
+  reducer: { characterTray: characterTrayReducer },
+});
+
+export default (
+  <Provider store={store}>
+    <TtbudTheme>
+      <ExampleCharacterTray />
+    </TtbudTheme>
   </Provider>
 );

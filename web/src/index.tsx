@@ -1,32 +1,20 @@
 import ReactDOM from "react-dom";
 import * as serviceWorker from "./serviceWorker";
-import { DomDroppableMonitor } from "./drag/DroppableMonitor";
 import { Provider } from "react-redux";
-import DndContext from "./drag/DndContext";
 import createStore from "./store/createStore";
 import { RealBoardStateApiClient } from "./network/RealBoardStateApiClient";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
-import { CssBaseline, createMuiTheme, ThemeProvider } from "@material-ui/core";
+import TtbudTheme from "./ui/TtbudTheme";
+import FakeApiClient from "./network/__test_util__/FakeApiClient";
 
-const monitor = new DomDroppableMonitor();
-const apiClient = new RealBoardStateApiClient(
-  `wss://${process.env.REACT_APP_DOMAIN}:${process.env.REACT_APP_API_WEBSOCKET_PORT}`
-);
-const store = createStore(monitor, apiClient);
+// const apiClient = new RealBoardStateApiClient(
+//   `wss://${process.env.REACT_APP_DOMAIN}:${process.env.REACT_APP_API_WEBSOCKET_PORT}`
+// );
+const apiClient = new FakeApiClient();
+const store = createStore(apiClient);
 
 let persistor = persistStore(store);
-
-const theme = createMuiTheme({
-  palette: {
-    primary: {
-      main: "#4517D1",
-    },
-    background: {
-      default: "#F5F5DC",
-    },
-  },
-});
 
 const render = () => {
   const App = require("./ui/app/App").default;
@@ -34,12 +22,9 @@ const render = () => {
   ReactDOM.render(
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <DndContext.Provider value={monitor}>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <App apiClient={apiClient} />
-          </ThemeProvider>
-        </DndContext.Provider>
+        <TtbudTheme>
+          <App apiClient={apiClient} />
+        </TtbudTheme>
       </PersistGate>
     </Provider>,
     document.getElementById("root")

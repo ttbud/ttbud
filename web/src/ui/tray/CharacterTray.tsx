@@ -1,15 +1,24 @@
-import { makeStyles, Paper } from "@material-ui/core";
-import React, { memo, useRef, useCallback } from "react";
-import { DROPPABLE_IDS } from "../DroppableIds";
-import SortableList, { Targets, Target } from "../sort/SortableList";
+import { Paper } from "@mui/material";
+import makeStyles from "@mui/styles/makeStyles";
+import React, { memo, useMemo, useRef } from "react";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import Sortable from "../drag/Sortable";
 import Character from "../token/Character";
-import { assert } from "../../util/invariants";
-import { GRID_SIZE_PX } from "../../config";
+import UnreachableCaseError from "../../util/UnreachableCaseError";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/rootReducer";
-import { removeCharacter } from "./character-tray-slice";
-import { connect } from "react-redux";
-import { TokenContents } from "../../types";
-import useTrayItems from "./useTrayItems";
+import { TokenBlueprint } from "./types";
+import {
+  addCharacter,
+  moveCharacter,
+  removeCharacter,
+  renewCharacter,
+} from "./character-tray-slice";
+import { DragOverEvent, useDndMonitor, useDroppable } from "@dnd-kit/core";
+import { isSortableData } from "../drag/types";
 
 const useStyles = makeStyles((theme) => ({
   tokenSheet: {
@@ -24,129 +33,57 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const DROPPABLE_ID = DROPPABLE_IDS.CHARACTER_TRAY;
-
-interface Props {
-  blueprints: TokenContents[];
-  onCharacterRemoved: (character: TokenContents) => void;
-}
-
-const mapStateToProps = (state: RootState) => ({
-  blueprints: state.characterTray.characterBlueprints,
-});
-
-const dispatchProps = { onCharacterRemoved: removeCharacter };
-
-const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
-  blueprints,
-  onCharacterRemoved,
-}) {
+const CharacterTray: React.FC = memo(() => {
   const classes = useStyles();
 
-  const containerRef = useRef<HTMLElement>();
-  const items = useTrayItems(DROPPABLE_ID, blueprints);
+  const blueprints = useSelector<RootState, TokenBlueprint[]>(
+    (state) => state.characterTray.characterBlueprints
+  );
+  const dispatch = useDispatch();
 
-  const getTargets = useCallback((): Targets => {
-    const existingElementsBounds = [];
-    for (const item of items) {
-      assert(
-        item.ref?.current,
-        "Character tray item refs not set up correctly before drag"
-      );
-      existingElementsBounds.push(item.ref.current.getBoundingClientRect());
-    }
+  const items = useMemo(() => {
+    return blueprints.map((bp) => ({
+      id: bp.id,
+      descriptor: {
+        type: "character",
+        contents: bp.contents,
+        source: "character tray",
+      } as const,
+    }));
+  }, [blueprints]);
 
-    assert(
-      containerRef.current,
-      "Character tray container ref not set up correctly before drag"
-    );
-    const containerBounds = containerRef.current.getBoundingClientRect();
-    const innerDragBounds: Target[] = [];
-    for (let i = 0; i < existingElementsBounds.length; i++) {
-      const prev = existingElementsBounds[i - 1];
-      const current = existingElementsBounds[i];
-      const next = existingElementsBounds[i + 1];
-
-      const top = prev ? (prev.bottom + current.top) / 2 : containerBounds.top;
-      const bottom = next
-        ? (next.top + current.bottom) / 2
-        : containerBounds.bottom;
-      innerDragBounds.push({
-        dropBounds: {
-          top,
-          left: containerBounds.left,
-          bottom,
-          right: containerBounds.right,
-        },
-        destination: {
-          top: current.top,
-          left: current.left,
-          bottom: current.bottom,
-          right: current.right,
-        },
-      });
-    }
-
-    const firstChildBounds = existingElementsBounds[0];
-    assert(
-      firstChildBounds,
-      "Must always have at least one element in character tray"
-    );
-
-    const outerDragBounds = Array.from(innerDragBounds);
-    outerDragBounds.unshift({
-      dropBounds: {
-        top: containerBounds.top - GRID_SIZE_PX,
-        left: containerBounds.left,
-        bottom: containerBounds.top,
-        right: containerBounds.right,
-      },
-      destination: {
-        top: containerBounds.top - GRID_SIZE_PX,
-        left: firstChildBounds.left,
-        bottom: containerBounds.top,
-        right: firstChildBounds.right,
-      },
-    });
-
-    return {
-      innerDrag: innerDragBounds,
-      outerDrag: outerDragBounds,
-    };
-  }, [items]);
+  const { setNodeRef } = useDroppable({ id: "character tray" });
 
   return (
     <Paper
       className={classes.tokenSheet}
-      ref={containerRef}
-      data-tour={"character-tray"}
-      aria-label={"Character Tray"}
+      ref={setNodeRef}
+      data-tour="character-tray"
+      aria-label="Character Tray"
     >
-      <SortableList id={DROPPABLE_ID} items={items} getTargets={getTargets}>
-        {(item, isDragging, attributes) => (
-          <Character
-            contents={item.blueprint}
-            isDragging={isDragging}
-            dragAttributes={{
-              ...attributes,
-              ref: item.makeRef(attributes.ref),
-            }}
-            onDelete={() => {
-              if (items.length > 2) {
-                onCharacterRemoved(item.blueprint);
-              }
-            }}
-          />
-        )}
-      </SortableList>
+      <SortableContext
+        key="character tray"
+        id="character tray"
+        items={items}
+        strategy={verticalListSortingStrategy}
+      >
+        {items.map((item, idx) => {
+          return (
+            <Sortable key={item.id} id={item.id} data={item.descriptor}>
+              <Character
+                contents={item.descriptor.contents}
+                onDelete={() => {
+                  if (items.length > 2) {
+                    dispatch(removeCharacter(idx));
+                  }
+                }}
+              />
+            </Sortable>
+          );
+        })}
+      </SortableContext>
     </Paper>
   );
 });
 
-const CharacterTray = connect(
-  mapStateToProps,
-  dispatchProps
-)(PureCharacterTray);
-
 export default CharacterTray;
-export { PureCharacterTray };

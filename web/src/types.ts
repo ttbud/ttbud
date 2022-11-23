@@ -35,15 +35,25 @@ export interface Color {
   blue: number;
 }
 
-export interface Token {
-  type: EntityType.Floor | EntityType.Character;
+export interface TokenBase {
   id: string;
   pos: Pos3d;
   contents: TokenContents;
   color?: Color;
 }
 
-export type Entity = Ping | Token;
+export interface Character extends TokenBase {
+  type: EntityType.Character;
+  dragId: string;
+}
+
+export interface Floor extends TokenBase {
+  type: EntityType.Floor;
+}
+
+export type Token = Character | Floor;
+
+export type Entity = Ping | Character | Floor;
 
 export function contentId(contents: TokenContents) {
   return contents.type === ContentType.Text

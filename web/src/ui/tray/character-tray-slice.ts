@@ -1,14 +1,31 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DragEndAction, dragEnded } from "../../drag/drag-slice";
-import { DROPPABLE_IDS } from "../DroppableIds";
 import { DEFAULT_CHARACTER_ICONS } from "../icons";
-import getDragResult from "../../drag/getDragResult";
-import { reorderTokenBlueprints } from "./reorderTokenBlueprints";
-import { contentId, ContentType, TokenContents } from "../../types";
+import { ContentType } from "../../types";
+import { arrayMove } from "@dnd-kit/sortable";
+import { TokenBlueprint } from "./types";
+import { v4 as uuid } from "uuid";
 
-const DEFAULT_CONTENTS: TokenContents[] = DEFAULT_CHARACTER_ICONS.map(
-  (icon) => ({ type: ContentType.Icon, iconId: icon.id })
+const DEFAULT_CONTENTS: TokenBlueprint[] = DEFAULT_CHARACTER_ICONS.map(
+  (icon) => ({
+    id: uuid(),
+    contents: { type: ContentType.Icon, iconId: icon.id },
+  })
 );
+
+interface AddCharacterAction {
+  blueprint: TokenBlueprint;
+  idx: number;
+}
+
+interface MoveCharacterAction {
+  fromIdx: number;
+  toIdx: number;
+}
+
+interface RenewCharacterAction {
+  idx: number;
+  newId: string;
+}
 
 const characterTraySlice = createSlice({
   name: "characterTrayIcons",
@@ -16,32 +33,33 @@ const characterTraySlice = createSlice({
     characterBlueprints: DEFAULT_CONTENTS,
   },
   reducers: {
-    removeCharacter(state, action: PayloadAction<TokenContents>) {
-      const removedContentId = contentId(action.payload);
-      state.characterBlueprints = state.characterBlueprints.filter(
-        (contents) => contentId(contents) !== removedContentId
+    addCharacter(state, action: PayloadAction<AddCharacterAction>) {
+      const { blueprint, idx } = action.payload;
+      state.characterBlueprints.splice(idx, 0, blueprint);
+    },
+    moveCharacter(state, action: PayloadAction<MoveCharacterAction>) {
+      const { fromIdx, toIdx } = action.payload;
+      state.characterBlueprints = arrayMove(
+        state.characterBlueprints,
+        fromIdx,
+        toIdx
       );
     },
-  },
-  extraReducers: {
-    [dragEnded.type]: (state, action: PayloadAction<DragEndAction>) => {
-      const { draggable, source, destination } = action.payload;
-
-      const dragResult = getDragResult(
-        DROPPABLE_IDS.CHARACTER_TRAY,
-        action.payload
-      );
-
-      reorderTokenBlueprints({
-        blueprints: state.characterBlueprints,
-        draggable,
-        source,
-        destination,
-        dragResult,
-      });
+    removeCharacter(state, action: PayloadAction<number>) {
+      state.characterBlueprints.splice(action.payload, 1);
+    },
+    renewCharacter: {
+      reducer: (state, action: PayloadAction<RenewCharacterAction>) => {
+        const { idx, newId } = action.payload;
+        state.characterBlueprints[idx].id = newId;
+      },
+      prepare: (idx: number) => {
+        return { payload: { idx, newId: uuid() } };
+      },
     },
   },
 });
 
-export const { removeCharacter } = characterTraySlice.actions;
+export const { addCharacter, moveCharacter, removeCharacter, renewCharacter } =
+  characterTraySlice.actions;
 export default characterTraySlice.reducer;

@@ -2,7 +2,6 @@ import characterTrayReducer from "../ui/tray/character-tray-slice";
 import floorTrayReducer from "../ui/tray/floor-tray-slice";
 import appReducer from "../ui/app/app-slice";
 import boardReducer from "../ui/board/board-slice";
-import dragReducer from "../drag/drag-slice";
 import connectionStateReducer from "../ui/connection-state/connection-state-slice";
 import settingsReducer from "../ui/settings/settings-slice";
 import { combineReducers } from "@reduxjs/toolkit";
@@ -15,7 +14,6 @@ const reducers = combineReducers({
   app: appReducer,
   settings: settingsReducer,
   board: boardReducer,
-  drag: dragReducer,
   connectionState: connectionStateReducer,
 });
 

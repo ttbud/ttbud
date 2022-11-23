@@ -7,9 +7,9 @@ import {
   DialogTitle,
   IconButton,
   Typography,
-} from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
-import MailIcon from "@material-ui/icons/Mail";
+} from "@mui/material";
+import makeStyles from "@mui/styles/makeStyles";
+import MailIcon from "@mui/icons-material/Mail";
 
 interface Props {
   open: boolean;
@@ -57,7 +57,7 @@ const About: React.FC<Props> = ({ open, onClose }) => {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <IconButton>
+            <IconButton size="large">
               <img
                 className={classes.logo}
                 src="/image/twitter-logo.svg"
@@ -70,7 +70,7 @@ const About: React.FC<Props> = ({ open, onClose }) => {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <IconButton>
+            <IconButton size="large">
               <img
                 className={classes.logo}
                 src="/image/github-logo.svg"
@@ -79,7 +79,7 @@ const About: React.FC<Props> = ({ open, onClose }) => {
             </IconButton>
           </a>
           <a href="mailto: media@ttbud.app">
-            <IconButton>
+            <IconButton size="large">
               <MailIcon htmlColor="black" />
             </IconButton>
           </a>

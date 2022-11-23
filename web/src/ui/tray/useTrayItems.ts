@@ -1,67 +1,78 @@
-import * as React from "react";
-import { contentId, TokenContents } from "../../types";
+import { TokenBlueprint } from "./types";
+import { useCallback, useMemo, useState } from "react";
+import { DROPPABLE_IDS } from "../DroppableIds";
+import { DragSourceId } from "../drag/types";
 import {
-  DraggableType,
-  TokenBlueprintDraggable,
-} from "../../drag/DragStateTypes";
-import { createRef, useMemo } from "react";
-import { assert } from "../../util/invariants";
-import assignRef from "../../util/assignRef";
+  withItemAt,
+  withItemMoved,
+  withItemReplaced,
+  withoutItemAt,
+} from "../../util/arr";
+import { v4 as uuid } from "uuid";
 
-interface TrayItem {
-  blueprint: TokenContents;
-  descriptor: TokenBlueprintDraggable;
-  /**
-   * Create a react ref that both assigns the draggable ref
-   * and assigns the item ref so the draggable and the tray
-   * can have a ref to the same component
-   */
-  makeRef: (dragRef: React.Ref<any>) => React.Ref<any>;
-  ref: React.RefObject<any>;
+interface AddItemAction {
+  idx: number;
+  bp: TokenBlueprint;
+  src: DragSourceId;
 }
 
-/**
- * Given a droppable id and a set of blueprints, create the draggable descriptors
- * and refs needed to render a draggable item tray for them
- */
-export default function useTrayItems(
-  droppableId: string,
-  blueprints: TokenContents[]
-): TrayItem[] {
-  const blueprintRefs = useMemo(() => {
-    const refs = new Map<string, React.MutableRefObject<HTMLElement | null>>();
-    for (const blueprint of blueprints) {
-      refs.set(contentId(blueprint), createRef<HTMLElement>());
-    }
-    return refs;
-  }, [blueprints]);
+function blueprintToItem(
+  bp: TokenBlueprint,
+  src: DragSourceId = DROPPABLE_IDS.CHARACTER_TRAY
+) {
+  return {
+    id: bp.id,
+    descriptor: {
+      type: "character",
+      contents: bp.contents,
+      source: src,
+    } as const,
+  };
+}
+
+export default function useTrayItems(defaultBlueprints: TokenBlueprint[]) {
+  const defaultItems = useMemo(() => {
+    return defaultBlueprints.map((item) => blueprintToItem(item));
+  }, [defaultBlueprints]);
+
+  const [items, setItems] = useState(defaultItems);
+
+  const addItem = useCallback(
+    ({ idx, bp, src = DROPPABLE_IDS.CHARACTER_TRAY }: AddItemAction) => {
+      setItems(withItemAt(items, blueprintToItem(bp, src), idx));
+    },
+    [items]
+  );
+
+  const removeItem = useCallback(
+    (idx: number) => setItems(withoutItemAt(items, idx)),
+    [items]
+  );
+
+  const moveItem = useCallback(
+    (fromIdx: number, toIdx: number) => {
+      setItems(withItemMoved(items, fromIdx, toIdx));
+    },
+    [items]
+  );
+
+  const renewItemId = useCallback(
+    (idx: number) => {
+      setItems(withItemReplaced(items, { ...items[idx], id: uuid() }, idx));
+    },
+    [items]
+  );
 
   return useMemo(
-    () =>
-      blueprints.map((blueprint) => {
-        const blueprintId = contentId(blueprint);
-        const ref = blueprintRefs.get(blueprintId);
-        assert(
-          ref,
-          `Unable to find blueprint ref for blueprint id ${blueprintId}`
-        );
-
-        return {
-          blueprint,
-          descriptor: {
-            type: DraggableType.TokenBlueprint,
-            id: `${droppableId}-${blueprintId}`,
-            contents: blueprint,
-          } as TokenBlueprintDraggable,
-          makeRef:
-            (dragRef: React.Ref<HTMLElement> | undefined) =>
-            (el: HTMLElement) => {
-              assignRef(ref, el);
-              assignRef(dragRef, el);
-            },
-          ref: ref,
-        };
-      }),
-    [blueprints, blueprintRefs, droppableId]
+    () => ({
+      items,
+      addItem,
+      moveItem,
+      removeItem,
+      renewItemId,
+    }),
+    [items, addItem, moveItem, removeItem, renewItemId]
   );
 }
+
+export type TrayItems = ReturnType<typeof useTrayItems>;

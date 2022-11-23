@@ -23,6 +23,7 @@ const API_CHARACTER = {
 
 const CHARACTER: Token = {
   type: EntityType.Character,
+  dragId: "957988c6-3b87-47be-aab2-30eae58018aa",
   color: {
     red: API_CHARACTER.color_rgb.red,
     green: API_CHARACTER.color_rgb.green,

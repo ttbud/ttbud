@@ -8,7 +8,13 @@ import {
   isTextContents,
   MessageDecoder,
 } from "./api-types";
-import { ContentType, EntityType, Token, TokenContents } from "../types";
+import {
+  ContentType,
+  EntityType,
+  Token,
+  TokenBase,
+  TokenContents,
+} from "../types";
 import { assert } from "../util/invariants";
 import {
   Action,
@@ -16,6 +22,7 @@ import {
   ConnectionError,
   EventType,
 } from "./BoardStateApiClient";
+import { v4 as uuid } from "uuid";
 
 function toApiAction(action: Action): ApiAction {
   switch (action.type) {
@@ -76,18 +83,6 @@ function toContents(contents: ApiTokenContents): TokenContents {
   }
 }
 
-function toType(type: "character" | "floor") {
-  switch (type) {
-    case "character":
-      return EntityType.Character;
-    case "floor":
-      return EntityType.Floor;
-    /* istanbul ignore next */
-    default:
-      throw new UnreachableCaseError(type);
-  }
-}
-
 function toAction(apiAction: ApiAction): Action {
   switch (apiAction.action) {
     case "delete":
@@ -112,25 +107,14 @@ function toAction(apiAction: ApiAction): Action {
       const token = apiAction.data;
       return {
         type: "upsert",
-        token: {
-          id: token.id,
-          type: toType(token.type),
-          contents: toContents(token.contents),
-          pos: {
-            x: token.start_x,
-            y: token.start_y,
-            z: token.start_z,
-          },
-          color: token.color_rgb,
-        },
+        token: toToken(token),
       };
   }
 }
 
 function toToken(apiToken: ApiToken): Token {
-  const token: Token = {
+  const base: TokenBase = {
     id: apiToken.id,
-    type: apiToken.type as EntityType.Character | EntityType.Floor,
     contents: toContents(apiToken.contents),
     pos: {
       x: apiToken.start_x,
@@ -138,10 +122,19 @@ function toToken(apiToken: ApiToken): Token {
       z: apiToken.start_z,
     },
   };
-  if (apiToken.type === "character") {
-    token.color = apiToken.color_rgb;
+  if (apiToken.type === EntityType.Character) {
+    return {
+      ...base,
+      type: EntityType.Character,
+      color: apiToken.color_rgb,
+      dragId: uuid(),
+    };
+  } else {
+    return {
+      ...base,
+      type: EntityType.Floor,
+    };
   }
-  return token;
 }
 
 enum DisconnectErrorCode {

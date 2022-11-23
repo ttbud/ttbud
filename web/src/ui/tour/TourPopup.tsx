@@ -1,12 +1,12 @@
-import CloseIcon from "@material-ui/icons/Close";
+import CloseIcon from "@mui/icons-material/Close";
 import {
   Button,
   Card,
   CardActions,
   CardContent,
   IconButton,
-} from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
+} from "@mui/material";
+import makeStyles from "@mui/styles/makeStyles";
 
 interface Props {
   /**
@@ -76,7 +76,7 @@ const TourPopup: React.FC<Props> = ({
 
   return (
     <Card className={classes.root}>
-      <IconButton className={classes.closeBtn} onClick={close}>
+      <IconButton className={classes.closeBtn} onClick={close} size="large">
         <CloseIcon />
       </IconButton>
       <CardContent>{content}</CardContent>

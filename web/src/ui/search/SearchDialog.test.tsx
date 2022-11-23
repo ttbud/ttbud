@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { getAllByLabelText, render } from "@testing-library/react";
 import SearchDialog from "./SearchDialog";
 import noop from "../../util/noop";
 import { DEFAULT_FLOOR_ICONS, WALL_ICON } from "../icons";
@@ -13,6 +13,7 @@ import {
 import { ContentType } from "../../types";
 import { ComponentProps } from "react";
 import userEvent from "@testing-library/user-event";
+import TtbudTheme from "../TtbudTheme";
 
 const DEFAULT_PROPS = {
   icons: DEFAULT_FLOOR_ICONS,
@@ -36,7 +37,9 @@ function renderSearchDialog({
 
   return render(
     <Provider store={store}>
-      <SearchDialog {...DEFAULT_PROPS} {...props} />
+      <TtbudTheme>
+        <SearchDialog {...DEFAULT_PROPS} {...props} />
+      </TtbudTheme>
     </Provider>
   );
 }
@@ -51,9 +54,11 @@ describe("SearchDialog", () => {
   });
 
   it("shows capitalized text icons for two letter searches", () => {
-    const { getByText, getByLabelText } = renderSearchDialog();
+    const { getByText, getByLabelText, getAllByLabelText } =
+      renderSearchDialog();
 
-    const searchBar = getByLabelText("search");
+    const searchBars = getAllByLabelText("search");
+    const searchBar = getByLabelText("search", { selector: "input" });
     userEvent.type(searchBar, "ab");
     expect(getByText("AB")).toBeVisible();
   });
@@ -61,14 +66,14 @@ describe("SearchDialog", () => {
   it("shows capitalized text icons for one letter searches", () => {
     const { getByText, getByLabelText } = renderSearchDialog();
 
-    const searchBar = getByLabelText("search");
+    const searchBar = getByLabelText("search", { selector: "input" });
     userEvent.type(searchBar, "z");
     expect(getByText("Z")).toBeVisible();
   });
 
   it("only shows icons that match the search", () => {
     const { queryByLabelText, getByLabelText } = renderSearchDialog();
-    const searchBar = getByLabelText("search");
+    const searchBar = getByLabelText("search", { selector: "input" });
     userEvent.type(searchBar, "stone");
     expect(getByLabelText("Character: stone wall")).toBeVisible();
     expect(queryByLabelText("Character: bed")).not.toBeInTheDocument();
