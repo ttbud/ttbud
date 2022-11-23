@@ -5,6 +5,8 @@ from uuid import uuid4
 
 import pytest
 from starlette.applications import Starlette
+from starlette.requests import Request
+from starlette.responses import Response
 
 from src.api.api_structures import BYPASS_RATE_LIMIT_HEADER
 from src.api.ws_close_codes import (
@@ -53,6 +55,10 @@ TEST_UPSERT_TOKEN = {
 TEST_BYPASS_RATE_LIMIT_KEY = '1234'
 
 
+async def noop_endpoint(request: Request) -> Response:
+    return Response('')
+
+
 @pytest.fixture
 async def app() -> Starlette:
     room_store = MemoryRoomStore(MemoryRoomStorage())
@@ -62,7 +68,7 @@ async def app() -> Starlette:
     )
     gss = GameStateServer(room_store, rate_limiter, NoopRateLimiter())
     ws = WebsocketManager(gss, rate_limiter, TEST_BYPASS_RATE_LIMIT_KEY)
-    return Starlette(routes=routes(ws), debug=True)
+    return Starlette(routes=routes(noop_endpoint, ws), debug=True)
 
 
 pytestmark = pytest.mark.asyncio

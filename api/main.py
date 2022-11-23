@@ -11,8 +11,9 @@ from asyncio import (
     Transport,
 )
 from asyncio import Future, AbstractEventLoop
+from functools import partial
 from socket import gaierror
-from typing import TypedDict, Optional, Any, Dict, cast
+from typing import TypedDict, Optional, Any, Dict, cast, Callable, Awaitable
 from uuid import uuid4
 
 import aiobotocore
@@ -24,8 +25,11 @@ from aiohttp import ClientConnectorError
 from botocore.exceptions import ClientError
 from scout_apm.api import Config as ScoutConfig
 from starlette.applications import Starlette
+from starlette.requests import Request
+from starlette.responses import Response
 
 from src.api.wsmanager import WebsocketManager
+from src.api.stats_endpoint import stats_endpoint
 from src.compaction import Compactor
 from src.config import config, Environment
 from src.game_state_server import GameStateServer
@@ -36,6 +40,7 @@ from src.room_store.merged_room_store import MergedRoomStore
 from src.room_store.redis_room_store import create_redis_room_store
 from src.room_store.s3_room_archive import S3RoomArchive
 from src.routes import routes
+from src.usage_stats import get_usage_stats
 from src.util.async_util import end_task
 from src.util.lazy_asgi import LazyASGI
 
@@ -104,6 +109,10 @@ async def make_app() -> Starlette:
     merged_room_store = MergedRoomStore(redis_room_store, room_archive)
     gss = GameStateServer(merged_room_store, rate_limiter, NoopRateLimiter())
     ws = WebsocketManager(gss, rate_limiter, config.bypass_rate_limit_key)
+    stat_getter = partial(get_usage_stats, redis_room_store, rate_limiter)
+    stats_view: Callable[[Request], Awaitable[Response]] = partial(
+        stats_endpoint, stat_getter
+    )
 
     liveness_task = asyncio.create_task(
         ws.maintain_liveness(), name='maintain_liveness'
@@ -125,7 +134,7 @@ async def make_app() -> Starlette:
         await s3_client_context.__aexit__(None, None, None)
 
     return Starlette(
-        routes=routes(ws),
+        routes=routes(stats_view, ws),
         on_shutdown=[shutdown],
         debug=config.environment == Environment.DEV,
     )

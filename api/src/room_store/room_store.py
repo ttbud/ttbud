@@ -98,3 +98,10 @@ class RoomStore(Protocol):
         :return: Number of seconds since the room was read or written to by a user
         """
         ...
+
+    async def seconds_since_last_activity(self) -> Optional[int]:
+        """
+        :return: How many seconds have passed since the last room update,
+        or None if there is no recorded activity in Redis
+        """
+        ...

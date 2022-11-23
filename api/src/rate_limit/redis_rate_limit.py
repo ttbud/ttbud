@@ -189,6 +189,14 @@ class RedisRateLimiter(RateLimiter):
         if recent_room_creation_count > MAX_ROOMS_PER_TEN_MINUTES:
             raise TooManyRoomsCreatedException
 
+    @instrument
+    async def get_total_num_connections(self) -> int:
+        num_connections = 0
+        async for entry in self._redis.scan_iter(match='user-connections:*'):
+            async for _, count in self._redis.hscan_iter(entry):
+                num_connections += int(count)
+        return num_connections
+
 
 async def create_redis_rate_limiter(server_id: str, redis: Redis) -> RedisRateLimiter:
     server_key = f'api-server:{server_id}'
