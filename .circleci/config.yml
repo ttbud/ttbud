@@ -213,6 +213,9 @@ jobs:
             API_DOMAIN: wss://ttbud-staging.herokuapp.com
           # Sometimes both browsers fail to start if we start more than one at a time
           command: yarn test --workers=1 --forbid-only
+      -run:
+          name: Download playwright browsers
+          command: npx playwright install
       - store_artifacts:
           path: ~/repo/e2e/test-results
 
