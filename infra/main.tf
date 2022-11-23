@@ -79,7 +79,7 @@ module "api" {
   organization                     = "ttbud"
   autoidle                         = !local.is_prod
   redis_plan                       = "mini"
-  dyno_size                        = local.is_prod ? "hobby" : "eco"
+  dyno_size                        = "hobby"
   region                           = "us"
   env_name                         = local.short_env
   deploy_tarball_url               = var.api_deploy_tarball_url
