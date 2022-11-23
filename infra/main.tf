@@ -78,7 +78,8 @@ module "api" {
   app_name                         = var.TFC_WORKSPACE_NAME
   organization                     = "ttbud"
   autoidle                         = !local.is_prod
-  redis_plan                       = local.is_prod ? "premium-0" : "mini"
+  redis_plan                       = "mini"
+  dyno_size                        = local.is_prod ? "basic" : "eco"
   region                           = "us"
   env_name                         = local.short_env
   deploy_tarball_url               = var.api_deploy_tarball_url

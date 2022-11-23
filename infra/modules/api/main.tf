@@ -53,7 +53,7 @@ resource "heroku_build" "api" {
 resource "heroku_formation" "api" {
   app      = heroku_app.api.name
   quantity = 1
-  size     = "hobby"
+  size     = var.dyno_size
   type     = "web"
 
   depends_on = [heroku_build.api]
@@ -75,7 +75,7 @@ resource "heroku_addon" "redis" {
 }
 
 resource "heroku_addon" "autoidle" {
-  count = var.autoidle ? 1 : 0
+  count = 0
   app   = heroku_app.api.name
   plan  = "autoidle:hobby"
 }

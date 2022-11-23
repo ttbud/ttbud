@@ -69,3 +69,8 @@ variable "commit_hash" {
   description = "Commit hash of the source being deployed"
   type        = string
 }
+
+variable "dyno_size" {
+  description = "Heroku dyno plan size"
+  type        = string
+}
