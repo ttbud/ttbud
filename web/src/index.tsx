@@ -7,7 +7,7 @@ import createStore from "./store/createStore";
 import { RealBoardStateApiClient } from "./network/RealBoardStateApiClient";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
-import { CssBaseline, createMuiTheme, ThemeProvider } from "@material-ui/core";
+import { CssBaseline, createTheme, ThemeProvider } from "@material-ui/core";
 
 const monitor = new DomDroppableMonitor();
 const apiClient = new RealBoardStateApiClient(
@@ -17,7 +17,7 @@ const store = createStore(monitor, apiClient);
 
 let persistor = persistStore(store);
 
-const theme = createMuiTheme({
+const theme = createTheme({
   palette: {
     primary: {
       main: "#4517D1",
