@@ -75,7 +75,7 @@ resource "heroku_addon" "redis" {
 }
 
 resource "heroku_addon" "autoidle" {
-  count = 0
+  count = var.autoidle ? 1 : 0
   app   = heroku_app.api.name
   plan  = "autoidle:hobby"
 }
