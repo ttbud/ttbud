@@ -6,8 +6,8 @@ from typing import Awaitable, TypeVar, Callable, AsyncIterator
 import fakeredis.aioredis
 import pytest
 import time_machine
-from aioredis import Redis
 from pytest_lazyfixture import lazy_fixture
+from redis.asyncio.client import Redis
 
 from src.rate_limit.rate_limit import (
     MAX_CONNECTIONS_PER_USER,
@@ -31,8 +31,6 @@ T = TypeVar('T', bound=RateLimiter)
 
 GenericRateLimiterFactory = Callable[[str], Awaitable[T]]
 RateLimiterFactory = GenericRateLimiterFactory[RateLimiter]
-
-pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture

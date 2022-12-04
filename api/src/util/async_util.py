@@ -2,7 +2,15 @@ from __future__ import annotations
 
 import asyncio
 from asyncio import Future, CancelledError, Task
-from typing import TypeVar, AsyncIterable, AsyncIterator, Optional, List, cast
+from typing import (
+    TypeVar,
+    AsyncIterable,
+    AsyncIterator,
+    Optional,
+    List,
+    cast,
+    Awaitable,
+)
 
 _T = TypeVar('_T')
 
@@ -37,11 +45,16 @@ async def all_items(q: asyncio.Queue[_T]) -> AsyncIterator[_T]:
         yield await q.get()
 
 
+async def to_coroutine(awaitable: Awaitable[_T]) -> _T:
+    """Transform any awaitable into a coroutine"""
+    return await awaitable
+
+
 async def items_until(it: AsyncIterable[_T], stop: asyncio.Future) -> AsyncIterator[_T]:
     """Yield items from the iterator until the stop future is completed"""
     it = aiter(it)
     while True:
-        next_item_task = asyncio.create_task(it.__anext__())
+        next_item_task: Task[_T] = asyncio.create_task(to_coroutine(it.__anext__()))
         done, pending = await asyncio.wait(
             [next_item_task, stop], return_when=asyncio.FIRST_COMPLETED
         )

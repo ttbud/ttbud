@@ -9,8 +9,6 @@ from src.util.amerge import amerge, CompleteCondition
 from src.util.async_util import async_collect, anext, race
 from tests.helpers import to_async
 
-pytestmark = pytest.mark.asyncio
-
 
 class QueueEnd:
     pass

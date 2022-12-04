@@ -7,8 +7,8 @@ from dataclasses import dataclass, asdict
 from json import JSONDecodeError
 from typing import Optional, DefaultDict, List, Union, NoReturn, Literal, AsyncIterator
 
-from aioredis.client import PubSub, Redis
 from dacite import from_dict, DaciteError
+from redis.asyncio.client import Redis, PubSub
 
 from src.api.api_structures import Request
 from src.util.async_util import end_task
@@ -92,7 +92,7 @@ class RedisRoomListener:
             # empty byte array, which handle_message cannot handle (ironically)
             if not resp:
                 continue
-            raw_event = self._pubsub.handle_message(resp)
+            raw_event = await self._pubsub.handle_message(resp)
             if raw_event is None or raw_event['type'] != 'message':
                 continue
 

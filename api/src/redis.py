@@ -1,6 +1,6 @@
 from enum import Enum
 
-from aioredis import Redis
+from redis.asyncio.client import Redis
 
 
 class SSLValidation(Enum):

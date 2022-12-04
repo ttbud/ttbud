@@ -8,7 +8,7 @@ from timber.formatter import TimberFormatter
 MAX_LOG_STACK_DEPTH = 20
 
 
-def _jsonable_traceback(tb: Optional[TracebackType]) -> List[Dict[str, str]]:
+def _jsonable_traceback(tb: Optional[TracebackType]) -> List[Dict[str, Optional[str]]]:
     stack = traceback.extract_tb(tb, limit=MAX_LOG_STACK_DEPTH)
     return [
         {

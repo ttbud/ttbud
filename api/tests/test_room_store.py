@@ -4,8 +4,8 @@ from typing import Callable, List
 
 import pytest
 import time_machine
-from aioredis import Redis
 from pytest_lazyfixture import lazy_fixture
+from redis.asyncio.client import Redis
 
 from src.api.api_structures import Request, Action
 from src.room_store.common import NoSuchRoomError
@@ -26,8 +26,6 @@ from tests.static_fixtures import (
     DELETE_REQUEST,
     VALID_MOVE_REQUEST,
 )
-
-pytestmark = pytest.mark.asyncio
 
 
 def any_room_store(func: Callable) -> Callable:

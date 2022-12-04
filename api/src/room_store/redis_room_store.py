@@ -16,8 +16,9 @@ from typing import (
     Optional,
 )
 
-from aioredis import Redis, ResponseError
-from aioredis.client import Script
+from redis.asyncio.client import Redis
+from redis.commands.core import AsyncScript
+from redis.exceptions import ResponseError
 
 from src.api.api_structures import Request, Action
 from src.apm import instrument
@@ -118,9 +119,9 @@ class RedisRoomStore:
         self,
         redis: Redis,
         room_listener: RedisRoomListener,
-        lreplace: Script,
-        delete_room: Script,
-        write_if_missing: Script,
+        lreplace: AsyncScript,
+        delete_room: AsyncScript,
+        write_if_missing: AsyncScript,
     ):
         self._redis = redis
         self._room_listener = room_listener
@@ -189,11 +190,13 @@ class RedisRoomStore:
     async def acquire_replacement_lock(
         self, replacer_id: str, force: bool = False
     ) -> bool:
-        return await self._redis.set(
-            REPLACEMENT_KEY,
-            replacer_id,
-            ex=COMPACTION_LOCK_EXPIRATION_SECONDS,
-            nx=not force,
+        return bool(
+            await self._redis.set(
+                REPLACEMENT_KEY,
+                replacer_id,
+                ex=COMPACTION_LOCK_EXPIRATION_SECONDS,
+                nx=not force,
+            )
         )
 
     @instrument
@@ -272,7 +275,10 @@ class RedisRoomStore:
     async def seconds_since_last_activity(self) -> Optional[int]:
         most_recent_activity = 0
         async for entry in self._redis.scan_iter(match='last-room-activity:*'):
-            last_activity_time = int(await self._redis.get(entry))
+            value = await self._redis.get(entry)
+            if value is None:
+                continue
+            last_activity_time = int(value)
             if last_activity_time > most_recent_activity:
                 most_recent_activity = last_activity_time
         if most_recent_activity == 0:

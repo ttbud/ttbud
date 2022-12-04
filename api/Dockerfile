@@ -25,7 +25,7 @@ ENV PATH="/home/appuser/.local/bin:${PATH}" \
     # the install once
     PIP_NO_CACHE_DIR=1
 
-RUN pip install --user poetry
+RUN pip install --user poetry==1.2.2
 # Create a venv so it's easy to copy everything over to the final image
 # Creating our own venv instead of letting poetry create one automatically
 # lets us dictate the venv location

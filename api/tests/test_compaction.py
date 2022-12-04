@@ -26,9 +26,6 @@ from tests.static_fixtures import (
 TEST_COMPACTOR_ID = 'compactor_1'
 
 
-pytestmark = pytest.mark.asyncio
-
-
 @pytest.fixture
 def room_store() -> RoomStore:
     return MemoryRoomStore(MemoryRoomStorage())
