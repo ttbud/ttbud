@@ -91,6 +91,10 @@ jobs:
             # or, failing that, just the most recent cache entry
             - api-deps-v3
       - run:
+          # Necessary for poetry, but not included in base image :(
+          name: Install libsasl2
+          command: sudo apt-get update && sudo apt-get install libsasl2-dev
+      - run:
           name: Configure Poetry
           command: poetry config virtualenvs.in-project true && poetry config virtualenvs.path .venv
       - run:
