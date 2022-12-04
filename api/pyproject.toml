@@ -29,7 +29,7 @@ flake8 = "^3.9.2"
 watchgod = "^0.7"
 fakeredis = {extras = ["lua"], version = "^1.6.0"}
 pytest-lazy-fixture = "^0.6.3"
-locust = "^1.5.3"
+locust = "^2.0.0"
 # Need a synchronous websocket client for interacting with the API via locust
 # locust does not support asyncio
 websocket_client = "^1.1.0"
