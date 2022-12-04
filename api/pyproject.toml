@@ -6,7 +6,7 @@ authors = ["Stephen Johnson <github@sjoh.net>", "Sam Burba <github@samburba.com>
 
 [tool.poetry.dependencies]
 python = "^3.9"
-websockets = "^9.1"
+websockets = "^10.4"
 dacite = "^1.6.0"
 aioredis = {extras = ["hiredis"], version = "^2.0.0"}
 timber = "^2.1.0"
