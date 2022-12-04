@@ -5,7 +5,7 @@ description = "Your virtual table friend"
 authors = ["Stephen Johnson <github@sjoh.net>", "Sam Burba <github@samburba.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.9.15"
 websockets = "^10.4"
 dacite = "^1.6.0"
 timber = "^2.1.0"
