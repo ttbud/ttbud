@@ -1,6 +1,6 @@
 ARG BUILD_ENV="prod"
 
-FROM python:3.9.15 as base
+FROM python:3.10.8 as base
 RUN useradd --create-home appuser
 WORKDIR /home/appuser/app
 RUN chown appuser:appuser /home/appuser/app
@@ -11,10 +11,10 @@ FROM base as builder
 USER root
 RUN apt-get update \
     && apt-get install -y \
-        g++ \
-        gcc \
-        libffi-dev \
-        libsasl2-dev \
+    g++ \
+    gcc \
+    libffi-dev \
+    libsasl2-dev \
     && rm -rf /var/lib/apt/lists/*
 USER appuser
 
