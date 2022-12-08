@@ -10,8 +10,6 @@ from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
 from src.room_store.room_store import RoomStore
 from tests.static_fixtures import VALID_REQUEST, VALID_TOKEN
 
-pytestmark = pytest.mark.asyncio
-
 LOAD_TEST_REQUEST = Request(
     'request-id',
     actions=[

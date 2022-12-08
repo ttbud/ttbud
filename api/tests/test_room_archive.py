@@ -3,9 +3,9 @@ from contextlib import suppress
 from typing import AsyncIterator, Callable, Iterator
 from uuid import uuid4
 
-import aiobotocore
 import pytest
 from aiobotocore.client import AioBaseClient
+from aiobotocore.session import get_session
 
 from localstack.services import infra
 from pytest_lazyfixture import lazy_fixture
@@ -15,8 +15,6 @@ from src.room_store.room_archive import RoomArchive
 from src.room_store.s3_room_archive import S3RoomArchive
 from src.util.async_util import async_collect
 from tests.static_fixtures import VALID_ACTION, ANOTHER_VALID_ACTION
-
-pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture(scope='session')
@@ -28,7 +26,7 @@ def s3_url() -> Iterator[str]:
 
 @pytest.fixture
 async def s3_client(s3_url: str) -> AsyncIterator[AioBaseClient]:
-    s3_client_context = aiobotocore.get_session().create_client(
+    s3_client_context = get_session().create_client(
         's3',
         region_name='us-east-1',
         endpoint_url=s3_url,

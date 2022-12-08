@@ -1,6 +1,6 @@
 ARG BUILD_ENV="prod"
 
-FROM python:3.9 as base
+FROM python:3.10.8 as base
 RUN useradd --create-home appuser
 WORKDIR /home/appuser/app
 RUN chown appuser:appuser /home/appuser/app
@@ -11,10 +11,10 @@ FROM base as builder
 USER root
 RUN apt-get update \
     && apt-get install -y \
-        g++ \
-        gcc \
-        libffi-dev \
-        libsasl2-dev \
+    g++ \
+    gcc \
+    libffi-dev \
+    libsasl2-dev \
     && rm -rf /var/lib/apt/lists/*
 USER appuser
 
@@ -25,7 +25,7 @@ ENV PATH="/home/appuser/.local/bin:${PATH}" \
     # the install once
     PIP_NO_CACHE_DIR=1
 
-RUN pip install --user poetry
+RUN pip install --user poetry==1.2.2
 # Create a venv so it's easy to copy everything over to the final image
 # Creating our own venv instead of letting poetry create one automatically
 # lets us dictate the venv location

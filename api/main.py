@@ -16,11 +16,10 @@ from socket import gaierror
 from typing import TypedDict, Optional, Any, Dict, cast, Callable, Awaitable
 from uuid import uuid4
 
-import aiobotocore
 import scout_apm.core
 import timber
 import uvicorn
-from aiobotocore.session import ClientCreatorContext
+from aiobotocore.session import ClientCreatorContext, get_session
 from aiohttp import ClientConnectorError
 from botocore.exceptions import ClientError
 from scout_apm.api import Config as ScoutConfig
@@ -63,7 +62,7 @@ class ExceptionContext(TypedDict):
 
 
 def create_s3_context() -> ClientCreatorContext:
-    s3_client_context = aiobotocore.get_session().create_client(
+    s3_client_context = get_session().create_client(
         's3',
         region_name=config.aws_region,
         endpoint_url=config.aws_endpoint,

@@ -4,9 +4,9 @@ import time
 from typing import Any, AsyncIterator
 
 import pytest
-from aioredis import Redis
 from fakeredis.aioredis import FakeRedis
 from pytest_mock import MockerFixture
+from redis.asyncio.client import Redis
 
 from src.room_store.memory_room_archive import MemoryRoomArchive
 from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage

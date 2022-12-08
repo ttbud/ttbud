@@ -32,8 +32,6 @@ from tests.static_fixtures import (
     VALID_ACTION_WITH_DUPLICATE_COLOR,
 )
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture
 def room_store() -> RoomStore:
