@@ -26,25 +26,6 @@ async def end_task(task: Task) -> None:
         pass
 
 
-async def anext(iterator: AsyncIterator[_T]) -> _T:
-    """
-    Retrieve the next item from the `iterator`.
-    If the iterator is exhausted, StopIteration is raised.
-    """
-    return await iterator.__anext__()
-
-
-def aiter(iterable: AsyncIterable[_T]) -> AsyncIterator[_T]:
-    """Return the iterator object for the given iterable"""
-    return iterable.__aiter__()
-
-
-async def all_items(q: asyncio.Queue[_T]) -> AsyncIterator[_T]:
-    """Create an indefinite iterator that contains all items the queue contains"""
-    while True:
-        yield await q.get()
-
-
 async def to_coroutine(awaitable: Awaitable[_T]) -> _T:
     """Transform any awaitable into a coroutine"""
     return await awaitable
