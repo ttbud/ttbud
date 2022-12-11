@@ -4,7 +4,7 @@ orbs:
 executors:
   web-executor:
     docker:
-      - image: cimg/node:14.17.6
+      - image: cimg/node:19.1.0
   e2e-executor:
     docker:
       - image: mcr.microsoft.com/playwright:v1.15.2-focal
