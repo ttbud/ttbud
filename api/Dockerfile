@@ -1,6 +1,6 @@
 ARG BUILD_ENV="prod"
 
-FROM python:3.10.8 as base
+FROM python:3.11.1 as base
 RUN useradd --create-home appuser
 WORKDIR /home/appuser/app
 RUN chown appuser:appuser /home/appuser/app
