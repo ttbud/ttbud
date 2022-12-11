@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Iterator
+from typing import AsyncGenerator, Iterable
 
 from redis.asyncio.client import Redis
 from redis.commands.core import AsyncScript
@@ -128,7 +128,7 @@ class RedisRateLimiter(RateLimiter):
             await self.release_connection(user_id, room_id)
 
     @instrument
-    async def refresh_server_liveness(self, user_ids: Iterator[str]) -> None:
+    async def refresh_server_liveness(self, user_ids: Iterable[str]) -> None:
         await self._redis.expire(
             f'api-server:{self._server_id}', SERVER_LIVENESS_EXPIRATION_SECONDS
         )
