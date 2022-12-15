@@ -2,7 +2,7 @@ import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import Dict, List, AsyncGenerator, Iterator
+from typing import Dict, List, AsyncGenerator, Iterable
 
 from src.rate_limit.rate_limit import (
     RateLimiter,
@@ -90,7 +90,7 @@ class MemoryRateLimiter(RateLimiter):
         if room_id in room_connections:
             room_connections.remove(room_id)
 
-    async def refresh_server_liveness(self, user_ids: Iterator[str]) -> None:
+    async def refresh_server_liveness(self, user_ids: Iterable[str]) -> None:
         self._storage.server_expirations_by_id[self._server_id] = (
             time.time() + SERVER_LIVENESS_EXPIRATION_SECONDS
         )

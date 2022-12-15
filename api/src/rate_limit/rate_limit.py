@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol, AsyncContextManager, Iterator
+from typing import Protocol, AsyncContextManager, Iterable
 
 MAX_ROOMS_PER_TEN_MINUTES = 50
 MAX_CONNECTIONS_PER_USER = 10
@@ -55,7 +55,7 @@ class RateLimiter(Protocol):
         """
         ...
 
-    async def refresh_server_liveness(self, user_ids: Iterator[str]) -> None:
+    async def refresh_server_liveness(self, user_ids: Iterable[str]) -> None:
         """
         This function should be called every
         SERVER_LIVENESS_EXPIRATION_SECONDS/3 while the server is operating

@@ -335,6 +335,31 @@ async def test_refresh_server_liveness(
 
 
 @any_rate_limiter_factory
+async def test_refresh_server_liveness_many_users(
+    rate_limiter_factory: RateLimiterFactory,
+) -> None:
+    with time_machine.travel('1970-01-01', tick=False) as traveller:
+        refreshing_server = await rate_limiter_factory('server-id-1')
+
+        users = [f'user-{i}' for i in range(50)]
+        for i, user in enumerate(users):
+            await refreshing_server.acquire_connection(user, f'room-{i}')
+
+        for i in range(MAX_CONNECTIONS_PER_USER):
+            await refreshing_server.acquire_connection('greedy-user', f'room-{i}')
+
+        traveller.shift(timedelta(seconds=SERVER_LIVENESS_EXPIRATION_SECONDS / 2))
+        await refreshing_server.refresh_server_liveness(users + ['greedy-user'])
+
+        # Move forward past expiration time if the server hadn't refreshed itself
+        traveller.shift(timedelta(seconds=SERVER_LIVENESS_EXPIRATION_SECONDS))
+        live_server = await rate_limiter_factory('server-id-2')
+
+        with pytest.raises(TooManyConnectionsException):
+            await live_server.acquire_connection('greedy-user', 'room-last')
+
+
+@any_rate_limiter_factory
 @time_machine.travel('1970-01-01', tick=False)
 async def test_context_manager(rate_limiter_factory: RateLimiterFactory) -> None:
     server = await rate_limiter_factory('server-id')
