@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from typing import Iterator, AsyncGenerator
+from typing import Iterable, AsyncGenerator
 
 from src.rate_limit.rate_limit import RateLimiter
 
@@ -19,7 +19,7 @@ class NoopRateLimiter(RateLimiter):
     ) -> AsyncGenerator[None, None]:
         yield
 
-    async def refresh_server_liveness(self, user_ids: Iterator[str]) -> None:
+    async def refresh_server_liveness(self, user_ids: Iterable[str]) -> None:
         pass
 
     async def acquire_new_room(self, user_id: str) -> None:
