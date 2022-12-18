@@ -1,6 +1,6 @@
 import asyncio
 from contextlib import AsyncExitStack, asynccontextmanager
-from typing import AsyncIterator, Optional, Dict
+from typing import AsyncIterator, Optional, Dict, cast
 from uuid import uuid4
 
 import pytest
@@ -28,7 +28,7 @@ from src.rate_limit.rate_limit import (
 from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
 from src.routes import routes
 from tests import emulated_client
-from tests.emulated_client import WebsocketClosed, EmulatedClient
+from tests.emulated_client import WebsocketClosed, EmulatedClient, WebsocketAsgiApp
 from tests.helpers import assert_matches
 from tests.static_fixtures import TEST_REQUEST_ID
 
@@ -60,7 +60,7 @@ async def noop_endpoint(request: Request) -> Response:
 
 
 @pytest.fixture
-async def app() -> Starlette:
+async def app() -> WebsocketAsgiApp:
     room_store = MemoryRoomStore(MemoryRoomStorage())
     rate_limiter = MemoryRateLimiter(
         'server-id',
@@ -68,7 +68,11 @@ async def app() -> Starlette:
     )
     gss = GameStateServer(room_store, rate_limiter, NoopRateLimiter())
     ws = WebsocketManager(gss, rate_limiter, TEST_BYPASS_RATE_LIMIT_KEY)
-    return Starlette(routes=routes(noop_endpoint, ws), debug=True)
+    # Starlette has looser definitions than WebsocketAsgiApp but otherwise fits
+    # the protocol requirements
+    return cast(
+        WebsocketAsgiApp, Starlette(routes=routes(noop_endpoint, ws), debug=True)
+    )
 
 
 pytestmark = pytest.mark.asyncio
@@ -76,7 +80,7 @@ pytestmark = pytest.mark.asyncio
 
 @asynccontextmanager
 async def num_active_connections(
-    app: Starlette,
+    app: WebsocketAsgiApp,
     num_connections: int,
     *,
     headers: Optional[Dict] = None,
@@ -100,7 +104,7 @@ async def num_active_connections(
         yield
 
 
-async def test_invalid_uuid(app: Starlette) -> None:
+async def test_invalid_uuid(app: WebsocketAsgiApp) -> None:
     with pytest.raises(WebsocketClosed) as e:
         async with emulated_client.connect(app, '/invalid-uuid'):
             pass
@@ -108,12 +112,12 @@ async def test_invalid_uuid(app: Starlette) -> None:
     assert e.value.code == ERR_INVALID_UUID
 
 
-async def test_connect(app: Starlette) -> None:
+async def test_connect(app: WebsocketAsgiApp) -> None:
     async with emulated_client.connect(app, f'/{ROOM_ID}') as client:
         assert await client.receive_json() == {'type': 'connected', 'data': []}
 
 
-async def test_add_token(app: Starlette) -> None:
+async def test_add_token(app: WebsocketAsgiApp) -> None:
     async with emulated_client.connect(app, f'/{ROOM_ID}') as client:
         # Grab the connection message
         await client.receive_json()
@@ -134,7 +138,7 @@ async def test_add_token(app: Starlette) -> None:
         )
 
 
-async def test_invalid_request(app: Starlette) -> None:
+async def test_invalid_request(app: WebsocketAsgiApp) -> None:
     with pytest.raises(WebsocketClosed) as e:
         async with emulated_client.connect(app, f'/{ROOM_ID}') as client:
             # Wait for the initial connection message
@@ -145,7 +149,7 @@ async def test_invalid_request(app: Starlette) -> None:
     assert e.value.code == ERR_INVALID_REQUEST
 
 
-async def test_too_many_user_connections(app: Starlette) -> None:
+async def test_too_many_user_connections(app: WebsocketAsgiApp) -> None:
     async with num_active_connections(app, MAX_CONNECTIONS_PER_USER, unique_ips=False):
         with pytest.raises(WebsocketClosed) as e:
             async with emulated_client.connect(
@@ -156,7 +160,7 @@ async def test_too_many_user_connections(app: Starlette) -> None:
     assert e.value.code == ERR_TOO_MANY_CONNECTIONS
 
 
-async def test_too_many_room_connections(app: Starlette) -> None:
+async def test_too_many_room_connections(app: WebsocketAsgiApp) -> None:
     async with num_active_connections(
         app, MAX_CONNECTIONS_PER_ROOM, unique_rooms=False
     ):
@@ -169,7 +173,7 @@ async def test_too_many_room_connections(app: Starlette) -> None:
         assert e.value.code == ERR_ROOM_FULL
 
 
-async def test_too_many_rooms_created(app: Starlette) -> None:
+async def test_too_many_rooms_created(app: WebsocketAsgiApp) -> None:
     for i in range(MAX_ROOMS_PER_TEN_MINUTES):
         async with emulated_client.connect(app, f'/{uuid4()}') as client:
             await client.receive_json()
@@ -181,7 +185,7 @@ async def test_too_many_rooms_created(app: Starlette) -> None:
     assert e.value.code == ERR_TOO_MANY_ROOMS_CREATED
 
 
-async def test_bypass_room_create_rate_limit(app: Starlette) -> None:
+async def test_bypass_room_create_rate_limit(app: WebsocketAsgiApp) -> None:
     headers = {BYPASS_RATE_LIMIT_HEADER: TEST_BYPASS_RATE_LIMIT_KEY}
     for i in range(MAX_ROOMS_PER_TEN_MINUTES):
         async with emulated_client.connect(
@@ -193,7 +197,7 @@ async def test_bypass_room_create_rate_limit(app: Starlette) -> None:
         assert await client.receive_json() == {'type': 'connected', 'data': []}
 
 
-async def test_bypass_max_connections_rate_limit(app: Starlette) -> None:
+async def test_bypass_max_connections_rate_limit(app: WebsocketAsgiApp) -> None:
     headers = {BYPASS_RATE_LIMIT_HEADER: TEST_BYPASS_RATE_LIMIT_KEY}
     async with num_active_connections(
         app, MAX_CONNECTIONS_PER_USER, unique_ips=False, headers=headers
@@ -204,7 +208,7 @@ async def test_bypass_max_connections_rate_limit(app: Starlette) -> None:
             assert await client.receive_json() == {'type': 'connected', 'data': []}
 
 
-async def test_bypass_room_create_rate_limit_invalid_key(app: Starlette) -> None:
+async def test_bypass_room_create_rate_limit_invalid_key(app: WebsocketAsgiApp) -> None:
     headers = {BYPASS_RATE_LIMIT_HEADER: "invalid-key"}
     for i in range(MAX_ROOMS_PER_TEN_MINUTES):
         async with emulated_client.connect(
@@ -221,7 +225,9 @@ async def test_bypass_room_create_rate_limit_invalid_key(app: Starlette) -> None
     assert e.value.code == ERR_TOO_MANY_ROOMS_CREATED
 
 
-async def test_bypass_max_connections_rate_limit_invalid_key(app: Starlette) -> None:
+async def test_bypass_max_connections_rate_limit_invalid_key(
+    app: WebsocketAsgiApp,
+) -> None:
     headers = {BYPASS_RATE_LIMIT_HEADER: "invalid-key"}
     async with num_active_connections(
         app, MAX_CONNECTIONS_PER_USER, unique_ips=False, headers=headers

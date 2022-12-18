@@ -7,10 +7,10 @@ executors:
       - image: cimg/node:14.17.6
   e2e-executor:
     docker:
-      - image: mcr.microsoft.com/playwright:focal
+      - image: mcr.microsoft.com/playwright:v1.15.2-focal
   terraform-executor:
     docker:
-      - image: hashicorp/terraform:1.0.8
+      - image: hashicorp/terraform:1.3.6
 commands:
   build_web:
     parameters:
@@ -79,9 +79,11 @@ commands:
 jobs:
   api:
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.10.8
     working_directory: ~/repo/api
     steps:
+      - setup_remote_docker:
+          version: 20.10.18
       - checkout:
           path: ~/repo
       - restore_cache:
@@ -90,6 +92,10 @@ jobs:
             - api-deps-v3-{{ checksum "poetry.lock" }}
             # or, failing that, just the most recent cache entry
             - api-deps-v3
+      - run:
+          # Necessary for poetry, but not included in base image :(
+          name: Install libsasl2
+          command: sudo apt-get update && sudo apt-get install libsasl2-dev
       - run:
           name: Configure Poetry
           command: poetry config virtualenvs.in-project true && poetry config virtualenvs.path .venv

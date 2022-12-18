@@ -24,3 +24,6 @@ class NoopRateLimiter(RateLimiter):
 
     async def acquire_new_room(self, user_id: str) -> None:
         pass
+
+    async def get_total_num_connections(self) -> int:
+        return 0

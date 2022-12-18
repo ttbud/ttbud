@@ -1,14 +1,16 @@
 import asyncio
+from asyncio import CancelledError
 from datetime import timedelta
 from typing import Callable, List
 
 import pytest
 import time_machine
-from aioredis import Redis
 from pytest_lazyfixture import lazy_fixture
+from redis.asyncio.client import Redis
 
 from src.api.api_structures import Request, Action
 from src.room_store.common import NoSuchRoomError
+from src.room_store.redis_room_store import create_redis_room_store
 from src.room_store.room_store import (
     RoomStore,
     UnexpectedReplacementId,
@@ -26,8 +28,6 @@ from tests.static_fixtures import (
     DELETE_REQUEST,
     VALID_MOVE_REQUEST,
 )
-
-pytestmark = pytest.mark.asyncio
 
 
 def any_room_store(func: Callable) -> Callable:
@@ -259,3 +259,13 @@ async def test_get_last_activity_time(room_store: RoomStore) -> None:
 @any_room_store
 async def test_unknown_last_activity(room_store: RoomStore) -> None:
     assert await room_store.seconds_since_last_activity() is None
+
+
+async def test_change_subscription_throws_when_closed(redis: Redis) -> None:
+    """Verify that attempting to listen for changes after redis room store has been
+    closed will throw an exception"""
+    async with create_redis_room_store(redis) as room_store:
+        test = await room_store.changes('room-id-1')
+
+    with pytest.raises(CancelledError):
+        await async_collect(test)

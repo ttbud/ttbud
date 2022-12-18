@@ -1,8 +1,8 @@
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Iterator
 
-from aioredis import Redis
-from aioredis.client import Script
+from redis.asyncio.client import Redis
+from redis.commands.core import AsyncScript
 
 from src.apm import instrument
 from src.rate_limit.rate_limit import (
@@ -107,9 +107,9 @@ class RedisRateLimiter(RateLimiter):
         self,
         server_id: str,
         redis: Redis,
-        acquire_connection: Script,
-        release_connection: Script,
-        incr_expire: Script,
+        acquire_connection: AsyncScript,
+        release_connection: AsyncScript,
+        incr_expire: AsyncScript,
     ):
         self._server_id = server_id
         self._redis = redis

@@ -9,8 +9,6 @@ from typing import (
     Generic,
 )
 
-from src.util.async_util import anext
-
 _T = TypeVar('_T')
 
 
@@ -46,7 +44,7 @@ def _next_task(it: AsyncIterator[_T]) -> asyncio.Task[_IterationResult[_T]]:
 
 async def amerge(
     *iterators: AsyncIterator[_T],
-    complete_when: CompleteCondition = CompleteCondition.ALL_COMPLETED
+    complete_when: CompleteCondition = CompleteCondition.ALL_COMPLETED,
 ) -> AsyncIterator[_T]:
     """
     Iterate through `iterators` concurrently and yield items as they arrive
