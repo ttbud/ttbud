@@ -16,8 +16,15 @@ import { v4 as uuid } from "uuid";
 import BoardStateApiClient from "../../network/BoardStateApiClient";
 import Tour from "../tour/Tour";
 import MobileWarningDialog from "../mobile-warning/MobileWarningDialog";
+import { Theme } from '@material-ui/core';
 
-const useStyles = makeStyles((theme) => ({
+interface StyleProps {
+  searching: boolean;
+}
+
+const spacing = 8;
+
+const useStyles = makeStyles<Theme, StyleProps>((theme) => ({
   app: {
     width: 4000,
     height: 2000,
@@ -28,7 +35,14 @@ const useStyles = makeStyles((theme) => ({
     position: "fixed",
     zIndex: 3,
     bottom: theme.spacing(3),
-    left: theme.spacing(1),
+    left: (props) => props.searching ? 300 + spacing : spacing,
+  },
+  searchTray: {
+    position: "fixed",
+    width: 300,
+    height: "100%",
+    left: (props) => props.searching ? 0 : -300,
+    top: 0,
   },
   floorTray: {
     display: "inline-flex",
@@ -40,14 +54,14 @@ const useStyles = makeStyles((theme) => ({
   },
   connectionNotifier: {
     position: "fixed",
-    top: theme.spacing(1),
+    top: spacing,
     left: "50%",
     transform: "translateX(-50%)",
   },
   settings: {
     position: "fixed",
-    bottom: theme.spacing(3),
-    right: theme.spacing(3),
+    bottom: spacing * 3,
+    right: spacing * 3,
   },
 }));
 
@@ -58,11 +72,11 @@ interface Props {
 }
 
 const App: React.FC<Props> = ({ apiClient }) => {
-  const classes = useStyles();
   const dispatch = useDispatch();
   const { searching } = useSelector((state: RootState) => ({
     searching: state.app.searching,
   }));
+  const classes = useStyles({searching});
   const [touring, setTouring] = useState(false);
 
   useEffect(() => {
@@ -88,14 +102,18 @@ const App: React.FC<Props> = ({ apiClient }) => {
   useEffect(() => {
     const onKeyPressed = (e: KeyboardEvent) => {
       if (e.getModifierState(searchModifier) && e.key === "f") {
-        dispatch(startSearching());
+        if(searching) {
+          dispatch(stopSearching());
+        } else {
+          dispatch(startSearching());
+        }
         e.preventDefault();
       }
     };
 
     document.addEventListener("keydown", onKeyPressed);
     return () => document.removeEventListener("keydown", onKeyPressed);
-  }, [dispatch]);
+  }, [dispatch, searching]);
 
   const onSearchDialogClose = useCallback(
     () => dispatch(stopSearching()),
@@ -112,11 +130,13 @@ const App: React.FC<Props> = ({ apiClient }) => {
       <Tour isOpen={touring} onCloseClicked={() => setTouring(false)} />
       <div className={classes.app}>
         <Board />
-        <SearchDialog
-          open={searching}
-          icons={ICONS}
-          onClose={onSearchDialogClose}
-        />
+        <div className={classes.searchTray}>
+          <SearchDialog
+            open={searching}
+            icons={ICONS}
+            onClose={onSearchDialogClose}
+          />
+        </div>
         <div className={classes.characterTray}>
           <CharacterTray />
         </div>

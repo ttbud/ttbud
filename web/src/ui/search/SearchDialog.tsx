@@ -1,38 +1,32 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  makeStyles,
-  TextField,
-} from "@material-ui/core";
-import React, { memo, useCallback, useMemo, useState } from "react";
-import { Icon, ICONS_BY_ID } from "../icons";
-import Draggable from "../../drag/Draggable";
-import {
-  DraggableDescriptor,
-  DraggableType,
-  DragStateType,
-  TokenBlueprintDraggable,
-} from "../../drag/DragStateTypes";
-import { useSelector } from "react-redux";
+import React, {memo, useCallback, useMemo, useState} from "react";
+import {Icon, ICONS_BY_ID} from "../icons";
 import Character from "../token/Character";
-import { assert } from "../../util/invariants";
-import { RootState } from "../../store/rootReducer";
-import { contentId, ContentType, TokenContents } from "../../types";
+import {contentId, ContentType, TokenContents} from "../../types";
+import Draggable from "../../drag/Draggable";
+import {GRID_SIZE_PX} from "../../config";
+import {makeStyles, Paper, TextField} from "@material-ui/core";
+import {DraggableDescriptor, DraggableType, DragStateType, TokenBlueprintDraggable} from "../../drag/DragStateTypes";
+import {useSelector} from "react-redux";
+import {RootState} from "../../store/rootReducer";
+import {assert} from "../../util/invariants";
 
 const useStyles = makeStyles((theme) => ({
-  content: {
-    width: "300px",
-    height: "300px",
+  root: {
+    width: "100%",
+    height: "100%",
+    overflowY: "scroll",
+    padding: theme.spacing(1),
   },
   tokenList: {
-    display: "flex",
-    flexWrap: "wrap",
+    display: "grid",
+    gridTemplateColumns: `repeat(auto-fit, minmax(${GRID_SIZE_PX}px, 1fr))`,
+    alignItems: "center",
+    justifyContent: "center",
+    justifyItems: "center",
   },
   token: {
     margin: theme.spacing(1),
   },
-  search: {},
   icon: {
     color: "white",
   },
@@ -44,16 +38,17 @@ interface Props {
   onClose: () => void;
 }
 
-const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
+const SearchDialog: React.FC<Props> = memo(({icons, open, onClose}) => {
   const classes = useStyles();
   const [search, setSearch] = useState("");
-  const onChange = useCallback((e) => setSearch(e.target.value), [setSearch]);
+  const onChange = useCallback((e) => setSearch(e.target.value), []);
+
 
   const items: TokenBlueprintDraggable[] = useMemo(
     () =>
       icons.map((icon) => ({
         type: DraggableType.TokenBlueprint,
-        contents: { type: ContentType.Icon, iconId: icon.id },
+        contents: {type: ContentType.Icon, iconId: icon.id},
         id: `search-dialog-${icon.id}`,
       })),
     [icons]
@@ -70,25 +65,25 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
   const visibleIconItems = useMemo(() => {
     return search
       ? items.filter(
-          (item) =>
-            item.contents.type === ContentType.Icon &&
-            ICONS_BY_ID.get(item.contents.iconId)!.desc.indexOf(search) !== -1
-        )
+        (item) =>
+          item.contents.type === ContentType.Icon &&
+          ICONS_BY_ID.get(item.contents.iconId)!.desc.indexOf(search) !== -1
+      )
       : items;
   }, [search, items]);
 
   const textContents: TokenContents | undefined =
     search.length > 0 && search.length <= 2
-      ? { type: ContentType.Text, text: search }
+      ? {type: ContentType.Text, text: search}
       : undefined;
 
   const textItem: DraggableDescriptor | undefined = !textContents
     ? undefined
     : {
-        type: DraggableType.TokenBlueprint,
-        contents: textContents,
-        id: `search-dialog-${contentId(textContents)}`,
-      };
+      type: DraggableType.TokenBlueprint,
+      contents: textContents,
+      id: `search-dialog-${contentId(textContents)}`,
+    };
 
   const renderDraggable = () => {
     assert(
@@ -97,10 +92,9 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
     );
 
     return (
-      <Draggable
-        key={`search-dialog-${contentId(activeDraggable.contents)}`}
-        descriptor={activeDraggable}
-        usePortal={true}
+      <Draggable key={`search-dialog-${contentId(activeDraggable.contents)}`}
+                 descriptor={activeDraggable}
+                 usePortal={true}
       >
         {(isDragging, attributes) => (
           <Character
@@ -114,23 +108,20 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
     );
   };
 
-  const renderDialog = () => (
-    <Dialog open={open} onClose={onClose} disableScrollLock={true}>
-      <DialogTitle>
+  return (
+    <>
+      <Paper className={classes.root} elevation={5}>
         <TextField
           id="search"
           fullWidth
-          autoFocus
-          className={classes.search}
           variant="filled"
           margin="normal"
           label="search"
+          autoComplete="off"
           onChange={onChange}
           onFocus={(e) => e.target.select()}
           value={search}
         />
-      </DialogTitle>
-      <DialogContent className={classes.content}>
         <div className={classes.tokenList}>
           {textItem && (
             <Draggable key={textItem.id} descriptor={textItem}>
@@ -145,24 +136,35 @@ const SearchDialog: React.FC<Props> = memo(({ icons, open, onClose }) => {
             </Draggable>
           )}
 
-          {visibleIconItems.map((item) => (
-            <Draggable key={item.id} descriptor={item}>
-              {(isDragging, attributes) => (
-                <Character
-                  dragAttributes={attributes}
-                  className={classes.token}
-                  contents={item.contents}
-                  isDragging={isDragging}
-                />
-              )}
-            </Draggable>
-          ))}
+          {visibleIconItems.map((item) => {
+            let newItem: TokenBlueprintDraggable;
+            if (item.id === activeDraggable?.id) {
+              newItem = {
+                type: item.type,
+                id: "dragging-search-item",
+                contents: item.contents
+              }
+            } else {
+              newItem = item;
+            }
+            return (
+              <Draggable key={newItem.id} descriptor={newItem}>
+                {(isDragging, attributes) => (
+                  <Character
+                    dragAttributes={attributes}
+                    className={classes.token}
+                    contents={newItem.contents}
+                    isDragging={isDragging}
+                  />
+                )}
+              </Draggable>
+            );
+          })}
         </div>
-      </DialogContent>
-    </Dialog>
+      </Paper>
+      {activeDraggable && renderDraggable()}
+    </>
   );
-
-  return activeDraggable ? renderDraggable() : renderDialog();
 });
 
 export default SearchDialog;
