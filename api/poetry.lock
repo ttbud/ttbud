@@ -2243,6 +2243,7 @@ category = "dev"
 optional = false
 python-versions = "*"
 files = [
+    {file = "junit-xml-1.9.tar.gz", hash = "sha256:de16a051990d4e25a3982b2dd9e89d671067548718866416faec14d9de56db9f"},
     {file = "junit_xml-1.9-py2.py3-none-any.whl", hash = "sha256:ec5ca1a55aefdd76d28fcc0b135251d156c7106fa979686a4b48d62b761b4732"},
 ]
 
@@ -4583,14 +4584,14 @@ dev = ["twine", "wheel", "yapf"]
 
 [[package]]
 name = "starlette"
-version = "0.23.1"
+version = "0.25.0"
 description = "The little ASGI library that shines."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "starlette-0.23.1-py3-none-any.whl", hash = "sha256:ec69736c90be8dbfc6ec6800ba6feb79c8c44f9b1706c0b2bb27f936bcf362cc"},
-    {file = "starlette-0.23.1.tar.gz", hash = "sha256:8510e5b3d670326326c5c1d4cb657cc66832193fe5d5b7015a51c7b1e1b1bf42"},
+    {file = "starlette-0.25.0-py3-none-any.whl", hash = "sha256:774f1df1983fd594b9b6fb3ded39c2aa1979d10ac45caac0f4255cbe2acb8628"},
+    {file = "starlette-0.25.0.tar.gz", hash = "sha256:854c71e73736c429c2bdb07801f2c76c9cba497e7c3cf4988fde5e95fe4cdb3c"},
 ]
 
 [package.dependencies]
@@ -5580,4 +5581,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10.8"
-content-hash = "0f0b1961370db87df00c688d6c4303668894bf3c1f31ce515c01f9ed08dc65d6"
+content-hash = "a6053396ef8f4be4580d44ce7569ba8bf697a924197b39c546d5c7200ff12474"
