@@ -1,4 +1,4 @@
-import SearchDialog from "./SearchDialog";
+import SearchTray from "./SearchTray";
 import { ICONS } from "../icons";
 import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
@@ -22,7 +22,7 @@ const store = configureStore({
 export default (
   <Provider store={store}>
     <DndContext.Provider value={monitor}>
-      <SearchDialog icons={ICONS} open={true} onClose={noop} />
+      <SearchTray icons={ICONS} open={true} onClose={noop} />
     </DndContext.Provider>
   </Provider>
 );

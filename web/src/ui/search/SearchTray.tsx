@@ -15,17 +15,18 @@ const useStyles = makeStyles((theme) => ({
     width: "100%",
     height: "100%",
     overflowY: "scroll",
-    padding: theme.spacing(1),
+    padding: theme.spacing(2),
+  },
+  searchInput: {
+    marginBottom: theme.spacing(1),
   },
   tokenList: {
     display: "grid",
-    gridTemplateColumns: `repeat(auto-fit, minmax(${GRID_SIZE_PX}px, 1fr))`,
-    alignItems: "center",
-    justifyContent: "center",
-    justifyItems: "center",
-  },
-  token: {
-    margin: theme.spacing(1),
+    gap: theme.spacing(1),
+    gridTemplateColumns: `repeat(auto-fill, ${GRID_SIZE_PX * 5}px`,
+    alignItems: "left",
+    justifyContent: "left",
+    justifyItems: "left",
   },
   icon: {
     color: "white",
@@ -38,7 +39,7 @@ interface Props {
   onClose: () => void;
 }
 
-const SearchDialog: React.FC<Props> = memo(({icons, open, onClose}) => {
+const SearchTray: React.FC<Props> = memo(({icons, open, onClose}) => {
   const classes = useStyles();
   const [search, setSearch] = useState("");
   const onChange = useCallback((e) => setSearch(e.target.value), []);
@@ -49,7 +50,7 @@ const SearchDialog: React.FC<Props> = memo(({icons, open, onClose}) => {
       icons.map((icon) => ({
         type: DraggableType.TokenBlueprint,
         contents: {type: ContentType.Icon, iconId: icon.id},
-        id: `search-dialog-${icon.id}`,
+        id: `search-tray-${icon.id}`,
       })),
     [icons]
   );
@@ -82,7 +83,7 @@ const SearchDialog: React.FC<Props> = memo(({icons, open, onClose}) => {
     : {
       type: DraggableType.TokenBlueprint,
       contents: textContents,
-      id: `search-dialog-${contentId(textContents)}`,
+      id: `search-tray-${contentId(textContents)}`,
     };
 
   const renderDraggable = () => {
@@ -92,14 +93,13 @@ const SearchDialog: React.FC<Props> = memo(({icons, open, onClose}) => {
     );
 
     return (
-      <Draggable key={`search-dialog-${contentId(activeDraggable.contents)}`}
+      <Draggable key={`search-tray-${contentId(activeDraggable.contents)}`}
                  descriptor={activeDraggable}
                  usePortal={true}
       >
         {(isDragging, attributes) => (
           <Character
             dragAttributes={attributes}
-            className={classes.token}
             contents={activeDraggable.contents}
             isDragging={isDragging}
           />
@@ -111,11 +111,11 @@ const SearchDialog: React.FC<Props> = memo(({icons, open, onClose}) => {
   return (
     <>
       <Paper className={classes.root} elevation={5}>
-        <TextField
+        <TextField className={classes.searchInput}
           id="search"
           fullWidth
           variant="filled"
-          margin="normal"
+          margin="none"
           label="search"
           autoComplete="off"
           onChange={onChange}
@@ -128,7 +128,6 @@ const SearchDialog: React.FC<Props> = memo(({icons, open, onClose}) => {
               {(isDragging, attributes) => (
                 <Character
                   dragAttributes={attributes}
-                  className={classes.token}
                   contents={textItem.contents}
                   isDragging={isDragging}
                 />
@@ -152,7 +151,6 @@ const SearchDialog: React.FC<Props> = memo(({icons, open, onClose}) => {
                 {(isDragging, attributes) => (
                   <Character
                     dragAttributes={attributes}
-                    className={classes.token}
                     contents={newItem.contents}
                     isDragging={isDragging}
                   />
@@ -167,4 +165,4 @@ const SearchDialog: React.FC<Props> = memo(({icons, open, onClose}) => {
   );
 });
 
-export default SearchDialog;
+export default SearchTray;

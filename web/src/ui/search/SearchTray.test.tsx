@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react";
-import SearchDialog from "./SearchDialog";
+import SearchTray from "./SearchTray";
 import noop from "../../util/noop";
 import { DEFAULT_FLOOR_ICONS, WALL_ICON } from "../icons";
 import { Provider } from "react-redux";
@@ -22,7 +22,7 @@ const DEFAULT_PROPS = {
 
 interface RenderProps {
   state?: DragState;
-  props?: Partial<ComponentProps<typeof SearchDialog>>;
+  props?: Partial<ComponentProps<typeof SearchTray>>;
 }
 
 function renderSearchDialog({
@@ -36,12 +36,12 @@ function renderSearchDialog({
 
   return render(
     <Provider store={store}>
-      <SearchDialog {...DEFAULT_PROPS} {...props} />
+      <SearchTray {...DEFAULT_PROPS} {...props} />
     </Provider>
   );
 }
 
-describe("SearchDialog", () => {
+describe("SearchTray", () => {
   it("shows all icons by default", () => {
     const { getByLabelText } = renderSearchDialog();
 

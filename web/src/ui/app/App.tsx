@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { clear } from "../board/board-slice";
 import Board from "../board/Board";
 import { ICONS } from "../icons";
-import SearchDialog from "../search/SearchDialog";
+import SearchTray from "../search/SearchTray";
 import Settings from "../settings/Settings";
 import CharacterTray from "../tray/CharacterTray";
 import FloorTray from "../tray/FloorTray";
@@ -17,9 +17,13 @@ import BoardStateApiClient from "../../network/BoardStateApiClient";
 import Tour from "../tour/Tour";
 import MobileWarningDialog from "../mobile-warning/MobileWarningDialog";
 import { Theme } from '@material-ui/core';
+import {DragStateType} from "../../drag/DragStateTypes";
+import useWindowSize from "../util/useWindowSize";
 
 interface StyleProps {
   searching: boolean;
+  dragging: boolean;
+  searchTrayWidthPx: number;
 }
 
 const spacing = 8;
@@ -35,13 +39,14 @@ const useStyles = makeStyles<Theme, StyleProps>((theme) => ({
     position: "fixed",
     zIndex: 3,
     bottom: theme.spacing(3),
-    left: (props) => props.searching ? 300 + spacing : spacing,
+    left: (props) => props.searching && !props.dragging ? props.searchTrayWidthPx + spacing : spacing,
   },
   searchTray: {
     position: "fixed",
-    width: 300,
+    zIndex: 3,
+    width: (props) => props.searchTrayWidthPx,
     height: "100%",
-    left: (props) => props.searching ? 0 : -300,
+    left: (props) => props.searching && !props.dragging ? 0 : -props.searchTrayWidthPx,
     top: 0,
   },
   floorTray: {
@@ -73,10 +78,15 @@ interface Props {
 
 const App: React.FC<Props> = ({ apiClient }) => {
   const dispatch = useDispatch();
-  const { searching } = useSelector((state: RootState) => ({
+
+
+  const { searching, dragging } = useSelector((state: RootState) => ({
     searching: state.app.searching,
+    dragging: state.drag.type !== DragStateType.NotDragging,
   }));
-  const classes = useStyles({searching});
+  const windowSize = useWindowSize();
+  const searchTrayWidthPx = Math.min(300, windowSize.width)
+  const classes = useStyles({searching, dragging, searchTrayWidthPx});
   const [touring, setTouring] = useState(false);
 
   useEffect(() => {
@@ -115,7 +125,7 @@ const App: React.FC<Props> = ({ apiClient }) => {
     return () => document.removeEventListener("keydown", onKeyPressed);
   }, [dispatch, searching]);
 
-  const onSearchDialogClose = useCallback(
+  const onSearchTrayClose = useCallback(
     () => dispatch(stopSearching()),
     [dispatch]
   );
@@ -131,10 +141,10 @@ const App: React.FC<Props> = ({ apiClient }) => {
       <div className={classes.app}>
         <Board />
         <div className={classes.searchTray}>
-          <SearchDialog
+          <SearchTray
             open={searching}
             icons={ICONS}
-            onClose={onSearchDialogClose}
+            onClose={onSearchTrayClose}
           />
         </div>
         <div className={classes.characterTray}>
