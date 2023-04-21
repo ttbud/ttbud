@@ -58,7 +58,7 @@ services:
     image: redis:6.2.4
     command: redis-server --appendonly yes
     ports:
-      - 6379:6379
+      - "6379:6379"
     volumes:
       - db:/data
   redisinsight:
@@ -68,24 +68,15 @@ services:
     ports:
       - 8001:8001
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack:1.3.0
     ports:
       # Expose 4566 so the s3 client can talk to the localstack instance
-      - "127.0.0.1:4566:4566"
+      - "4566:4566"
     environment:
       - SERVICES=s3
-      - DEBUG=1
-      - DATA_DIR=/data
-      - PORT_WEB_UI=${PORT_WEB_UI- }
-      - LAMBDA_EXECUTOR=${LAMBDA_EXECUTOR- }
-      - LOCALSTACK_API_KEY=${LOCALSTACK_API_KEY- }
-      - KINESIS_ERROR_PROBABILITY=${KINESIS_ERROR_PROBABILITY- }
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - HOST_TMP_FOLDER=${TMPDIR:-/tmp/localstack}
+      - EAGER_SERVICE_LOADING=1
     volumes:
-      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - "./infra:/docker-entrypoint-initaws.d"
+      - "./infra:/etc/localstack/init/ready.d"
 volumes:
   redisinsight:
   db:
