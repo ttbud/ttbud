@@ -27,11 +27,11 @@ const useStyles = makeStyles((theme) => ({
   },
   tokenList: {
     display: "grid",
-    gap: theme.spacing(1),
-    gridTemplateColumns: `repeat(auto-fill, ${GRID_SIZE_PX * 5}px`,
-    alignItems: "left",
-    justifyContent: "left",
-    justifyItems: "left",
+    gap: theme.spacing(2),
+    gridTemplateColumns: `repeat(auto-fill, ${GRID_SIZE_PX}px)`,
+    alignItems: "center",
+    justifyContent: "center",
+    justifyItems: "center",
   },
   icon: {
     color: "white",
