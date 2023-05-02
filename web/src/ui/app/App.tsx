@@ -22,7 +22,7 @@ import useWindowSize from "../util/useWindowSize";
 
 interface StyleProps {
   searching: boolean;
-  dragging: boolean;
+  draggingFromSearchTray: boolean;
   searchTrayWidthPx: number;
 }
 
@@ -39,14 +39,14 @@ const useStyles = makeStyles<Theme, StyleProps>((theme) => ({
     position: "fixed",
     zIndex: 3,
     bottom: theme.spacing(3),
-    left: (props) => props.searching && !props.dragging ? props.searchTrayWidthPx + spacing : spacing,
+    left: (props) => props.searching && !props.draggingFromSearchTray ? props.searchTrayWidthPx + spacing : spacing,
   },
   searchTray: {
     position: "fixed",
     zIndex: 3,
     width: (props) => props.searchTrayWidthPx,
     height: "100%",
-    left: (props) => props.searching && !props.dragging ? 0 : -props.searchTrayWidthPx,
+    left: (props) => props.searching && !props.draggingFromSearchTray ? 0 : -props.searchTrayWidthPx,
     top: 0,
   },
   floorTray: {
@@ -80,13 +80,13 @@ const App: React.FC<Props> = ({ apiClient }) => {
   const dispatch = useDispatch();
 
 
-  const { searching, dragging } = useSelector((state: RootState) => ({
+  const { searching, draggingFromSearchTray } = useSelector((state: RootState) => ({
     searching: state.app.searching,
-    dragging: state.drag.type !== DragStateType.NotDragging,
+    draggingFromSearchTray: state.drag.type !== DragStateType.NotDragging && state.drag.source.id === undefined,
   }));
   const windowSize = useWindowSize();
   const searchTrayWidthPx = Math.min(300, windowSize.width)
-  const classes = useStyles({searching, dragging, searchTrayWidthPx});
+  const classes = useStyles({searching, draggingFromSearchTray, searchTrayWidthPx});
   const [touring, setTouring] = useState(false);
 
   useEffect(() => {

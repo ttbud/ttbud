@@ -56,7 +56,7 @@ const SearchTray: React.FC<Props> = memo(({icons, open, onClose}) => {
   );
 
   const activeDraggable = useSelector((state: RootState) => {
-    if (!open || state.drag.type === DragStateType.NotDragging) {
+    if (!open || state.drag.type === DragStateType.NotDragging || state.drag.source.id !== undefined) {
       return;
     }
 

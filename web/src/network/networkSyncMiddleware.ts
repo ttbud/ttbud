@@ -68,10 +68,10 @@ export function networkSyncMiddleware(
             if (retryTimeoutId) {
               window.clearTimeout(retryTimeoutId);
             }
-            retryTimeoutId = window.setTimeout(
-              () => apiClient.reconnect(),
-              waitTimeSecs * 1000
-            );
+            // retryTimeoutId = window.setTimeout(
+            //   () => apiClient.reconnect(),
+            //   waitTimeSecs * 1000
+            // );
           }
 
           store.dispatch(disconnected({ error: event.error }));
