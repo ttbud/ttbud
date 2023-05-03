@@ -1,14 +1,19 @@
-import React, {memo, useCallback, useMemo, useState} from "react";
-import {Icon, ICONS_BY_ID} from "../icons";
+import React, { memo, useCallback, useMemo, useState } from "react";
+import { Icon, ICONS_BY_ID } from "../icons";
 import Character from "../token/Character";
-import {contentId, ContentType, TokenContents} from "../../types";
+import { contentId, ContentType, TokenContents } from "../../types";
 import Draggable from "../../drag/Draggable";
-import {GRID_SIZE_PX} from "../../config";
-import {makeStyles, Paper, TextField} from "@material-ui/core";
-import {DraggableDescriptor, DraggableType, DragStateType, TokenBlueprintDraggable} from "../../drag/DragStateTypes";
-import {useSelector} from "react-redux";
-import {RootState} from "../../store/rootReducer";
-import {assert} from "../../util/invariants";
+import { GRID_SIZE_PX } from "../../config";
+import { makeStyles, Paper, TextField } from "@material-ui/core";
+import {
+  DraggableDescriptor,
+  DraggableType,
+  DragStateType,
+  TokenBlueprintDraggable,
+} from "../../drag/DragStateTypes";
+import { useSelector } from "react-redux";
+import { RootState } from "../../store/rootReducer";
+import { assert } from "../../util/invariants";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -39,24 +44,27 @@ interface Props {
   onClose: () => void;
 }
 
-const SearchTray: React.FC<Props> = memo(({icons, open, onClose}) => {
+const SearchTray: React.FC<Props> = memo(({ icons, open, onClose }) => {
   const classes = useStyles();
   const [search, setSearch] = useState("");
   const onChange = useCallback((e) => setSearch(e.target.value), []);
-
 
   const items: TokenBlueprintDraggable[] = useMemo(
     () =>
       icons.map((icon) => ({
         type: DraggableType.TokenBlueprint,
-        contents: {type: ContentType.Icon, iconId: icon.id},
+        contents: { type: ContentType.Icon, iconId: icon.id },
         id: `search-tray-${icon.id}`,
       })),
     [icons]
   );
 
   const activeDraggable = useSelector((state: RootState) => {
-    if (!open || state.drag.type === DragStateType.NotDragging || state.drag.source.id !== undefined) {
+    if (
+      !open ||
+      state.drag.type === DragStateType.NotDragging ||
+      state.drag.source.id !== undefined
+    ) {
       return;
     }
 
@@ -66,25 +74,25 @@ const SearchTray: React.FC<Props> = memo(({icons, open, onClose}) => {
   const visibleIconItems = useMemo(() => {
     return search
       ? items.filter(
-        (item) =>
-          item.contents.type === ContentType.Icon &&
-          ICONS_BY_ID.get(item.contents.iconId)!.desc.indexOf(search) !== -1
-      )
+          (item) =>
+            item.contents.type === ContentType.Icon &&
+            ICONS_BY_ID.get(item.contents.iconId)!.desc.indexOf(search) !== -1
+        )
       : items;
   }, [search, items]);
 
   const textContents: TokenContents | undefined =
     search.length > 0 && search.length <= 2
-      ? {type: ContentType.Text, text: search}
+      ? { type: ContentType.Text, text: search }
       : undefined;
 
   const textItem: DraggableDescriptor | undefined = !textContents
     ? undefined
     : {
-      type: DraggableType.TokenBlueprint,
-      contents: textContents,
-      id: `search-tray-${contentId(textContents)}`,
-    };
+        type: DraggableType.TokenBlueprint,
+        contents: textContents,
+        id: `search-tray-${contentId(textContents)}`,
+      };
 
   const renderDraggable = () => {
     assert(
@@ -93,9 +101,10 @@ const SearchTray: React.FC<Props> = memo(({icons, open, onClose}) => {
     );
 
     return (
-      <Draggable key={`search-tray-${contentId(activeDraggable.contents)}`}
-                 descriptor={activeDraggable}
-                 usePortal={true}
+      <Draggable
+        key={`search-tray-${contentId(activeDraggable.contents)}`}
+        descriptor={activeDraggable}
+        usePortal={true}
       >
         {(isDragging, attributes) => (
           <Character
@@ -111,7 +120,8 @@ const SearchTray: React.FC<Props> = memo(({icons, open, onClose}) => {
   return (
     <>
       <Paper className={classes.root} elevation={5}>
-        <TextField className={classes.searchInput}
+        <TextField
+          className={classes.searchInput}
           id="search"
           fullWidth
           variant="filled"
@@ -141,8 +151,8 @@ const SearchTray: React.FC<Props> = memo(({icons, open, onClose}) => {
               newItem = {
                 type: item.type,
                 id: "dragging-search-item",
-                contents: item.contents
-              }
+                contents: item.contents,
+              };
             } else {
               newItem = item;
             }

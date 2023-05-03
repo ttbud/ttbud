@@ -16,8 +16,8 @@ import { v4 as uuid } from "uuid";
 import BoardStateApiClient from "../../network/BoardStateApiClient";
 import Tour from "../tour/Tour";
 import MobileWarningDialog from "../mobile-warning/MobileWarningDialog";
-import { Theme } from '@material-ui/core';
-import {DragStateType} from "../../drag/DragStateTypes";
+import { Theme } from "@material-ui/core";
+import { DragStateType } from "../../drag/DragStateTypes";
 import useWindowSize from "../util/useWindowSize";
 
 interface StyleProps {
@@ -39,14 +39,20 @@ const useStyles = makeStyles<Theme, StyleProps>((theme) => ({
     position: "fixed",
     zIndex: 3,
     bottom: theme.spacing(3),
-    left: (props) => props.searching && !props.draggingFromSearchTray ? props.searchTrayWidthPx + spacing : spacing,
+    left: (props) =>
+      props.searching && !props.draggingFromSearchTray
+        ? props.searchTrayWidthPx + spacing
+        : spacing,
   },
   searchTray: {
     position: "fixed",
     zIndex: 3,
     width: (props) => props.searchTrayWidthPx,
     height: "100%",
-    left: (props) => props.searching && !props.draggingFromSearchTray ? 0 : -props.searchTrayWidthPx,
+    left: (props) =>
+      props.searching && !props.draggingFromSearchTray
+        ? 0
+        : -props.searchTrayWidthPx,
     top: 0,
   },
   floorTray: {
@@ -79,14 +85,21 @@ interface Props {
 const App: React.FC<Props> = ({ apiClient }) => {
   const dispatch = useDispatch();
 
-
-  const { searching, draggingFromSearchTray } = useSelector((state: RootState) => ({
-    searching: state.app.searching,
-    draggingFromSearchTray: state.drag.type !== DragStateType.NotDragging && state.drag.source.id === undefined,
-  }));
+  const { searching, draggingFromSearchTray } = useSelector(
+    (state: RootState) => ({
+      searching: state.app.searching,
+      draggingFromSearchTray:
+        state.drag.type !== DragStateType.NotDragging &&
+        state.drag.source.id === undefined,
+    })
+  );
   const windowSize = useWindowSize();
-  const searchTrayWidthPx = Math.min(300, windowSize.width)
-  const classes = useStyles({searching, draggingFromSearchTray, searchTrayWidthPx});
+  const searchTrayWidthPx = Math.min(300, windowSize.width);
+  const classes = useStyles({
+    searching,
+    draggingFromSearchTray,
+    searchTrayWidthPx,
+  });
   const [touring, setTouring] = useState(false);
 
   useEffect(() => {
@@ -112,7 +125,7 @@ const App: React.FC<Props> = ({ apiClient }) => {
   useEffect(() => {
     const onKeyPressed = (e: KeyboardEvent) => {
       if (e.getModifierState(searchModifier) && e.key === "f") {
-        if(searching) {
+        if (searching) {
           dispatch(stopSearching());
         } else {
           dispatch(startSearching());

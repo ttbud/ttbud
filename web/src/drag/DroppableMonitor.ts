@@ -34,10 +34,13 @@ export interface DroppableConfigApi {
 export interface DroppableConfig extends DroppableConfigApi {
   ref: RefObject<HTMLElement>;
   /**
-   * A callback to synchronously collect measurement information
-   * before a drag starts.
+   * Called before any drag starts
    */
   onBeforeDragStart: (draggable: DraggableDescriptor, bounds: Bounds) => void;
+  /**
+   * Called when an active drag enters the droppable
+   */
+  onDragEnter: (draggable: DraggableDescriptor, bounds: Bounds) => void;
 }
 
 export interface DroppableMonitor {
