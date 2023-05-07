@@ -4,7 +4,8 @@ import Character from "../token/Character";
 import { contentId, ContentType, TokenContents } from "../../types";
 import Draggable from "../../drag/Draggable";
 import { GRID_SIZE_PX } from "../../config";
-import { makeStyles, Paper, TextField } from "@material-ui/core";
+import { IconButton, makeStyles, Paper, TextField } from "@material-ui/core";
+import SearchIcon from "@material-ui/icons/Search";
 import {
   DraggableDescriptor,
   DraggableType,
@@ -14,16 +15,23 @@ import {
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/rootReducer";
 import { assert } from "../../util/invariants";
+import { DROPPABLE_IDS } from "../DroppableIds";
+import Droppable from "../../drag/Droppable";
 
 const useStyles = makeStyles((theme) => ({
   root: {
     width: "100%",
     height: "100%",
-    overflowY: "scroll",
-    padding: theme.spacing(2),
+    display: "flex",
+    flexDirection: "column",
   },
   searchInput: {
-    marginBottom: theme.spacing(1),
+    margin: `4px
+    ${theme.spacing(2)}px
+    ${theme.spacing(1)}px
+    ${theme.spacing(2)}px`,
+    position: "sticky",
+    width: `calc(100% - ${theme.spacing(4)}px)`,
   },
   tokenList: {
     display: "grid",
@@ -32,9 +40,17 @@ const useStyles = makeStyles((theme) => ({
     alignItems: "center",
     justifyContent: "center",
     justifyItems: "center",
+    overflowY: "scroll",
+    padding: `0 ${theme.spacing(1)}px 0 ${theme.spacing(1)}px`,
   },
   icon: {
     color: "white",
+  },
+  searchButton: {
+    position: "absolute",
+    top: 0,
+    left: "100%",
+    backgroundColor: theme.palette.primary.main,
   },
 }));
 
@@ -119,57 +135,69 @@ const SearchTray: React.FC<Props> = memo(({ icons, open, onClose }) => {
 
   return (
     <>
-      <Paper className={classes.root} elevation={5}>
-        <TextField
-          className={classes.searchInput}
-          id="search"
-          fullWidth
-          variant="filled"
-          margin="none"
-          label="search"
-          autoComplete="off"
-          onChange={onChange}
-          onFocus={(e) => e.target.select()}
-          value={search}
-        />
-        <div className={classes.tokenList}>
-          {textItem && (
-            <Draggable key={textItem.id} descriptor={textItem}>
-              {(isDragging, attributes) => (
-                <Character
-                  dragAttributes={attributes}
-                  contents={textItem.contents}
-                  isDragging={isDragging}
-                />
-              )}
-            </Draggable>
-          )}
-
-          {visibleIconItems.map((item) => {
-            let newItem: TokenBlueprintDraggable;
-            if (item.id === activeDraggable?.id) {
-              newItem = {
-                type: item.type,
-                id: "dragging-search-item",
-                contents: item.contents,
-              };
-            } else {
-              newItem = item;
-            }
-            return (
-              <Draggable key={newItem.id} descriptor={newItem}>
-                {(isDragging, attributes) => (
-                  <Character
-                    dragAttributes={attributes}
-                    contents={newItem.contents}
-                    isDragging={isDragging}
-                  />
+      <Droppable id={DROPPABLE_IDS.SEARCH_TRAY} getLocation={() => undefined}>
+        {(attributes) => (
+          <>
+            <Paper className={classes.searchButton}>
+              <IconButton aria-label="search">
+                <SearchIcon />
+              </IconButton>
+            </Paper>
+            <Paper {...attributes} className={classes.root} elevation={5}>
+              <TextField
+                className={classes.searchInput}
+                id="search"
+                fullWidth
+                variant="filled"
+                margin="none"
+                label="search"
+                autoComplete="off"
+                onChange={onChange}
+                onFocus={(e) => e.target.select()}
+                value={search}
+                size="small"
+              />
+              <div className={classes.tokenList}>
+                {textItem && (
+                  <Draggable key={textItem.id} descriptor={textItem}>
+                    {(isDragging, attributes) => (
+                      <Character
+                        dragAttributes={attributes}
+                        contents={textItem.contents}
+                        isDragging={isDragging}
+                      />
+                    )}
+                  </Draggable>
                 )}
-              </Draggable>
-            );
-          })}
-        </div>
-      </Paper>
+
+                {visibleIconItems.map((item) => {
+                  let newItem: TokenBlueprintDraggable;
+                  if (item.id === activeDraggable?.id) {
+                    newItem = {
+                      type: item.type,
+                      id: "dragging-search-item",
+                      contents: item.contents,
+                    };
+                  } else {
+                    newItem = item;
+                  }
+                  return (
+                    <Draggable key={newItem.id} descriptor={newItem}>
+                      {(isDragging, attributes) => (
+                        <Character
+                          dragAttributes={attributes}
+                          contents={newItem.contents}
+                          isDragging={isDragging}
+                        />
+                      )}
+                    </Draggable>
+                  );
+                })}
+              </div>
+            </Paper>
+          </>
+        )}
+      </Droppable>
       {activeDraggable && renderDraggable()}
     </>
   );
