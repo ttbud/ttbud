@@ -16,7 +16,7 @@ import userEvent from "@testing-library/user-event";
 
 const DEFAULT_PROPS = {
   icons: DEFAULT_FLOOR_ICONS,
-  onClose: noop,
+  onSearchClicked: noop,
   open: true,
 };
 

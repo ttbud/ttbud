@@ -6,6 +6,7 @@ import Draggable from "../../drag/Draggable";
 import { GRID_SIZE_PX } from "../../config";
 import { IconButton, makeStyles, Paper, TextField } from "@material-ui/core";
 import SearchIcon from "@material-ui/icons/Search";
+import ChevronLeft from "@material-ui/icons/ChevronLeft";
 import {
   DraggableDescriptor,
   DraggableType,
@@ -46,21 +47,32 @@ const useStyles = makeStyles((theme) => ({
   icon: {
     color: "white",
   },
-  searchButton: {
+  searchButtonWrapper: {
+    zIndex: -1,
     position: "absolute",
     top: 0,
     left: "100%",
-    backgroundColor: theme.palette.primary.main,
+    filter: "drop-shadow(0px 2px 5px #00000024)",
+  },
+  searchButton: {
+    transform: "translate(-3px,0)",
+    clipPath: "polygon(75% 0%, 100% 50%, 75% 100%, 0% 100%, 0 50%, 0% 0%)",
+    backgroundColor: "white",
+    // backgroundColor: theme.palette.primary.main,
+  },
+  searchButtonIcon: {
+    transform: "translate(-3px, 0px)",
+    // color: "white",
   },
 }));
 
 interface Props {
   open: boolean;
   icons: Icon[];
-  onClose: () => void;
+  onSearchClicked: () => void;
 }
 
-const SearchTray: React.FC<Props> = memo(({ icons, open, onClose }) => {
+const SearchTray: React.FC<Props> = memo(({ icons, open, onSearchClicked }) => {
   const classes = useStyles();
   const [search, setSearch] = useState("");
   const onChange = useCallback((e) => setSearch(e.target.value), []);
@@ -138,11 +150,17 @@ const SearchTray: React.FC<Props> = memo(({ icons, open, onClose }) => {
       <Droppable id={DROPPABLE_IDS.SEARCH_TRAY} getLocation={() => undefined}>
         {(attributes) => (
           <>
-            <Paper className={classes.searchButton}>
-              <IconButton aria-label="search">
-                <SearchIcon />
-              </IconButton>
-            </Paper>
+            <div className={classes.searchButtonWrapper}>
+              <div className={classes.searchButton}>
+                <IconButton
+                  onClick={onSearchClicked}
+                  aria-label="search"
+                  className={classes.searchButtonIcon}
+                >
+                  {open ? <ChevronLeft /> : <SearchIcon />}
+                </IconButton>
+              </div>
+            </div>
             <Paper {...attributes} className={classes.root} elevation={5}>
               <TextField
                 className={classes.searchInput}

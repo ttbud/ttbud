@@ -43,6 +43,7 @@ const useStyles = makeStyles<Theme, StyleProps>((theme) => ({
       props.searching && !props.draggingFromSearchTray
         ? props.searchTrayWidthPx + spacing
         : spacing,
+    transition: "left 250ms",
   },
   searchTray: {
     position: "fixed",
@@ -54,6 +55,7 @@ const useStyles = makeStyles<Theme, StyleProps>((theme) => ({
         ? 0
         : -props.searchTrayWidthPx,
     top: 0,
+    transition: "left 250ms",
   },
   floorTray: {
     display: "inline-flex",
@@ -138,10 +140,13 @@ const App: React.FC<Props> = ({ apiClient }) => {
     return () => document.removeEventListener("keydown", onKeyPressed);
   }, [dispatch, searching]);
 
-  const onSearchTrayClose = useCallback(
-    () => dispatch(stopSearching()),
-    [dispatch]
-  );
+  const onSearchClicked = useCallback(() => {
+    if (searching) {
+      dispatch(stopSearching());
+    } else {
+      dispatch(startSearching());
+    }
+  }, [dispatch, searching]);
 
   const onClearMap = () => dispatch(clear());
 
@@ -157,7 +162,7 @@ const App: React.FC<Props> = ({ apiClient }) => {
           <SearchTray
             open={searching}
             icons={ICONS}
-            onClose={onSearchTrayClose}
+            onSearchClicked={onSearchClicked}
           />
         </div>
         <div className={classes.characterTray}>

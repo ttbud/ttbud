@@ -22,7 +22,7 @@ const store = configureStore({
 export default (
   <Provider store={store}>
     <DndContext.Provider value={monitor}>
-      <SearchTray icons={ICONS} open={true} onClose={noop} />
+      <SearchTray icons={ICONS} open={true} onSearchClicked={noop} />
     </DndContext.Provider>
   </Provider>
 );

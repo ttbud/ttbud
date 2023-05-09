@@ -120,6 +120,7 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
     <Paper
       className={classes.tokenSheet}
       ref={containerRef}
+      elevation={4}
       data-tour={"character-tray"}
       aria-label={"Character Tray"}
     >
