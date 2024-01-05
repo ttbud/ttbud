@@ -49,7 +49,14 @@ const Droppable: React.FC<Props> = ({
     });
 
     return () => dndContext.removeDroppable(id);
-  }, [dndContext, getDragBounds, getLocation, id, onBeforeDragStart]);
+  }, [
+    dndContext,
+    getDragBounds,
+    getLocation,
+    id,
+    onBeforeDragStart,
+    onDragEnter,
+  ]);
 
   return children({ ref });
 };
