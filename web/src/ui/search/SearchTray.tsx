@@ -42,7 +42,12 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: "center",
     justifyItems: "center",
     overflowY: "scroll",
-    padding: `0 ${theme.spacing(1)}px 0 ${theme.spacing(1)}px`,
+    padding: `
+      0
+      ${theme.spacing(1)}px
+      ${theme.spacing(1)}px
+      ${theme.spacing(1)}px
+    `,
   },
   icon: {
     color: "white",
