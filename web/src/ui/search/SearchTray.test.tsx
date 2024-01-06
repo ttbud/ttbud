@@ -40,7 +40,7 @@ function renderSearchDialog({
   return render(
     <Provider store={store}>
       <DndContext.Provider value={monitor as unknown as DomDroppableMonitor}>
-          <SearchTray {...DEFAULT_PROPS} {...props} />
+        <SearchTray {...DEFAULT_PROPS} {...props} />
       </DndContext.Provider>
     </Provider>
   );
