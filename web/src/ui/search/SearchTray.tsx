@@ -159,7 +159,7 @@ const SearchTray: React.FC<Props> = memo(({ icons, open, onSearchClicked }) => {
               <div className={classes.searchButton}>
                 <IconButton
                   onClick={onSearchClicked}
-                  aria-label="search"
+                  aria-label="open search tray"
                   className={classes.searchButtonIcon}
                 >
                   {open ? <ChevronLeft /> : <SearchIcon />}

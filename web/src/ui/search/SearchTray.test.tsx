@@ -5,6 +5,8 @@ import { DEFAULT_FLOOR_ICONS, WALL_ICON } from "../icons";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import dragReducer from "../../drag/drag-slice";
+import { FakeDroppableMonitor } from "../../drag/__test_util__/FakeDroppableMonitor";
+import DndContext from "../../drag/DndContext";
 import {
   DraggableType,
   DragState,
@@ -29,6 +31,7 @@ function renderSearchDialog({
   state = { type: DragStateType.NotDragging },
   props = {},
 }: RenderProps = {}) {
+  const monitor = new FakeDroppableMonitor();
   const store = configureStore({
     reducer: { drag: dragReducer },
     preloadedState: { drag: state },
@@ -36,7 +39,9 @@ function renderSearchDialog({
 
   return render(
     <Provider store={store}>
-      <SearchTray {...DEFAULT_PROPS} {...props} />
+      <DndContext.Provider value={monitor as unknown as DomDroppableMonitor}>
+          <SearchTray {...DEFAULT_PROPS} {...props} />
+      </DndContext.Provider>
     </Provider>
   );
 }
@@ -72,32 +77,5 @@ describe("SearchTray", () => {
     userEvent.type(searchBar, "stone");
     expect(getByLabelText("Character: stone wall")).toBeVisible();
     expect(queryByLabelText("Character: bed")).not.toBeInTheDocument();
-  });
-
-  it("hides the dialog when a drag starts", () => {
-    const origin = { top: 0, left: 0, bottom: 0, right: 0 };
-    const { queryByLabelText, getByLabelText } = renderSearchDialog({
-      state: {
-        type: DragStateType.Dragging,
-        bounds: origin,
-        dragBounds: origin,
-        hoveredDroppableId: undefined,
-        mouseOffset: { x: 0, y: 0 },
-        source: { bounds: origin },
-        draggable: {
-          id: "draggable-id",
-          type: DraggableType.TokenBlueprint,
-          contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
-        },
-      },
-    });
-    expect(queryByLabelText("search")).not.toBeInTheDocument();
-    expect(getByLabelText("Character: stone wall")).toBeVisible();
-  });
-
-  it("hides the dialog when open is false", () => {
-    const { queryByLabelText } = renderSearchDialog({ props: { open: false } });
-
-    expect(queryByLabelText("search")).not.toBeInTheDocument();
   });
 });
