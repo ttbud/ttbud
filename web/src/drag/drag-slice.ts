@@ -194,6 +194,9 @@ function moveDrag(draggable: DraggableDescriptor, mousePos: Pos2d): AppThunk {
       state.drag.dragBounds
     );
     const hoveredDroppableId = monitor.findDroppableAt(centerOf(bounds))?.id;
+    if (state.drag.hoveredDroppableId !== hoveredDroppableId) {
+      monitor.onBeforeDragStart(draggable, bounds);
+    }
     dispatch(dragMoved({ draggable, hoveredDroppableId, bounds }));
   };
 }

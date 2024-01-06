@@ -61,6 +61,7 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
       "Character tray container ref not set up correctly before drag"
     );
     const containerBounds = containerRef.current.getBoundingClientRect();
+    // Inner drag bounds is where the character will animate to
     const innerDragBounds: Target[] = [];
     for (let i = 0; i < existingElementsBounds.length; i++) {
       const prev = existingElementsBounds[i - 1];
@@ -119,6 +120,7 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
     <Paper
       className={classes.tokenSheet}
       ref={containerRef}
+      elevation={4}
       data-tour={"character-tray"}
       aria-label={"Character Tray"}
     >

@@ -10,6 +10,7 @@ export interface FakeDroppable extends DroppableConfigApi {
   bounds: Bounds;
   zIndex: number;
   onBeforeDragStart?: () => void;
+  onDragEnter?: () => void;
 }
 
 /**
@@ -43,6 +44,7 @@ export class FakeDroppableMonitor implements DroppableMonitor {
       bounds: { top: 0, left: 0, bottom: 0, right: 0 },
       zIndex: 0,
       onBeforeDragStart: () => {},
+      onDragEnter: () => {},
     });
   }
 

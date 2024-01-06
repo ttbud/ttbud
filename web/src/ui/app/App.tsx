@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { clear } from "../board/board-slice";
 import Board from "../board/Board";
 import { ICONS } from "../icons";
-import SearchDialog from "../search/SearchDialog";
+import SearchTray from "../search/SearchTray";
 import Settings from "../settings/Settings";
 import CharacterTray from "../tray/CharacterTray";
 import FloorTray from "../tray/FloorTray";
@@ -16,8 +16,19 @@ import { v4 as uuid } from "uuid";
 import BoardStateApiClient from "../../network/BoardStateApiClient";
 import Tour from "../tour/Tour";
 import MobileWarningDialog from "../mobile-warning/MobileWarningDialog";
+import { Theme } from "@material-ui/core";
+import { DragStateType } from "../../drag/DragStateTypes";
+import useWindowSize from "../util/useWindowSize";
 
-const useStyles = makeStyles((theme) => ({
+interface StyleProps {
+  searching: boolean;
+  draggingFromSearchTray: boolean;
+  searchTrayWidthPx: number;
+}
+
+const spacing = 8;
+
+const useStyles = makeStyles<Theme, StyleProps>((theme) => ({
   app: {
     width: 4000,
     height: 2000,
@@ -28,7 +39,23 @@ const useStyles = makeStyles((theme) => ({
     position: "fixed",
     zIndex: 3,
     bottom: theme.spacing(3),
-    left: theme.spacing(1),
+    left: (props) =>
+      props.searching && !props.draggingFromSearchTray
+        ? props.searchTrayWidthPx + spacing
+        : spacing,
+    transition: "left 250ms",
+  },
+  searchTray: {
+    position: "fixed",
+    zIndex: 3,
+    width: (props) => props.searchTrayWidthPx,
+    height: "100%",
+    left: (props) =>
+      props.searching && !props.draggingFromSearchTray
+        ? 0
+        : -props.searchTrayWidthPx,
+    top: 0,
+    transition: "left 250ms",
   },
   floorTray: {
     display: "inline-flex",
@@ -40,14 +67,14 @@ const useStyles = makeStyles((theme) => ({
   },
   connectionNotifier: {
     position: "fixed",
-    top: theme.spacing(1),
+    top: spacing,
     left: "50%",
     transform: "translateX(-50%)",
   },
   settings: {
     position: "fixed",
-    bottom: theme.spacing(3),
-    right: theme.spacing(3),
+    bottom: spacing * 3,
+    right: spacing * 3,
   },
 }));
 
@@ -58,11 +85,23 @@ interface Props {
 }
 
 const App: React.FC<Props> = ({ apiClient }) => {
-  const classes = useStyles();
   const dispatch = useDispatch();
-  const { searching } = useSelector((state: RootState) => ({
-    searching: state.app.searching,
-  }));
+
+  const { searching, draggingFromSearchTray } = useSelector(
+    (state: RootState) => ({
+      searching: state.app.searching,
+      draggingFromSearchTray:
+        state.drag.type !== DragStateType.NotDragging &&
+        state.drag.source.id === undefined,
+    })
+  );
+  const windowSize = useWindowSize();
+  const searchTrayWidthPx = Math.min(300, windowSize.width);
+  const classes = useStyles({
+    searching,
+    draggingFromSearchTray,
+    searchTrayWidthPx,
+  });
   const [touring, setTouring] = useState(false);
 
   useEffect(() => {
@@ -88,19 +127,26 @@ const App: React.FC<Props> = ({ apiClient }) => {
   useEffect(() => {
     const onKeyPressed = (e: KeyboardEvent) => {
       if (e.getModifierState(searchModifier) && e.key === "f") {
-        dispatch(startSearching());
+        if (searching) {
+          dispatch(stopSearching());
+        } else {
+          dispatch(startSearching());
+        }
         e.preventDefault();
       }
     };
 
     document.addEventListener("keydown", onKeyPressed);
     return () => document.removeEventListener("keydown", onKeyPressed);
-  }, [dispatch]);
+  }, [dispatch, searching]);
 
-  const onSearchDialogClose = useCallback(
-    () => dispatch(stopSearching()),
-    [dispatch]
-  );
+  const onSearchClicked = useCallback(() => {
+    if (searching) {
+      dispatch(stopSearching());
+    } else {
+      dispatch(startSearching());
+    }
+  }, [dispatch, searching]);
 
   const onClearMap = () => dispatch(clear());
 
@@ -112,11 +158,13 @@ const App: React.FC<Props> = ({ apiClient }) => {
       <Tour isOpen={touring} onCloseClicked={() => setTouring(false)} />
       <div className={classes.app}>
         <Board />
-        <SearchDialog
-          open={searching}
-          icons={ICONS}
-          onClose={onSearchDialogClose}
-        />
+        <div className={classes.searchTray}>
+          <SearchTray
+            open={searching}
+            icons={ICONS}
+            onSearchClicked={onSearchClicked}
+          />
+        </div>
         <div className={classes.characterTray}>
           <CharacterTray />
         </div>
