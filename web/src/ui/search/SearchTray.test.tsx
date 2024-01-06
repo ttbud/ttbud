@@ -6,6 +6,7 @@ import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import dragReducer from "../../drag/drag-slice";
 import { FakeDroppableMonitor } from "../../drag/__test_util__/FakeDroppableMonitor";
+import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
 import DndContext from "../../drag/DndContext";
 import {
   DraggableType,
