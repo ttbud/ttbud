@@ -19,6 +19,7 @@ export interface DroppableAttributes {
 interface Props {
   id: string;
   onBeforeDragStart?: (draggable: DraggableDescriptor, bounds: Bounds) => void;
+  onDragEnter?: (draggable: DraggableDescriptor, bounds: Bounds) => void;
   getLocation: LocationCollector;
   getDragBounds?: () => Bounds | undefined;
   children: (attributes: DroppableAttributes) => ReactElement;
@@ -29,6 +30,7 @@ const noBounds = () => undefined;
 const Droppable: React.FC<Props> = ({
   id,
   onBeforeDragStart = noop,
+  onDragEnter = noop,
   getDragBounds = noBounds,
   getLocation,
   children,
@@ -42,11 +44,19 @@ const Droppable: React.FC<Props> = ({
       ref,
       getLocation,
       onBeforeDragStart,
+      onDragEnter,
       getDragBounds,
     });
 
     return () => dndContext.removeDroppable(id);
-  }, [dndContext, getDragBounds, getLocation, id, onBeforeDragStart]);
+  }, [
+    dndContext,
+    getDragBounds,
+    getLocation,
+    id,
+    onBeforeDragStart,
+    onDragEnter,
+  ]);
 
   return children({ ref });
 };

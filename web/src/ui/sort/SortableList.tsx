@@ -162,7 +162,7 @@ export default function SortableList<T extends DraggableItem>({
       }
     }, shallowEqual);
 
-  const onBeforeDragStart = useCallback(
+  const measureTargets = useCallback(
     (draggable: DraggableDescriptor, bounds: Bounds) =>
       (targets.current = getTargets(draggable, bounds)),
     [getTargets]
@@ -345,7 +345,8 @@ export default function SortableList<T extends DraggableItem>({
       <Droppable
         id={id}
         getLocation={getLocation}
-        onBeforeDragStart={onBeforeDragStart}
+        onBeforeDragStart={measureTargets}
+        onDragEnter={measureTargets}
         getDragBounds={getDragBounds}
       >
         {renderChildren}
