@@ -52,15 +52,17 @@ test("floors sync between pages", async ({ context }) => {
   const boardWall = boardFloorSelector("stone wall");
 
   // Select the wall from the floor tray and draw one in the top left
-  await pageOne.click(trayWall);
-  await pageOne.mouse.click(10, 10);
+  // Have to have a delay between pointerdown and pointer up on click because drag events are only sent one event loop
+  // after the click is received, so we'll get the pointerup before getting the pointerdown, which breaks everything
+  await pageOne.click(trayWall, { delay: 1 });
+  await pageOne.mouse.click(200, 200, { delay: 1 });
   await expect(pageOne).toContainSelector(boardWall);
 
   // Archer should show up on the second page
   const pageTwoWall = await pageTwo.waitForSelector(boardWall);
 
   // Delete archer on second page
-  await pageTwoWall.click({ button: "right" });
+  await pageTwoWall.click({ button: "right", delay: 1 });
 
   // Should disappear from first page
   await expect(pageOne).not.toContainSelector(boardWall);
