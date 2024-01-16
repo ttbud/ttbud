@@ -18,6 +18,7 @@ interface FakeDroppableConfig {
   bounds?: Bounds;
   getLocation?: LocationCollector;
   onBeforeDragStart?: () => void;
+  onDragEnter?: () => void;
 }
 
 function toFakeDroppable({
@@ -26,8 +27,9 @@ function toFakeDroppable({
   bounds = { top: 0, left: 0, bottom: 50, right: 50 },
   getLocation = () => undefined,
   onBeforeDragStart = noop,
+  onDragEnter = noop,
 }: FakeDroppableConfig): FakeDroppable {
-  return { id, zIndex, bounds, getLocation, onBeforeDragStart };
+  return { id, zIndex, bounds, getLocation, onBeforeDragStart, onDragEnter };
 }
 
 function toDomDroppable({
@@ -36,6 +38,7 @@ function toDomDroppable({
   bounds = { top: 0, left: 0, bottom: 50, right: 50 },
   getLocation = () => undefined,
   onBeforeDragStart = noop,
+  onDragEnter = noop,
 }: FakeDroppableConfig): DroppableConfig {
   const el = document.createElement("div");
   document.body.append(el);
@@ -51,6 +54,7 @@ function toDomDroppable({
     ref: { current: el },
     getLocation,
     onBeforeDragStart,
+    onDragEnter,
   };
 }
 
@@ -106,7 +110,7 @@ describe.each(monitors)("%sDroppableMonitor", (_, monitor, droppables) => {
   });
 });
 
-// These tests only run on the the fake for now, because jsdom does not
+// These tests only run on the fake for now, because jsdom does not
 // support document.elementsFromPoint :(
 describe("FakeDroppableMonitor", () => {
   it("should find an unobstructed droppable", () => {
