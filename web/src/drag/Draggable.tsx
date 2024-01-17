@@ -180,15 +180,23 @@ const Draggable: React.FC<Props> = ({
       const bounds = ref.current.getBoundingClientRect();
       const mousePos = { x: e.clientX, y: e.clientY };
 
-      dispatch(
-        // Have to copy bounds because ClientRect is not serializable
-        startDrag(descriptor, droppableId, mousePos, {
-          top: bounds.top,
-          left: bounds.left,
-          bottom: bounds.bottom,
-          right: bounds.right,
-        })
-      );
+      // :(
+      // Firefox does not like it when you remove the target element inside of the pointerdown event, it will stop
+      // giving any pointer events for the entirety of the drag, regardless of what element the event handlers are
+      // attached to. This doesn't happen if we wait until the next event loop run to trigger the removal.
+      // The element doesn't necessarily get removed, but in the case of portaling it frequently does, so we add the
+      // delay here to cover all cases
+      window.setTimeout(() => {
+        dispatch(
+          // Have to copy bounds because ClientRect is not serializable
+          startDrag(descriptor, droppableId, mousePos, {
+            top: bounds.top,
+            left: bounds.left,
+            bottom: bounds.bottom,
+            right: bounds.right,
+          })
+        );
+      }, 0);
 
       e.stopPropagation();
     },
