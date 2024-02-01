@@ -226,12 +226,6 @@ default-filter: &DEFAULT_FILTER
   filters:
     branches:
       ignore:
-        # bors ng uses these branches to stage merges for pending PRs, they
-        # shouldn't be built until bors moves them to the "staging" branch
-        # https://bors.tech/documentation/getting-started/
-        - staging.tmp
-        - trying.tmp
-        - staging-squash-merge.tmp
         # We don't need to run unit tests on master, because bors ensures
         # they ran on the same commit in staging
         - master
@@ -253,6 +247,9 @@ workflows:
               only:
                 - staging
                 - trying
+                # Enable stage release and e2e tests for github merge queue to master
+                # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue#triggering-merge-group-checks-with-third-party-ci-providers
+                - /gh-readonly-queue\/master.*/
       - release-staging:
           requires:
             - web
