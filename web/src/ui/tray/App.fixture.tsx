@@ -8,11 +8,18 @@ import {
   CollisionDetection,
   Modifier,
 } from "@dnd-kit/core";
-import {Transform} from "@dnd-kit/utilities"
+import { Transform } from "@dnd-kit/utilities";
 import React, { useCallback, useRef, useState } from "react";
 import { TokenDescriptor, TokenOrigin } from "../token/Character2/Draggable2";
 import Character2 from "../token/Character2/Character2";
-import { ContentType, EntityType, TokenContents, contentId } from "../../types";
+import {
+  ContentType,
+  Entity,
+  EntityType,
+  Token,
+  TokenContents,
+  contentId,
+} from "../../types";
 import { ICONS, WALL_ICON } from "../icons";
 import CharacterTray2, { Blueprint } from "./CharacterTray2";
 import noop from "../../util/noop";
@@ -32,31 +39,67 @@ import ttbudCollisionDetector from "./TtbudCollisionDetector";
 
 const WALL_CONTENTS = { type: ContentType.Icon, iconId: WALL_ICON.id } as const;
 
+const TEMP_TOKEN_ID = "temporary-token";
+
+interface TokenLocations {
+  blueprint: Blueprint;
+  location: GridLocation;
+}
+
 const defaultBoardState: BoardState = makeBoardStateFromBlueprint(
-  makeToken(WALL_CONTENTS),
-  { type: LocationType.Grid, x: 1, y: 1 }
+  // TODO: Make list of board tokens
+  [
+    {
+      blueprint: makeToken(WALL_CONTENTS),
+      location: { type: LocationType.Grid, x: 1, y: 1 },
+    },
+  ]
 );
 
 function makeBoardStateFromBlueprint(
-  { id, contents }: Blueprint,
-  location: GridLocation
+  tokenLocations: TokenLocations[]
 ): BoardState {
-  const pos = { x: location.x, y: location.y, z: 1 };
+  const entityById: { [id: string]: Entity } = {};
+  const tokenIdsByPosStr: { [pos: string]: string } = {};
+  const charIdsByContentId: { [contentId: string]: string[] } = {};
+  for (const {
+    blueprint: { contents, id },
+    location,
+  } of tokenLocations) {
+    const pos = { x: location.x, y: location.y, z: 1 };
 
-  return {
-    charIdsByContentId: { [contentId(contents)]: [id] },
-    entityById: {
-      [id]: {
-        id,
-        pos,
-        contents,
-        type: EntityType.Character,
-      },
-    },
-    tokenIdsByPosStr: {
-      [toPosStr(pos)]: id,
-    },
+    const charIds = charIdsByContentId[contentId(contents)];
+    if (charIds === undefined) {
+      charIdsByContentId[contentId(contents)] = [id];
+    } else {
+      charIds.push(id);
+    }
+
+    entityById[id] = { id, pos, contents, type: EntityType.Character };
+    tokenIdsByPosStr[toPosStr(pos)] = id;
+  }
+  return { entityById, tokenIdsByPosStr, charIdsByContentId };
+}
+
+function addTokenToBoard(boardState: BoardState, token: Token): BoardState {
+  const newBoardState = {
+    entityById: { ...boardState.entityById },
+    tokenIdsByPosStr: { ...boardState.tokenIdsByPosStr },
+    charIdsByContentId: { ...boardState.charIdsByContentId },
   };
+  newBoardState.entityById[token.id] = token;
+  return newBoardState;
+}
+
+function removeTokenFromBoard(boardState: BoardState, id: string): BoardState {
+  const newBoardState = {
+    entityById: { ...boardState.entityById },
+    tokenIdsByPosStr: { ...boardState.tokenIdsByPosStr },
+    charIdsByContentId: { ...boardState.charIdsByContentId },
+  };
+  delete newBoardState.entityById[id];
+
+  return newBoardState;
 }
 
 function dec2hex(dec: number) {
@@ -110,7 +153,9 @@ interface MyDragEndEvent {
   targetId: string;
 }
 
-export type MyModifier = (args: Parameters<Modifier>[0] & {origin?: TokenOrigin}) => Transform;
+export type MyModifier = (
+  args: Parameters<Modifier>[0] & { origin?: TokenOrigin }
+) => Transform;
 
 interface MyDndContextProps {
   onDragContainerChanged: (event: MyDragOverChangedEvent) => void;
@@ -136,8 +181,9 @@ const MyDndContext: React.FC<MyDndContextProps> = ({
   const lastContainer = useRef<string>();
 
   const dndkitModifiers = modifiers.map((modifier) => {
-    return (args: Parameters<Modifier>[0]) => modifier({...args, origin: origin.current})
-  })
+    return (args: Parameters<Modifier>[0]) =>
+      modifier({ ...args, origin: origin.current });
+  });
 
   const myOnDragOver = ({ active, over, collisions }: DragOverEvent) => {
     const descriptor = active.data.current as TokenDescriptor & SortableData;
@@ -295,24 +341,16 @@ const CharacterWrapper: React.FC = () => {
       let newBoardState = boardState;
 
       if (currentContainerId === "board") {
-        const location =
-          origin.location.type === LocationType.Grid
-            ? origin.location
-            : ({ type: LocationType.Grid, x: -1, y: -1, z: 0 } as const);
-        newBoardState = makeBoardStateFromBlueprint(
-          {
-            id: draggableId,
-            contents: descriptor.contents,
-          },
-          location
-        );
+        newBoardState = addTokenToBoard(newBoardState, {
+          type: EntityType.Character,
+          id: draggableId,
+          pos: { x: -1, y: -1, z: 0 },
+          contents: descriptor.contents,
+        });
       }
 
       if (lastContainerId === "board") {
-        newBoardState = makeBoardStateFromBlueprint(
-          makeToken(descriptor.contents),
-          { type: LocationType.Grid, x: 0, y: 0 }
-        );
+        newBoardState = removeTokenFromBoard(newBoardState, draggableId);
       }
 
       if (currentContainerId === "floor-tray") {
