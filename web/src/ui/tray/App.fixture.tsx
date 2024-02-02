@@ -6,7 +6,9 @@ import {
   DragEndEvent,
   Modifiers,
   CollisionDetection,
+  Modifier,
 } from "@dnd-kit/core";
+import {Transform} from "@dnd-kit/utilities"
 import React, { useCallback, useRef, useState } from "react";
 import { TokenDescriptor, TokenOrigin } from "../token/Character2/Draggable2";
 import Character2 from "../token/Character2/Character2";
@@ -108,12 +110,14 @@ interface MyDragEndEvent {
   targetId: string;
 }
 
+export type MyModifier = (args: Parameters<Modifier>[0] & {origin?: TokenOrigin}) => Transform;
+
 interface MyDndContextProps {
   onDragContainerChanged: (event: MyDragOverChangedEvent) => void;
   onDragStart: (event: MyDragStartEvent) => void;
   onDragEnd: (event: MyDragEndEvent) => void;
   collisionDetection: CollisionDetection;
-  modifiers: Modifiers;
+  modifiers: MyModifier[];
 }
 
 interface SortableData {
@@ -130,6 +134,10 @@ const MyDndContext: React.FC<MyDndContextProps> = ({
 }) => {
   const origin = useRef<TokenOrigin>();
   const lastContainer = useRef<string>();
+
+  const dndkitModifiers = modifiers.map((modifier) => {
+    return (args: Parameters<Modifier>[0]) => modifier({...args, origin: origin.current})
+  })
 
   const myOnDragOver = ({ active, over, collisions }: DragOverEvent) => {
     const descriptor = active.data.current as TokenDescriptor & SortableData;
@@ -160,6 +168,7 @@ const MyDndContext: React.FC<MyDndContextProps> = ({
       currentOverId,
       currentContainerId,
       lastContainerId,
+      origin: origin.current,
     });
 
     if (currentContainerId !== lastContainerId) {
@@ -214,7 +223,7 @@ const MyDndContext: React.FC<MyDndContextProps> = ({
       onDragOver={myOnDragOver}
       onDragEnd={myOnDragEnd}
       collisionDetection={collisionDetection}
-      modifiers={modifiers}
+      modifiers={dndkitModifiers}
     >
       {children}
     </DndContext>

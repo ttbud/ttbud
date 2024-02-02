@@ -21,13 +21,7 @@ function randSuffix() {
 
 const blueprints: Blueprint[] = ICONS.slice(0, 5).map((icon, i) => ({
   id: `${icon.id}-${randSuffix()}`,
-  descriptor: {
-    contents: { iconId: icon.id, type: ContentType.Icon },
-    origin: {
-      containerId: "floor-tray",
-      location: { type: LocationType.List, idx: i },
-    },
-  },
+  contents: { iconId: icon.id, type: ContentType.Icon },
 }));
 
 const firstBlueprint = blueprints[0];
