@@ -1,20 +1,21 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DragEndAction, dragEnded } from "../../drag/drag-slice";
-import { DROPPABLE_IDS } from "../DroppableIds";
 import { assert } from "../../util/invariants";
-import { DraggableType, LocationType } from "../../drag/DragStateTypes";
 import { v4 as uuid } from "uuid";
-import getDragResult, { DragResult } from "../../drag/getDragResult";
-import UnreachableCaseError from "../../util/UnreachableCaseError";
 import Pos2d from "../../util/shape-math";
-import { EntityType, Token, TokenContents } from "../../types";
+import {
+  Character,
+  EntityType,
+  NetworkToken,
+  Token,
+  TokenContents,
+} from "../../types";
 import {
   applyLocalAction,
   applyNetworkUpdate,
   collectUpdate,
   MergeState,
 } from "./action-reconciliation";
-import { Action } from "../../network/BoardStateApiClient";
+import { Action, NetworkAction } from "../../network/BoardStateApiClient";
 import { AppThunk } from "../../store/createStore";
 import pause from "../../util/pause";
 
@@ -34,11 +35,25 @@ const INITIAL_STATE: MergeState = {
 };
 
 interface NetworkUpdateAction {
+  actions: NetworkAction[];
+  updateId: string;
+}
+
+interface InternalNetworkUpdateAction {
   actions: Action[];
   updateId: string;
 }
 
-interface AddTokenAction {
+interface SetDragIdAction {
+  id: string;
+  newDragId: string;
+}
+
+interface UpsertCharacterAction {
+  character: Character;
+}
+
+interface AddFloorAction {
   id: string;
   contents: TokenContents;
   pos: Pos2d;
@@ -60,15 +75,41 @@ const boardSlice = createSlice({
   name: "board",
   initialState: INITIAL_STATE,
   reducers: {
-    receiveInitialState(state, action: PayloadAction<Token[]>) {
-      applyNetworkUpdate(
-        state,
-        action.payload.map((token) => ({ type: "upsert", token }))
-      );
+    receiveInitialState: {
+      reducer: (state, action: PayloadAction<Token[]>) => {
+        applyNetworkUpdate(
+          state,
+          action.payload.map((token) => ({ type: "upsert", token }))
+        );
+      },
+      prepare: (tokens: NetworkToken[]) => {
+        return {
+          payload: tokens.map<Token>((token) => ({ ...token, dragId: uuid() })),
+        };
+      },
     },
-    receiveNetworkUpdate(state, action: PayloadAction<NetworkUpdateAction>) {
-      const { actions, updateId } = action.payload;
-      applyNetworkUpdate(state, actions, updateId);
+    receiveNetworkUpdate: {
+      reducer: (state, action: PayloadAction<InternalNetworkUpdateAction>) => {
+        const { actions, updateId } = action.payload;
+        applyNetworkUpdate(state, actions, updateId);
+      },
+      prepare: ({ actions, updateId }: NetworkUpdateAction) => {
+        const newActions: Action[] = actions.map((action): Action => {
+          if (action.type === "upsert") {
+            return {
+              type: "upsert",
+              token: {
+                ...action.token,
+                dragId: uuid(), // Need to look at state to pick a dragId, but can't look at state in prepare functions ??
+              },
+            };
+          } else {
+            return action;
+          }
+        });
+
+        return { payload: { actions: newActions, updateId } };
+      },
     },
     batchUnqueuedActions(state, action: PayloadAction<BatchUnqueuedAction>) {
       collectUpdate(state, action.payload.updateId);
@@ -78,8 +119,24 @@ const boardSlice = createSlice({
         applyLocalAction(state, { type: "delete", entityId: id });
       }
     },
+    setDragId(state, action: PayloadAction<SetDragIdAction>) {
+      const { id, newDragId } = action.payload;
+      const character = state.local.entityById[id];
+      assert(
+        character.type === EntityType.Character,
+        "Cannot call setDragId on a non-character"
+      );
+      character.dragId = newDragId;
+    },
+    upsertCharacter(state, action: PayloadAction<UpsertCharacterAction>) {
+      const { character } = action.payload;
+      applyLocalAction(state, {
+        type: "upsert",
+        token: character,
+      });
+    },
     addFloor: {
-      reducer: (state, action: PayloadAction<AddTokenAction>) => {
+      reducer: (state, action: PayloadAction<AddFloorAction>) => {
         const { id, contents, pos } = action.payload;
 
         applyLocalAction(state, {
@@ -118,70 +175,6 @@ const boardSlice = createSlice({
       });
     },
   },
-  extraReducers: {
-    [dragEnded.type]: (state, action: PayloadAction<DragEndAction>) => {
-      const { draggable, destination } = action.payload;
-
-      const dragResult = getDragResult(DROPPABLE_IDS.BOARD, action.payload);
-
-      switch (dragResult) {
-        case DragResult.MovedInside:
-          const loc = destination.logicalLocation;
-          assert(
-            draggable.type === DraggableType.Token,
-            "Dragged from board but draggable type was not token"
-          );
-          assert(
-            loc?.type === LocationType.Grid,
-            "Dropped in board but drop type was not grid"
-          );
-
-          const token = state.local.entityById[draggable.tokenId];
-          // The token was deleted before the drag completed
-          if (!token) return;
-          assert(
-            token.type === "character",
-            "Draggable had the id of a non-character token"
-          );
-
-          const newToken = {
-            ...token,
-            pos: { x: loc.x, y: loc.y, z: CHARACTER_HEIGHT },
-          } as Token;
-
-          applyLocalAction(state, {
-            type: "upsert",
-            token: newToken,
-          });
-          break;
-        case DragResult.DraggedOutOf:
-          // Dragging a token to a tray from the board should not remove the token from the board
-          break;
-        case DragResult.DraggedInto:
-          assert(
-            destination.logicalLocation?.type === LocationType.Grid,
-            "Dropped in board but drop type was not grid"
-          );
-
-          const { x, y } = destination.logicalLocation;
-          applyLocalAction(state, {
-            type: "upsert",
-            token: {
-              type: EntityType.Character,
-              id: uuid(),
-              contents: draggable.contents,
-              pos: { x, y, z: CHARACTER_HEIGHT },
-            },
-          });
-          break;
-        case DragResult.None:
-          break;
-        /* istanbul ignore next */
-        default:
-          throw new UnreachableCaseError(dragResult);
-      }
-    },
-  },
 });
 
 function addPing(pos: Pos2d): AppThunk {
@@ -201,6 +194,7 @@ const {
   receiveInitialState,
   receiveNetworkUpdate,
   batchUnqueuedActions,
+  upsertCharacter,
 } = boardSlice.actions;
 
 export {
@@ -211,5 +205,6 @@ export {
   receiveInitialState,
   receiveNetworkUpdate,
   batchUnqueuedActions,
+  upsertCharacter,
 };
 export default boardSlice.reducer;

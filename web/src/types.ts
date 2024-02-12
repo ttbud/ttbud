@@ -35,13 +35,25 @@ export interface Color {
   blue: number;
 }
 
-export interface Token {
-  type: EntityType.Floor | EntityType.Character;
+export interface Floor {
+  type: EntityType.Floor;
   id: string;
+  pos: Pos3d;
+  contents: TokenContents;
+}
+
+export interface Character {
+  type: EntityType.Character;
+  id: string;
+  dragId: string;
   pos: Pos3d;
   contents: TokenContents;
   color?: Color;
 }
+
+export type Token = Floor | Character;
+
+export type NetworkToken = Omit<Token, "dragId">;
 
 export type Entity = Ping | Token;
 

@@ -25,6 +25,7 @@ export const ICONS = loadIcons().map(({ path, img }) => {
 export const ICONS_BY_ID = byId(ICONS);
 
 export const WALL_ICON = ICONS_BY_ID.get("./stone-wall.svg")!;
+export const STACK_ICON = ICONS_BY_ID.get("./stack.svg")!;
 
 // Don't change these without also changing src/ui/__mocks__/icon-loader.ts
 export const DEFAULT_FLOOR_ICONS = [

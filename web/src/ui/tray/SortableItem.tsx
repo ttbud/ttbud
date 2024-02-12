@@ -1,7 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { CSSProperties } from "react";
-import { TokenDescriptor } from "../token/Character2/Draggable2";
+import { TokenDescriptor } from "../../drag/Draggable2";
 
 interface Props {
   id: string;

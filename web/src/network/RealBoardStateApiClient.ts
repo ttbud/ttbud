@@ -15,12 +15,13 @@ import {
   ApiEventHandler,
   ConnectionError,
   EventType,
+  NetworkAction,
 } from "./BoardStateApiClient";
 
 function toApiAction(action: Action): ApiAction {
   switch (action.type) {
     case "upsert":
-      const { id, type, contents, pos, color } = action.token;
+      const { id, type, contents, pos } = action.token;
       const apiContents =
         contents.type === ContentType.Text
           ? { text: contents.text }
@@ -38,7 +39,10 @@ function toApiAction(action: Action): ApiAction {
           end_x: pos.x + 1,
           end_y: pos.y + 1,
           end_z: pos.z + 1,
-          color_rgb: color,
+          color_rgb:
+            action.token.type === EntityType.Character
+              ? action.token.color
+              : undefined,
         },
       };
     case "delete":
@@ -88,7 +92,7 @@ function toType(type: "character" | "floor") {
   }
 }
 
-function toAction(apiAction: ApiAction): Action {
+function toAction(apiAction: ApiAction): NetworkAction {
   switch (apiAction.action) {
     case "delete":
       return {
@@ -121,14 +125,16 @@ function toAction(apiAction: ApiAction): Action {
             y: token.start_y,
             z: token.start_z,
           },
+          //TODO: Fix this
+          //@ts-ignore
           color: token.color_rgb,
         },
       };
   }
 }
 
-function toToken(apiToken: ApiToken): Token {
-  const token: Token = {
+function toToken(apiToken: ApiToken): Omit<Token, "dragId"> {
+  const token = {
     id: apiToken.id,
     type: apiToken.type as EntityType.Character | EntityType.Floor,
     contents: toContents(apiToken.contents),
@@ -139,6 +145,8 @@ function toToken(apiToken: ApiToken): Token {
     },
   };
   if (apiToken.type === "character") {
+    //TODO: Fix this
+    //@ts-ignore
     token.color = apiToken.color_rgb;
   }
   return token;

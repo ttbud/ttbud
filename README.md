@@ -7,7 +7,6 @@ We made TTBud so we can play DnD with our friends across the globe. It's a repla
 Try it out here:
 [ttbud.app](https://ttbud.app)
 
-
 ## Development
 
 ### Requirements
@@ -17,6 +16,7 @@ Try it out here:
 - [docker-compose](https://docs.docker.com/compose/install/)
 
 ### Setup
+
 ```bash
 # Create a dev ssl cert
 mkcert -install

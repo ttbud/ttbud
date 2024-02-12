@@ -21,17 +21,13 @@ interface ThunkExtras {
   monitor: DroppableMonitor;
 }
 
-export default function createStore(
-  monitor: DroppableMonitor,
-  apiClient: BoardStateApiClient
-) {
+export default function createStore(apiClient: BoardStateApiClient) {
   const store = configureStore({
     reducer: rootReducer,
     preloadedState: {},
     middleware: [
       networkSyncMiddleware(apiClient),
       ...getDefaultMiddleware({
-        thunk: { extraArgument: { monitor } },
         // redux-persist uses non-serializable actions, and that's core to how it works :(.
         serializableCheck: {
           ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],

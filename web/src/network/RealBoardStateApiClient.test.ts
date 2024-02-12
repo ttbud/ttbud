@@ -30,6 +30,7 @@ const CHARACTER: Token = {
   },
   contents: { type: ContentType.Text, text: API_CHARACTER.contents.text },
   id: API_CHARACTER.id,
+  dragId: API_CHARACTER.id,
   pos: {
     x: API_CHARACTER.start_x,
     y: API_CHARACTER.start_y,

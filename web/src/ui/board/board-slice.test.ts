@@ -57,6 +57,7 @@ const FLOOR_1: Entity = {
 
 const TOKEN_1: Entity = {
   id: "token-1",
+  dragId: "drag-token-1",
   type: EntityType.Character,
   contents: { type: ContentType.Icon, iconId: "icon-id" },
   pos: { x: 0, y: 0, z: 1 },
@@ -64,6 +65,7 @@ const TOKEN_1: Entity = {
 
 const TOKEN_2: Entity = {
   id: "token-2",
+  dragId: "token-2",
   type: EntityType.Character,
   contents: { type: ContentType.Icon, iconId: "icon-id" },
   pos: { x: 1, y: 1, z: 1 },

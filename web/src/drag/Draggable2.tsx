@@ -1,6 +1,6 @@
 import { useDraggable } from "@dnd-kit/core";
-import { TokenContents } from "../../../types";
-import { LogicalLocation } from "../../../drag/DragStateTypes";
+import { TokenContents } from "../types";
+import { LogicalLocation } from "./DragStateTypes";
 import { CSSProperties } from "@material-ui/core/styles/withStyles";
 
 export interface TokenOrigin {
@@ -11,6 +11,7 @@ export interface TokenOrigin {
 export interface TokenDescriptor {
   contents: TokenContents;
   origin: TokenOrigin;
+  networkId?: string;
 }
 
 interface Props {

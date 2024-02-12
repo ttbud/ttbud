@@ -1,4 +1,4 @@
-import { Ping, Token } from "../types";
+import { NetworkToken, Ping, Token } from "../types";
 
 export enum EventType {
   Update = "update",
@@ -7,6 +7,11 @@ export enum EventType {
   InitialState = "initial state",
   Error = "error",
   Disconnected = "disconnected",
+}
+
+interface NetworkUpsertAction {
+  type: "upsert";
+  token: Omit<Token, "dragId">;
 }
 
 interface UpsertAction {
@@ -25,11 +30,12 @@ interface PingAction {
 }
 
 export type Action = UpsertAction | DeleteAction | PingAction;
+export type NetworkAction = NetworkUpsertAction | DeleteAction | PingAction;
 
 interface UpdateEvent {
   type: EventType.Update;
   requestId: string;
-  actions: Action[];
+  actions: NetworkAction[];
 }
 
 export enum ConnectionError {
@@ -51,7 +57,7 @@ export type ConnectionStatusEvent =
 
 interface InitialStateEvent {
   type: EventType.InitialState;
-  tokens: Token[];
+  tokens: NetworkToken[];
 }
 
 interface ErrorEvent {

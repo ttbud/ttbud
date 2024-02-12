@@ -40,6 +40,7 @@ export function networkSyncMiddleware(
       }
 
       const requestId = uuid();
+      //TODO: Combine this into one step, that just sends the action ids
       store.dispatch(batchUnqueuedActions({ updateId: requestId }));
       const update = store
         .getState()

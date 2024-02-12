@@ -8,52 +8,50 @@ import { Paper } from "@material-ui/core";
 import FloorButton from "./FloorButton";
 import { LocationType } from "../../drag/DragStateTypes";
 import { useDroppable } from "@dnd-kit/core";
+import { shallowEqual } from "react-redux";
+import { memo } from "react";
 
 interface Props {
   blueprints: Blueprint[];
   activeFloor: Blueprint;
 }
 
-const FloorTray2: React.FC<Props> = ({ blueprints, activeFloor }) => {
-  const { setNodeRef } = useDroppable({ id: "floor-tray" });
-
+const FloorTray2: React.FC<Props> = memo(({ blueprints, activeFloor }) => {
   return (
-    <div ref={setNodeRef} style={{ display: "inline-flex" }}>
-      <Paper
-        data-tour="floor-tray"
-        aria-label="Floor Tray"
-        style={{
-          display: "flex",
-          flexDirection: "row",
-        }}
+    <Paper
+      data-tour="floor-tray"
+      aria-label="Floor Tray"
+      style={{
+        display: "flex",
+        flexDirection: "row",
+      }}
+    >
+      <SortableContext
+        id={"floor-tray"}
+        items={blueprints}
+        strategy={horizontalListSortingStrategy}
       >
-        <SortableContext
-          id={"floor-tray"}
-          items={blueprints}
-          strategy={horizontalListSortingStrategy}
-        >
-          {blueprints.map((blueprint, idx) => (
-            <SortableItem
-              id={blueprint.id}
-              key={blueprint.id}
-              descriptor={{
-                contents: blueprint.contents,
-                origin: {
-                  containerId: "floor-tray",
-                  location: { type: LocationType.List, idx },
-                },
-              }}
-            >
-              <FloorButton
-                contents={blueprint.contents}
-                selected={activeFloor.id === blueprint.id}
-              />
-            </SortableItem>
-          ))}
-        </SortableContext>
-      </Paper>
-    </div>
+        {blueprints.map((blueprint, idx) => (
+          <SortableItem
+            id={blueprint.id}
+            key={blueprint.id}
+            descriptor={{
+              contents: blueprint.contents,
+              origin: {
+                containerId: "floor-tray",
+                location: { type: LocationType.List, idx },
+              },
+            }}
+          >
+            <FloorButton
+              contents={blueprint.contents}
+              selected={activeFloor.id === blueprint.id}
+            />
+          </SortableItem>
+        ))}
+      </SortableContext>
+    </Paper>
   );
-};
+}, shallowEqual);
 
 export default FloorTray2;

@@ -3,7 +3,7 @@ import Character2 from "./Character2";
 import { ContentType, IconContents } from "../../../types";
 import { DndContext, DragOverlay } from "@dnd-kit/core";
 import React, { useState } from "react";
-import Draggable2 from "./Draggable2";
+import Draggable2 from "../../../drag/Draggable2";
 import { LocationType } from "../../../drag/DragStateTypes";
 
 const ICON = DEFAULT_CHARACTER_ICONS[0];

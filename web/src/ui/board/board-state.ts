@@ -1,7 +1,8 @@
-import { contentId, Entity, EntityType, Token } from "../../types";
+import { Character, contentId, Entity, EntityType, Token } from "../../types";
 import { Action } from "../../network/BoardStateApiClient";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import Pos2d, { Pos3d, posAreEqual } from "../../util/shape-math";
+import { assert } from "../../util/invariants";
 
 interface Color {
   red: number;
@@ -30,7 +31,7 @@ function colorsEqual(left: Color, right: Color) {
 
 export interface BoardState {
   entityById: { [id: string]: Entity };
-  tokenIdsByPosStr: { [pos: string]: string };
+  tokenIdsByPosStr: { [pos: string]: string[] };
   charIdsByContentId: { [contentId: string]: string[] };
 }
 
@@ -40,8 +41,8 @@ export interface ActionParams {
   isConfirmed: boolean;
 }
 
-export function toPosStr(pos: Pos3d) {
-  return `${pos.x},${pos.y},${pos.z}`;
+export function toPosStr(pos: Pos2d) {
+  return `${pos.x},${pos.y}`;
 }
 
 export function applyAction({ boardState, action, isConfirmed }: ActionParams) {
@@ -68,7 +69,11 @@ export function deleteEntity(boardState: BoardState, entityId: string) {
   delete boardState.entityById[entityId];
 
   if (entity.type !== "ping") {
-    delete boardState.tokenIdsByPosStr[toPosStr(entity.pos)];
+    const tokenIds = boardState.tokenIdsByPosStr[toPosStr(entity.pos)];
+    const idx = tokenIds.findIndex((id) => id === entityId);
+    if (idx !== -1) {
+      tokenIds.splice(idx, 1);
+    }
   }
 
   if (entity.type === "character") {
@@ -86,10 +91,20 @@ export function upsertEntity(
   isConfirmed: boolean
 ) {
   // If it's not a ping, check for collision
-  if (entity.type !== "ping") {
-    const existingId = boardState.tokenIdsByPosStr[toPosStr(entity.pos)];
-    // Can't upsert, something's already there
-    if (existingId && existingId !== entity.id) return;
+  if (entity.type === "floor") {
+    // Check for floor collision
+    const existingIds = boardState.tokenIdsByPosStr[toPosStr(entity.pos)];
+    if (
+      existingIds.some(
+        (id) => boardState.entityById[id].type === EntityType.Floor
+      )
+    ) {
+      return;
+    }
+  } else if (entity.type === "character") {
+    // Find the z-index for the new character
+    const maxZ = topTokenAt(boardState, entity.pos)?.pos.z ?? 0;
+    entity.pos.z = maxZ + 1;
   }
 
   if (boardState.entityById[entity.id]) {
@@ -99,7 +114,10 @@ export function upsertEntity(
 
   // Pings don't store the collision bookkeeping info
   if (entity.type !== "ping") {
-    boardState.tokenIdsByPosStr[toPosStr(entity.pos)] = entity.id;
+    const posStr = toPosStr(entity.pos);
+    const posIds = boardState.tokenIdsByPosStr[posStr] ?? [];
+    posIds.push(entity.id);
+    boardState.tokenIdsByPosStr[posStr] = posIds;
   }
 
   if (entity.type === "character") {
@@ -113,8 +131,8 @@ export function upsertEntity(
 
       for (const charId of charIds) {
         const entity = boardState.entityById[charId] as Token;
-        const entityColor = entity.color;
-        if (entityColor) {
+        if (entity.type === EntityType.Character && entity.color) {
+          const entityColor = entity.color;
           const idx = unusedColors.findIndex((color) =>
             colorsEqual(entityColor, color)
           );
@@ -123,7 +141,7 @@ export function upsertEntity(
       }
 
       for (const charId of charIds) {
-        const entity = boardState.entityById[charId] as Token;
+        const entity = boardState.entityById[charId] as Character;
         if (!entity.color) {
           entity.color = unusedColors.shift();
         }
@@ -132,11 +150,46 @@ export function upsertEntity(
   }
 }
 
-export function tokenIdAt(
+export function topTokenAt(
   boardState: BoardState,
-  pos: Pos3d
-): string | undefined {
-  return boardState.tokenIdsByPosStr[toPosStr(pos)];
+  pos: Pos2d
+): Token | undefined {
+  const existingIds = boardState.tokenIdsByPosStr[toPosStr(pos)];
+  return existingIds?.reduce<Token | undefined>(
+    (topToken: Token | undefined, currentId: string): Token => {
+      const currentEntity = boardState.entityById[currentId];
+      assert(currentEntity.type !== EntityType.Ping, "Ping in position map??");
+      if (topToken && topToken.pos.z > currentEntity.pos.z) {
+        return topToken;
+      }
+      return currentEntity;
+    },
+    undefined
+  );
+}
+
+export function bottomCharacterAt(
+  boardState: BoardState,
+  pos: Pos2d
+): Character | undefined {
+  const existingIds = boardState.tokenIdsByPosStr[toPosStr(pos)];
+  return existingIds?.reduce<Character | undefined>(
+    (
+      bottomCharacter: Character | undefined,
+      currentId: string
+    ): Character | undefined => {
+      const currentEntity = boardState.entityById[currentId];
+      assert(currentEntity.type !== EntityType.Ping, "Ping in position map??");
+      if (
+        currentEntity.type === EntityType.Floor ||
+        (bottomCharacter && bottomCharacter.pos.z < currentEntity.pos.z)
+      ) {
+        return bottomCharacter;
+      }
+      return currentEntity;
+    },
+    undefined
+  );
 }
 
 export function pingAt(boardState: BoardState, pos: Pos2d): string | undefined {

@@ -6,19 +6,14 @@ import {
   DragEndEvent,
 } from "@dnd-kit/core";
 import React, { useCallback, useRef, useState } from "react";
-import Draggable2, { TokenDescriptor } from "../token/Character2/Draggable2";
+import Draggable2, { TokenDescriptor } from "../../drag/Draggable2";
 import Character2 from "../token/Character2/Character2";
-import {
-  ContentType,
-  IconContents,
-  TokenContents,
-  contentId,
-} from "../../types";
+import { ContentType, TokenContents, contentId } from "../../types";
 import { ICONS, WALL_ICON } from "../icons";
 import CharacterTray2, { Blueprint } from "./CharacterTray2";
 import noop from "../../util/noop";
 import { assert } from "../../util/invariants";
-import { LocationType, LogicalLocation } from "../../drag/DragStateTypes";
+import { LocationType } from "../../drag/DragStateTypes";
 
 const wall = { type: ContentType.Icon, iconId: WALL_ICON.id } as const;
 
@@ -32,28 +27,16 @@ function randSuffix() {
   return Array.from(arr, dec2hex).join("");
 }
 
-const defaultChars: Blueprint[] = ICONS.slice(0, 5).map((icon, i) =>
-  makeToken(
-    "character-tray",
-    { type: ContentType.Icon, iconId: icon.id },
-    { type: LocationType.List, idx: i }
-  )
+const defaultChars: Blueprint[] = ICONS.slice(0, 50).map((icon) =>
+  makeToken({ type: ContentType.Icon, iconId: icon.id })
 );
 
-const defaultBoardToken: Blueprint = makeToken("board", wall, {
-  type: LocationType.Grid,
-  x: 0,
-  y: 0,
-});
+const defaultBoardToken: Blueprint = makeToken(wall);
 
-function makeToken(
-  containerId: string,
-  content: TokenContents,
-  location: LogicalLocation
-): Blueprint {
+function makeToken(content: TokenContents): Blueprint {
   return {
     id: `${contentId(content)}-${randSuffix()}`,
-    descriptor: { origin: { containerId, location }, contents: content },
+    contents: content,
   };
 }
 
@@ -193,17 +176,11 @@ const CharacterWrapper: React.FC = () => {
       let newCharacterTrayTokens = characterTrayTokens;
 
       if (currentContainerId === "board") {
-        setBoardToken({ id: draggableId, descriptor });
+        setBoardToken({ id: draggableId, contents: descriptor.contents });
       }
 
       if (lastContainerId === "board") {
-        setBoardToken(
-          makeToken("board", descriptor.contents, {
-            type: LocationType.Grid,
-            x: 0,
-            y: 0,
-          })
-        );
+        setBoardToken(makeToken(descriptor.contents));
       }
 
       if (currentContainerId === "character-tray") {
@@ -226,7 +203,7 @@ const CharacterWrapper: React.FC = () => {
           newCharacterTrayTokens,
           {
             id: draggableId,
-            descriptor,
+            contents: descriptor.contents,
           },
           overIdx
         );
@@ -240,11 +217,7 @@ const CharacterWrapper: React.FC = () => {
           // Create a temporary token to hold the place of the token we're moving into the board
           newCharacterTrayTokens = withReplacedItem(
             newCharacterTrayTokens,
-            makeToken(
-              "character-tray",
-              descriptor.contents,
-              descriptor.origin.location
-            ),
+            makeToken(descriptor.contents),
             currentIdx
           );
         } else {
@@ -301,7 +274,16 @@ const CharacterWrapper: React.FC = () => {
             onCharacterRemoved={noop}
           />
         </div>
-        <Draggable2 id={boardToken.id} descriptor={boardToken.descriptor}>
+        <Draggable2
+          id={boardToken.id}
+          descriptor={{
+            contents: boardToken.contents,
+            origin: {
+              containerId: "board",
+              location: { x: 0, y: 0, type: LocationType.Grid },
+            },
+          }}
+        >
           <Character2
             contents={{ type: ContentType.Icon, iconId: WALL_ICON.id }}
           />

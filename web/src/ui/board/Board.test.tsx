@@ -20,6 +20,7 @@ import { LONG_TAP_MS } from "../util/useLongTap";
 
 const CHARACTER: Entity = {
   id: "character-id",
+  dragId: "character-id",
   type: EntityType.Character,
   pos: { x: 0, y: 0, z: 0 },
   contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
@@ -178,6 +179,7 @@ describe("Board", () => {
         FLOOR,
         {
           id: "character-id",
+          dragId: "character-id",
           type: EntityType.Character,
           pos: { x: 0, y: 0, z: 1 },
           contents: { type: ContentType.Icon, iconId: WALL_ICON.id },

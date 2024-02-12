@@ -11,7 +11,7 @@ jest.mock("../../network/BoardStateApiClient");
 it("renders without crashing", () => {
   const monitor = new DomDroppableMonitor();
   const apiClient = new FakeApiClient();
-  const store = createStore(monitor, apiClient);
+  const store = createStore(apiClient);
 
   const div = document.createElement("div");
 

@@ -35,7 +35,7 @@ import {
 } from "./board-slice";
 import { connect } from "react-redux";
 import { EntityType, TokenContents } from "../../types";
-import { BoardState, pingAt, tokenIdAt } from "./board-state";
+import { BoardState, pingAt, topTokenAt } from "./board-state";
 import { Buttons } from "../util/Buttons";
 import useDoubleTap, { DoubleTapState } from "../util/useDoubleTap";
 import useLongTap from "../util/useLongTap";
@@ -115,20 +115,6 @@ const dispatchProps = {
   onTokenDeleted: removeEntity,
 };
 
-function topTokenIdAt(boardState: BoardState, gridPos: Pos2d) {
-  let tokenId = tokenIdAt(boardState, {
-    ...gridPos,
-    z: CHARACTER_HEIGHT,
-  });
-  if (!tokenId) {
-    tokenId = tokenIdAt(boardState, {
-      ...gridPos,
-      z: FLOOR_HEIGHT,
-    });
-  }
-  return tokenId;
-}
-
 type Mode = "draw" | "delete";
 
 const PureBoard: React.FC<Props> = ({
@@ -152,12 +138,12 @@ const PureBoard: React.FC<Props> = ({
           }
           break;
         case "draw":
-          if (!tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })) {
-            onFloorCreated(activeFloor, gridPos);
-          }
+          // if (!tokenIdAt(boardState, { ...gridPos, z: FLOOR_HEIGHT })) {
+          //   onFloorCreated(activeFloor, gridPos);
+          // }
           break;
         case "delete":
-          let toDeleteId = topTokenIdAt(boardState, gridPos);
+          let toDeleteId = topTokenAt(boardState, gridPos)?.id;
           if (toDeleteId) {
             onTokenDeleted(toDeleteId);
           }
@@ -177,7 +163,7 @@ const PureBoard: React.FC<Props> = ({
       if (isDragging) return;
 
       const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
-      const tokenId = topTokenIdAt(boardState, gridPos);
+      const tokenId = topTokenAt(boardState, gridPos)?.id;
       if (tokenId) {
         onTokenDeleted(tokenId);
         setMode("delete");
@@ -209,15 +195,15 @@ const PureBoard: React.FC<Props> = ({
       assert(container.current, "Board ref not assigned properly");
       const gridPos = toGridPos(pos);
 
-      const existingTokenId = tokenIdAt(boardState, {
-        ...gridPos,
-        z: CHARACTER_HEIGHT,
-      });
-      const draggedTokenId =
-        draggable.type === DraggableType.Token ? draggable.tokenId : undefined;
-      if (existingTokenId && existingTokenId !== draggedTokenId) {
-        return;
-      }
+      // const existingTokenId = tokenIdAt(boardState, {
+      //   ...gridPos,
+      //   z: CHARACTER_HEIGHT,
+      // });
+      // const draggedTokenId =
+      //   draggable.type === DraggableType.Token ? draggable.tokenId : undefined;
+      // if (existingTokenId && existingTokenId !== draggedTokenId) {
+      //   return;
+      // }
 
       const containerRect = container.current.getBoundingClientRect();
       const snappedPixelPos = snapToGrid(scrolledPos(pos));

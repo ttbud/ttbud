@@ -6,10 +6,15 @@ import { DROPPABLE_IDS } from "../DroppableIds";
 import noop from "../../util/noop";
 import useDoubleTap, { DoubleTapState } from "../util/useDoubleTap";
 import { MouseEventHandler, useCallback, useState } from "react";
-import Pos2d, { snapToGrid } from "../../util/shape-math";
-import { BoardState, tokenIdAt } from "./board-state";
+import Pos2d from "../../util/shape-math";
+import {
+  BoardState,
+  bottomCharacterAt,
+  toPosStr,
+  topTokenAt,
+} from "./board-state";
 import { CHARACTER_HEIGHT, FLOOR_HEIGHT } from "./board-slice";
-import { EntityType, TokenContents } from "../../types";
+import { Character, EntityType, TokenContents } from "../../types";
 import useLongTap from "../util/useLongTap";
 import { useDroppable } from "@dnd-kit/core";
 import { LocationType } from "../../drag/DragStateTypes";
@@ -18,8 +23,9 @@ import Floor from "../token/Floor";
 import Ping from "../token/Ping";
 import NoopTransition from "../transition/NoopTransition";
 import Fade from "../transition/Fade";
-import Draggable2 from "../token/Character2/Draggable2";
+import Draggable2 from "../../drag/Draggable2";
 import Character2 from "../token/Character2/Character2";
+import { toGridPos } from "./grid";
 
 let GRID_COLOR = "#947C65";
 
@@ -31,7 +37,7 @@ const useStyles = makeStyles((theme) => ({
   board: {
     // Otherwise safari will try to "select" the empty text next to each floor icon
     userSelect: "none",
-    backgroundColor: theme.palette.background.default,
+    backgroundColor: "#F5F5DC",
     backgroundImage: `repeating-linear-gradient(
       0deg,
       transparent,
@@ -57,33 +63,13 @@ const useStyles = makeStyles((theme) => ({
 
 const preventDefault: MouseEventHandler = (e) => e.preventDefault();
 
-function topTokenIdAt(boardState: BoardState, gridPos: Pos2d) {
-  let tokenId = tokenIdAt(boardState, {
-    ...gridPos,
-    z: CHARACTER_HEIGHT,
-  });
-  if (!tokenId) {
-    tokenId = tokenIdAt(boardState, {
-      ...gridPos,
-      z: FLOOR_HEIGHT,
-    });
-  }
-  return tokenId;
-}
-
-const scrolledPos = (pixelPos: Pos2d) => {
-  return {
-    x: pixelPos.x + document.documentElement.scrollLeft,
-    y: pixelPos.y + document.documentElement.scrollTop,
-  };
-};
-
 type Mode = "draw" | "delete";
 
 interface Props {
   isDragging: boolean;
   boardState: BoardState;
   activeFloor: TokenContents;
+  tempCharacter?: Character;
   onFloorCreated: (activeFloor: TokenContents, gridPos: Pos2d) => void;
   onTokenDeleted: (tokenId: string) => void;
   onPingCreated: (pos: Pos2d) => void;
@@ -93,6 +79,7 @@ const Board2: React.FC<Props> = ({
   isDragging,
   boardState,
   activeFloor,
+  tempCharacter,
   onTokenDeleted,
   onFloorCreated,
   onPingCreated,
@@ -103,20 +90,12 @@ const Board2: React.FC<Props> = ({
   const { setNodeRef: setDroppableRef } = useDroppable({ id: "board" });
   const droppableRef = setDroppableRef as (el: HTMLDivElement) => void;
 
-  const toGridPos = (pixelPos: Pos2d) => {
-    const snappedPixelPos = snapToGrid(scrolledPos(pixelPos));
-    return {
-      x: snappedPixelPos.x / GRID_SIZE_PX,
-      y: snappedPixelPos.y / GRID_SIZE_PX,
-    };
-  };
-
   const onDoubleTap = useCallback(
     (e: PointerEvent) => {
       if (isDragging) return;
 
       const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
-      const tokenId = topTokenIdAt(boardState, gridPos);
+      const tokenId = topTokenAt(boardState, gridPos)?.id;
       if (tokenId) {
         onTokenDeleted(tokenId);
         setMode("delete");
@@ -154,12 +133,21 @@ const Board2: React.FC<Props> = ({
           </Fade>
         );
       case EntityType.Character:
+        const dragId =
+          tempCharacter?.id === token.id ? tempCharacter.dragId : token.dragId;
+
+        const tokensAtPos =
+          boardState.tokenIdsByPosStr[toPosStr(token.pos)] ?? [];
+
+        const isInStack = tokensAtPos.length > 1;
+        const isBottomOfStack =
+          bottomCharacterAt(boardState, token.pos)?.id === token.id;
         return (
           // Need to have some sort of transition otherwise the element will
           // never be removed from the dom :(
           <NoopTransition key={token.id}>
             <Draggable2
-              id={token.id}
+              id={dragId}
               style={{
                 position: "absolute",
                 left: pixelPos.x,
@@ -176,9 +164,14 @@ const Board2: React.FC<Props> = ({
                     y: token.pos.y,
                   },
                 },
+                networkId: token.id,
               }}
             >
-              <Character2 contents={token.contents} />
+              <Character2
+                isInStack={isInStack}
+                isBottomOfStack={!!isBottomOfStack}
+                contents={token.contents}
+              />
             </Draggable2>
           </NoopTransition>
         );
@@ -226,7 +219,38 @@ const Board2: React.FC<Props> = ({
       }}
     >
       <div className={classes.board}>
-        <TransitionGroup>{tokenIcons}</TransitionGroup>
+        <TransitionGroup>
+          {tokenIcons}
+          {/*TODO: Make this work/pick a better api */}
+          {tempCharacter && !boardState.entityById[tempCharacter.id] && (
+            // Need to have some sort of transition otherwise the element will
+            // never be removed from the dom :(
+            <NoopTransition key={tempCharacter.id}>
+              <Draggable2
+                id={tempCharacter.dragId}
+                style={{
+                  position: "absolute",
+                  left: tempCharacter.pos.x * GRID_SIZE_PX,
+                  top: tempCharacter.pos.y * GRID_SIZE_PX,
+                  zIndex: CHARACTER_HEIGHT,
+                }}
+                descriptor={{
+                  contents: tempCharacter.contents,
+                  origin: {
+                    containerId: DROPPABLE_IDS.BOARD,
+                    location: {
+                      type: LocationType.Grid,
+                      x: tempCharacter.pos.x,
+                      y: tempCharacter.pos.y,
+                    },
+                  },
+                }}
+              >
+                <Character2 contents={tempCharacter.contents} />
+              </Draggable2>
+            </NoopTransition>
+          )}
+        </TransitionGroup>
       </div>
     </div>
   );

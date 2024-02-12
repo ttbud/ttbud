@@ -15,12 +15,13 @@ const boardState: BoardState = {
     "wall-id": {
       contents: WALL_CONTENTS,
       id: "wall-id",
+      dragId: "wall-id",
       pos: { x: 5, y: 5, z: 1 },
       type: EntityType.Character,
     },
   },
   tokenIdsByPosStr: {
-    [toPosStr({ x: 5, y: 5, z: 1 })]: "wall-id",
+    [toPosStr({ x: 5, y: 5 })]: ["wall-id"],
   },
 };
 
