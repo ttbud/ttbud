@@ -95,7 +95,7 @@ export function upsertEntity(
     // Check for floor collision
     const existingIds = boardState.tokenIdsByPosStr[toPosStr(entity.pos)];
     if (
-      existingIds.some(
+      existingIds?.some(
         (id) => boardState.entityById[id].type === EntityType.Floor
       )
     ) {

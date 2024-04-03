@@ -8,6 +8,7 @@ import { useState } from "react";
 import FloorButton from "./FloorButton";
 import { assert } from "../../util/invariants";
 import restrictToFloorTray from "./floorTrayDragsModifier";
+import noop from "../../util/noop";
 
 function dec2hex(dec: number) {
   return dec.toString(16).padStart(2, "0");
@@ -46,7 +47,11 @@ const FloorTray2Fixture: React.FC = () => {
       onDragEnd={onDragEnd}
       modifiers={[restrictToFloorTray]}
     >
-      <FloorTray2 activeFloor={firstBlueprint} blueprints={blueprints} />
+      <FloorTray2
+        activeFloor={firstBlueprint}
+        blueprints={blueprints}
+        onFloorSelected={noop}
+      />
       <DragOverlay>
         {dragContent && <FloorButton contents={dragContent} selected={true} />}
       </DragOverlay>

@@ -11,6 +11,7 @@ import { makeStyles } from "@material-ui/core";
 interface Props {
   contents: TokenContents;
   selected: boolean;
+  onSelected?: () => void;
 }
 
 const useStyles = makeStyles({
@@ -20,7 +21,7 @@ const useStyles = makeStyles({
   },
 });
 
-const FloorButton: React.FC<Props> = ({ contents, selected }) => {
+const FloorButton: React.FC<Props> = ({ contents, selected, onSelected }) => {
   const classes = useStyles();
 
   const renderButtonContents = (contents: TokenContents) => {
@@ -52,7 +53,12 @@ const FloorButton: React.FC<Props> = ({ contents, selected }) => {
     }
   };
   return (
-    <ToggleButton selected={selected} onChange={noop} onContextMenu={noop}>
+    <ToggleButton
+      selected={selected}
+      onChange={onSelected}
+      onContextMenu={noop}
+      value={contents}
+    >
       {renderButtonContents(contents)}
     </ToggleButton>
   );

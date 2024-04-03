@@ -27,7 +27,11 @@ import DndContext2, {
 } from "../../drag/DndContext2";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/rootReducer";
-import { CHARACTER_HEIGHT, upsertCharacter } from "../board/board-slice";
+import {
+  CHARACTER_HEIGHT,
+  addFloor,
+  upsertCharacter,
+} from "../board/board-slice";
 import { v4 as uuid } from "uuid";
 import { toGridPos } from "../board/grid";
 import { centerOf } from "../../util/shape-math";
@@ -103,6 +107,8 @@ const App2: React.FC = () => {
   const [floorTrayBlueprints, setFloorTrayBlueprints] =
     useState<Blueprint[]>(defaultFloors);
 
+  const [activeFloor, setActiveFloor] = useState<Blueprint>(defaultFloors[0]);
+
   const boardState = useSelector<RootState, BoardState>(
     (state) => state.board.local
   );
@@ -118,7 +124,7 @@ const App2: React.FC = () => {
       currentOverId,
       lastContainerId,
       currentContainerId,
-      origin,
+      originalDescriptor: origin,
     }: DragOverChangedEvent) => {
       let newCharacterTrayBlueprints = characterTrayBlueprints;
       let newFloorTrayBlueprints = floorTrayBlueprints;
@@ -218,7 +224,11 @@ const App2: React.FC = () => {
             origin.location.type === LocationType.List,
             "It's in character tray but not a list?"
           );
-          overIdx = overIdx === -1 ? origin.location.idx : overIdx;
+          //overIdx = overIdx === -1 ? origin.location.idx : overIdx;
+          // Setting the overIdx to the origin idx means the dragged token
+          // will maintain its position even when leaving the tray from
+          // a different position. Looks weird but behaves well
+          overIdx = origin.location.idx;
           newCharacterTrayBlueprints = withoutItem(
             newCharacterTrayBlueprints,
             origin.location.idx
@@ -411,11 +421,13 @@ const App2: React.FC = () => {
           style={{ width: "100vw", height: "100vh", margin: "-8px" }}
         >
           <Board2
-            activeFloor={WALL_CONTENTS}
+            activeFloor={activeFloor.contents}
             boardState={boardState}
             tempCharacter={tempBoardCharacter}
             isDragging={!!activeDragDescriptor}
-            onFloorCreated={noop}
+            onFloorCreated={(activeFloor, gridPos) =>
+              dispatch(addFloor(activeFloor, gridPos))
+            }
             onPingCreated={noop}
             onTokenDeleted={noop}
           />
@@ -444,8 +456,9 @@ const App2: React.FC = () => {
         >
           <Droppable2 id="floor-tray" style={{ display: "inline-flex" }}>
             <FloorTray2
-              activeFloor={defaultActiveFloor}
+              activeFloor={activeFloor}
               blueprints={floorTrayBlueprints}
+              onFloorSelected={(tokenContents) => setActiveFloor(tokenContents)}
             />
           </Droppable2>
         </div>

@@ -1,5 +1,9 @@
 import {
   CollisionDetection,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
   DragOverEvent as DndKitDragOverEvent,
   DragStartEvent as DndKitDragStartEvent,
   DragEndEvent as DndKitDragEndEvent,
@@ -21,7 +25,7 @@ export declare type Transform = {
 
 export interface DragOverChangedEvent {
   draggableId: string;
-  origin: TokenOrigin;
+  originalDescriptor: TokenDescriptor;
   descriptor: TokenDescriptor;
   currentContainerId: string;
   currentOverId: string;
@@ -67,7 +71,17 @@ const DndContext2: React.FC<DndContextProps> = ({
   modifiers,
   children,
 }) => {
-  const origin = useRef<TokenOrigin>();
+  const pointerSensor = useSensor(PointerSensor, {
+    activationConstraint: {
+      distance: 0,
+    },
+  });
+  const keyboardSensor = useSensor(KeyboardSensor);
+
+  const sensors = useSensors(pointerSensor, keyboardSensor);
+  // TODO: Change this from origin to a descriptor so we have access
+  // to the networkID later
+  const originalDescriptor = useRef<TokenDescriptor>();
   const lastContainer = useRef<string>();
 
   const dndkitModifiers = modifiers.map((modifier) => {
@@ -114,7 +128,7 @@ const DndContext2: React.FC<DndContextProps> = ({
     if (currentContainerId !== lastContainerId) {
       onDragContainerChanged({
         draggableId: active.id as string,
-        origin: origin.current,
+        originalDescriptor: origin.current,
         currentContainerId,
         descriptor,
         currentOverId,
@@ -165,6 +179,7 @@ const DndContext2: React.FC<DndContextProps> = ({
       onDragEnd={dndKitOnDragEnd}
       collisionDetection={collisionDetection}
       modifiers={dndkitModifiers}
+      sensors={sensors}
     >
       {children}
     </DndKitContext>

@@ -27,7 +27,7 @@ const useStyles = makeStyles<Theme, StyleProps>({
       height: GRID_SIZE_PX,
       userDrag: "none",
       userSelect: "none",
-      border: `3px solid ${toCssColor({ blue: 5, red: 126, green: 69 })}`,
+      border: `3px solid ${toCssColor(color)}`,
     };
   },
   media: {

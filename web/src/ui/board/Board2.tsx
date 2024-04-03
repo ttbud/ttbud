@@ -5,11 +5,17 @@ import mergeRefs from "../../util/mergeRefs";
 import { DROPPABLE_IDS } from "../DroppableIds";
 import noop from "../../util/noop";
 import useDoubleTap, { DoubleTapState } from "../util/useDoubleTap";
-import { MouseEventHandler, useCallback, useState } from "react";
-import Pos2d from "../../util/shape-math";
+import {
+  MouseEventHandler,
+  PointerEventHandler,
+  useCallback,
+  useState,
+} from "react";
+import Pos2d, { posAreEqual } from "../../util/shape-math";
 import {
   BoardState,
   bottomCharacterAt,
+  pingAt,
   toPosStr,
   topTokenAt,
 } from "./board-state";
@@ -26,6 +32,7 @@ import Fade from "../transition/Fade";
 import Draggable2 from "../../drag/Draggable2";
 import Character2 from "../token/Character2/Character2";
 import { toGridPos } from "./grid";
+import { Buttons } from "../util/Buttons";
 
 let GRID_COLOR = "#947C65";
 
@@ -65,6 +72,20 @@ const preventDefault: MouseEventHandler = (e) => e.preventDefault();
 
 type Mode = "draw" | "delete";
 
+type PointerAction = "delete" | "ping" | "draw" | "ignore";
+
+const getMouseAction = (e: React.PointerEvent): PointerAction => {
+  if (e.shiftKey && e.buttons === Buttons.LEFT_MOUSE) {
+    return "ping";
+  } else if (e.buttons === Buttons.LEFT_MOUSE) {
+    return "draw";
+  } else if (e.buttons === Buttons.RIGHT_MOUSE) {
+    return "delete";
+  } else {
+    return "ignore";
+  }
+};
+
 interface Props {
   isDragging: boolean;
   boardState: BoardState;
@@ -89,6 +110,104 @@ const Board2: React.FC<Props> = ({
 
   const { setNodeRef: setDroppableRef } = useDroppable({ id: "board" });
   const droppableRef = setDroppableRef as (el: HTMLDivElement) => void;
+
+  const handlePointerAction = useCallback(
+    (action: PointerAction, gridPos: Pos2d, allowDuplicatePings: boolean) => {
+      switch (action) {
+        case "ping":
+          if (allowDuplicatePings || !pingAt(boardState, gridPos)) {
+            onPingCreated(gridPos);
+          }
+          break;
+        case "draw":
+          if (!topTokenAt(boardState, gridPos)) {
+            onFloorCreated(activeFloor, gridPos);
+          }
+          break;
+        case "delete":
+          let toDeleteId = topTokenAt(boardState, gridPos)?.id;
+          if (toDeleteId) {
+            onTokenDeleted(toDeleteId);
+          }
+          break;
+        case "ignore":
+          break;
+        /* istanbul ignore next */
+        default:
+          throw new UnreachableCaseError(action);
+      }
+    },
+    [activeFloor, boardState, onFloorCreated, onPingCreated, onTokenDeleted]
+  );
+
+  const getTouchAction = (): PointerAction => {
+    if (doubleTapState !== DoubleTapState.Active) {
+      return "ignore";
+    }
+
+    return mode;
+  };
+
+  const getPointerAction = (e: React.PointerEvent): PointerAction => {
+    if (isDragging) return "ignore";
+
+    switch (e.pointerType) {
+      case "pen":
+        return "draw";
+      case "touch":
+        return getTouchAction();
+      default:
+        return getMouseAction(e);
+    }
+  };
+
+  const onPointerDown: PointerEventHandler = (e) => {
+    const action = getPointerAction(e);
+
+    // Stop pen users from scrolling with their pen
+    if (e.pointerType === "pen") e.preventDefault();
+
+    const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
+    handlePointerAction(action, gridPos, true);
+  };
+
+  const onPointerMove: PointerEventHandler = (e) => {
+    // Stop pen users from scrolling with their pen
+    if (e.pointerType === "pen") e.preventDefault();
+
+    // Pointer events are only triggered once per frame, but if the mouse is
+    // moving quickly it can actually move over an entire grid square in less
+    // than a frame's time, so we'll miss drawing walls in certain places. In
+    // browsers that support it, we can request all of the mouse move events
+    // since the last frame, and then batch process those
+    let events: PointerEvent[];
+    if (e.nativeEvent.getCoalescedEvents) {
+      events = e.nativeEvent.getCoalescedEvents();
+      // Firefox has a bug where sometimes coalesced events is empty
+      if (events.length === 0) {
+        events = [e.nativeEvent];
+      }
+    } else {
+      events = [e.nativeEvent];
+    }
+
+    const processedPositions: Pos2d[] = [];
+    for (const event of events) {
+      const action = getPointerAction(e);
+      const { clientX: x, clientY: y } = event;
+      const gridPos = toGridPos({ x, y });
+      // Skip mouse events that result in the same grid position
+      if (processedPositions.some((pos) => posAreEqual(pos, gridPos))) {
+        continue;
+      }
+      handlePointerAction(action, gridPos, false);
+      processedPositions.push(gridPos);
+    }
+  };
+
+  const onPointerUp = () => {
+    setMode("draw");
+  };
 
   const onDoubleTap = useCallback(
     (e: PointerEvent) => {
@@ -208,9 +327,9 @@ const Board2: React.FC<Props> = ({
     <div
       ref={mergeRefs(doubleTapRef, longTapRef, droppableRef)}
       className={classes.container}
-      onPointerDown={noop}
-      onPointerMove={noop}
-      onPointerUp={noop}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
       onContextMenu={preventDefault}
       aria-label={"Board"}
       style={{
