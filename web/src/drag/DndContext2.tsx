@@ -34,13 +34,12 @@ export interface DragOverChangedEvent {
 
 export interface DragStartEvent {
   draggableId: string;
-  origin: TokenOrigin;
   descriptor: TokenDescriptor;
 }
 
 export interface DragEndEvent {
   draggableId: string;
-  origin: TokenOrigin;
+  originalDescriptor: TokenDescriptor;
   bounds: Bounds | null;
   descriptor: TokenDescriptor;
   targetContainerId: string;
@@ -79,14 +78,12 @@ const DndContext2: React.FC<DndContextProps> = ({
   const keyboardSensor = useSensor(KeyboardSensor);
 
   const sensors = useSensors(pointerSensor, keyboardSensor);
-  // TODO: Change this from origin to a descriptor so we have access
-  // to the networkID later
   const originalDescriptor = useRef<TokenDescriptor>();
   const lastContainer = useRef<string>();
 
   const dndkitModifiers = modifiers.map((modifier) => {
     return (args: Parameters<Modifier>[0]) =>
-      modifier({ ...args, origin: origin.current });
+      modifier({ ...args, origin: originalDescriptor.current?.origin });
   });
 
   const dndKitOnDragOver = ({
@@ -95,20 +92,24 @@ const DndContext2: React.FC<DndContextProps> = ({
     collisions,
   }: DndKitDragOverEvent) => {
     const descriptor = active.data.current as TokenDescriptor & SortableData;
-    assert(origin.current !== undefined, "Origin is undefined on drag over");
+    assert(
+      originalDescriptor.current !== undefined,
+      "originalDescriptor is undefined on drag over"
+    );
 
     //TODO: Not this??
     if (over?.id === undefined) {
+      console.log("The weird bug where there is no over.id happened");
       return;
     }
 
     const currentOverId =
-      (over?.id as string | undefined) ?? origin.current.containerId;
+      (over?.id as string | undefined) ??
+      originalDescriptor.current.origin.containerId;
     // Instead of using the internals of the sortable library, can we just use the origin of the
     // over?
-    const currentContainerId = over
-      ? over?.data?.current?.sortable?.containerId ?? over.id
-      : origin.current.containerId;
+    const currentContainerId =
+      over?.data?.current?.sortable?.containerId ?? currentOverId;
 
     const lastContainerId = lastContainer.current;
     assert(
@@ -122,13 +123,13 @@ const DndContext2: React.FC<DndContextProps> = ({
       currentOverId,
       currentContainerId,
       lastContainerId,
-      origin: origin.current,
+      originalDescriptor: originalDescriptor.current,
     });
 
     if (currentContainerId !== lastContainerId) {
       onDragContainerChanged({
         draggableId: active.id as string,
-        originalDescriptor: origin.current,
+        originalDescriptor: originalDescriptor.current,
         currentContainerId,
         descriptor,
         currentOverId,
@@ -142,34 +143,37 @@ const DndContext2: React.FC<DndContextProps> = ({
   const dndKitOnDragStart = ({ active }: DndKitDragStartEvent) => {
     const descriptor = active.data.current as TokenDescriptor;
     lastContainer.current = descriptor.origin.containerId;
-    origin.current = descriptor.origin;
+    originalDescriptor.current = descriptor;
     onDragStart({
       draggableId: active.id as string,
       descriptor,
-      origin: origin.current,
     });
   };
 
   const dndKitOnDragEnd = ({ active, over }: DndKitDragEndEvent) => {
-    assert(origin.current, "Origin is undefined on drag end");
+    assert(
+      originalDescriptor.current,
+      "originalDescriptor is undefined on drag end"
+    );
     const descriptor = active.data.current as TokenDescriptor & SortableData;
     const targetId =
-      (over?.id as string | undefined) ?? origin.current.containerId;
+      (over?.id as string | undefined) ??
+      originalDescriptor.current.origin.containerId;
 
     const targetContainerId = over
       ? over?.data?.current?.sortable?.containerId ?? over.id
-      : origin.current.containerId;
+      : originalDescriptor.current.origin.containerId;
 
     onDragEnd({
       draggableId: active.id as string,
       descriptor,
       targetId,
       targetContainerId,
-      origin: origin.current,
+      originalDescriptor: originalDescriptor.current,
       bounds: active.rect.current.translated,
     });
     lastContainer.current = undefined;
-    origin.current = undefined;
+    originalDescriptor.current = undefined;
   };
 
   return (
