@@ -14,7 +14,7 @@ import { ListLocation, LocationType } from "../../drag/DragStateTypes";
 import restrictToFloorTray from "../tray/floorTrayDragsModifier";
 import FloorTray2 from "../tray/FloorTray2";
 import Board2 from "../board/Board2";
-import { BoardState } from "../board/board-state";
+import { BoardState, pingAt } from "../board/board-state";
 import ReactDOM from "react-dom";
 import ttbudCollisionDetector from "../tray/TtbudCollisionDetector";
 import Droppable2 from "../../drag/Droppable2";
@@ -30,11 +30,14 @@ import { RootState } from "../../store/rootReducer";
 import {
   CHARACTER_HEIGHT,
   addFloor,
+  addPing,
+  removeEntity,
   upsertCharacter,
 } from "../board/board-slice";
 import { v4 as uuid } from "uuid";
 import { toGridPos } from "../board/grid";
 import { centerOf } from "../../util/shape-math";
+import { Theme, makeStyles } from "@material-ui/core";
 
 const WALL_CONTENTS = { type: ContentType.Icon, iconId: WALL_ICON.id } as const;
 
@@ -78,6 +81,64 @@ function withReplacedItem<T>(arr: Array<T>, item: T, index: number) {
   return [...arr.slice(0, index), item, ...arr.slice(index + 1, arr.length)];
 }
 
+interface StyleProps {
+  searching: boolean;
+  draggingFromSearchTray: boolean;
+  searchTrayWidthPx: number;
+}
+
+const spacing = 8;
+
+const useStyles = makeStyles<Theme, StyleProps>((theme) => ({
+  app: {
+    width: 4000,
+    height: 2000,
+    // Otherwise safari will try to select the connection notifier text even when you're long pressing no where near it
+    userSelect: "none",
+  },
+  characterTray: {
+    position: "fixed",
+    zIndex: 3,
+    bottom: theme.spacing(3),
+    left: (props) =>
+      props.searching && !props.draggingFromSearchTray
+        ? props.searchTrayWidthPx + spacing
+        : spacing,
+    transition: "left 250ms",
+  },
+  searchTray: {
+    position: "fixed",
+    zIndex: 3,
+    width: (props) => props.searchTrayWidthPx,
+    height: "100%",
+    left: (props) =>
+      props.searching && !props.draggingFromSearchTray
+        ? 0
+        : -props.searchTrayWidthPx,
+    top: 0,
+    transition: "left 250ms",
+  },
+  floorTray: {
+    display: "inline-flex",
+    position: "fixed",
+    zIndex: 2,
+    bottom: theme.spacing(3),
+    left: "50%",
+    transform: "translateX(-50%)",
+  },
+  connectionNotifier: {
+    position: "fixed",
+    top: spacing,
+    left: "50%",
+    transform: "translateX(-50%)",
+  },
+  settings: {
+    position: "fixed",
+    bottom: spacing * 3,
+    right: spacing * 3,
+  },
+}));
+
 const App2: React.FC = () => {
   //TODO: Add TempBoardToken
   // TempBoardToken {realId: string | undefined, dragId: string}
@@ -97,6 +158,11 @@ const App2: React.FC = () => {
   //    -> Set dragId for token w/ id = realID to new valid drag id
   // -> TempBoardToken = {realId: undefined, dragId: active draggable id}
   //    -> Add character to board w/ active draggable id and new realId
+  const classes = useStyles({
+    draggingFromSearchTray: false,
+    searching: false,
+    searchTrayWidthPx: 300,
+  });
 
   const [activeDragDescriptor, setActiveDragDescriptor] =
     useState<TokenDescriptor>();
@@ -124,18 +190,19 @@ const App2: React.FC = () => {
       currentOverId,
       lastContainerId,
       currentContainerId,
-      originalDescriptor: origin,
+      originalDescriptor,
     }: DragOverChangedEvent) => {
       let newCharacterTrayBlueprints = characterTrayBlueprints;
       let newFloorTrayBlueprints = floorTrayBlueprints;
 
+      const origin = originalDescriptor.origin;
       if (currentContainerId === "board") {
         if (origin.containerId === "board") {
           assert(
             origin.location.type === LocationType.Grid,
             "Origin is board but location type is not grid"
           );
-          const tokenId = descriptor.networkId;
+          const tokenId = originalDescriptor.networkId;
           assert(tokenId, "Draggable from the board doesn't have network ID?");
           const character = boardState.entityById[tokenId];
           assert(
@@ -282,7 +349,7 @@ const App2: React.FC = () => {
     descriptor,
     targetId,
     targetContainerId,
-    origin,
+    originalDescriptor,
     bounds,
   }: DragEndEvent) => {
     console.log("onDragEnd", {
@@ -300,6 +367,7 @@ const App2: React.FC = () => {
     //    -> Set dragId for token w/ id = realID to new valid drag id
     // -> TempBoardToken = {realId: undefined, dragId: active draggable id}
     //    -> Add character to board w/ active draggable id and new realId
+    const origin = originalDescriptor.origin;
     if (targetContainerId === "board") {
       assert(bounds !== null, "Bounds are null??");
       const gridPos = toGridPos(centerOf(bounds));
@@ -428,18 +496,11 @@ const App2: React.FC = () => {
             onFloorCreated={(activeFloor, gridPos) =>
               dispatch(addFloor(activeFloor, gridPos))
             }
-            onPingCreated={noop}
-            onTokenDeleted={noop}
+            onPingCreated={(pos) => dispatch(addPing(pos))}
+            onTokenDeleted={(tokenId) => dispatch(removeEntity(tokenId))}
           />
         </Droppable2>
-        <div
-          style={{
-            display: "inline-block",
-            position: "absolute",
-            left: 100,
-            top: 0,
-          }}
-        >
+        <div className={classes.characterTray}>
           <Droppable2 id="character-tray">
             <CharacterTray2
               items={characterTrayBlueprints}
@@ -447,13 +508,7 @@ const App2: React.FC = () => {
             />
           </Droppable2>
         </div>
-        <div
-          style={{
-            position: "absolute",
-            left: 200,
-            top: 0,
-          }}
-        >
+        <div className={classes.floorTray}>
           <Droppable2 id="floor-tray" style={{ display: "inline-flex" }}>
             <FloorTray2
               activeFloor={activeFloor}

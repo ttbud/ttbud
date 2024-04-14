@@ -155,7 +155,7 @@ const PureBoard: React.FC<Props> = ({
           throw new UnreachableCaseError(action);
       }
     },
-    [activeFloor, boardState, onFloorCreated, onPingCreated, onTokenDeleted]
+    [boardState, onPingCreated, onTokenDeleted]
   );
 
   const onDoubleTap = useCallback(

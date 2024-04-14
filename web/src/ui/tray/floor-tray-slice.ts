@@ -6,7 +6,7 @@ import { assert } from "../../util/invariants";
 import getDragResult from "../../drag/getDragResult";
 import { reorderTokenBlueprints } from "./reorderTokenBlueprints";
 import { contentId, ContentType, TokenContents } from "../../types";
-import {current} from 'immer'
+import { current } from "immer";
 
 const DEFAULT_FLOOR_BLUEPRINTS: TokenContents[] = DEFAULT_FLOOR_ICONS.map(
   (icon) => ({ type: ContentType.Icon, iconId: icon.id })
@@ -22,8 +22,8 @@ const floorTraySlice = createSlice({
     setActiveFloor(state, action: PayloadAction<TokenContents>) {
       const activeContents = action.payload;
       const activeFloorId = contentId(activeContents);
-      console.log(current(state.floorBlueprints), "Floor tray contents")
-      console.log(activeFloorId, "activeFloorId")
+      console.log(current(state.floorBlueprints), "Floor tray contents");
+      console.log(activeFloorId, "activeFloorId");
       assert(
         state.floorBlueprints.some(
           (blueprint) => contentId(blueprint) === activeFloorId

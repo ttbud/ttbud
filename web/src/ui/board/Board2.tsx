@@ -3,7 +3,6 @@ import { GRID_SIZE_PX } from "../../config";
 import { TransitionGroup } from "react-transition-group";
 import mergeRefs from "../../util/mergeRefs";
 import { DROPPABLE_IDS } from "../DroppableIds";
-import noop from "../../util/noop";
 import useDoubleTap, { DoubleTapState } from "../util/useDoubleTap";
 import {
   MouseEventHandler,
@@ -19,7 +18,7 @@ import {
   toPosStr,
   topTokenAt,
 } from "./board-state";
-import { CHARACTER_HEIGHT, FLOOR_HEIGHT } from "./board-slice";
+import { CHARACTER_HEIGHT } from "./board-slice";
 import { Character, EntityType, TokenContents } from "../../types";
 import useLongTap from "../util/useLongTap";
 import { useDroppable } from "@dnd-kit/core";
@@ -33,6 +32,7 @@ import Draggable2 from "../../drag/Draggable2";
 import Character2 from "../token/Character2/Character2";
 import { toGridPos } from "./grid";
 import { Buttons } from "../util/Buttons";
+import React from "react";
 
 let GRID_COLOR = "#947C65";
 
@@ -374,5 +374,4 @@ const Board2: React.FC<Props> = ({
     </div>
   );
 };
-
 export default Board2;
