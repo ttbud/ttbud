@@ -12,6 +12,7 @@ const DragOverlayContents: React.FC<OverlayProps> = ({
 }) => {
   if (activeDragDescriptor === undefined) return null;
 
+  console.log("dragoverlay", { activeDragDescriptor });
   //TODO: activeDragDescriptor is only loaded on start, which means the origin never changes
   if (activeDragDescriptor.origin.containerId === "floor-tray") {
     return (

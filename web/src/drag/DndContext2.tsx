@@ -35,6 +35,7 @@ export interface DragOverChangedEvent {
 export interface DragStartEvent {
   draggableId: string;
   descriptor: TokenDescriptor;
+  bounds: Bounds;
 }
 
 export interface DragEndEvent {
@@ -144,9 +145,11 @@ const DndContext2: React.FC<DndContextProps> = ({
     const descriptor = active.data.current as TokenDescriptor;
     lastContainer.current = descriptor.origin.containerId;
     originalDescriptor.current = descriptor;
+    console.log({ active });
     onDragStart({
       draggableId: active.id as string,
       descriptor,
+      bounds: active.rect.current.initial!,
     });
   };
 

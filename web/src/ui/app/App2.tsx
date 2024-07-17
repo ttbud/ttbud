@@ -6,15 +6,17 @@ import {
   TokenContents,
   contentId,
 } from "../../types";
-import { ICONS, WALL_ICON } from "../icons";
-import CharacterTray2, { Blueprint } from "../tray/CharacterTray2";
+import { ICONS } from "../icons";
+import CharacterTray2, {
+  Blueprint,
+} from "../tray/CharacterTray/CharacterTray2";
 import noop from "../../util/noop";
 import { assert } from "../../util/invariants";
 import { ListLocation, LocationType } from "../../drag/DragStateTypes";
 import restrictToFloorTray from "../tray/floorTrayDragsModifier";
-import FloorTray2 from "../tray/FloorTray2";
+import FloorTray2 from "../tray/FloorTray/FloorTray2";
 import Board2 from "../board/Board2";
-import { BoardState, pingAt } from "../board/board-state";
+import { BoardState } from "../board/board-state";
 import ReactDOM from "react-dom";
 import ttbudCollisionDetector from "../tray/TtbudCollisionDetector";
 import Droppable2 from "../../drag/Droppable2";
@@ -31,6 +33,7 @@ import {
   CHARACTER_HEIGHT,
   addFloor,
   addPing,
+  clear,
   removeEntity,
   upsertCharacter,
 } from "../board/board-slice";
@@ -38,18 +41,12 @@ import { v4 as uuid } from "uuid";
 import { toGridPos } from "../board/grid";
 import { centerOf } from "../../util/shape-math";
 import { Theme, makeStyles } from "@material-ui/core";
-
-const WALL_CONTENTS = { type: ContentType.Icon, iconId: WALL_ICON.id } as const;
-
-function dec2hex(dec: number) {
-  return dec.toString(16).padStart(2, "0");
-}
-
-function randSuffix() {
-  const arr = new Uint8Array(5 / 2);
-  crypto.getRandomValues(arr);
-  return Array.from(arr, dec2hex).join("");
-}
+import Settings from "../settings/Settings";
+import Tour from "../tour/Tour";
+import { randSuffix } from "../util/randSuffix";
+import { withItem, withReplacedItem, withoutItem } from "../util/arrays";
+import { useSearchTrayState } from "../tray/SearchTray/useSearchTrayState";
+import SearchTray2 from "../tray/SearchTray/SearchTray2";
 
 const defaultChars: Blueprint[] = ICONS.slice(0, 5).map((icon, i) =>
   makeToken({ type: ContentType.Icon, iconId: icon.id })
@@ -60,25 +57,11 @@ const defaultFloors: Blueprint[] = ICONS.slice(5, 10).map((icon, i) => ({
   contents: { iconId: icon.id, type: ContentType.Icon },
 }));
 
-const defaultActiveFloor = defaultFloors[0];
-
 function makeToken(content: TokenContents): Blueprint {
   return {
     id: `${contentId(content)}-${randSuffix()}`,
     contents: content,
   };
-}
-
-function withItem<T>(arr: Array<T>, item: T, index: number) {
-  return [...arr.slice(0, index), item, ...arr.slice(index, arr.length)];
-}
-
-function withoutItem<T>(arr: Array<T>, index: number) {
-  return [...arr.slice(0, index), ...arr.slice(index + 1, arr.length)];
-}
-
-function withReplacedItem<T>(arr: Array<T>, item: T, index: number) {
-  return [...arr.slice(0, index), item, ...arr.slice(index + 1, arr.length)];
 }
 
 interface StyleProps {
@@ -158,11 +141,16 @@ const App2: React.FC = () => {
   //    -> Set dragId for token w/ id = realID to new valid drag id
   // -> TempBoardToken = {realId: undefined, dragId: active draggable id}
   //    -> Add character to board w/ active draggable id and new realId
+  const [searchTrayState, searchTrayHandlers, searchTrayOnDragStart] =
+    useSearchTrayState();
+
   const classes = useStyles({
     draggingFromSearchTray: false,
-    searching: false,
+    searching: searchTrayState.open,
     searchTrayWidthPx: 300,
   });
+
+  const [touring, setTouring] = useState(false);
 
   const [activeDragDescriptor, setActiveDragDescriptor] =
     useState<TokenDescriptor>();
@@ -339,8 +327,22 @@ const App2: React.FC = () => {
     [boardState, characterTrayBlueprints, floorTrayBlueprints]
   );
 
-  const onDragStart = ({ draggableId, descriptor }: DragStartEvent) => {
+  const onDragStart = ({ draggableId, descriptor, bounds }: DragStartEvent) => {
     console.log("onDragStart", { draggableId, descriptor });
+    //TODO: Causes crash on drag start because maybe there's nothing calling useDraggable with the dragging id
+    // because search tray changes the drag id of the token the drag started with
+    if (descriptor.origin.containerId === "search-tray") {
+      const center = centerOf(bounds);
+      const gridPos = toGridPos(center);
+      setTempBoardCharacter({
+        contents: descriptor.contents,
+        dragId: draggableId,
+        id: uuid(),
+        pos: { x: gridPos.x, y: gridPos.y, z: CHARACTER_HEIGHT },
+        type: EntityType.Character,
+      });
+    }
+    // searchTrayOnDragStart(draggableId);
     setActiveDragDescriptor(descriptor);
   };
 
@@ -475,19 +477,16 @@ const App2: React.FC = () => {
   };
 
   return (
-    <div style={{ touchAction: "none" }}>
-      <DndContext2
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        onDragContainerChanged={onDragContainerChanged}
-        collisionDetection={ttbudCollisionDetector}
-        modifiers={[restrictToFloorTray]}
-      >
-        {/*Negative margin to cancel out the body margin because board cannot handle that :(*/}
-        <Droppable2
-          id="board"
-          style={{ width: "100vw", height: "100vh", margin: "-8px" }}
-        >
+    <DndContext2
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragContainerChanged={onDragContainerChanged}
+      collisionDetection={ttbudCollisionDetector}
+      modifiers={[restrictToFloorTray]}
+    >
+      <Tour isOpen={touring} onCloseClicked={() => setTouring(false)} />
+      <div className={classes.app}>
+        <Droppable2 id="board" style={{ width: "100%", height: "100%" }}>
           <Board2
             activeFloor={activeFloor.contents}
             boardState={boardState}
@@ -517,9 +516,17 @@ const App2: React.FC = () => {
             />
           </Droppable2>
         </div>
-        <DragOverlay activeDragDescriptor={activeDragDescriptor} />
-      </DndContext2>
-    </div>
+        <div className={classes.searchTray}>
+          <SearchTray2 state={searchTrayState} {...searchTrayHandlers} />
+        </div>
+        <Settings
+          className={classes.settings}
+          onClearMap={() => dispatch(clear())}
+          onTourClicked={() => setTouring(true)}
+        />
+      </div>
+      <DragOverlay activeDragDescriptor={activeDragDescriptor} />
+    </DndContext2>
   );
 };
 

@@ -1,14 +1,13 @@
 import { makeStyles, Paper } from "@material-ui/core";
-import React, { memo, useRef } from "react";
-import { TokenContents } from "../../types";
+import React, { memo } from "react";
+import { TokenContents } from "../../../types";
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import SortableItem from "./SortableItem";
-import Character2 from "../token/Character2/Character2";
-import { LocationType } from "../../drag/DragStateTypes";
-import { useDroppable } from "@dnd-kit/core";
+import SortableItem from "../SortableItem";
+import Character2 from "../../token/Character2/Character2";
+import { LocationType } from "../../../drag/DragStateTypes";
 import { shallowEqual } from "react-redux";
 
 const useStyles = makeStyles((theme) => ({
@@ -37,6 +36,7 @@ interface Props {
 const CharacterTray2: React.FC<Props> = memo(
   ({ items, onCharacterRemoved }) => {
     const classes = useStyles();
+    console.log("CharacterTray", { items });
 
     return (
       <Paper

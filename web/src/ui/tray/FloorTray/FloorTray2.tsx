@@ -1,16 +1,16 @@
-import { Blueprint } from "./CharacterTray2";
+import { Blueprint } from "../CharacterTray/CharacterTray2";
 import {
   SortableContext,
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import SortableItem from "./SortableItem";
+import SortableItem from "../SortableItem";
 import { Paper } from "@material-ui/core";
-import FloorButton from "./FloorButton";
-import { LocationType } from "../../drag/DragStateTypes";
+import FloorButton from "../FloorButton";
+import { LocationType } from "../../../drag/DragStateTypes";
 import { useDroppable } from "@dnd-kit/core";
 import { shallowEqual } from "react-redux";
 import { memo } from "react";
-import { TokenContents } from "../../types";
+import { TokenContents } from "../../../types";
 
 interface Props {
   blueprints: Blueprint[];

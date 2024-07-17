@@ -1,14 +1,14 @@
 import { DndContext, DragOverlay, DragStartEvent } from "@dnd-kit/core";
 import FloorTray2 from "./FloorTray2";
-import { ICONS } from "../icons";
-import { Blueprint } from "./CharacterTray2";
-import { LocationType } from "../../drag/DragStateTypes";
-import { ContentType, TokenContents } from "../../types";
+import { ICONS } from "../../icons";
+import { Blueprint } from "../CharacterTray/CharacterTray2";
+import { LocationType } from "../../../drag/DragStateTypes";
+import { ContentType, TokenContents } from "../../../types";
 import { useState } from "react";
-import FloorButton from "./FloorButton";
-import { assert } from "../../util/invariants";
-import restrictToFloorTray from "./floorTrayDragsModifier";
-import noop from "../../util/noop";
+import FloorButton from "../FloorButton";
+import { assert } from "../../../util/invariants";
+import restrictToFloorTray from "../floorTrayDragsModifier";
+import noop from "../../../util/noop";
 
 function dec2hex(dec: number) {
   return dec.toString(16).padStart(2, "0");

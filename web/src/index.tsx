@@ -4,6 +4,7 @@ import App from "./ui/app/App2";
 import { Provider } from "react-redux";
 import { RealBoardStateApiClient } from "./network/RealBoardStateApiClient";
 import createStore from "./store/createStore";
+import { CssBaseline, ThemeProvider, createTheme } from "@material-ui/core";
 
 const apiClient = new RealBoardStateApiClient(
   `wss://${process.env.REACT_APP_DOMAIN}:${process.env.REACT_APP_API_WEBSOCKET_PORT}`
@@ -12,16 +13,16 @@ const store = createStore(apiClient);
 
 // let persistor = persistStore(store);
 
-// const theme = createTheme({
-//   palette: {
-//     primary: {
-//       main: "#4517D1",
-//     },
-//     background: {
-//       default: "#F5F5DC",
-//     },
-//   },
-// });
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#4517D1",
+    },
+    background: {
+      default: "#F5F5DC",
+    },
+  },
+});
 
 const render = () => {
   // const App = require("./ui/app/App").default;
@@ -41,7 +42,10 @@ const render = () => {
   // );
   ReactDOM.render(
     <Provider store={store}>
-      <App />
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <App />
+      </ThemeProvider>
     </Provider>,
     document.getElementById("root")
   );

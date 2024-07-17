@@ -1,5 +1,5 @@
 import { ToggleButton } from "@material-ui/lab";
-import { Blueprint } from "./CharacterTray2";
+import { Blueprint } from "./CharacterTray/CharacterTray2";
 import noop from "../../util/noop";
 import { TokenContents, ContentType } from "../../types";
 import UnreachableCaseError from "../../util/UnreachableCaseError";

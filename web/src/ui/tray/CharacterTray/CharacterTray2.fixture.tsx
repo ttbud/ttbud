@@ -6,14 +6,14 @@ import {
   DragEndEvent,
 } from "@dnd-kit/core";
 import React, { useCallback, useRef, useState } from "react";
-import Draggable2, { TokenDescriptor } from "../../drag/Draggable2";
-import Character2 from "../token/Character2/Character2";
-import { ContentType, TokenContents, contentId } from "../../types";
-import { ICONS, WALL_ICON } from "../icons";
+import Draggable2, { TokenDescriptor } from "../../../drag/Draggable2";
+import Character2 from "../../token/Character2/Character2";
+import { ContentType, TokenContents, contentId } from "../../../types";
+import { ICONS, WALL_ICON } from "../../icons";
 import CharacterTray2, { Blueprint } from "./CharacterTray2";
-import noop from "../../util/noop";
-import { assert } from "../../util/invariants";
-import { LocationType } from "../../drag/DragStateTypes";
+import noop from "../../../util/noop";
+import { assert } from "../../../util/invariants";
+import { LocationType } from "../../../drag/DragStateTypes";
 
 const wall = { type: ContentType.Icon, iconId: WALL_ICON.id } as const;
 
