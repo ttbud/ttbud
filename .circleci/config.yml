@@ -83,7 +83,7 @@ jobs:
     working_directory: ~/repo/api
     steps:
       - setup_remote_docker:
-          version: 20.10.18
+          version: docker24
       - checkout:
           path: ~/repo
       - restore_cache:
