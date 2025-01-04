@@ -1,0 +1,62 @@
+name: pr
+on:
+  pull_request:
+jobs:
+  api:
+    env:
+      IMAGE_TAG: ttbud-api-${{ github.sha }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: api
+          build-args: BUILD_ENV=dev
+          load: true
+          target: builder
+          tags: ${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Check Code Format
+        run: docker run $IMAGE_TAG black -S src tests load main.py --check
+      - name: Typecheck
+        run: docker run $IMAGE_TAG poetry run mypy src tests load main.py
+      - name: Lint
+        run: docker run $IMAGE_TAG poetry run flake8 src tests load main.py
+      - name: Run Tests
+        run: docker run $IMAGE_TAG poetry run pytest tests --junitxml=test-results/junit.xml
+  web:
+    runs-on: ubuntu-22.04
+    env:
+      IMAGE_NAME: "ttbud-web-${{ github.sha}}"
+    defaults:
+      run:
+        working-directory: ./web
+    steps:
+      - uses: actions/checkout@v4.1.6
+      - uses: docker/setup-buildx-action@v3
+      - name: Build Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: web
+          build-args: BUILD_ENV=dev
+          load: true
+          tags: ${{ env.IMAGE_NAME }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Check Style
+        run: docker run $IMAGE_NAME yarn run checkstyle
+      - name: Typecheck
+        run: docker run $IMAGE_NAME yarn run typecheck
+      - name: Lint
+        run: docker run $IMAGE_NAME yarn run lint
+      - name: Run Tests
+        run: |
+          docker run \
+            -e CI=true \
+            -e JEST_JUNIT_OUTPUT_DIR=test-results \
+            -e REACT_APP_DOMAIN=localhost \
+            -e REACT_APP_API_WEBSOCKET_PORT=1234 \
+            $IMAGE_NAME yarn run test --reporters=default --reporters=jest-junit

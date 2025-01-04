@@ -18,7 +18,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 USER appuser
 
-ENV PATH="/home/appuser/.local/bin:${PATH}" \
+ENV PATH="/home/appuser/.local/bin:/home/appuser/venv/bin:${PATH}" \
     # We're always going to use the version built into the docker image
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     # pip cache is useless in a docker build because we always only ever run
