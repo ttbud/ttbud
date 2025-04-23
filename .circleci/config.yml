@@ -1,6 +1,4 @@
 version: 2.1
-orbs:
-  heroku: circleci/heroku@1.2.6
 executors:
   web-executor:
     docker:
@@ -222,18 +220,33 @@ jobs:
       - store_artifacts:
           path: ~/repo/e2e/test-results
 
+# Github requires the merge queue jobs and the PR jobs to be exactly the same.
+# We only want to run certain jobs on the merge queue, so this will skip the
+# rest of the steps in a job if we're not in the merge queue branch
+# The exception is the trying branch, which can be used to try something in
+# staging without fully releasing it
+exit_if_not_merge_queue: &EXIT_IF_NOT_MERGE_QUEUE
+  pre-steps:
+    - run:
+        name: Skip unless on gh-readonly-queue/master*
+        # Specify a working directory so that this doesn't cause any directories
+        # to be created in jobs that have a working directory specified before
+        # the checkout happens
+        working_directory: /tmp
+        command: |
+          case "$CIRCLE_BRANCH" in
+            trying|gh-readonly-queue/master*) ;;
+            *) 
+              echo "Skipping job because branch is not trying or gh-readonly-queue/master*"
+              circleci-agent step halt
+              ;;
+          esac
 default-filter: &DEFAULT_FILTER
   filters:
     branches:
       ignore:
-        # bors ng uses these branches to stage merges for pending PRs, they
-        # shouldn't be built until bors moves them to the "staging" branch
-        # https://bors.tech/documentation/getting-started/
-        - staging.tmp
-        - trying.tmp
-        - staging-squash-merge.tmp
-        # We don't need to run unit tests on master, because bors ensures
-        # they ran on the same commit in staging
+        # We don't need to run unit tests on master, because the merge queue
+        # ensures they've been run before making it to master
         - master
 workflows:
   version: 2
@@ -248,24 +261,17 @@ workflows:
       - terraform-lint:
           <<: *DEFAULT_FILTER
       - build-staging-web:
-          filters:
-            branches:
-              only:
-                - staging
-                - trying
+          <<: *EXIT_IF_NOT_MERGE_QUEUE
       - release-staging:
           requires:
             - web
             - api
             - build-staging-web
-          filters:
-            branches:
-              only:
-                - staging
-                - trying
+          <<: *EXIT_IF_NOT_MERGE_QUEUE
       - e2e-staging:
           requires:
             - release-staging
+          <<: *EXIT_IF_NOT_MERGE_QUEUE
       - build-prod-web:
           filters:
             branches:
