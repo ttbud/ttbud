@@ -229,6 +229,10 @@ exit_if_not_merge_queue: &EXIT_IF_NOT_MERGE_QUEUE
   pre-steps:
     - run:
         name: Skip unless on gh-readonly-queue/master*
+        # Specify a working directory so that this doesn't cause any directories
+        # to be created in jobs that have a working directory specified before
+        # the checkout happens
+        working_directory: /tmp
         command: |
           case "$CIRCLE_BRANCH" in
             trying|gh-readonly-queue/master*) ;;
