@@ -264,8 +264,6 @@ workflows:
           <<: *EXIT_IF_NOT_MERGE_QUEUE
       - release-staging:
           requires:
-            - web
-            - api
             - build-staging-web
           <<: *EXIT_IF_NOT_MERGE_QUEUE
       - e2e-staging:
