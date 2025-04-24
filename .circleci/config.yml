@@ -263,10 +263,12 @@ workflows:
       - build-staging-web:
           <<: *EXIT_IF_NOT_MERGE_QUEUE
       - release-staging:
+          serial-group: << pipeline.project.slug >>/deploy-staging
           requires:
             - build-staging-web
           <<: *EXIT_IF_NOT_MERGE_QUEUE
       - e2e-staging:
+          serial-group: << pipeline.project.slug >>/deploy-staging
           requires:
             - release-staging
           <<: *EXIT_IF_NOT_MERGE_QUEUE
@@ -275,6 +277,7 @@ workflows:
             branches:
               only: master
       - release-prod:
+          serial-group: << pipeline.project.slug >>/deploy-prod
           requires:
             - build-prod-web
           filters:
