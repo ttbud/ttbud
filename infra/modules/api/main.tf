@@ -2,7 +2,7 @@ terraform {
   required_providers {
     heroku = {
       source  = "heroku/heroku"
-      version = "~> 4.0"
+      version = "~> 5.0"
     }
   }
 }
@@ -38,7 +38,7 @@ resource "heroku_app" "api" {
 }
 
 resource "heroku_build" "api" {
-  app = heroku_app.api.name
+  app_id = heroku_app.api.id
 
   source {
     url     = var.deploy_tarball_url
@@ -51,7 +51,7 @@ resource "heroku_build" "api" {
 }
 
 resource "heroku_formation" "api" {
-  app      = heroku_app.api.name
+  app_id   = heroku_app.api.id
   quantity = 1
   size     = "basic"
   type     = "web"
@@ -60,22 +60,22 @@ resource "heroku_formation" "api" {
 }
 
 resource "heroku_addon" "scout" {
-  app  = heroku_app.api.name
-  plan = "scout:chair"
+  app_id = heroku_app.api.id
+  plan   = "scout:chair"
 }
 
 resource "heroku_addon" "sumologic" {
-  app  = heroku_app.api.name
-  plan = "sumologic:free"
+  app_id = heroku_app.api.id
+  plan   = "sumologic:free"
 }
 
 resource "heroku_addon" "redis" {
-  app  = heroku_app.api.name
-  plan = "heroku-redis:${var.redis_plan}"
+  app_id = heroku_app.api.id
+  plan   = "heroku-redis:${var.redis_plan}"
 }
 
 resource "heroku_addon" "autoidle" {
-  count = var.autoidle ? 1 : 0
-  app   = heroku_app.api.name
-  plan  = "autoidle:hobby"
+  count  = var.autoidle ? 1 : 0
+  app_id = heroku_app.api.id
+  plan   = "autoidle:hobby"
 }
