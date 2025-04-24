@@ -87,35 +87,31 @@ jobs:
       - restore_cache:
           keys:
             # Restore the cache with the exact dependencies,
-            - api-deps-v3-{{ checksum "poetry.lock" }}
+            - api-deps-v3-{{ checksum "uv.lock" }}
             # or, failing that, just the most recent cache entry
             - api-deps-v3
       - run:
-          # Necessary for poetry, but not included in base image :(
-          name: Install libsasl2
-          command: sudo apt-get update && sudo apt-get install libsasl2-dev
-      - run:
-          name: Configure Poetry
-          command: poetry config virtualenvs.in-project true && poetry config virtualenvs.path .venv
+          name: Install uv
+          command: curl -LsSf https://astral.sh/uv/0.6.16/install.sh | sh
       - run:
           name: Install Deps
-          command: poetry install
+          command: uv sync
       - save_cache:
-          key: api-deps-v3-{{ checksum "poetry.lock" }}
+          key: api-deps-v3-{{ checksum "uv.lock" }}
           paths:
             - .venv
       - run:
           name: Check Code Format
-          command: poetry run black -S src tests load main.py --check
+          command: uv run black -S src tests load main.py --check
       - run:
           name: Typecheck
-          command: poetry run mypy src tests load main.py
+          command: uv run mypy src tests load main.py
       - run:
           name: Lint
-          command: poetry run flake8 src tests load main.py
+          command: uv run flake8 src tests load main.py
       - run:
           name: Run Tests
-          command: poetry run pytest tests --junitxml=test-results/junit.xml
+          command: uv run pytest tests --junitxml=test-results/junit.xml
       - store_test_results:
           path: test-results
   web:

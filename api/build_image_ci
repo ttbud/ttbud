@@ -17,7 +17,7 @@ export DOCKER_BUILDKIT=1
 
 # Add tags for the checksum of the lockfile so that builds with different dependencies
 # can still make use of the cache without overwriting each other
-lockfile_checksum=$(shasum -a256 poetry.lock | cut -d " " -f1)
+lockfile_checksum=$(shasum -a256 uv.lock | cut -d " " -f1)
 for stage in "${stages[@]}"
 do
   docker build \

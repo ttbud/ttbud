@@ -5,6 +5,7 @@ RUN useradd --create-home appuser
 WORKDIR /home/appuser/app
 RUN chown appuser:appuser /home/appuser/app
 USER appuser
+WORKDIR /home/appuser
 
 FROM base as builder
 
@@ -18,31 +19,33 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 USER appuser
 
-ENV PATH="/home/appuser/.local/bin:${PATH}" \
-    # We're always going to use the version built into the docker image
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    # pip cache is useless in a docker build because we always only ever run
-    # the install once
-    PIP_NO_CACHE_DIR=1
+COPY --from=ghcr.io/astral-sh/uv:0.6.16 /uv /uvx /bin/
 
-RUN pip install --user poetry==1.2.2
-# Create a venv so it's easy to copy everything over to the final image
-# Creating our own venv instead of letting poetry create one automatically
-# lets us dictate the venv location
-RUN python -m venv /home/appuser/venv
-
-COPY --chown=appuser:appuser pyproject.toml poetry.lock ./
 ARG BUILD_ENV
-RUN . /home/appuser/venv/bin/activate && \
-    poetry install --no-root --no-interaction --no-ansi $(test "$BUILD_ENV" != "dev" && echo "--no-dev")
+
+# Not using run mounts because heroku docker image builder doesn't support
+# docker buildkit :(. Once it does, we can use the commented-out strategy
+# instead for faster local builds
+COPY --chown=appuser:appuser pyproject.toml uv.lock ./
+RUN uv sync --locked --no-cache --no-install-project $(test "$BUILD_ENV" != "dev" && echo "--no-dev --no-editable")
+
+# RUN --mount=type=cache,target=/root/.cache/uv \
+#     --mount=type=bind,source=uv.lock,target=uv.lock \
+#     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+#     uv sync --locked --no-install-project $(test "$BUILD_ENV" != "dev" && echo "--no-dev --no-editable")
 
 COPY --chown=appuser:appuser . ./
 
+# Same here, waiting for heroku to update their docker version to use the
+# faster version with run mounts
+RUN uv sync --locked --no-cache $(test "$BUILD_ENV" != "dev" && echo "--no-dev --no-editable")
+# RUN --mount=type=cache,target=/root/.cache/uv \
+#     uv sync --locked $(test "$BUILD_ENV" != "dev" && echo "--no-dev --no-editable")
+
 FROM base
 
-COPY --chown=appuser:appuser --from=builder /home/appuser/venv /home/appuser/venv/
-COPY --chown=appuser:appuser --from=builder /home/appuser/app /home/appuser/app/
+COPY --chown=appuser:appuser --from=builder /home/appuser/ /home/appuser/
 
-ENV PATH=/home/appuser/venv/bin:$PATH
+ENV PATH=/home/appuser/.venv/bin:$PATH
 EXPOSE 5000
 CMD ["gunicorn", "-c", "gunicorn.conf.py", "main:app"]
