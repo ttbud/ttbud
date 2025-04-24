@@ -10,6 +10,8 @@ import { removeCharacter } from "./character-tray-slice";
 import { connect } from "react-redux";
 import { TokenContents } from "../../types";
 import useTrayItems from "./useTrayItems";
+import { DraggableDescriptor } from "../../drag/DragStateTypes";
+import { Bounds } from "../../util/shape-math";
 
 const useStyles = makeStyles((theme) => ({
   tokenSheet: {
@@ -46,79 +48,94 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
   const containerRef = useRef<HTMLElement>();
   const items = useTrayItems(DROPPABLE_ID, blueprints);
 
-  const getTargets = useCallback((): Targets => {
-    const existingElementsBounds = [];
-    for (const item of items) {
+  const getTargets = useCallback(
+    (
+      draggable: DraggableDescriptor,
+      _: Bounds,
+      dragSourceBounds?: Bounds
+    ): Targets => {
+      const existingElementsBounds = [];
+      for (const item of items) {
+        assert(
+          item.ref?.current,
+          "Character tray item refs not set up correctly before drag"
+        );
+        if (item.descriptor.id === draggable.id && dragSourceBounds) {
+          existingElementsBounds.push(dragSourceBounds);
+        } else {
+          existingElementsBounds.push(item.ref.current.getBoundingClientRect());
+        }
+      }
+
       assert(
-        item.ref?.current,
-        "Character tray item refs not set up correctly before drag"
+        containerRef.current,
+        "Character tray container ref not set up correctly before drag"
       );
-      existingElementsBounds.push(item.ref.current.getBoundingClientRect());
-    }
+      const containerBounds = containerRef.current.getBoundingClientRect();
+      // Inner drag bounds is where the character will animate to
+      const innerDragBounds: Target[] = [];
+      for (let i = 0; i < existingElementsBounds.length; i++) {
+        const prev = existingElementsBounds[i - 1];
+        const current = existingElementsBounds[i];
+        const next = existingElementsBounds[i + 1];
 
-    assert(
-      containerRef.current,
-      "Character tray container ref not set up correctly before drag"
-    );
-    const containerBounds = containerRef.current.getBoundingClientRect();
-    const innerDragBounds: Target[] = [];
-    for (let i = 0; i < existingElementsBounds.length; i++) {
-      const prev = existingElementsBounds[i - 1];
-      const current = existingElementsBounds[i];
-      const next = existingElementsBounds[i + 1];
+        const top = prev
+          ? (prev.bottom + current.top) / 2
+          : containerBounds.top;
+        const bottom = next
+          ? (next.top + current.bottom) / 2
+          : containerBounds.bottom;
+        innerDragBounds.push({
+          dropBounds: {
+            top,
+            left: containerBounds.left,
+            bottom,
+            right: containerBounds.right,
+          },
+          destination: {
+            top: current.top,
+            left: current.left,
+            bottom: current.bottom,
+            right: current.right,
+          },
+        });
+      }
 
-      const top = prev ? (prev.bottom + current.top) / 2 : containerBounds.top;
-      const bottom = next
-        ? (next.top + current.bottom) / 2
-        : containerBounds.bottom;
-      innerDragBounds.push({
+      const firstChildBounds = existingElementsBounds[0];
+      assert(
+        firstChildBounds,
+        "Must always have at least one element in character tray"
+      );
+
+      const outerDragBounds = Array.from(innerDragBounds);
+      outerDragBounds.unshift({
         dropBounds: {
-          top,
+          top: containerBounds.top - GRID_SIZE_PX,
           left: containerBounds.left,
-          bottom,
+          bottom: containerBounds.top,
           right: containerBounds.right,
         },
         destination: {
-          top: current.top,
-          left: current.left,
-          bottom: current.bottom,
-          right: current.right,
+          top: containerBounds.top - GRID_SIZE_PX,
+          left: firstChildBounds.left,
+          bottom: containerBounds.top,
+          right: firstChildBounds.right,
         },
       });
-    }
 
-    const firstChildBounds = existingElementsBounds[0];
-    assert(
-      firstChildBounds,
-      "Must always have at least one element in character tray"
-    );
-
-    const outerDragBounds = Array.from(innerDragBounds);
-    outerDragBounds.unshift({
-      dropBounds: {
-        top: containerBounds.top - GRID_SIZE_PX,
-        left: containerBounds.left,
-        bottom: containerBounds.top,
-        right: containerBounds.right,
-      },
-      destination: {
-        top: containerBounds.top - GRID_SIZE_PX,
-        left: firstChildBounds.left,
-        bottom: containerBounds.top,
-        right: firstChildBounds.right,
-      },
-    });
-
-    return {
-      innerDrag: innerDragBounds,
-      outerDrag: outerDragBounds,
-    };
-  }, [items]);
+      return {
+        innerDrag: innerDragBounds,
+        outerDrag: outerDragBounds,
+      };
+    },
+    [items]
+  );
 
   return (
     <Paper
       className={classes.tokenSheet}
       ref={containerRef}
+      elevation={4}
       data-tour={"character-tray"}
       aria-label={"Character Tray"}
     >

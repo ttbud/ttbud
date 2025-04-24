@@ -37,7 +37,11 @@ export interface Targets {
 interface Props<T> {
   id: string;
   items: T[];
-  getTargets: (draggable: DraggableDescriptor, bounds: Bounds) => Targets;
+  getTargets: (
+    draggable: DraggableDescriptor,
+    bounds: Bounds,
+    dragSourceBounds?: Bounds
+  ) => Targets;
   style?: CSSProperties;
   /**
    * If true, draggables inside the list will not be allowed to be dragged
@@ -61,6 +65,7 @@ interface SortState {
   hoverIdx?: number;
   isHovering: boolean;
   isDragging: boolean;
+  dragSourceBounds?: Bounds;
 }
 
 const NOT_SORTING: SortState = {
@@ -122,50 +127,59 @@ export default function SortableList<T extends DraggableItem>({
     }
   };
 
-  const { isHovering, isDragging, hoverIdx, dragStartIdx, draggableId } =
-    useSelector((state: RootState): SortState => {
-      const dragState = state.drag;
+  const {
+    isHovering,
+    isDragging,
+    hoverIdx,
+    dragStartIdx,
+    draggableId,
+    dragSourceBounds,
+  } = useSelector((state: RootState): SortState => {
+    const dragState = state.drag;
 
-      switch (dragState.type) {
-        case DragStateType.NotDragging:
-          return NOT_SORTING;
-        case DragStateType.Dragging:
-          if (dragState.source.id === id) {
-            assert(
-              dragState.source.logicalLocation?.type === LocationType.List,
-              "Drag started from sortable list but source location isn't of type list"
-            );
-          }
+    switch (dragState.type) {
+      case DragStateType.NotDragging:
+        return NOT_SORTING;
+      case DragStateType.Dragging:
+        if (dragState.source.id === id) {
+          assert(
+            dragState.source.logicalLocation?.type === LocationType.List,
+            "Drag started from sortable list but source location isn't of type list"
+          );
+        }
 
-          return {
+        return {
+          isHovering: dragState.hoveredDroppableId === id,
+          isDragging: true,
+          hoverIdx: getHoverIdx({
+            pos: centerOf(dragState.bounds),
+            dragStartedHere: dragState.source.id === id,
             isHovering: dragState.hoveredDroppableId === id,
-            isDragging: true,
-            hoverIdx: getHoverIdx({
-              pos: centerOf(dragState.bounds),
-              dragStartedHere: dragState.source.id === id,
-              isHovering: dragState.hoveredDroppableId === id,
-            }),
-            dragStartIdx: getListIdx(id, dragState.source),
-            draggableId: dragState.draggable?.id,
-          };
-        case DragStateType.DragEndAnimating:
-          return {
-            isHovering: dragState.destination.id === id,
-            isDragging: true,
-            hoverIdx: getListIdx(id, dragState.destination),
-            draggableId: dragState.draggable?.id,
-            dragStartIdx: getListIdx(id, dragState.source),
-          };
-        /* istanbul ignore next */
-        default:
-          throw new UnreachableCaseError(dragState);
-      }
-    }, shallowEqual);
+          }),
+          dragStartIdx: getListIdx(id, dragState.source),
+          draggableId: dragState.draggable?.id,
+          dragSourceBounds: dragState.source.bounds,
+        };
+      case DragStateType.DragEndAnimating:
+        return {
+          isHovering: dragState.destination.id === id,
+          isDragging: true,
+          hoverIdx: getListIdx(id, dragState.destination),
+          draggableId: dragState.draggable?.id,
+          dragStartIdx: getListIdx(id, dragState.source),
+          dragSourceBounds: dragState.source.bounds,
+        };
+      /* istanbul ignore next */
+      default:
+        throw new UnreachableCaseError(dragState);
+    }
+  }, shallowEqual);
 
-  const onBeforeDragStart = useCallback(
-    (draggable: DraggableDescriptor, bounds: Bounds) =>
-      (targets.current = getTargets(draggable, bounds)),
-    [getTargets]
+  const measureTargets = useCallback(
+    (draggable: DraggableDescriptor, bounds: Bounds) => {
+      targets.current = getTargets(draggable, bounds, dragSourceBounds);
+    },
+    [getTargets, dragSourceBounds]
   );
 
   const getLocation: LocationCollector = useCallback(
@@ -345,7 +359,8 @@ export default function SortableList<T extends DraggableItem>({
       <Droppable
         id={id}
         getLocation={getLocation}
-        onBeforeDragStart={onBeforeDragStart}
+        onBeforeDragStart={measureTargets}
+        onDragEnter={measureTargets}
         getDragBounds={getDragBounds}
       >
         {renderChildren}

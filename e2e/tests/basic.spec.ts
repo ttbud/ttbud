@@ -51,9 +51,8 @@ test("floors sync between pages", async ({ context }) => {
   const trayWall = trayFloorSelector("stone wall");
   const boardWall = boardFloorSelector("stone wall");
 
-  // Select the wall from the floor tray and draw one in the top left
   await pageOne.click(trayWall);
-  await pageOne.mouse.click(10, 10);
+  await pageOne.mouse.click(200, 200);
   await expect(pageOne).toContainSelector(boardWall);
 
   // Archer should show up on the second page

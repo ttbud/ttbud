@@ -1,7 +1,7 @@
 import asyncio
 import contextlib
 import json
-from asyncio import Future, Task
+from asyncio import Future, Task, CancelledError
 from collections import defaultdict
 from dataclasses import dataclass, asdict
 from json import JSONDecodeError
@@ -63,9 +63,18 @@ class RedisRoomListener:
             await self._pubsub.ping()
 
     def _on_pubsub_task_finished(self, task: Task) -> None:
-        exc = task.exception() or ValueError(
-            f'{task.get_name()} finished without throwing an exception'
-        )
+        try:
+            exc = task.exception()
+        except CancelledError as e:
+            exc = e
+
+        # In theory, it's impossible to trigger this branch because pubsub
+        # tasks should never finish without being cancelled or throwing an exception
+        if exc is None:  # pragma: no cover
+            exc = ValueError(
+                f'{task.get_name()} finished without throwing an exception'
+            )
+
         for queues in self._queues_by_room_id.values():
             for q in queues:
                 # put_nowait will not throw here because we use unbounded queues

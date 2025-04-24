@@ -19,5 +19,5 @@ DOMAIN=https://ttbud-staging.netlify.app API_DOMAIN=wss://ttbud-staging.herokuap
 Running tests against your local instance requires some extra setup to get node to recognize your local SSL certificate:
 
 ```bash
-NODE_EXTRA_CA_CERTS=$(mkcert -CAROOT)/rootCA.pem DOMAIN=https://ttbud.local:3000 API_DOMAIN=wss://ttbud.local:8443 yarn test
+IGNORE_CERT_ERRORS=true NODE_EXTRA_CA_CERTS=$(mkcert -CAROOT)/rootCA.pem DOMAIN=https://ttbud.local:3000 API_DOMAIN=wss://ttbud.local:8443 yarn test
 ```

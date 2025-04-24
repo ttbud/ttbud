@@ -1,34 +1,33 @@
 import { render } from "@testing-library/react";
-import SearchDialog from "./SearchDialog";
+import SearchTray from "./SearchTray";
 import noop from "../../util/noop";
-import { DEFAULT_FLOOR_ICONS, WALL_ICON } from "../icons";
+import { DEFAULT_FLOOR_ICONS } from "../icons";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import dragReducer from "../../drag/drag-slice";
-import {
-  DraggableType,
-  DragState,
-  DragStateType,
-} from "../../drag/DragStateTypes";
-import { ContentType } from "../../types";
+import { FakeDroppableMonitor } from "../../drag/__test_util__/FakeDroppableMonitor";
+import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
+import DndContext from "../../drag/DndContext";
+import { DragState, DragStateType } from "../../drag/DragStateTypes";
 import { ComponentProps } from "react";
 import userEvent from "@testing-library/user-event";
 
 const DEFAULT_PROPS = {
   icons: DEFAULT_FLOOR_ICONS,
-  onClose: noop,
+  onSearchClicked: noop,
   open: true,
 };
 
 interface RenderProps {
   state?: DragState;
-  props?: Partial<ComponentProps<typeof SearchDialog>>;
+  props?: Partial<ComponentProps<typeof SearchTray>>;
 }
 
 function renderSearchDialog({
   state = { type: DragStateType.NotDragging },
   props = {},
 }: RenderProps = {}) {
+  const monitor = new FakeDroppableMonitor();
   const store = configureStore({
     reducer: { drag: dragReducer },
     preloadedState: { drag: state },
@@ -36,12 +35,14 @@ function renderSearchDialog({
 
   return render(
     <Provider store={store}>
-      <SearchDialog {...DEFAULT_PROPS} {...props} />
+      <DndContext.Provider value={monitor as unknown as DomDroppableMonitor}>
+        <SearchTray {...DEFAULT_PROPS} {...props} />
+      </DndContext.Provider>
     </Provider>
   );
 }
 
-describe("SearchDialog", () => {
+describe("SearchTray", () => {
   it("shows all icons by default", () => {
     const { getByLabelText } = renderSearchDialog();
 
@@ -72,32 +73,5 @@ describe("SearchDialog", () => {
     userEvent.type(searchBar, "stone");
     expect(getByLabelText("Character: stone wall")).toBeVisible();
     expect(queryByLabelText("Character: bed")).not.toBeInTheDocument();
-  });
-
-  it("hides the dialog when a drag starts", () => {
-    const origin = { top: 0, left: 0, bottom: 0, right: 0 };
-    const { queryByLabelText, getByLabelText } = renderSearchDialog({
-      state: {
-        type: DragStateType.Dragging,
-        bounds: origin,
-        dragBounds: origin,
-        hoveredDroppableId: undefined,
-        mouseOffset: { x: 0, y: 0 },
-        source: { bounds: origin },
-        draggable: {
-          id: "draggable-id",
-          type: DraggableType.TokenBlueprint,
-          contents: { type: ContentType.Icon, iconId: WALL_ICON.id },
-        },
-      },
-    });
-    expect(queryByLabelText("search")).not.toBeInTheDocument();
-    expect(getByLabelText("Character: stone wall")).toBeVisible();
-  });
-
-  it("hides the dialog when open is false", () => {
-    const { queryByLabelText } = renderSearchDialog({ props: { open: false } });
-
-    expect(queryByLabelText("search")).not.toBeInTheDocument();
   });
 });

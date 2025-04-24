@@ -9,8 +9,6 @@ from typing import (
     Generic,
 )
 
-from src.util.async_util import anext
-
 _T = TypeVar('_T')
 
 
