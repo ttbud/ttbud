@@ -1,31 +1,37 @@
 {
-  branchPrefix: "deps/",
+  branchPrefix: 'deps/',
   packageRules: [
     {
-      matchPaths: ["web", "e2e"],
-      // If the tests pass, automerge packages that only have effects on lint/test
-      matchPackagePatterns: [
-        "@babel",
-        "@testing-library",
-        "@types",
-        "jest",
-        "lint",
-        "mock-socket",
-        "prettier",
+      matchFileNames: [
+        'web',
+        'e2e',
       ],
-      // Use bors to merge dependency updates
       automerge: true,
-      automergeType: "pr-comment",
-      automergeComment: "bors merge",
+      automergeType: 'pr-comment',
+      automergeComment: 'bors merge',
+      matchPackageNames: [
+        '/@babel/',
+        '/@testing-library/',
+        '/@types/',
+        '/jest/',
+        '/lint/',
+        '/mock-socket/',
+        '/prettier/',
+      ],
     },
     {
-      matchPaths: ["api"],
-      matchDepTypes: ["dev-dependencies"],
-      // Use bors to merge dependency updates
+      matchFileNames: [
+        'api',
+      ],
+      matchDepTypes: [
+        'dev-dependencies',
+      ],
       automerge: true,
-      automergeType: "pr-comment",
-      automergeComment: "bors merge",
+      automergeType: 'pr-comment',
+      automergeComment: 'bors merge',
     },
   ],
-  extends: ["config:base"],
+  extends: [
+    'config:recommended',
+  ],
 }
