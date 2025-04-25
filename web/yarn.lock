@@ -8564,9 +8564,9 @@ into-stream@^3.1.0:
     p-is-promise "^1.1.0"
 
 io-ts@^2.2.20:
-  version "2.2.20"
-  resolved "https://registry.yarnpkg.com/io-ts/-/io-ts-2.2.20.tgz#be42b75f6668a2c44f706f72ee6e4c906777c7f5"
-  integrity sha512-Rq2BsYmtwS5vVttie4rqrOCIfHCS9TgpRLFpKQCM1wZBBRY9nWVGmEvm2FnDbSE2un1UE39DvFpTR5UL47YDcA==
+  version "2.2.22"
+  resolved "https://registry.yarnpkg.com/io-ts/-/io-ts-2.2.22.tgz#5ab0d3636fe8494a275f0266461ab019da4b8d0b"
+  integrity sha512-FHCCztTkHoV9mdBsHpocLpdTAfh956ZQcIkWQxxS0U5HT53vtrcuYdQneEJKH6xILaLNzXVl2Cvwtoy8XNN0AA==
 
 ipaddr.js@1.9.1:
   version "1.9.1"
