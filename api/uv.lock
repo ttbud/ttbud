@@ -1864,14 +1864,14 @@ wheels = [
 
 [[package]]
 name = "starlette"
-version = "0.40.0"
+version = "0.46.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4b/cb/244daf0d7be4508099ad5bca3cdfe8b8b5538acd719c5f397f614e569fff/starlette-0.40.0.tar.gz", hash = "sha256:1a3139688fb298ce5e2d661d37046a66ad996ce94be4d4983be019a23a04ea35", size = 2573611, upload_time = "2024-10-15T06:52:34.481Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ce/20/08dfcd9c983f6a6f4a1000d934b9e6d626cff8d2eeb77a89a68eef20a2b7/starlette-0.46.2.tar.gz", hash = "sha256:7f7361f34eed179294600af672f565727419830b54b7b084efe44bb82d2fccd5", size = 2580846, upload_time = "2025-04-13T13:56:17.942Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0a/0f/64baf7a06492e8c12f5c4b49db286787a7255195df496fc21f5fd9eecffa/starlette-0.40.0-py3-none-any.whl", hash = "sha256:c494a22fae73805376ea6bf88439783ecfba9aac88a43911b48c653437e784c4", size = 73303, upload_time = "2024-10-15T06:52:32.486Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/0c/9d30a4ebeb6db2b25a841afbb80f6ef9a854fc3b41be131d249a977b4959/starlette-0.46.2-py3-none-any.whl", hash = "sha256:595633ce89f8ffa71a015caed34a5b2dc1c0cdb3f0f1fbd1e69339cf2abeec35", size = 72037, upload_time = "2025-04-13T13:56:16.21Z" },
 ]
 
 [[package]]
@@ -2005,7 +2005,7 @@ requires-dist = [
     { name = "httptools", specifier = "==0.5.0" },
     { name = "redis", extras = ["hiredis"], specifier = "==5.2.1" },
     { name = "scout-apm", specifier = "==2.26.1" },
-    { name = "starlette", specifier = "==0.40.0" },
+    { name = "starlette", specifier = "==0.46.2" },
     { name = "timber", specifier = "==2.1.0" },
     { name = "uvicorn", specifier = "==0.20.0" },
     { name = "uvloop", specifier = "==0.17.0" },
