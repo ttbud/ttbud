@@ -9,7 +9,7 @@ authors = [
 ]
 dependencies = [
     "websockets==10.4",
-    "dacite==1.6.0",
+    "dacite==1.9.2",
     "timber==2.1.0",
     "starlette==0.46.2",
     "uvicorn==0.20.0",
