@@ -1592,10 +1592,9 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "7.2.0"
+version = "7.4.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "attrs" },
     { name = "colorama", marker = "sys_platform == 'win32'" },
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "iniconfig" },
@@ -1603,9 +1602,9 @@ dependencies = [
     { name = "pluggy" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0b/21/055f39bf8861580b43f845f9e8270c7786fe629b2f8562ff09007132e2e7/pytest-7.2.0.tar.gz", hash = "sha256:c4014eb40e10f11f355ad4e3c2fb2c6c6d1919c73f3b5a433de4708202cade59", size = 1300608, upload_time = "2022-10-25T07:58:12.847Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/80/1f/9d8e98e4133ffb16c90f3b405c43e38d3abb715bb5d7a63a5a684f7e46a3/pytest-7.4.4.tar.gz", hash = "sha256:2cf0005922c6ace4a3e2ec8b4080eb0d9753fdc93107415332f50ce9e7994280", size = 1357116, upload_time = "2023-12-31T12:00:18.035Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/67/68/a5eb36c3a8540594b6035e6cdae40c1ef1b6a2bfacbecc3d1a544583c078/pytest-7.2.0-py3-none-any.whl", hash = "sha256:892f933d339f068883b6fd5a459f03d85bfcb355e4981e146d2c7616c21fef71", size = 316791, upload_time = "2022-10-25T07:58:10.747Z" },
+    { url = "https://files.pythonhosted.org/packages/51/ff/f6e8b8f39e08547faece4bd80f89d5a8de68a38b2d179cc1c4490ffa3286/pytest-7.4.4-py3-none-any.whl", hash = "sha256:b090cdf5ed60bf4c45261be03239c2c1c22df034fbffe691abe93cd80cea01d8", size = 325287, upload_time = "2023-12-31T12:00:13.963Z" },
 ]
 
 [[package]]
@@ -2015,7 +2014,7 @@ dev = [
     { name = "flake8", specifier = "==6.1.0" },
     { name = "locust", specifier = "==2.13.1" },
     { name = "mypy", specifier = "==0.991" },
-    { name = "pytest", specifier = "==7.2.0" },
+    { name = "pytest", specifier = "==7.4.4" },
     { name = "pytest-asyncio", specifier = "==0.20.2" },
     { name = "pytest-cov", specifier = "==4.0.0" },
     { name = "pytest-lazy-fixture", specifier = "==0.6.3" },
