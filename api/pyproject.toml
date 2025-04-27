@@ -8,7 +8,7 @@ authors = [
     { name = "Sam Burba", email = "github@samburba.com" },
 ]
 dependencies = [
-    "websockets==10.4",
+    "websockets==15.0.1",
     "dacite==1.9.2",
     "timber==2.1.0",
     "starlette==0.46.2",
