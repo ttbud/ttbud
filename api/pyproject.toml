@@ -17,7 +17,7 @@ dependencies = [
     "uvloop==0.21.0",
     "gunicorn==23.0.0",
     "scout-apm==2.26.1",
-    "aiobotocore==2.4.1",
+    "aiobotocore==2.21.1",
     "redis[hiredis]==5.2.1",
 ]
 
