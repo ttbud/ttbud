@@ -13,7 +13,7 @@ dependencies = [
     "timber==2.1.0",
     "starlette==0.46.2",
     "uvicorn==0.34.2",
-    "httptools==0.5.0",
+    "httptools==0.6.4",
     "uvloop==0.21.0",
     "gunicorn==23.0.0",
     "scout-apm==2.26.1",
