@@ -36,7 +36,7 @@ dev = [
     "flake8==6.1.0",
     "watchdog==2.1.9",
     "fakeredis[lua]>=2.2.0",
-    "locust==2.13.1",
+    "locust==2.36.2",
     # Need a synchronous websocket client for interacting with the API via locust
     # locust does not support asyncio
     "websocket-client==1.4.2",
