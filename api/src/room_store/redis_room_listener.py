@@ -157,5 +157,5 @@ async def create_redis_room_listener(redis: Redis) -> AsyncIterator[RedisRoomLis
         try:
             yield listener
         finally:
-            await pubsub.reset()
+            await pubsub.aclose()
             await listener.reset()
