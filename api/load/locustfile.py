@@ -51,7 +51,7 @@ class TTBudClient:
             # Wait for first connection message
             self._ws.recv()
         except Exception as e:
-            self._locust.events.request_failure.fire(
+            self._locust.events.request.fire(
                 request_type='websocket',
                 name='connect',
                 response_time=milliseconds_since(start_time),
@@ -60,7 +60,7 @@ class TTBudClient:
             )
             raise e
         else:
-            self._locust.events.request_success.fire(
+            self._locust.events.request.fire(
                 request_type='websocket',
                 name='connect',
                 response_time=milliseconds_since(start_time),
@@ -84,7 +84,7 @@ class TTBudClient:
                 if resp['request_id'] == request.request_id:
                     break
         except Exception as e:
-            self._locust.events.request_failure.fire(
+            self._locust.events.request.fire(
                 request_type='websocket',
                 name='update',
                 response_time=milliseconds_since(start_time),
@@ -92,7 +92,7 @@ class TTBudClient:
                 response_length=0,
             )
         else:
-            self._locust.events.request_success.fire(
+            self._locust.events.request.fire(
                 request_type='websocket',
                 name='update',
                 response_time=milliseconds_since(start_time),
