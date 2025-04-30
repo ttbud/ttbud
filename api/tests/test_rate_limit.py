@@ -6,7 +6,7 @@ from typing import Awaitable, TypeVar, Callable, AsyncIterator
 import fakeredis.aioredis
 import pytest
 import time_machine
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf
 from redis.asyncio.client import Redis
 
 from src.rate_limit.rate_limit import (
@@ -74,24 +74,22 @@ async def memory_rate_limiter(
     return await memory_rate_limiter_factory('server-id')
 
 
-def any_rate_limiter(func: Callable) -> Callable:
-    return pytest.mark.parametrize(
-        'rate_limiter',
-        [
-            lazy_fixture('memory_rate_limiter'),
-            lazy_fixture('redis_rate_limiter'),
-        ],
-    )(func)
+any_rate_limiter = pytest.mark.parametrize(
+    'rate_limiter',
+    [
+        lf('memory_rate_limiter'),
+        lf('redis_rate_limiter'),
+    ],
+)
 
 
-def any_rate_limiter_factory(func: Callable) -> Callable:
-    return pytest.mark.parametrize(
-        'rate_limiter_factory',
-        [
-            lazy_fixture('memory_rate_limiter_factory'),
-            lazy_fixture('redis_rate_limiter_factory'),
-        ],
-    )(func)
+any_rate_limiter_factory = pytest.mark.parametrize(
+    'rate_limiter_factory',
+    [
+        lf('memory_rate_limiter_factory'),
+        lf('redis_rate_limiter_factory'),
+    ],
+)
 
 
 @any_rate_limiter
