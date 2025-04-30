@@ -44,7 +44,8 @@ def fix_random() -> None:
 async def redis() -> AsyncIterator[Redis]:
     redis_instance = FakeRedis()
     yield redis_instance
-    await redis_instance.close()
+    # aclose does exist, but mypy doesn't know about it
+    await redis_instance.aclose()  # type: ignore
 
 
 @pytest.fixture

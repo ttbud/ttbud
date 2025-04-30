@@ -1,5 +1,4 @@
 from datetime import timedelta
-from asyncio import AbstractEventLoop
 from functools import partial
 from typing import Awaitable, TypeVar, Callable, AsyncIterator
 
@@ -34,10 +33,11 @@ RateLimiterFactory = GenericRateLimiterFactory[RateLimiter]
 
 
 @pytest.fixture
-async def redis(event_loop: AbstractEventLoop) -> AsyncIterator[Redis]:
+async def redis() -> AsyncIterator[Redis]:
     redis_instance = fakeredis.aioredis.FakeRedis()
     yield redis_instance
-    await redis_instance.close()
+    # aclose does exist, but mypy doesn't know about it
+    await redis_instance.aclose()  # type: ignore
 
 
 @pytest.fixture

@@ -2094,7 +2094,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "black", specifier = "==22.12.0" },
-    { name = "fakeredis", extras = ["lua"], specifier = ">=2.2.0" },
+    { name = "fakeredis", extras = ["lua"], specifier = "==2.28.1" },
     { name = "flake8", specifier = "==6.1.0" },
     { name = "locust", specifier = "==2.36.2" },
     { name = "mypy", specifier = "==0.991" },
