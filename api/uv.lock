@@ -2105,7 +2105,7 @@ dev = [
     { name = "pytest-mock", specifier = "==3.14.0" },
     { name = "time-machine", specifier = "==2.8.2" },
     { name = "types-mock", specifier = "==4.0.15.2" },
-    { name = "types-python-dateutil", specifier = "==2.8.19.4" },
+    { name = "types-python-dateutil", specifier = "==2.9.0.20241206" },
     { name = "types-redis", specifier = "==4.3.21.6" },
     { name = "types-requests", specifier = "==2.28.11.5" },
     { name = "types-setuptools", specifier = "==65.6.0.1" },
@@ -2124,11 +2124,11 @@ wheels = [
 
 [[package]]
 name = "types-python-dateutil"
-version = "2.8.19.4"
+version = "2.9.0.20241206"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/91/79/287563bb95b4ef7472ab30afdb09afc7c9a13315886d8a9157eec7810254/types-python-dateutil-2.8.19.4.tar.gz", hash = "sha256:351a8ca9afd4aea662f87c1724d2e1ae59f9f5f99691be3b3b11d2393cd3aaa1", size = 7457, upload-time = "2022-11-16T18:23:36.501Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a9/60/47d92293d9bc521cd2301e423a358abfac0ad409b3a1606d8fbae1321961/types_python_dateutil-2.9.0.20241206.tar.gz", hash = "sha256:18f493414c26ffba692a72369fea7a154c502646301ebfe3d56a04b3767284cb", size = 13802, upload-time = "2024-12-06T02:56:41.019Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cd/8d/44a74448152ac6838cee27f43c8e377cc2089c7d9d9443b34e3411e08ed5/types_python_dateutil-2.8.19.4-py3-none-any.whl", hash = "sha256:722a55be8e2eeff749c3e166e7895b0e2f4d29ab4921c0cff27aa6b997d7ee2e", size = 8205, upload-time = "2022-11-16T18:23:35.096Z" },
+    { url = "https://files.pythonhosted.org/packages/0f/b3/ca41df24db5eb99b00d97f89d7674a90cb6b3134c52fb8121b6d8d30f15c/types_python_dateutil-2.9.0.20241206-py3-none-any.whl", hash = "sha256:e248a4bc70a486d3e3ec84d0dc30eec3a5f979d6e7ee4123ae043eedbb987f53", size = 14384, upload-time = "2024-12-06T02:56:39.412Z" },
 ]
 
 [[package]]
