@@ -1,11 +1,11 @@
 import asyncio
 from asyncio import CancelledError
 from datetime import timedelta
-from typing import Callable, List
+from typing import List
 
 import pytest
 import time_machine
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf
 from redis.asyncio.client import Redis
 
 from src.api.api_structures import Request, Action
@@ -30,15 +30,14 @@ from tests.static_fixtures import (
 )
 
 
-def any_room_store(func: Callable) -> Callable:
-    return pytest.mark.parametrize(
-        'room_store',
-        [
-            lazy_fixture('memory_room_store'),
-            lazy_fixture('redis_room_store'),
-            lazy_fixture('merged_room_store'),
-        ],
-    )(func)
+any_room_store = pytest.mark.parametrize(
+    'room_store',
+    [
+        lf('memory_room_store'),
+        lf('redis_room_store'),
+        lf('merged_room_store'),
+    ],
+)
 
 
 @any_room_store
