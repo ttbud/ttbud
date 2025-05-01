@@ -77,7 +77,7 @@ commands:
 jobs:
   api:
     docker:
-      - image: cimg/python:3.10.8
+      - image: cimg/python:3.12.10
     working_directory: ~/repo/api
     steps:
       - setup_remote_docker:
