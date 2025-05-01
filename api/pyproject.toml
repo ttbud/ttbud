@@ -39,7 +39,7 @@ dev = [
     "locust==2.36.2",
     # Need a synchronous websocket client for interacting with the API via locust
     # locust does not support asyncio
-    "websocket-client==1.4.2",
+    "websocket-client==1.8.0",
     "pytest-cov==4.1.0",
     "time-machine==2.8.2",
     "pytest-lazy-fixtures>=1.1.2",
