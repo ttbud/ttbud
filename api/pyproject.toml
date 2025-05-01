@@ -34,7 +34,7 @@ dev = [
     "types-requests==2.28.11.5",
     "types-setuptools==65.7.0.4",
     "flake8==6.1.0",
-    "watchdog==2.1.9",
+    "watchdog==2.3.1",
     "fakeredis[lua]==2.28.1",
     "locust==2.36.2",
     # Need a synchronous websocket client for interacting with the API via locust
