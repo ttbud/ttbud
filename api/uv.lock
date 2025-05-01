@@ -2118,9 +2118,18 @@ dev = [
     { name = "types-python-dateutil", specifier = "==2.9.0.20241206" },
     { name = "types-redis", specifier = "==4.3.21.6" },
     { name = "types-requests", specifier = "==2.28.11.5" },
-    { name = "types-setuptools", specifier = "==65.6.0.1" },
+    { name = "types-setuptools", specifier = "==65.7.0.4" },
     { name = "watchdog", specifier = "==2.1.9" },
     { name = "websocket-client", specifier = "==1.4.2" },
+]
+
+[[package]]
+name = "types-docutils"
+version = "0.21.0.20241128"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/dd/df/64e7ab01a4fc5ce46895dc94e31cffc8b8087c8d91ee54c45ac2d8d82445/types_docutils-0.21.0.20241128.tar.gz", hash = "sha256:4dd059805b83ac6ec5a223699195c4e9eeb0446a4f7f2aeff1759a4a7cc17473", size = 26739, upload-time = "2024-11-28T02:54:57.756Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/59/b6/10ba95739f2cbb9c5bd2f6568148d62b468afe01a94c633e8892a2936d8a/types_docutils-0.21.0.20241128-py3-none-any.whl", hash = "sha256:e0409204009639e9b0bf4521eeabe58b5e574ce9c0db08421c2ac26c32be0039", size = 34677, upload-time = "2024-11-28T02:54:55.64Z" },
 ]
 
 [[package]]
@@ -2164,11 +2173,14 @@ wheels = [
 
 [[package]]
 name = "types-setuptools"
-version = "65.6.0.1"
+version = "65.7.0.4"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/61/52/a23231a0bd312e575a1ff5e9a44170f7f12d4dbe29e47b74b000a9cdf04e/types-setuptools-65.6.0.1.tar.gz", hash = "sha256:a03cf72f336929c9405f485dd90baef31a401776675f785f69a5a519f0b099ca", size = 26608, upload-time = "2022-11-23T12:36:23.587Z" }
+dependencies = [
+    { name = "types-docutils" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/02/9f/faa71a8744221b4fdcda1ae62cd5889dd8c4ab43c169d86886d76936d69b/types-setuptools-65.7.0.4.tar.gz", hash = "sha256:147809433301fe7e0f4ef5c0782f9a0453788960575e1efb6da5fe8cb2493c9f", size = 27109, upload-time = "2023-02-02T09:16:14.481Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/2c/1c109cfada59540b64cfe73967c1d57db05fdb24766f5297757ebadd965f/types_setuptools-65.6.0.1-py3-none-any.whl", hash = "sha256:c957599502195ab98e90f0560466fa963f6a23373905e6d4e1772dbfaf1e44b7", size = 48937, upload-time = "2022-11-23T12:36:22.437Z" },
+    { url = "https://files.pythonhosted.org/packages/7d/b2/0c8eb7a6ea8d549abc5cee8f2e786dec33fbcffd10f3a8417aa0342fc7da/types_setuptools-65.7.0.4-py3-none-any.whl", hash = "sha256:522067dfd8e1771f8d7e047e451de2740dc4e0c9f48a22302a6cc96e6c964a13", size = 49205, upload-time = "2023-02-02T09:16:13.391Z" },
 ]
 
 [[package]]
