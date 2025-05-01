@@ -26,7 +26,7 @@ expect.extend({
   async toContainSelector(
     received: Page,
     selector: string,
-    options: WaitForSelectorOptions = {}
+    options: WaitForSelectorOptions = {},
   ) {
     options.timeout = 500;
     if (this.isNot) {
@@ -34,7 +34,7 @@ expect.extend({
     }
     try {
       await received.waitForSelector(selector, options);
-      return { pass: !this.isNot };
+      return { pass: !this.isNot, message: () => "" };
     } catch (e) {
       return {
         message: () => {

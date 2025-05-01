@@ -13,7 +13,7 @@ export default async function dragTo(page: Page, selector: string, dest: Pos) {
 
   await page.mouse.move(
     boundingBox.x + boundingBox.width / 2,
-    boundingBox.y + boundingBox.height / 2
+    boundingBox.y + boundingBox.height / 2,
   );
   await page.mouse.down();
   await page.mouse.move(dest.x, dest.y);

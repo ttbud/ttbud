@@ -4,7 +4,7 @@ export function fail(msg: string): never {
 
 export function assert(
   condition: boolean | object | null | undefined | string,
-  msg: string
+  msg: string,
 ): asserts condition {
   if (!condition) {
     fail(msg);
