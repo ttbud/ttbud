@@ -7,7 +7,7 @@
 ## Running tests
 ### Production
 ```bash
-DOMAIN=https://ttbud.app API_DOMAIN=wss://ttbud.herokuapp.com yarn test
+DOMAIN=https://ttbud.app API_DOMAIN=wss://ttbud-prod.herokuapp.com yarn test
 ```
 
 ### Staging
