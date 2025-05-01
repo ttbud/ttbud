@@ -36,22 +36,25 @@ const floorTraySlice = createSlice({
       );
     },
   },
-  extraReducers: {
-    [dragEnded.type]: (state, action: PayloadAction<DragEndAction>) => {
-      const { draggable, destination, source } = action.payload;
-      const dragResult = getDragResult(
-        DROPPABLE_IDS.FLOOR_TRAY,
-        action.payload
-      );
+  extraReducers: (builder) => {
+    builder.addCase(
+      dragEnded,
+      (state, action: PayloadAction<DragEndAction>) => {
+        const { draggable, destination, source } = action.payload;
+        const dragResult = getDragResult(
+          DROPPABLE_IDS.FLOOR_TRAY,
+          action.payload
+        );
 
-      reorderTokenBlueprints({
-        blueprints: state.floorBlueprints,
-        draggable,
-        source,
-        destination,
-        dragResult,
-      });
-    },
+        reorderTokenBlueprints({
+          blueprints: state.floorBlueprints,
+          draggable,
+          source,
+          destination,
+          dragResult,
+        });
+      }
+    );
   },
 });
 

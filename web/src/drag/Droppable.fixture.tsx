@@ -2,7 +2,7 @@ import Draggable from "./Draggable";
 import Droppable from "./Droppable";
 import Square from "../ui/__stories__/Square";
 import DraggableSquare from "../ui/__stories__/DragAwareSquare";
-import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
 import dragReducer from "./drag-slice";
 import { Provider, useSelector } from "react-redux";
 import { DomDroppableMonitor } from "./DroppableMonitor";
@@ -16,7 +16,8 @@ import { WALL_ICON } from "../ui/icons";
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: { drag: dragReducer },
-  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
 
 const ColoredDroppable: React.FC<{ color: string }> = ({ color }) => (
