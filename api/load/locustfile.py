@@ -48,6 +48,8 @@ class TTBudClient:
                 timeout=CONNECTION_TIMEOUT_SECONDS,
                 sslopt={'cert_reqs': ssl.CERT_NONE},
             )
+            # mypy doesn't understand that _ws is set in the line above
+            assert self._ws is not None
             # Wait for first connection message
             self._ws.recv()
         except Exception as e:
