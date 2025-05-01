@@ -68,7 +68,7 @@ services:
     ports:
       - 8001:8001
   localstack:
-    image: localstack/localstack:1.3.0
+    image: localstack/localstack:1.4.0
     ports:
       # Expose 4566 so the s3 client can talk to the localstack instance
       - "4566:4566"
