@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
@@ -25,11 +25,11 @@ class CertConfig:
 class Config:
     environment: Environment = Environment[os.environ['ENVIRONMENT'].upper()]
     websocket_port: int = int(os.environ['PORT'])
-    # When you use the cheapest heroku redis plan, the "REDIS_URL" environment variable
+    # When you use the cheapest heroku redis plan, the 'REDIS_URL' environment variable
     # is a plaintext URI for backwards-compatibility reasons, so you have to use
-    # "REDIS_TLS_URL" to get a TLS connection if it's available
+    # 'REDIS_TLS_URL' to get a TLS connection if it's available
     # In production we use a slightly more expensive plan, which provides a TLS
-    # connection for the "REDIS_URL" environment variable, but doesn't provide a
+    # connection for the 'REDIS_URL' environment variable, but doesn't provide a
     # REDIS_TLS_URL environment variable
     redis_address = os.environ.get('REDIS_TLS_URL', os.environ['REDIS_URL'])
     json_logs: bool = os.environ.get('JSON_LOGS') == 'true'
@@ -39,8 +39,8 @@ class Config:
     aws_secret_key: str = os.environ['AWS_SECRET_KEY']
     aws_bucket: str = os.environ['AWS_BUCKET']
     aws_endpoint: Optional[str] = os.environ.get('AWS_ENDPOINT')
-    cert_config: Optional[CertConfig] = (
-        CertConfig(
+    cert_config: Optional[CertConfig] = field(
+        default_factory=lambda: CertConfig(
             key_file_path=os.environ['SSL_KEY_FILE'],
             cert_file_path=os.environ['SSL_CRT_FILE'],
         )

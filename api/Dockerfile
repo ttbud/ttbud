@@ -1,13 +1,13 @@
 ARG BUILD_ENV="prod"
 
-FROM python:3.10.8 as base
+FROM python:3.12.10-slim AS base
 RUN useradd --create-home appuser
 WORKDIR /home/appuser/app
 RUN chown appuser:appuser /home/appuser/app
 USER appuser
 WORKDIR /home/appuser
 
-FROM base as builder
+FROM base AS builder
 
 USER root
 RUN apt-get update \

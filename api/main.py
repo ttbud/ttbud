@@ -163,7 +163,8 @@ async def wait_for_redis_ready() -> None:
                 config.redis_address, config.redis_ssl_validation
             )
             logger.info("redis is ready")
-            await redis.close()
+            # aclose does exist, but mypy doesn't know about it
+            await redis.aclose()  # type: ignore
             break
         except gaierror:
             pass
