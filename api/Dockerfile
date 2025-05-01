@@ -12,8 +12,7 @@ FROM base as builder
 USER root
 RUN apt-get update \
     && apt-get install -y \
-    g++ \
-    gcc \
+    clang \
     libffi-dev \
     libsasl2-dev \
     && rm -rf /var/lib/apt/lists/*
