@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TypeVar, AsyncIterator, Union
+from collections.abc import AsyncIterator
+from typing import TypeVar
 
 import pytest
 
-from src.util.amerge import amerge, CompleteCondition
+from src.util.amerge import CompleteCondition, amerge
 from src.util.async_util import async_collect, race
 from tests.helpers import to_async
 
@@ -19,7 +20,7 @@ T = TypeVar('T')
 
 
 async def queue_to_iterator(
-    queue: asyncio.Queue[Union[T, QueueEnd]]
+    queue: asyncio.Queue[T | QueueEnd],
 ) -> AsyncIterator[T]:
     value = await queue.get()
     while not isinstance(value, QueueEnd):
@@ -28,7 +29,7 @@ async def queue_to_iterator(
 
 
 async def test_amerge_all_completed() -> None:
-    combined: AsyncIterator[Union[int, str]] = amerge(
+    combined: AsyncIterator[int | str] = amerge(
         to_async([1, 2, 3]),
         to_async(['one', 'two', 'three']),
         complete_when=CompleteCondition.ALL_COMPLETED,
@@ -45,10 +46,10 @@ async def test_amerge_all_completed() -> None:
 
 
 async def test_amerge_first_completed() -> None:
-    numbers_queue: asyncio.Queue[Union[int, str, QueueEnd]] = asyncio.Queue()
-    words_queue: asyncio.Queue[Union[int, str, QueueEnd]] = asyncio.Queue()
+    numbers_queue: asyncio.Queue[int | str | QueueEnd] = asyncio.Queue()
+    words_queue: asyncio.Queue[int | str | QueueEnd] = asyncio.Queue()
 
-    combined: AsyncIterator[Union[int, str]] = amerge(
+    combined: AsyncIterator[int | str] = amerge(
         queue_to_iterator(numbers_queue),
         queue_to_iterator(words_queue),
         complete_when=CompleteCondition.FIRST_COMPLETED,

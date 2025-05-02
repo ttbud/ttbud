@@ -1,19 +1,18 @@
+from collections.abc import AsyncGenerator, Iterable
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Iterable
 
 from redis.asyncio.client import Redis
 from redis.commands.core import AsyncScript
-
 from src.apm import instrument
 from src.rate_limit.rate_limit import (
-    TooManyRoomsCreatedException,
+    MAX_CONNECTIONS_PER_ROOM,
+    MAX_CONNECTIONS_PER_USER,
     MAX_ROOMS_PER_TEN_MINUTES,
     SERVER_LIVENESS_EXPIRATION_SECONDS,
     RateLimiter,
-    MAX_CONNECTIONS_PER_USER,
-    MAX_CONNECTIONS_PER_ROOM,
-    TooManyConnectionsException,
     RoomFullException,
+    TooManyConnectionsException,
+    TooManyRoomsCreatedException,
 )
 
 _USER_LIVENESS_REFRESH_BATCH_SIZE = 50

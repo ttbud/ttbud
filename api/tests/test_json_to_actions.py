@@ -2,7 +2,7 @@ import json
 from dataclasses import asdict
 
 from src.room_store.json_to_actions import json_to_actions
-from tests.static_fixtures import VALID_ACTION, ANOTHER_VALID_ACTION, DELETE_VALID_TOKEN
+from tests.static_fixtures import ANOTHER_VALID_ACTION, DELETE_VALID_TOKEN, VALID_ACTION
 
 
 def test_json_to_actions() -> None:

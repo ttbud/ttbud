@@ -1,7 +1,6 @@
 import os
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 from src.redis import SSLValidation
 
@@ -38,8 +37,8 @@ class Config:
     aws_key_id: str = os.environ['AWS_KEY_ID']
     aws_secret_key: str = os.environ['AWS_SECRET_KEY']
     aws_bucket: str = os.environ['AWS_BUCKET']
-    aws_endpoint: Optional[str] = os.environ.get('AWS_ENDPOINT')
-    cert_config: Optional[CertConfig] = field(
+    aws_endpoint: str | None = os.environ.get('AWS_ENDPOINT')
+    cert_config: CertConfig | None = field(
         default_factory=lambda: CertConfig(
             key_file_path=os.environ['SSL_KEY_FILE'],
             cert_file_path=os.environ['SSL_CRT_FILE'],

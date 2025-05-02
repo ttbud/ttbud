@@ -102,13 +102,13 @@ jobs:
             - .venv
       - run:
           name: Check Code Format
-          command: uv run black -S src tests load main.py --check
+          command: uv run ruff format --check src tests load main.py
       - run:
           name: Typecheck
           command: uv run mypy src tests load main.py
       - run:
           name: Lint
-          command: uv run flake8 src tests load main.py
+          command: uv run ruff check src tests load main.py
       - run:
           name: Run Tests
           command: uv run pytest tests --junitxml=test-results/junit.xml

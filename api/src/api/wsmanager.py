@@ -3,49 +3,45 @@ import json
 import logging
 import random
 import secrets
+from collections.abc import AsyncIterator
 from dataclasses import asdict
 from typing import (
-    List,
-    Tuple,
-    Dict,
     Any,
     NoReturn,
-    AsyncIterator,
 )
 from uuid import UUID
 
 import dacite
-from dacite.exceptions import WrongTypeError, MissingValueError
+from dacite.exceptions import MissingValueError, WrongTypeError
 from websockets.exceptions import ConnectionClosedError
 
-from src.api.api_structures import Request, BYPASS_RATE_LIMIT_HEADER
+from src.api.api_structures import BYPASS_RATE_LIMIT_HEADER, Request
 from src.api.ws_close_codes import (
-    ERR_INVALID_UUID,
-    ERR_TOO_MANY_CONNECTIONS,
-    ERR_ROOM_FULL,
     ERR_INVALID_REQUEST,
+    ERR_INVALID_UUID,
+    ERR_ROOM_FULL,
+    ERR_TOO_MANY_CONNECTIONS,
 )
 from src.apm import background_transaction
 from src.game_state_server import (
-    InvalidConnectionException,
     GameStateServer,
+    InvalidConnectionException,
 )
 from src.rate_limit.rate_limit import (
-    RateLimiter,
     SERVER_LIVENESS_EXPIRATION_SECONDS,
-    TooManyConnectionsException,
+    RateLimiter,
     RoomFullException,
+    TooManyConnectionsException,
 )
 from src.ws.ws_client import WebsocketClient
 
 logger = logging.getLogger(__name__)
 
 
-class InvalidRequestException(Exception):
-    ...
+class InvalidRequestException(Exception): ...
 
 
-def ignore_none(items: List[Tuple[str, Any]]) -> Dict[str, Any]:
+def ignore_none(items: list[tuple[str, Any]]) -> dict[str, Any]:
     return dict(filter(lambda entry: entry[1] is not None, items))
 
 
@@ -62,13 +58,13 @@ async def _requests(client: WebsocketClient) -> AsyncIterator[Request]:
         try:
             message = json.loads(raw_message)
             request = dacite.from_dict(Request, message)
-        except (json.JSONDecodeError, WrongTypeError, MissingValueError):
+        except (json.JSONDecodeError, WrongTypeError, MissingValueError) as e:
             logger.info(
                 'invalid json received from client',
                 extra={'json': raw_message},
                 exc_info=True,
             )
-            raise InvalidRequestException()
+            raise InvalidRequestException() from e
 
         yield Request(
             actions=request.actions,
@@ -86,7 +82,7 @@ class WebsocketManager:
         self._gss = gss
         self._rate_limiter = rate_limiter
         self._bypass_rate_limiter_key = bypass_rate_limiter_key
-        self._clients: List[WebsocketClient] = []
+        self._clients: list[WebsocketClient] = []
 
     async def maintain_liveness(self) -> NoReturn:
         while True:

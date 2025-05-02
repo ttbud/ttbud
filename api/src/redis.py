@@ -20,12 +20,12 @@ async def create_redis_pool(address: str, ssl_validation: SSLValidation) -> Redi
     ssl_args: dict
     if ssl_validation == SSLValidation.SELF_SIGNED:
         ssl_args = {
-            "ssl_check_hostname": False,
-            "ssl_cert_reqs": "none",
+            'ssl_check_hostname': False,
+            'ssl_cert_reqs': 'none',
         }
     elif ssl_validation == SSLValidation.NONE:
         ssl_args = {}
     else:
-        ssl_args = {"ssl_check_hostname": True}
+        ssl_args = {'ssl_check_hostname': True}
 
     return Redis.from_url(address, **ssl_args)

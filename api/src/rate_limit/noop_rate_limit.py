@@ -1,5 +1,5 @@
+from collections.abc import AsyncGenerator, Iterable
 from contextlib import asynccontextmanager
-from typing import Iterable, AsyncGenerator
 
 from src.rate_limit.rate_limit import RateLimiter
 

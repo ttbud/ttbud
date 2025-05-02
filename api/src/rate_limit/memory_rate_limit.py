@@ -1,32 +1,32 @@
 import time
 from collections import defaultdict
+from collections.abc import AsyncGenerator, Iterable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import Dict, List, AsyncGenerator, Iterable
 
 from src.rate_limit.rate_limit import (
-    RateLimiter,
-    SERVER_LIVENESS_EXPIRATION_SECONDS,
     MAX_CONNECTIONS_PER_ROOM,
-    RoomFullException,
     MAX_CONNECTIONS_PER_USER,
-    TooManyConnectionsException,
     MAX_ROOMS_PER_TEN_MINUTES,
+    SERVER_LIVENESS_EXPIRATION_SECONDS,
+    RateLimiter,
+    RoomFullException,
+    TooManyConnectionsException,
     TooManyRoomsCreatedException,
 )
 
 
 @dataclass
 class User:
-    connections_by_server_id: Dict[str, int] = field(default_factory=dict)
-    room_creation_times: List[float] = field(default_factory=list)
+    connections_by_server_id: dict[str, int] = field(default_factory=dict)
+    room_creation_times: list[float] = field(default_factory=list)
 
 
 @dataclass
 class MemoryRateLimiterStorage:
-    server_expirations_by_id: Dict[str, float] = field(default_factory=dict)
-    users_by_id: Dict[str, User] = field(default_factory=dict)
-    room_connections_by_server_id: Dict[str, List[str]] = field(
+    server_expirations_by_id: dict[str, float] = field(default_factory=dict)
+    users_by_id: dict[str, User] = field(default_factory=dict)
+    room_connections_by_server_id: dict[str, list[str]] = field(
         default_factory=lambda: defaultdict(list)
     )
 

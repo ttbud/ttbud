@@ -1,5 +1,5 @@
 import json
-from typing import Callable, Awaitable
+from collections.abc import Awaitable, Callable
 from dataclasses import asdict
 
 from starlette.requests import Request

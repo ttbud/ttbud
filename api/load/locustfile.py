@@ -5,23 +5,21 @@ import ssl
 import time
 import uuid
 from dataclasses import asdict
-from typing import List, Optional
 
-from locust import User, task, between
+from locust import User, between, task
 from locust.env import Environment
-from websocket import create_connection, WebSocket
+from websocket import WebSocket, create_connection
 
 from load.constants import LOAD_TEST_ICON_ID
-
 from src.api.api_structures import (
+    BYPASS_RATE_LIMIT_HEADER,
+    Action,
+    DeleteAction,
+    PingAction,
     Request,
     UpsertAction,
-    PingAction,
-    DeleteAction,
-    Action,
-    BYPASS_RATE_LIMIT_HEADER,
 )
-from src.game_components import Ping, Token, IconTokenContents
+from src.game_components import IconTokenContents, Ping, Token
 
 CONNECTION_TIMEOUT_SECONDS = 10
 
@@ -36,7 +34,7 @@ class TTBudClient:
     ):
         self._ttbud_addr = f'{locust_env.host}/{room_id}'
         self._locust = locust_env
-        self._ws: Optional[WebSocket] = None
+        self._ws: WebSocket | None = None
         self._bypass_rate_limit_key = bypass_rate_limit_key
 
     def connect(self) -> None:
@@ -110,7 +108,7 @@ class TTBudUser(User):
         self.client = TTBudClient(
             environment, str(uuid.uuid4()), os.environ['BYPASS_RATE_LIMIT_KEY']
         )
-        self.tokens_ids_sent: List[str] = []
+        self.tokens_ids_sent: list[str] = []
 
     def on_start(self) -> None:
         self.client.connect()
@@ -118,7 +116,7 @@ class TTBudUser(User):
     def on_stop(self) -> None:
         # Delete all the tokens from the room to avoid saving load test rooms
         # to the store
-        actions: List[Action] = [
+        actions: list[Action] = [
             DeleteAction(token_id) for token_id in self.tokens_ids_sent
         ]
         self.client.send(Request(request_id=str(uuid.uuid4()), actions=actions))

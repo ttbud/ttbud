@@ -1,14 +1,13 @@
 import traceback
 from logging import LogRecord
 from types import TracebackType
-from typing import Dict, List, Optional
 
 from timber.formatter import TimberFormatter
 
 MAX_LOG_STACK_DEPTH = 20
 
 
-def _jsonable_traceback(tb: Optional[TracebackType]) -> List[Dict[str, Optional[str]]]:
+def _jsonable_traceback(tb: TracebackType | None) -> list[dict[str, str | None]]:
     stack = traceback.extract_tb(tb, limit=MAX_LOG_STACK_DEPTH)
     return [
         {
@@ -64,7 +63,7 @@ class DetailedFormatter(TimberFormatter):
             if (
                 key not in _DEFAULT_KEYS
                 and value is not None
-                and not isinstance(value, (dict, str, int))
+                and not isinstance(value, dict | str | int)
             ):
                 del record.__dict__[key]
 

@@ -3,44 +3,38 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from contextlib import asynccontextmanager
 import time
+from collections.abc import AsyncGenerator, AsyncIterator, Iterable
+from contextlib import asynccontextmanager
 from dataclasses import asdict, dataclass, field
 from typing import (
-    List,
-    AsyncGenerator,
-    AsyncIterator,
-    Iterable,
     Any,
-    Union,
-    Optional,
 )
 
 from redis.asyncio.client import Redis
 from redis.commands.core import AsyncScript
 from redis.exceptions import ResponseError
-
-from src.api.api_structures import Request, Action
+from src.api.api_structures import Action, Request
 from src.apm import instrument
+from src.room_store.common import ARCHIVE_WHEN_IDLE_SECONDS, NoSuchRoomError
+from src.room_store.json_to_actions import json_to_actions
 from src.room_store.redis_room_listener import (
     RedisRoomListener,
     create_redis_room_listener,
 )
-from src.room_store.common import ARCHIVE_WHEN_IDLE_SECONDS, NoSuchRoomError
-from src.room_store.json_to_actions import json_to_actions
 from src.room_store.room_store import (
+    COMPACTION_LOCK_EXPIRATION_SECONDS,
     ReplacementData,
     UnexpectedReplacementId,
-    COMPACTION_LOCK_EXPIRATION_SECONDS,
     UnexpectedReplacementToken,
 )
 
 logger = logging.getLogger(__name__)
 
-NO_REQUEST_ID = "NO_REQUEST_ID"
+NO_REQUEST_ID = 'NO_REQUEST_ID'
 REPLACEMENT_KEY = 'replacement_lock'
-ERR_INVALID_COMPACTION_KEY = "INVALID_COMPACTION_KEY"
-ERR_INVALID_ROOM_LENGTH = "INVALID_ROOM_LENGTH"
+ERR_INVALID_COMPACTION_KEY = 'INVALID_COMPACTION_KEY'
+ERR_INVALID_ROOM_LENGTH = 'INVALID_ROOM_LENGTH'
 
 
 # language=lua
@@ -109,7 +103,7 @@ def _last_activity_key(room_id: str) -> str:
 
 @dataclass
 class ChangeListener:
-    output_queues: List[asyncio.Queue[Union[Request, BaseException]]]
+    output_queues: list[asyncio.Queue[Request | BaseException]]
     task: asyncio.Task
     subscribe_started: asyncio.Future[None] = field(default_factory=asyncio.Future)
 
@@ -207,7 +201,7 @@ class RedisRoomStore:
 
     @instrument
     async def replace(
-        self, room_id: str, actions: List[Action], replace_token: Any, replacer_id: str
+        self, room_id: str, actions: list[Action], replace_token: Any, replacer_id: str
     ) -> None:
         try:
             await self._lreplace(
@@ -272,7 +266,7 @@ class RedisRoomStore:
             return int(time.time()) - int(last_edited)
 
     @instrument
-    async def seconds_since_last_activity(self) -> Optional[int]:
+    async def seconds_since_last_activity(self) -> int | None:
         most_recent_activity = 0
         async for entry in self._redis.scan_iter(match='last-room-activity:*'):
             value = await self._redis.get(entry)

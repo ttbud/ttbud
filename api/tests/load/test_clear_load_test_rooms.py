@@ -6,7 +6,7 @@ from load.clear_load_test_rooms import clear_load_test_rooms
 from load.constants import LOAD_TEST_ICON_ID
 from src.api.api_structures import Request, UpsertAction
 from src.game_components import IconTokenContents
-from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
+from src.room_store.memory_room_store import MemoryRoomStorage, MemoryRoomStore
 from src.room_store.room_store import RoomStore
 from tests.static_fixtures import VALID_REQUEST, VALID_TOKEN
 

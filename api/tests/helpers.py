@@ -1,5 +1,6 @@
 import asyncio
-from typing import Iterable, Any, TypeVar, AsyncIterator
+from collections.abc import AsyncIterator, Iterable
+from typing import Any, TypeVar
 
 _SENTINEL = object()
 

@@ -4,26 +4,20 @@ import asyncio
 import logging
 import time
 from collections import defaultdict
+from collections.abc import AsyncGenerator, AsyncIterator, Iterable
 from copy import copy
 from dataclasses import dataclass, field
 from typing import (
-    Dict,
-    List,
-    AsyncIterator,
-    AsyncGenerator,
-    DefaultDict,
-    Iterable,
     Any,
-    Optional,
 )
 
-from src.api.api_structures import Request, Action
+from src.api.api_structures import Action, Request
 from src.room_store.common import NoSuchRoomError
 from src.room_store.room_store import (
-    RoomStore,
-    ReplacementData,
-    UnexpectedReplacementId,
     COMPACTION_LOCK_EXPIRATION_SECONDS,
+    ReplacementData,
+    RoomStore,
+    UnexpectedReplacementId,
     UnexpectedReplacementToken,
 )
 
@@ -32,10 +26,10 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MemoryRoomStorage:
-    rooms_by_id: DefaultDict[str, List[Action]] = field(
+    rooms_by_id: defaultdict[str, list[Action]] = field(
         default_factory=lambda: defaultdict(list)
     )
-    last_room_activity_by_id: DefaultDict[str, int] = field(
+    last_room_activity_by_id: defaultdict[str, int] = field(
         default_factory=lambda: defaultdict(lambda: int(time.time()))
     )
 
@@ -49,8 +43,8 @@ class ReplacementLock:
 class MemoryRoomStore(RoomStore):
     def __init__(self, storage: MemoryRoomStorage):
         self.storage = storage
-        self._changes: Dict[str, List[asyncio.Queue]] = defaultdict(list)
-        self._replacement_lock: Optional[ReplacementLock] = None
+        self._changes: dict[str, list[asyncio.Queue]] = defaultdict(list)
+        self._replacement_lock: ReplacementLock | None = None
 
     async def changes(self, room_id: str) -> AsyncGenerator[Request, None]:
         queue: asyncio.Queue[Request] = asyncio.Queue()
@@ -132,7 +126,7 @@ class MemoryRoomStore(RoomStore):
     async def replace(
         self,
         room_id: str,
-        actions: List[Action],
+        actions: list[Action],
         replace_token: Any,
         replacement_id: str,
     ) -> None:
@@ -166,7 +160,7 @@ class MemoryRoomStore(RoomStore):
             raise NoSuchRoomError
         return int(time.time()) - self.storage.last_room_activity_by_id[room_id]
 
-    async def seconds_since_last_activity(self) -> Optional[int]:
+    async def seconds_since_last_activity(self) -> int | None:
         most_recent_activity = 0
         for _, last_activity_time in self.storage.last_room_activity_by_id.items():
             if last_activity_time > most_recent_activity:

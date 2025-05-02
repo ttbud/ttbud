@@ -3,9 +3,9 @@
 import asyncio
 
 from load.clear_load_test_rooms import clear_load_test_rooms
+from src.config import config
 from src.redis import create_redis_pool
 from src.room_store.redis_room_store import create_redis_room_store
-from src.config import config
 
 
 async def main() -> None:
@@ -14,5 +14,5 @@ async def main() -> None:
         await clear_load_test_rooms(room_store)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     asyncio.run(main())

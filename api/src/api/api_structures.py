@@ -1,5 +1,6 @@
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Union, Iterable, Literal, List
+from typing import Literal
 
 from src.game_components import Ping, Token
 
@@ -24,7 +25,7 @@ class PingAction:
     action: Literal['ping'] = field(init=False, default='ping')
 
 
-Action = Union[UpsertAction, DeleteAction, PingAction]
+Action = UpsertAction | DeleteAction | PingAction
 
 
 @dataclass
@@ -48,10 +49,10 @@ class ErrorResponse:
     type: Literal['error'] = field(init=False, default='error')
 
 
-Response = Union[ConnectionResponse, UpdateResponse, ErrorResponse]
+Response = ConnectionResponse | UpdateResponse | ErrorResponse
 
 
 @dataclass
 class Request:
     request_id: str
-    actions: List[Action]
+    actions: list[Action]

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
-    AsyncIterator,
-    TypeVar,
     Generic,
+    TypeVar,
 )
 
 _T = TypeVar('_T')
@@ -35,8 +35,8 @@ def _next_task(it: AsyncIterator[_T]) -> asyncio.Task[_IterationResult[_T]]:
     async def wait_for_result() -> _IterationResult[_T]:
         try:
             value = await anext(it)
-        except StopAsyncIteration:
-            raise _IterationEnded(it)
+        except StopAsyncIteration as e:
+            raise _IterationEnded(it) from e
         return _IterationResult(value, it)
 
     return asyncio.create_task(wait_for_result())

@@ -15,7 +15,7 @@ if git diff-index --quiet HEAD -- api; then
   echo "=== Skipping api lint, no changes found =="
 else
   echo "=== checking api formatting ==="
-  docker-compose run --rm api black -S src tests load main.py --check
+  docker-compose run --rm api ruff src tests load main.py --check
   echo "=== checking api style ==="
   docker-compose run --rm api flake8 src tests load main.py
   echo "=== typechecking api ==="

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import Protocol, AsyncContextManager, Iterable
+from collections.abc import Iterable
+from contextlib import AbstractAsyncContextManager
+from typing import Protocol
 
 MAX_ROOMS_PER_TEN_MINUTES = 50
 MAX_CONNECTIONS_PER_USER = 10
@@ -43,7 +45,7 @@ class RateLimiter(Protocol):
 
     def rate_limited_connection(
         self, user_id: str, room_id: str
-    ) -> AsyncContextManager:
+    ) -> AbstractAsyncContextManager:
         """
         Reserve a connection for the given user_id for the duration of the
         context

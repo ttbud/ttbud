@@ -1,4 +1,5 @@
-from typing import cast, AsyncIterable, TypedDict, Tuple, Mapping
+from collections.abc import AsyncIterable, Mapping
+from typing import TypedDict, cast
 
 from starlette.websockets import WebSocket
 
@@ -43,7 +44,7 @@ class WebsocketScope(TypedDict):
     for more details
     """
 
-    client: Tuple[str, int]
+    client: tuple[str, int]
     """
     A two-item iterable of [host, port], where host is the remote host’s IPv4
     or IPv6 address, and port is the remote port. Optional; if missing

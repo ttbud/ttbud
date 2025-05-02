@@ -1,17 +1,12 @@
+from collections.abc import AsyncIterator, Awaitable, Iterable
 from dataclasses import dataclass
 from typing import (
-    Protocol,
-    Optional,
-    List,
-    AsyncIterator,
-    Union,
-    Awaitable,
-    Iterable,
     Any,
+    Protocol,
 )
 
-from src.api.api_structures import Request, Action
-from src.game_components import Token, Ping
+from src.api.api_structures import Action, Request
+from src.game_components import Ping, Token
 
 MAX_LOCK_RETRIES = 3
 COMPACTION_INTERVAL_SECONDS = 10 * 60
@@ -36,8 +31,8 @@ class UnexpectedReplacementToken(Exception):
 
 @dataclass
 class RoomChangeEvent:
-    request_id: Optional[str]
-    entities: List[Union[Token, Ping]]
+    request_id: str | None
+    entities: list[Token | Ping]
 
 
 @dataclass
@@ -47,17 +42,13 @@ class ReplacementData:
 
 
 class RoomStore(Protocol):
-    def changes(self, room_id: str) -> Awaitable[AsyncIterator[Request]]:
-        ...
+    def changes(self, room_id: str) -> Awaitable[AsyncIterator[Request]]: ...
 
-    def get_all_room_ids(self) -> AsyncIterator[str]:
-        ...
+    def get_all_room_ids(self) -> AsyncIterator[str]: ...
 
-    async def room_exists(self, room_id: str) -> bool:
-        ...
+    async def room_exists(self, room_id: str) -> bool: ...
 
-    async def read(self, room_id: str) -> Iterable[Action]:
-        ...
+    async def read(self, room_id: str) -> Iterable[Action]: ...
 
     async def write_if_missing(self, room_id: str, actions: Iterable[Action]) -> None:
         """
@@ -68,28 +59,25 @@ class RoomStore(Protocol):
         """
         ...
 
-    async def add_request(self, room_id: str, request: Request) -> None:
-        ...
+    async def add_request(self, room_id: str, request: Request) -> None: ...
 
     async def acquire_replacement_lock(
         self, compaction_id: str, force: bool = False
-    ) -> bool:
-        ...
+    ) -> bool: ...
 
-    async def read_for_replacement(self, room_id: str) -> ReplacementData:
-        ...
+    async def read_for_replacement(self, room_id: str) -> ReplacementData: ...
 
-    async def delete(self, room_id: str, replacer_id: str, replace_token: Any) -> None:
-        ...
+    async def delete(
+        self, room_id: str, replacer_id: str, replace_token: Any
+    ) -> None: ...
 
     async def replace(
         self,
         room_id: str,
-        actions: List[Action],
+        actions: list[Action],
         replace_token: Any,
         compaction_id: str,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     async def get_room_idle_seconds(self, room_id: str) -> int:
         """
@@ -99,7 +87,7 @@ class RoomStore(Protocol):
         """
         ...
 
-    async def seconds_since_last_activity(self) -> Optional[int]:
+    async def seconds_since_last_activity(self) -> int | None:
         """
         :return: How many seconds have passed since the last room update,
         or None if there is no recorded activity in Redis
