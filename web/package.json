@@ -30,7 +30,7 @@
     "jest-junit": "^15.0.0",
     "jest-websocket-mock": "^2.4.0",
     "mock-socket": "^9.1.5",
-    "netlify-cli": "^12.2.8",
+    "netlify-cli": "^20.0.0",
     "pepjs": "^0.5.3",
     "prettier": "^2.8.0",
     "react": "^17.0.2",
