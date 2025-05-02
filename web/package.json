@@ -11,8 +11,8 @@
     "@material-ui/lab": "^4.0.0-alpha.61",
     "@opentelemetry/api": "^1.9.0",
     "@reduxjs/toolkit": "^1.9.1",
-    "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^12.1.2",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^16.0.0",
     "@types/jest": "^29.2.3",
     "@types/node": "^22.15.3",
     "@types/react": "^17.0.30",
@@ -90,7 +90,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@testing-library/dom": "^8.9.1",
-    "@testing-library/user-event": "^13.4.1"
+    "@testing-library/dom": "^10.0.0",
+    "@testing-library/user-event": "^14.0.0"
   }
 }
