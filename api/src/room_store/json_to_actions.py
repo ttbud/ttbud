@@ -1,12 +1,12 @@
 import json
-from typing import List, Iterator
+from collections.abc import Iterator
 
 from dacite import from_dict
 
-from src.api.api_structures import Action, UpsertAction, DeleteAction
+from src.api.api_structures import Action, DeleteAction, UpsertAction
 
 
-def json_to_actions(raw_updates: List[str]) -> Iterator[Action]:
+def json_to_actions(raw_updates: list[str]) -> Iterator[Action]:
     for raw_update_group in raw_updates:
         update_group = json.loads(raw_update_group)
         for update in update_group:

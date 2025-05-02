@@ -1,7 +1,6 @@
 import json
 import logging
 from dataclasses import dataclass
-from typing import List, Dict
 
 import pytest
 
@@ -12,7 +11,7 @@ from tests.helpers import assert_matches
 class RecordingLogHandler(logging.Handler):
     def __init__(self) -> None:
         super().__init__()
-        self.lines: List[str] = []
+        self.lines: list[str] = []
 
     def emit(self, record: logging.LogRecord) -> None:
         self.lines.append(self.format(record))
@@ -21,7 +20,7 @@ class RecordingLogHandler(logging.Handler):
 @dataclass
 class LogContext:
     logger: logging.Logger
-    lines: List[str]
+    lines: list[str]
 
 
 @pytest.fixture
@@ -60,5 +59,5 @@ def test_includes_exception_details(log_context: LogContext) -> None:
     )
 
 
-def decoded_lines(lines: List[str]) -> List[Dict]:
+def decoded_lines(lines: list[str]) -> list[dict]:
     return [json.loads(line) for line in lines]

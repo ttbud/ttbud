@@ -1,6 +1,7 @@
 import asyncio
+from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager
-from typing import AsyncIterator, Optional, Dict, cast
+from typing import cast
 from uuid import uuid4
 
 import pytest
@@ -10,10 +11,10 @@ from starlette.responses import Response
 
 from src.api.api_structures import BYPASS_RATE_LIMIT_HEADER
 from src.api.ws_close_codes import (
-    ERR_INVALID_UUID,
-    ERR_TOO_MANY_CONNECTIONS,
-    ERR_ROOM_FULL,
     ERR_INVALID_REQUEST,
+    ERR_INVALID_UUID,
+    ERR_ROOM_FULL,
+    ERR_TOO_MANY_CONNECTIONS,
     ERR_TOO_MANY_ROOMS_CREATED,
 )
 from src.api.wsmanager import WebsocketManager
@@ -21,14 +22,14 @@ from src.game_state_server import GameStateServer
 from src.rate_limit.memory_rate_limit import MemoryRateLimiter, MemoryRateLimiterStorage
 from src.rate_limit.noop_rate_limit import NoopRateLimiter
 from src.rate_limit.rate_limit import (
-    MAX_CONNECTIONS_PER_USER,
     MAX_CONNECTIONS_PER_ROOM,
+    MAX_CONNECTIONS_PER_USER,
     MAX_ROOMS_PER_TEN_MINUTES,
 )
-from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
+from src.room_store.memory_room_store import MemoryRoomStorage, MemoryRoomStore
 from src.routes import routes
 from tests import emulated_client
-from tests.emulated_client import WebsocketClosed, EmulatedClient, WebsocketAsgiApp
+from tests.emulated_client import EmulatedClient, WebsocketAsgiApp, WebsocketClosed
 from tests.helpers import assert_matches
 from tests.static_fixtures import TEST_REQUEST_ID
 
@@ -83,7 +84,7 @@ async def num_active_connections(
     app: WebsocketAsgiApp,
     num_connections: int,
     *,
-    headers: Optional[Dict] = None,
+    headers: dict | None = None,
     unique_ips: bool = True,
     unique_rooms: bool = True,
 ) -> AsyncIterator[None]:
@@ -174,7 +175,7 @@ async def test_too_many_room_connections(app: WebsocketAsgiApp) -> None:
 
 
 async def test_too_many_rooms_created(app: WebsocketAsgiApp) -> None:
-    for i in range(MAX_ROOMS_PER_TEN_MINUTES):
+    for _ in range(MAX_ROOMS_PER_TEN_MINUTES):
         async with emulated_client.connect(app, f'/{uuid4()}') as client:
             await client.receive_json()
 
@@ -187,7 +188,7 @@ async def test_too_many_rooms_created(app: WebsocketAsgiApp) -> None:
 
 async def test_bypass_room_create_rate_limit(app: WebsocketAsgiApp) -> None:
     headers = {BYPASS_RATE_LIMIT_HEADER: TEST_BYPASS_RATE_LIMIT_KEY}
-    for i in range(MAX_ROOMS_PER_TEN_MINUTES):
+    for _ in range(MAX_ROOMS_PER_TEN_MINUTES):
         async with emulated_client.connect(
             app, f'/{uuid4()}', headers=headers
         ) as client:
@@ -199,18 +200,18 @@ async def test_bypass_room_create_rate_limit(app: WebsocketAsgiApp) -> None:
 
 async def test_bypass_max_connections_rate_limit(app: WebsocketAsgiApp) -> None:
     headers = {BYPASS_RATE_LIMIT_HEADER: TEST_BYPASS_RATE_LIMIT_KEY}
-    async with num_active_connections(
-        app, MAX_CONNECTIONS_PER_USER, unique_ips=False, headers=headers
+    async with (
+        num_active_connections(
+            app, MAX_CONNECTIONS_PER_USER, unique_ips=False, headers=headers
+        ),
+        emulated_client.connect(app, f'/{uuid4()}', headers=headers) as client,
     ):
-        async with emulated_client.connect(
-            app, f'/{uuid4()}', headers=headers
-        ) as client:
-            assert await client.receive_json() == {'type': 'connected', 'data': []}
+        assert await client.receive_json() == {'type': 'connected', 'data': []}
 
 
 async def test_bypass_room_create_rate_limit_invalid_key(app: WebsocketAsgiApp) -> None:
-    headers = {BYPASS_RATE_LIMIT_HEADER: "invalid-key"}
-    for i in range(MAX_ROOMS_PER_TEN_MINUTES):
+    headers = {BYPASS_RATE_LIMIT_HEADER: 'invalid-key'}
+    for _ in range(MAX_ROOMS_PER_TEN_MINUTES):
         async with emulated_client.connect(
             app, f'/{uuid4()}', headers=headers
         ) as client:
@@ -228,7 +229,7 @@ async def test_bypass_room_create_rate_limit_invalid_key(app: WebsocketAsgiApp) 
 async def test_bypass_max_connections_rate_limit_invalid_key(
     app: WebsocketAsgiApp,
 ) -> None:
-    headers = {BYPASS_RATE_LIMIT_HEADER: "invalid-key"}
+    headers = {BYPASS_RATE_LIMIT_HEADER: 'invalid-key'}
     async with num_active_connections(
         app, MAX_CONNECTIONS_PER_USER, unique_ips=False, headers=headers
     ):

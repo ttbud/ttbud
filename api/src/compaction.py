@@ -1,18 +1,18 @@
 import asyncio
 import logging
 import time
-from typing import List, NoReturn
+from typing import NoReturn
 
-from src.api.api_structures import UpsertAction, Action
+from src.api.api_structures import Action, UpsertAction
 from src.apm import background_transaction
 from src.game_components import Token
 from src.room import create_room
 from src.room_store.common import ARCHIVE_WHEN_IDLE_SECONDS, NoSuchRoomError
 from src.room_store.room_archive import RoomArchive
 from src.room_store.room_store import (
+    COMPACTION_INTERVAL_SECONDS,
     RoomStore,
     UnexpectedReplacementId,
-    COMPACTION_INTERVAL_SECONDS,
     UnexpectedReplacementToken,
 )
 
@@ -93,8 +93,8 @@ class Compactor:
         )
 
 
-def _tokens_to_actions(tokens: List[Token]) -> List[Action]:
-    actions: List[Action] = []
+def _tokens_to_actions(tokens: list[Token]) -> list[Action]:
+    actions: list[Action] = []
     for token in tokens:
         actions.append(UpsertAction(token))
     return actions

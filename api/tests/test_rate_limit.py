@@ -1,29 +1,28 @@
+from collections.abc import AsyncIterator, Awaitable, Callable
 from datetime import timedelta
 from functools import partial
-from typing import Awaitable, TypeVar, Callable, AsyncIterator
+from typing import TypeVar
 
 import fakeredis.aioredis
 import pytest
 import time_machine
 from pytest_lazy_fixtures import lf
+
 from redis.asyncio.client import Redis
-
-from src.rate_limit.rate_limit import (
-    MAX_CONNECTIONS_PER_USER,
-    TooManyConnectionsException,
-    SERVER_LIVENESS_EXPIRATION_SECONDS,
-    RateLimiter,
-    MAX_ROOMS_PER_TEN_MINUTES,
-    TooManyRoomsCreatedException,
-    MAX_CONNECTIONS_PER_ROOM,
-    RoomFullException,
-)
-
 from src.rate_limit.memory_rate_limit import (
     MemoryRateLimiter,
     MemoryRateLimiterStorage,
 )
-
+from src.rate_limit.rate_limit import (
+    MAX_CONNECTIONS_PER_ROOM,
+    MAX_CONNECTIONS_PER_USER,
+    MAX_ROOMS_PER_TEN_MINUTES,
+    SERVER_LIVENESS_EXPIRATION_SECONDS,
+    RateLimiter,
+    RoomFullException,
+    TooManyConnectionsException,
+    TooManyRoomsCreatedException,
+)
 from src.rate_limit.redis_rate_limit import RedisRateLimiter, create_redis_rate_limiter
 
 T = TypeVar('T', bound=RateLimiter)
@@ -378,7 +377,7 @@ async def test_context_manager(rate_limiter_factory: RateLimiterFactory) -> None
 @any_rate_limiter
 @time_machine.travel('1970-01-01', tick=False)
 async def test_too_many_new_rooms(rate_limiter: RateLimiter) -> None:
-    for i in range(0, MAX_ROOMS_PER_TEN_MINUTES):
+    for _ in range(0, MAX_ROOMS_PER_TEN_MINUTES):
         await rate_limiter.acquire_new_room('user-1')
 
     with pytest.raises(TooManyRoomsCreatedException):
@@ -388,10 +387,10 @@ async def test_too_many_new_rooms(rate_limiter: RateLimiter) -> None:
 @any_rate_limiter
 @time_machine.travel('1970-01-01', tick=False)
 async def test_new_room_multiple_users(rate_limiter: RateLimiter) -> None:
-    for i in range(0, MAX_ROOMS_PER_TEN_MINUTES):
+    for _ in range(0, MAX_ROOMS_PER_TEN_MINUTES):
         await rate_limiter.acquire_new_room('user-1')
 
-    for i in range(0, MAX_ROOMS_PER_TEN_MINUTES):
+    for _ in range(0, MAX_ROOMS_PER_TEN_MINUTES):
         await rate_limiter.acquire_new_room('user-2')
 
     with pytest.raises(TooManyRoomsCreatedException):
@@ -406,7 +405,7 @@ async def test_new_room_multiple_servers(
     server_1 = await rate_limiter_factory('server-1')
     server_2 = await rate_limiter_factory('server-2')
 
-    for i in range(0, MAX_ROOMS_PER_TEN_MINUTES - 1):
+    for _ in range(0, MAX_ROOMS_PER_TEN_MINUTES - 1):
         await server_1.acquire_new_room('user-1')
 
     await server_2.acquire_new_room('user-1')
@@ -433,10 +432,10 @@ async def test_release_connection_on_exception(rate_limiter: RateLimiter) -> Non
 @time_machine.travel('1970-01-01', tick=False)
 async def test_get_num_connections(rate_limiter: RateLimiter) -> None:
     assert await rate_limiter.get_total_num_connections() == 0
-    for i in range(0, MAX_CONNECTIONS_PER_USER):
+    for _ in range(0, MAX_CONNECTIONS_PER_USER):
         await rate_limiter.acquire_connection('user-1', 'room-1')
     assert await rate_limiter.get_total_num_connections() == MAX_CONNECTIONS_PER_USER
-    for i in range(0, MAX_CONNECTIONS_PER_USER):
+    for _ in range(0, MAX_CONNECTIONS_PER_USER):
         await rate_limiter.acquire_connection('user-2', 'room-2')
     assert (
         await rate_limiter.get_total_num_connections() == 2 * MAX_CONNECTIONS_PER_USER

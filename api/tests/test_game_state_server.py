@@ -1,35 +1,34 @@
 import asyncio
-from typing import List
 
 import pytest
 
 from src.api.api_structures import (
-    PingAction,
-    Response,
-    Request,
-    UpdateResponse,
-    ErrorResponse,
     ConnectionResponse,
+    ErrorResponse,
+    PingAction,
+    Request,
+    Response,
+    UpdateResponse,
 )
 from src.game_components import Ping
 from src.game_state_server import GameStateServer
-from src.rate_limit.memory_rate_limit import MemoryRateLimiterStorage, MemoryRateLimiter
+from src.rate_limit.memory_rate_limit import MemoryRateLimiter, MemoryRateLimiterStorage
 from src.rate_limit.noop_rate_limit import NoopRateLimiter
 from src.rate_limit.rate_limit import RateLimiter
 from src.room_store.memory_room_archive import MemoryRoomArchive
-from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
+from src.room_store.memory_room_store import MemoryRoomStorage, MemoryRoomStore
 from src.room_store.merged_room_store import MergedRoomStore
 from src.room_store.room_store import RoomStore
 from src.util.async_util import async_collect
 from tests.helpers import to_async_until
 from tests.static_fixtures import (
-    TEST_ROOM_ID,
-    VALID_TOKEN,
-    ANOTHER_VALID_TOKEN,
-    VALID_ACTION,
     ANOTHER_VALID_ACTION,
+    ANOTHER_VALID_TOKEN,
     PING_ACTION,
+    TEST_ROOM_ID,
+    VALID_ACTION,
     VALID_ACTION_WITH_DUPLICATE_COLOR,
+    VALID_TOKEN,
 )
 
 
@@ -51,11 +50,11 @@ def gss(room_store: RoomStore, rate_limiter: RateLimiter) -> GameStateServer:
     return GameStateServer(room_store, rate_limiter, NoopRateLimiter())
 
 
-def errors(responses: List[Response]) -> List[Response]:
+def errors(responses: list[Response]) -> list[Response]:
     return list(filter(lambda response: isinstance(response, ErrorResponse), responses))
 
 
-def updates(responses: List[Response]) -> List[Response]:
+def updates(responses: list[Response]) -> list[Response]:
     return list(
         filter(lambda response: isinstance(response, UpdateResponse), responses)
     )
@@ -63,10 +62,10 @@ def updates(responses: List[Response]) -> List[Response]:
 
 async def collect_responses(
     gss: GameStateServer,
-    requests: List[Request],
+    requests: list[Request],
     response_count: int,
     room_id: str = TEST_ROOM_ID,
-) -> List[Response]:
+) -> list[Response]:
     disconnect_event = asyncio.Event()
     try:
         responses = await async_collect(

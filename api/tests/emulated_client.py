@@ -1,24 +1,17 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
-from asyncio import CancelledError
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Mapping
 from contextlib import asynccontextmanager
 from typing import (
     Any,
-    Optional,
     Literal,
-    Iterable,
-    Tuple,
     Protocol,
-    Awaitable,
-    Callable,
-    Union,
-    TypeVar,
     TypedDict,
+    TypeVar,
     cast,
-    AsyncIterator,
-    Mapping,
 )
 
 
@@ -27,8 +20,7 @@ class WebsocketClosed(Exception):
         self.code = code
 
 
-class UnexpectedResponse(Exception):
-    ...
+class UnexpectedResponse(Exception): ...
 
 
 class RequiredAsgi(TypedDict):
@@ -48,7 +40,7 @@ class RequiredWebsocketScope(TypedDict):
     path: str
     """HTTP request target excluding any query string, with percent-encoded
     sequences and UTF-8 byte sequences decoded into characters."""
-    headers: Iterable[Tuple[bytes, bytes]]
+    headers: Iterable[tuple[bytes, bytes]]
     """An iterable of [name, value] two-item iterables, where name is the header name
     and value is the header value. Order should be preserved from the original HTTP
     request; duplicates are possible and must be preserved in the message as
@@ -56,7 +48,7 @@ class RequiredWebsocketScope(TypedDict):
     HTTP/3) must be removed; if :authority is present its value must be added to the
     start of the iterable with host as the header name or replace any existing host
     header already present."""
-    client: Tuple[str, int]
+    client: tuple[str, int]
     """A two-item iterable of [host, port], where host is the remote host’s IPv4 or
     IPv6 address, and port is the remote port. Optional; if missing defaults to None.
     """
@@ -76,7 +68,7 @@ class WebsocketScope(RequiredWebsocketScope, total=False):
     root_path: bytes
     """The root path this application is mounted at; same as SCRIPT_NAME in
     WSGI. Optional; if missing defaults to empty string."""
-    server: Tuple[str, Optional[int]]
+    server: tuple[str, int | None]
     """Either a two-item iterable of [host, port], where host is the listening
     address for this server, and port is the integer listening port, or [path,
     None] where path is that of the unix socket. Optional; if missing defaults to
@@ -110,7 +102,7 @@ class Accept(AcceptRequired, total=False):
     subprotocol: str
     """The subprotocol the server wishes to accept. Optional; if missing defaults to
     None. """
-    headers: Iterable[Tuple[bytes, bytes]]
+    headers: Iterable[tuple[bytes, bytes]]
     """An iterable of [name, value] two-item iterables, where name is the header
     name, and value is the header value. Order must be preserved in the HTTP
     response. Header names must be lowercased. Must not include a header named
@@ -177,8 +169,8 @@ class Close(TypedDict, total=False):
     defaults to 1000. """
 
 
-IncomingEvent = Union[Connect, ReceiveText, ReceiveBytes, Disconnect]
-OutgoingEvent = Union[Accept, SendText, SendBytes, Close]
+IncomingEvent = Connect | ReceiveText | ReceiveBytes | Disconnect
+OutgoingEvent = Accept | SendText | SendBytes | Close
 
 
 class WebsocketAsgiApp(Protocol):
@@ -238,7 +230,7 @@ async def connect(
     app: WebsocketAsgiApp,
     path: str,
     client_ip: str = '127.0.0.1',
-    headers: Optional[Mapping[str, str]] = None,
+    headers: Mapping[str, str] | None = None,
 ) -> AsyncIterator[EmulatedClient]:
     """Create an emulated client connected to the provided app"""
     headers = {} if headers is None else headers
@@ -276,7 +268,5 @@ async def connect(
             raise UnexpectedResponse(response)
     finally:
         app_task.cancel()
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await app_task
-        except CancelledError:
-            pass

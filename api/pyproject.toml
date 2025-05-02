@@ -17,23 +17,21 @@ dependencies = [
     "uvloop==0.21.0",
     "gunicorn==23.0.0",
     "scout-apm>=3.3.0",
-    "aiobotocore==2.22.0",
+    "aiobotocore==2.21.1",
     "redis[hiredis]==5.3.0",
 ]
 
 [dependency-groups]
 dev = [
     "pytest==8.3.5",
-    "black==22.12.0",
     "pytest-mock==3.14.0",
     "pytest-asyncio==0.26.0",
     "mypy==1.15.0",
     "types-mock==4.0.15.2",
     "types-python-dateutil==2.9.0.20241206",
     "types-redis==4.3.21.6",
-    "types-requests==2.32.0.20250328",
+    "types-requests==2.28.11.5",
     "types-setuptools==65.7.0.4",
-    "flake8==6.1.0",
     "watchdog==2.3.1",
     "fakeredis[lua]==2.28.1",
     "locust==2.36.2",
@@ -43,6 +41,7 @@ dev = [
     "pytest-cov==4.1.0",
     "time-machine==2.10.0",
     "pytest-lazy-fixtures>=1.1.2",
+    "ruff>=0.11.8",
 ]
 
 [tool.mypy]
@@ -74,3 +73,22 @@ directory = "coverage"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]

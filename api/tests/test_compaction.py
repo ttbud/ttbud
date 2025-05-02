@@ -8,19 +8,19 @@ from src.api.api_structures import (
     UpsertAction,
 )
 from src.colors import colors
-from src.compaction import Compactor, ARCHIVE_WHEN_IDLE_SECONDS
+from src.compaction import ARCHIVE_WHEN_IDLE_SECONDS, Compactor
 from src.game_components import Token
 from src.room_store.memory_room_archive import MemoryRoomArchive
-from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
+from src.room_store.memory_room_store import MemoryRoomStorage, MemoryRoomStore
 from src.room_store.room_archive import RoomArchive
 from src.room_store.room_store import RoomStore
 from tests.static_fixtures import (
-    TEST_ROOM_ID,
-    VALID_TOKEN,
-    VALID_REQUEST,
     DELETE_REQUEST,
-    VALID_MOVE_REQUEST,
+    TEST_ROOM_ID,
     UPDATED_TOKEN,
+    VALID_MOVE_REQUEST,
+    VALID_REQUEST,
+    VALID_TOKEN,
 )
 
 TEST_COMPACTOR_ID = 'compactor_1'

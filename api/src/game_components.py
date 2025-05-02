@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Union, Literal
+from typing import Literal
 
 from .colors import Color
 
@@ -14,7 +14,7 @@ class IconTokenContents:
     icon_id: str
 
 
-TokenContents = Union[TextTokenContents, IconTokenContents]
+TokenContents = TextTokenContents | IconTokenContents
 
 
 @dataclass
@@ -28,7 +28,7 @@ class Token:
     end_x: int
     end_y: int
     end_z: int
-    color_rgb: Optional[Color] = None
+    color_rgb: Color | None = None
 
     def __post_init__(self) -> None:
         if (

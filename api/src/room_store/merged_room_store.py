@@ -1,20 +1,16 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncGenerator, AsyncIterator, Iterable
 from typing import (
-    List,
-    AsyncGenerator,
-    AsyncIterator,
-    Iterable,
     Any,
-    Optional,
 )
 
-from src.api.api_structures import Request, Action
+from src.api.api_structures import Action, Request
 from src.room_store.room_archive import RoomArchive
 from src.room_store.room_store import (
-    RoomStore,
     ReplacementData,
+    RoomStore,
 )
 
 logger = logging.getLogger(__name__)
@@ -76,7 +72,7 @@ class MergedRoomStore(RoomStore):
         return await self._room_store.read_for_replacement(room_id)
 
     async def replace(
-        self, room_id: str, actions: List[Action], replace_token: Any, replacer_id: str
+        self, room_id: str, actions: list[Action], replace_token: Any, replacer_id: str
     ) -> None:
         await self._room_store.replace(room_id, actions, replace_token, replacer_id)
 
@@ -86,5 +82,5 @@ class MergedRoomStore(RoomStore):
     async def get_room_idle_seconds(self, room_id: str) -> int:
         return await self._room_store.get_room_idle_seconds(room_id)
 
-    async def seconds_since_last_activity(self) -> Optional[int]:
+    async def seconds_since_last_activity(self) -> int | None:
         return await self._room_store.seconds_since_last_activity()

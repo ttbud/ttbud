@@ -1,7 +1,7 @@
 import pytest
 
 from src.colors import colors
-from src.game_components import Token, IconTokenContents
+from src.game_components import IconTokenContents, Token
 from src.room import Room
 from tests.static_fixtures import VALID_TOKEN, VALID_TOKEN_WITH_DUPLICATE_COLOR
 

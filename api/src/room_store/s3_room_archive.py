@@ -1,6 +1,6 @@
 import json
+from collections.abc import AsyncIterator, Iterable
 from dataclasses import asdict
-from typing import Iterable, AsyncIterator
 
 import botocore.exceptions
 from aiobotocore.client import AioBaseClient

@@ -5,15 +5,17 @@ import signal
 import socket
 import sys
 from asyncio import (
+    AbstractEventLoop,
     CancelledError,
+    Future,
     Handle,
     Protocol,
     Transport,
 )
-from asyncio import Future, AbstractEventLoop
+from collections.abc import Awaitable, Callable
 from functools import partial
 from socket import gaierror
-from typing import TypedDict, Optional, Any, Dict, cast, Callable, Awaitable
+from typing import Any, TypedDict, cast
 from uuid import uuid4
 
 import scout_apm.core
@@ -27,10 +29,10 @@ from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import Response
 
-from src.api.wsmanager import WebsocketManager
 from src.api.stats_endpoint import stats_endpoint
+from src.api.wsmanager import WebsocketManager
 from src.compaction import Compactor
-from src.config import config, Environment
+from src.config import Environment, config
 from src.game_state_server import GameStateServer
 from src.rate_limit.noop_rate_limit import NoopRateLimiter
 from src.rate_limit.redis_rate_limit import create_redis_rate_limiter
@@ -53,12 +55,12 @@ class ExceptionContext(TypedDict):
     # See:
     # https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_exception_handler
     message: str
-    exception: Optional[BaseException]
-    future: Optional[Future]
-    handle: Optional[Handle]
-    protocol: Optional[Protocol]
-    transport: Optional[Transport]
-    socket: Optional[socket.socket]
+    exception: BaseException | None
+    future: Future | None
+    handle: Handle | None
+    protocol: Protocol | None
+    transport: Transport | None
+    socket: socket.socket | None
 
 
 def create_s3_context() -> ClientCreatorContext:
@@ -77,7 +79,7 @@ async def make_app() -> Starlette:
     worker_id = str(uuid4())
     timber.context(server={'server_id': server_id, 'worker_id': worker_id})
 
-    def exception_handler(_: AbstractEventLoop, context: Dict[str, Any]) -> None:
+    def exception_handler(_: AbstractEventLoop, context: dict[str, Any]) -> None:
         ctx = cast(ExceptionContext, context)
         msg = ctx['message']
         exc = ctx.get('exception')
@@ -143,12 +145,12 @@ app = LazyASGI(make_app)
 
 
 async def wait_for_s3_ready() -> None:
-    logger.info("waiting for s3 bucket to exist")
+    logger.info('waiting for s3 bucket to exist')
     async with create_s3_context() as client:
         while True:
             try:
                 await client.head_bucket(Bucket=config.aws_bucket)
-                logger.info("s3 bucket ready")
+                logger.info('s3 bucket ready')
                 break
             except (ClientError, ClientConnectorError):
                 pass
@@ -156,13 +158,13 @@ async def wait_for_s3_ready() -> None:
 
 
 async def wait_for_redis_ready() -> None:
-    logger.info("waiting for redis to be ready")
+    logger.info('waiting for redis to be ready')
     while True:
         try:
             redis = await create_redis_pool(
                 config.redis_address, config.redis_ssl_validation
             )
-            logger.info("redis is ready")
+            logger.info('redis is ready')
             # aclose does exist, but mypy doesn't know about it
             await redis.aclose()  # type: ignore
             break
@@ -185,7 +187,7 @@ async def wait_until_services_ready() -> None:
 if __name__ == '__main__':
     if config.environment != Environment.DEV:
         logger.critical(
-            "Refusing to run in non-development mode, use gunicorn in production"
+            'Refusing to run in non-development mode, use gunicorn in production'
         )
         sys.exit(1)
 

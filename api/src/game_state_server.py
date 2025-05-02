@@ -2,21 +2,19 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import (
-    AsyncIterator,
-    AsyncIterable,
-)
+from collections.abc import AsyncIterable, AsyncIterator
 from uuid import uuid4
 
 import timber
 
 from src.api.api_structures import (
-    Response,
-    Request,
-    UpdateResponse,
     ConnectionResponse,
+    Request,
+    Response,
+    UpdateResponse,
 )
 from src.api.ws_close_codes import ERR_TOO_MANY_ROOMS_CREATED
+
 from .apm import foreground_transaction
 from .rate_limit.noop_rate_limit import NoopRateLimiter
 from .rate_limit.rate_limit import RateLimiter, TooManyRoomsCreatedException
@@ -43,9 +41,11 @@ async def _requests_to_messages(
     requests: AsyncIterator[Request],
 ) -> AsyncIterator[Response]:
     async for request in requests:
-        with foreground_transaction('update_send'):
-            with timber.context(request={'request_id': request.request_id}):
-                yield UpdateResponse(request.actions, request.request_id)
+        with (
+            foreground_transaction('update_send'),
+            timber.context(request={'request_id': request.request_id}),
+        ):
+            yield UpdateResponse(request.actions, request.request_id)
 
 
 class GameStateServer:
@@ -121,13 +121,12 @@ class GameStateServer:
     ) -> None:
         try:
             await rate_limiter.acquire_new_room(client_ip)
-        except TooManyRoomsCreatedException:
+        except TooManyRoomsCreatedException as e:
             logger.info(
-                f'Rejecting connection to {client_ip}, too many rooms'
-                ' created recently',
+                f'Rejecting connection to {client_ip}, too many rooms created recently',
                 extra={'client_ip': client_ip, 'room_id': room_id},
             )
             raise InvalidConnectionException(
                 ERR_TOO_MANY_ROOMS_CREATED,
                 'Too many rooms created by client',
-            )
+            ) from e

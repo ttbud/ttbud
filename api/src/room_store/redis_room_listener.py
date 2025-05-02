@@ -1,15 +1,16 @@
 import asyncio
 import contextlib
 import json
-from asyncio import Future, Task, CancelledError
+from asyncio import CancelledError, Future, Task
 from collections import defaultdict
-from dataclasses import dataclass, asdict
+from collections.abc import AsyncIterator
+from dataclasses import asdict, dataclass
 from json import JSONDecodeError
-from typing import Optional, DefaultDict, List, Union, NoReturn, Literal, AsyncIterator
+from typing import Literal, NoReturn
 
-from dacite import from_dict, DaciteError
-from redis.asyncio.client import Redis, PubSub
+from dacite import DaciteError, from_dict
 
+from redis.asyncio.client import PubSub, Redis
 from src.api.api_structures import Request
 from src.util.async_util import end_task
 
@@ -34,25 +35,25 @@ class RedisRoomListener:
         self._redis = redis
         self._pubsub = pubsub
         self._listening_started: Future[None] = Future()
-        self._pubsub_task: Optional[Task] = None
-        self._keepalive_task: Optional[Task] = None
-        self._queues_by_room_id: DefaultDict[
-            str, List[asyncio.Queue[Union[Request, BaseException]]]
+        self._pubsub_task: Task | None = None
+        self._keepalive_task: Task | None = None
+        self._queues_by_room_id: defaultdict[
+            str, list[asyncio.Queue[Request | BaseException]]
         ] = defaultdict(list)
 
     async def reset(self) -> None:
-        self._listening_started.cancel("Resetting RedisRoomStore")
+        self._listening_started.cancel('Resetting RedisRoomStore')
         self._listening_started = asyncio.Future()
         if self._pubsub_task:
-            self._pubsub_task.cancel("Resetting RedisRoomStore")
+            self._pubsub_task.cancel('Resetting RedisRoomStore')
             await end_task(self._pubsub_task)
 
         if self._keepalive_task:
-            self._keepalive_task.cancel("Resetting RedisRoomStore")
+            self._keepalive_task.cancel('Resetting RedisRoomStore')
             await end_task(self._keepalive_task)
 
     async def publish(
-        self, room_id: str, request: Request, pipeline: Optional[Redis] = None
+        self, room_id: str, request: Request, pipeline: Redis | None = None
     ) -> None:
         con = pipeline or self._redis
         await con.publish(_channel_key(room_id), json.dumps(asdict(request)))
@@ -111,7 +112,7 @@ class RedisRoomListener:
                 # No one's listening anymore, just skip this one
                 continue
 
-            update: Union[Request, BaseException]
+            update: Request | BaseException
             try:
                 update = from_dict(Request, json.loads(event.data.decode()))
             except (DaciteError, JSONDecodeError) as e:
@@ -120,7 +121,7 @@ class RedisRoomListener:
                 await q.put(update)
 
     async def changes(self, room_id: str) -> AsyncIterator[Request]:
-        queue: asyncio.Queue[Union[Request, BaseException]] = asyncio.Queue()
+        queue: asyncio.Queue[Request | BaseException] = asyncio.Queue()
         self._queues_by_room_id[room_id].append(queue)
         # If we're the first listener for this room, subscribe to updates from redis
         if len(self._queues_by_room_id[room_id]) == 1:
@@ -134,7 +135,7 @@ class RedisRoomListener:
         return self._room_changes(room_id, queue)
 
     async def _room_changes(
-        self, room_id: str, queue: asyncio.Queue[Union[Request, BaseException]]
+        self, room_id: str, queue: asyncio.Queue[Request | BaseException]
     ) -> AsyncIterator[Request]:
         try:
             while True:

@@ -1,15 +1,16 @@
 import asyncio
 import random
 import time
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 import pytest
 from fakeredis.aioredis import FakeRedis
 from pytest_mock import MockerFixture
-from redis.asyncio.client import Redis
 
+from redis.asyncio.client import Redis
 from src.room_store.memory_room_archive import MemoryRoomArchive
-from src.room_store.memory_room_store import MemoryRoomStore, MemoryRoomStorage
+from src.room_store.memory_room_store import MemoryRoomStorage, MemoryRoomStore
 from src.room_store.merged_room_store import MergedRoomStore
 from src.room_store.redis_room_store import RedisRoomStore, create_redis_room_store
 

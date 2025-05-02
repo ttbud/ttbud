@@ -1,17 +1,16 @@
+from collections.abc import Iterable
 from copy import deepcopy
-from typing import Dict, List, Tuple, Iterable
 
 from src.api.api_structures import Action
 from src.colors import colors
 from src.game_components import Token, content_id
 
 
-def _assign_colors(tokens: List[Token]) -> None:
+def _assign_colors(tokens: list[Token]) -> None:
     available_colors = deepcopy(colors)
     for token in tokens:
-        if token.color_rgb:
-            if token.color_rgb in available_colors:
-                del available_colors[available_colors.index(token.color_rgb)]
+        if token.color_rgb and token.color_rgb in available_colors:
+            del available_colors[available_colors.index(token.color_rgb)]
     for token in tokens:
         if not token.color_rgb:
             if not available_colors:
@@ -19,7 +18,7 @@ def _assign_colors(tokens: List[Token]) -> None:
             token.color_rgb = available_colors.pop(0)
 
 
-def _get_unit_blocks(token: Token) -> List[Tuple[int, int, int]]:
+def _get_unit_blocks(token: Token) -> list[tuple[int, int, int]]:
     unit_blocks = []
     for x in range(token.start_x, token.end_x):
         for y in range(token.start_y, token.end_y):
@@ -30,10 +29,10 @@ def _get_unit_blocks(token: Token) -> List[Tuple[int, int, int]]:
 
 class Room:
     def __init__(self) -> None:
-        self.game_state: Dict[str, Token] = {}
-        self.id_to_positions: Dict[str, List[Tuple[int, int, int]]] = {}
-        self.positions_to_ids: Dict[Tuple[int, int, int], str] = {}
-        self.icon_to_token_ids: Dict[str, List[str]] = {}
+        self.game_state: dict[str, Token] = {}
+        self.id_to_positions: dict[str, list[tuple[int, int, int]]] = {}
+        self.positions_to_ids: dict[tuple[int, int, int], str] = {}
+        self.icon_to_token_ids: dict[str, list[str]] = {}
 
     def _remove_positions(self, token_id: str) -> None:
         positions = self.id_to_positions.get(token_id, [])
@@ -80,10 +79,7 @@ class Room:
 
     def is_valid_position(self, token: Token) -> bool:
         blocks = _get_unit_blocks(token)
-        for block in blocks:
-            if self.positions_to_ids.get(block, False):
-                return False
-        return True
+        return all(not self.positions_to_ids.get(block, False) for block in blocks)
 
 
 def create_room(updates: Iterable[Action]) -> Room:

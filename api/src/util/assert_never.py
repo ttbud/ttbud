@@ -7,4 +7,4 @@ def assert_never(x: NoReturn) -> NoReturn:
     (Such as checking all values in an enum or a discriminated union)
     """
     # pragma: no coverage
-    assert False, f'Unhandled type: {type(x)}'
+    raise AssertionError(f'Unhandled type: {type(x)}')

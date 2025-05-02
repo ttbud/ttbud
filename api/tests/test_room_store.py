@@ -1,34 +1,32 @@
 import asyncio
 from asyncio import CancelledError
 from datetime import timedelta
-from typing import List
 
 import pytest
 import time_machine
 from pytest_lazy_fixtures import lf
-from redis.asyncio.client import Redis
 
-from src.api.api_structures import Request, Action
+from redis.asyncio.client import Redis
+from src.api.api_structures import Action, Request
 from src.room_store.common import NoSuchRoomError
 from src.room_store.redis_room_store import create_redis_room_store
 from src.room_store.room_store import (
+    COMPACTION_LOCK_EXPIRATION_SECONDS,
     RoomStore,
     UnexpectedReplacementId,
-    COMPACTION_LOCK_EXPIRATION_SECONDS,
     UnexpectedReplacementToken,
 )
 from src.util.async_util import async_collect
 from tests.static_fixtures import (
-    VALID_ACTION,
+    ANOTHER_VALID_ACTION,
+    DELETE_REQUEST,
     PING_ACTION,
     TEST_REQUEST_ID,
     TEST_ROOM_ID,
-    VALID_REQUEST,
-    ANOTHER_VALID_ACTION,
-    DELETE_REQUEST,
+    VALID_ACTION,
     VALID_MOVE_REQUEST,
+    VALID_REQUEST,
 )
-
 
 any_room_store = pytest.mark.parametrize(
     'room_store',
@@ -42,7 +40,7 @@ any_room_store = pytest.mark.parametrize(
 
 @any_room_store
 async def test_mutate_and_read(room_store: RoomStore) -> None:
-    updates: List[Action] = [VALID_ACTION, PING_ACTION]
+    updates: list[Action] = [VALID_ACTION, PING_ACTION]
     await room_store.add_request(TEST_ROOM_ID, Request(TEST_REQUEST_ID, updates))
     assert list(await room_store.read(TEST_ROOM_ID)) == [VALID_ACTION]
 
@@ -82,7 +80,8 @@ async def test_change_notification_error(
     sub_task = asyncio.create_task(async_collect(changes, count=1))
 
     await redis.publish(f'channel:{TEST_ROOM_ID}', 'INVALID REQUEST')
-    with pytest.raises(BaseException):
+    # We don't want to assert the exact exception type here, just that it bubbles up
+    with pytest.raises(BaseException):  # noqa: B017
         await sub_task
 
 
@@ -118,7 +117,7 @@ async def test_replace_concurrent_updates(room_store: RoomStore) -> None:
     await room_store.add_request('room-id-1', DELETE_REQUEST)
     assert replace_data.actions == [VALID_ACTION]
 
-    replace_actions: List[Action] = [ANOTHER_VALID_ACTION]
+    replace_actions: list[Action] = [ANOTHER_VALID_ACTION]
     await room_store.replace(
         'room-id-1', replace_actions, replace_data.replace_token, 'compaction_id'
     )

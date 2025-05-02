@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-from asyncio import Future, CancelledError, Task
+import contextlib
+from asyncio import CancelledError, Future, Task
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable
 from typing import (
     TypeVar,
-    AsyncIterable,
-    AsyncIterator,
-    Optional,
-    List,
     cast,
-    Awaitable,
 )
 
 _T = TypeVar('_T')
@@ -42,12 +39,9 @@ async def items_until(it: AsyncIterable[_T], stop: asyncio.Future) -> AsyncItera
 
         if stop in done:
             next_item_task.cancel()
-            try:
-                # Await the task to ensure that the cancel finishes.
-                # This should raise a CancelledError, which we ignore
+            # Await the task to ensure that the cancel finishes.
+            with contextlib.suppress(CancelledError):
                 await next_item_task
-            except CancelledError:
-                pass
             await stop
             return
         else:
@@ -68,8 +62,8 @@ async def race(*futures: Future[_T]) -> _T:
 
 
 async def async_collect(
-    iterator: AsyncIterable[_T], count: Optional[int] = None
-) -> List[_T]:
+    iterator: AsyncIterable[_T], count: int | None = None
+) -> list[_T]:
     """
     Collect `count` items from `iterator` and return it as a list.
 

@@ -1,4 +1,6 @@
-from typing import ContextManager, Callable, Any, TypeVar, cast, overload, Union
+from collections.abc import Callable
+from contextlib import AbstractContextManager
+from typing import Any, TypeVar, cast, overload
 
 import scout_apm.api
 
@@ -8,16 +10,14 @@ InstrumentType = Callable[[F], F]
 
 
 @overload
-def instrument(func_or_name: F) -> F:
-    ...
+def instrument(func_or_name: F) -> F: ...
 
 
 @overload
-def instrument(func_or_name: str) -> ContextManager:
-    ...
+def instrument(func_or_name: str) -> AbstractContextManager: ...
 
 
-def instrument(func_or_name: Union[F, str]) -> Union[F, ContextManager]:
+def instrument(func_or_name: F | str) -> F | AbstractContextManager:
     """Measure function or block execution time in scout for the current transaction"""
 
     if callable(func_or_name):
@@ -32,7 +32,7 @@ def instrument(func_or_name: Union[F, str]) -> Union[F, ContextManager]:
         return scout_apm.api.instrument(func_or_name)
 
 
-def foreground_transaction(transaction_name: str) -> ContextManager:
+def foreground_transaction(transaction_name: str) -> AbstractContextManager:
     """
     Create a tracked apm transaction context for foreground work
 
@@ -46,7 +46,7 @@ def foreground_transaction(transaction_name: str) -> ContextManager:
     return scout_apm.api.WebTransaction(transaction_name)
 
 
-def background_transaction(transaction_name: str) -> ContextManager:
+def background_transaction(transaction_name: str) -> AbstractContextManager:
     """
     Create a tracked apm transaction context for background work
 

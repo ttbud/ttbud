@@ -1,11 +1,11 @@
 from src.api.api_structures import (
-    UpsertAction,
     DeleteAction,
     PingAction,
     Request,
+    UpsertAction,
 )
 from src.colors import colors
-from src.game_components import Token, IconTokenContents, Ping
+from src.game_components import IconTokenContents, Ping, Token
 
 TEST_ROOM_ID = 'test_room'
 TEST_CLIENT_ID = 'test_client'

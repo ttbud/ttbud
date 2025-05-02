@@ -1,5 +1,5 @@
 import ipaddress
-from typing import Mapping
+from collections.abc import Mapping
 
 
 def get_client_ip(remote_ip: str, headers: Mapping[str, str]) -> str:
