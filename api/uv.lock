@@ -1150,7 +1150,7 @@ dev = [
     { name = "types-mock", specifier = "==4.0.15.2" },
     { name = "types-python-dateutil", specifier = "==2.9.0.20241206" },
     { name = "types-redis", specifier = "==4.3.21.6" },
-    { name = "types-requests", specifier = "==2.28.11.5" },
+    { name = "types-requests", specifier = "==2.32.0.20250328" },
     { name = "types-setuptools", specifier = "==65.7.0.4" },
     { name = "watchdog", specifier = "==2.3.1" },
     { name = "websocket-client", specifier = "==1.8.0" },
@@ -1194,14 +1194,14 @@ wheels = [
 
 [[package]]
 name = "types-requests"
-version = "2.28.11.5"
+version = "2.32.0.20250328"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "types-urllib3" },
+    { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/62/2c/8f1647d9dcc91e53129ade955824c1059292eea9d9e43b94fe090dd8a2ef/types-requests-2.28.11.5.tar.gz", hash = "sha256:a7df37cc6fb6187a84097da951f8e21d335448aa2501a6b0a39cbd1d7ca9ee2a", size = 14135, upload-time = "2022-11-16T18:23:44.523Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/00/7d/eb174f74e3f5634eaacb38031bbe467dfe2e545bc255e5c90096ec46bc46/types_requests-2.32.0.20250328.tar.gz", hash = "sha256:c9e67228ea103bd811c96984fac36ed2ae8da87a36a633964a21f199d60baf32", size = 22995, upload-time = "2025-03-28T02:55:13.271Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fd/17/61e0d7203f3133aecead2d8b75f89d7b3c6664560e70d9030e69eb3c0d87/types_requests-2.28.11.5-py3-none-any.whl", hash = "sha256:091d4a5a33c1b4f20d8b1b952aa8fa27a6e767c44c3cf65e56580df0b05fd8a9", size = 14154, upload-time = "2022-11-16T18:23:43.112Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/15/3700282a9d4ea3b37044264d3e4d1b1f0095a4ebf860a99914fd544e3be3/types_requests-2.32.0.20250328-py3-none-any.whl", hash = "sha256:72ff80f84b15eb3aa7a8e2625fffb6a93f2ad5a0c20215fc1dcfa61117bcb2a2", size = 20663, upload-time = "2025-03-28T02:55:11.946Z" },
 ]
 
 [[package]]
@@ -1214,15 +1214,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/02/9f/faa71a8744221b4fdcda1ae62cd5889dd8c4ab43c169d86886d76936d69b/types-setuptools-65.7.0.4.tar.gz", hash = "sha256:147809433301fe7e0f4ef5c0782f9a0453788960575e1efb6da5fe8cb2493c9f", size = 27109, upload-time = "2023-02-02T09:16:14.481Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7d/b2/0c8eb7a6ea8d549abc5cee8f2e786dec33fbcffd10f3a8417aa0342fc7da/types_setuptools-65.7.0.4-py3-none-any.whl", hash = "sha256:522067dfd8e1771f8d7e047e451de2740dc4e0c9f48a22302a6cc96e6c964a13", size = 49205, upload-time = "2023-02-02T09:16:13.391Z" },
-]
-
-[[package]]
-name = "types-urllib3"
-version = "1.26.25.14"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/73/de/b9d7a68ad39092368fb21dd6194b362b98a1daeea5dcfef5e1adb5031c7e/types-urllib3-1.26.25.14.tar.gz", hash = "sha256:229b7f577c951b8c1b92c1bc2b2fdb0b49847bd2af6d1cc2a2e3dd340f3bda8f", size = 11239, upload-time = "2023-07-20T15:19:31.307Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/11/7b/3fc711b2efea5e85a7a0bbfe269ea944aa767bbba5ec52f9ee45d362ccf3/types_urllib3-1.26.25.14-py3-none-any.whl", hash = "sha256:9683bbb7fb72e32bfe9d2be6e04875fbe1b3eeec3cbb4ea231435aa7fd6b4f0e", size = 15377, upload-time = "2023-07-20T15:19:30.379Z" },
 ]
 
 [[package]]
