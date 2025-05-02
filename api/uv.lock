@@ -1074,12 +1074,25 @@ wheels = [
 
 [[package]]
 name = "time-machine"
-version = "2.10.0"
+version = "2.16.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "python-dateutil" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ac/60/0793032eef5b1dcab2aee60deb5cf3e42fc6437cfa7428a87e2745f5d640/time_machine-2.10.0.tar.gz", hash = "sha256:64fd89678cf589fc5554c311417128b2782222dd65f703bf248ef41541761da0", size = 28249, upload-time = "2023-06-16T15:22:16.676Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fb/dd/5022939b9cadefe3af04f4012186c29b8afbe858b1ec2cfa38baeec94dab/time_machine-2.16.0.tar.gz", hash = "sha256:4a99acc273d2f98add23a89b94d4dd9e14969c01214c8514bfa78e4e9364c7e2", size = 24626, upload-time = "2024-10-08T14:21:59.734Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4a/f4/603a84e7ae6427a53953db9f61b689dc6adf233e03c5f5ca907a901452fd/time_machine-2.16.0-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:84788f4d62a8b1bf5e499bb9b0e23ceceea21c415ad6030be6267ce3d639842f", size = 20155, upload-time = "2024-10-08T14:21:20.055Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/94/dbe69aecb4b84be52d34814e63176c5ca61f38ee9e6ecda11104653405b5/time_machine-2.16.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:15ec236b6571730236a193d9d6c11d472432fc6ab54e85eac1c16d98ddcd71bf", size = 16640, upload-time = "2024-10-08T14:21:22.005Z" },
+    { url = "https://files.pythonhosted.org/packages/da/13/27f11be25d7bd298e033b9da93217e5b68309bf724b6e494cdadb471d00d/time_machine-2.16.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cedc989717c8b44a3881ac3d68ab5a95820448796c550de6a2149ed1525157f0", size = 33721, upload-time = "2024-10-08T14:21:23.059Z" },
+    { url = "https://files.pythonhosted.org/packages/e6/9d/70e4640fed1fd8122204ae825c688d0ef8c04f515ec6bf3c5f3086d6510e/time_machine-2.16.0-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:9d26d79de1c63a8c6586c75967e09b0ff306aa7e944a1eaddb74595c9b1839ca", size = 31646, upload-time = "2024-10-08T14:21:24.037Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/cb/93bc0e51bea4e171a85151dbba3c3b3f612b50b953cd3076f5b4f0db9e14/time_machine-2.16.0-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:317b68b56a9c3731e0cf8886e0f94230727159e375988b36c60edce0ddbcb44a", size = 33403, upload-time = "2024-10-08T14:21:24.975Z" },
+    { url = "https://files.pythonhosted.org/packages/89/71/2c6a63ad4fbce3d62d46bbd9ac4433f30bade7f25978ce00815b905bcfcf/time_machine-2.16.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:43e1e18279759897be3293a255d53e6b1cb0364b69d9591d0b80c51e461c94b0", size = 33327, upload-time = "2024-10-08T14:21:25.958Z" },
+    { url = "https://files.pythonhosted.org/packages/68/4e/205c2b26763b8817cd6b8868242843800a1fbf275f2af35f5ba35ff2b01a/time_machine-2.16.0-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:e43adb22def972a29d2b147999b56897116085777a0fea182fd93ee45730611e", size = 31454, upload-time = "2024-10-08T14:21:27.367Z" },
+    { url = "https://files.pythonhosted.org/packages/d7/95/44c1aa3994919f93534244c40cfd2fb9416d7686dc0c8b9b262c751b5118/time_machine-2.16.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:0c766bea27a0600e36806d628ebc4b47178b12fcdfb6c24dc0a566a9c06bfe7f", size = 32972, upload-time = "2024-10-08T14:21:28.351Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/ee/75243df9c7cf30f108758e887141a58e6544baaa46e2e647b9ccc56db819/time_machine-2.16.0-cp312-cp312-win32.whl", hash = "sha256:6dae82ab647d107817e013db82223e20a9853fa88543fec853ae326382d03c2e", size = 19078, upload-time = "2024-10-08T14:21:29.425Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/7c/d4e67cc031f9653c92167ccf87d241e3208653d191c96ac79281c273ab92/time_machine-2.16.0-cp312-cp312-win_amd64.whl", hash = "sha256:265462c77dc9576267c3c7f20707780a171a9fdbac93ac22e608c309efd68c33", size = 19923, upload-time = "2024-10-08T14:21:30.759Z" },
+    { url = "https://files.pythonhosted.org/packages/aa/b6/7047226fcb9afefe47fc80f605530535bf71ad99b6797f057abbfa4cd9a5/time_machine-2.16.0-cp312-cp312-win_arm64.whl", hash = "sha256:ef768e14768eebe3bb1196c0dece8e14c1c6991605721214a0c3c68cf77eb216", size = 18003, upload-time = "2024-10-08T14:21:32.662Z" },
+]
 
 [[package]]
 name = "ttbud"
@@ -1146,7 +1159,7 @@ dev = [
     { name = "pytest-lazy-fixtures", specifier = ">=1.1.2" },
     { name = "pytest-mock", specifier = "==3.14.0" },
     { name = "ruff", specifier = ">=0.11.8" },
-    { name = "time-machine", specifier = "==2.10.0" },
+    { name = "time-machine", specifier = "==2.16.0" },
     { name = "types-mock", specifier = "==4.0.15.2" },
     { name = "types-python-dateutil", specifier = "==2.9.0.20241206" },
     { name = "types-redis", specifier = "==4.3.21.6" },
