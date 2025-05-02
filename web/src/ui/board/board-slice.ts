@@ -118,69 +118,72 @@ const boardSlice = createSlice({
       });
     },
   },
-  extraReducers: {
-    [dragEnded.type]: (state, action: PayloadAction<DragEndAction>) => {
-      const { draggable, destination } = action.payload;
+  extraReducers: (builder) => {
+    builder.addCase(
+      dragEnded,
+      (state, action: PayloadAction<DragEndAction>) => {
+        const { draggable, destination } = action.payload;
 
-      const dragResult = getDragResult(DROPPABLE_IDS.BOARD, action.payload);
+        const dragResult = getDragResult(DROPPABLE_IDS.BOARD, action.payload);
 
-      switch (dragResult) {
-        case DragResult.MovedInside:
-          const loc = destination.logicalLocation;
-          assert(
-            draggable.type === DraggableType.Token,
-            "Dragged from board but draggable type was not token"
-          );
-          assert(
-            loc?.type === LocationType.Grid,
-            "Dropped in board but drop type was not grid"
-          );
+        switch (dragResult) {
+          case DragResult.MovedInside:
+            const loc = destination.logicalLocation;
+            assert(
+              draggable.type === DraggableType.Token,
+              "Dragged from board but draggable type was not token"
+            );
+            assert(
+              loc?.type === LocationType.Grid,
+              "Dropped in board but drop type was not grid"
+            );
 
-          const token = state.local.entityById[draggable.tokenId];
-          // The token was deleted before the drag completed
-          if (!token) return;
-          assert(
-            token.type === "character",
-            "Draggable had the id of a non-character token"
-          );
+            const token = state.local.entityById[draggable.tokenId];
+            // The token was deleted before the drag completed
+            if (!token) return;
+            assert(
+              token.type === "character",
+              "Draggable had the id of a non-character token"
+            );
 
-          const newToken = {
-            ...token,
-            pos: { x: loc.x, y: loc.y, z: CHARACTER_HEIGHT },
-          } as Token;
+            const newToken = {
+              ...token,
+              pos: { x: loc.x, y: loc.y, z: CHARACTER_HEIGHT },
+            } as Token;
 
-          applyLocalAction(state, {
-            type: "upsert",
-            token: newToken,
-          });
-          break;
-        case DragResult.DraggedOutOf:
-          // Dragging a token to a tray from the board should not remove the token from the board
-          break;
-        case DragResult.DraggedInto:
-          assert(
-            destination.logicalLocation?.type === LocationType.Grid,
-            "Dropped in board but drop type was not grid"
-          );
+            applyLocalAction(state, {
+              type: "upsert",
+              token: newToken,
+            });
+            break;
+          case DragResult.DraggedOutOf:
+            // Dragging a token to a tray from the board should not remove the token from the board
+            break;
+          case DragResult.DraggedInto:
+            assert(
+              destination.logicalLocation?.type === LocationType.Grid,
+              "Dropped in board but drop type was not grid"
+            );
 
-          const { x, y } = destination.logicalLocation;
-          applyLocalAction(state, {
-            type: "upsert",
-            token: {
-              type: EntityType.Character,
-              id: uuid(),
-              contents: draggable.contents,
-              pos: { x, y, z: CHARACTER_HEIGHT },
-            },
-          });
-          break;
-        case DragResult.None:
-          break;
-        /* istanbul ignore next */
-        default:
-          throw new UnreachableCaseError(dragResult);
+            const { x, y } = destination.logicalLocation;
+            applyLocalAction(state, {
+              type: "upsert",
+              token: {
+                type: EntityType.Character,
+                id: uuid(),
+                contents: draggable.contents,
+                pos: { x, y, z: CHARACTER_HEIGHT },
+              },
+            });
+            break;
+          case DragResult.None:
+            break;
+          /* istanbul ignore next */
+          default:
+            throw new UnreachableCaseError(dragResult);
+        }
       }
-    },
+    );
   },
 });
 

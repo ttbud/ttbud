@@ -1,6 +1,6 @@
 import Draggable from "./Draggable";
 import DraggableSquare from "../ui/__stories__/DragAwareSquare";
-import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
 import dragReducer from "./drag-slice";
 import { Provider } from "react-redux";
 import { DomDroppableMonitor } from "./DroppableMonitor";
@@ -14,7 +14,8 @@ const store = configureStore({
   reducer: {
     drag: dragReducer,
   },
-  middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
 
 export default function DraggableFixture() {

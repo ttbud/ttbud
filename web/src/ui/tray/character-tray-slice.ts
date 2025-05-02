@@ -23,23 +23,26 @@ const characterTraySlice = createSlice({
       );
     },
   },
-  extraReducers: {
-    [dragEnded.type]: (state, action: PayloadAction<DragEndAction>) => {
-      const { draggable, source, destination } = action.payload;
+  extraReducers: (builder) => {
+    builder.addCase(
+      dragEnded,
+      (state, action: PayloadAction<DragEndAction>) => {
+        const { draggable, source, destination } = action.payload;
 
-      const dragResult = getDragResult(
-        DROPPABLE_IDS.CHARACTER_TRAY,
-        action.payload
-      );
+        const dragResult = getDragResult(
+          DROPPABLE_IDS.CHARACTER_TRAY,
+          action.payload
+        );
 
-      reorderTokenBlueprints({
-        blueprints: state.characterBlueprints,
-        draggable,
-        source,
-        destination,
-        dragResult,
-      });
-    },
+        reorderTokenBlueprints({
+          blueprints: state.characterBlueprints,
+          draggable,
+          source,
+          destination,
+          dragResult,
+        });
+      }
+    );
   },
 });
 
