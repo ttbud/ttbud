@@ -25,7 +25,7 @@
     "@types/uuid": "^10.0.0",
     "@types/webpack-env": "^1.18.0",
     "fp-ts": "^2.13.1",
-    "immer": "^9.0.16",
+    "immer": "^10.0.0",
     "io-ts": "^2.2.20",
     "jest-junit": "^16.0.0",
     "jest-websocket-mock": "^2.4.0",
