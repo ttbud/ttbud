@@ -5,11 +5,13 @@ import userEvent from "@testing-library/user-event";
 
 const DEFAULT_PROPS = {
   showTourPrompt: false,
+  measureWhileDragging: true,
   tutorialPrompt: false,
   onTutorialDismissed: noop,
   onClearMap: noop,
   onTourClicked: noop,
   onTourPromptDismissed: noop,
+  onMeasureWhileDraggingChanged: noop,
 };
 
 describe("Settings", () => {
@@ -128,5 +130,20 @@ describe("Settings", () => {
     userEvent.click(getByLabelText("Settings"));
     userEvent.click(getByText("about"));
     expect(getByText("Your virtual table friend")).toBeVisible();
+  });
+
+  it("calls onMeasureWhileDraggingChanged when the toggle is clicked", () => {
+    const onMeasureWhileDraggingChanged = jest.fn();
+    const { getByLabelText } = render(
+      <PureSettings
+        {...DEFAULT_PROPS}
+        onMeasureWhileDraggingChanged={onMeasureWhileDraggingChanged}
+      />
+    );
+
+    userEvent.click(getByLabelText("Settings"));
+    userEvent.click(getByLabelText("Measure While Dragging"));
+
+    expect(onMeasureWhileDraggingChanged).toHaveBeenCalledWith(false);
   });
 });

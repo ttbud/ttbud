@@ -1,8 +1,18 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DragEndAction, dragEnded } from "../../drag/drag-slice";
+import {
+  DragEndAction,
+  dragEnded,
+  dragMoved,
+  DragMoveAction,
+  dragStarted,
+  DragStartAction,
+} from "../../drag/drag-slice";
 import { DROPPABLE_IDS } from "../DroppableIds";
 import { assert } from "../../util/invariants";
-import { DraggableType, LocationType } from "../../drag/DragStateTypes";
+import {
+  DraggableType,
+  LocationType,
+} from "../../drag/DragStateTypes";
 import { v4 as uuid } from "uuid";
 import getDragResult, { DragResult } from "../../drag/getDragResult";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
@@ -18,7 +28,11 @@ import { Action } from "../../network/BoardStateApiClient";
 import { AppThunk } from "../../store/createStore";
 import pause from "../../util/pause";
 
-const INITIAL_STATE: MergeState = {
+export interface BoardSliceState extends MergeState {
+  dragMeasurement: { start: Pos2d; end: Pos2d } | null;
+}
+
+const INITIAL_STATE: BoardSliceState = {
   unqueuedActions: [],
   queuedUpdates: [],
   local: {
@@ -31,6 +45,7 @@ const INITIAL_STATE: MergeState = {
     charIdsByContentId: {},
     tokenIdsByPosStr: {},
   },
+  dragMeasurement: null,
 };
 
 interface NetworkUpdateAction {
@@ -119,7 +134,36 @@ const boardSlice = createSlice({
     },
   },
   extraReducers: {
+    [dragStarted.type]: (state, action: PayloadAction<DragStartAction>) => {
+      const { draggable, source, measureWhileDragging } = action.payload;
+      if (draggable.type !== DraggableType.Token || !measureWhileDragging)
+        return;
+
+      const start = source.logicalLocation;
+      if (!start || start.type !== LocationType.Grid) return;
+
+      state.dragMeasurement = { start, end: { x: start.x, y: start.y } };
+    },
+    [dragMoved.type]: (state, action: PayloadAction<DragMoveAction>) => {
+      const { draggable, destination, measureWhileDragging } = action.payload;
+      if (draggable.type !== DraggableType.Token || !measureWhileDragging)
+        return;
+
+      // We need to know where it started to have a measurement
+      if (!state.dragMeasurement) return;
+
+      if (destination?.logicalLocation?.type === LocationType.Grid) {
+        state.dragMeasurement = {
+          start: state.dragMeasurement.start,
+          end: {
+            x: destination.logicalLocation.x,
+            y: destination.logicalLocation.y,
+          },
+        };
+      }
+    },
     [dragEnded.type]: (state, action: PayloadAction<DragEndAction>) => {
+      state.dragMeasurement = null;
       const { draggable, destination } = action.payload;
 
       const dragResult = getDragResult(DROPPABLE_IDS.BOARD, action.payload);

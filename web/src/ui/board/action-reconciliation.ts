@@ -1,6 +1,7 @@
 import { Action } from "../../network/BoardStateApiClient";
 import { applyAction, BoardState } from "./board-state";
 import produce from "immer";
+import Pos2d from "../../util/shape-math";
 
 export interface Update {
   updateId: string;

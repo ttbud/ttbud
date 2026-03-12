@@ -8,6 +8,7 @@ import {
   makeStyles,
   Popover,
   Snackbar,
+  Switch,
   Tooltip,
   Typography,
 } from "@material-ui/core";
@@ -18,7 +19,10 @@ import ConfirmationDialog from "../confirm/ConfirmationDialog";
 import isMac from "../../util/isMac";
 import { connect } from "react-redux";
 import { RootState } from "../../store/rootReducer";
-import { dismissTourPrompt } from "./settings-slice";
+import {
+  dismissTourPrompt,
+  setMeasureWhileDragging,
+} from "./settings-slice";
 import AboutDialog from "../about/About";
 
 const FIVE_SECONDS_MS = 5000;
@@ -57,9 +61,11 @@ const useStyles = makeStyles((theme) => ({
 interface Props {
   className?: string;
   showTourPrompt: boolean;
+  measureWhileDragging: boolean;
   onClearMap: () => void;
   onTourClicked: () => void;
   onTourPromptDismissed: () => void;
+  onMeasureWhileDraggingChanged: (val: boolean) => void;
 }
 
 const searchShortcut = isMac() ? "command+f" : "control+f";
@@ -68,9 +74,11 @@ const PureSettings: React.FC<Props> = memo(
   ({
     className,
     showTourPrompt,
+    measureWhileDragging,
     onClearMap,
     onTourClicked,
     onTourPromptDismissed,
+    onMeasureWhileDraggingChanged,
   }) => {
     const classes = useStyles();
     const [anchorEl, setAnchorEl] = useState<Element | null>(null);
@@ -198,6 +206,28 @@ const PureSettings: React.FC<Props> = memo(
             </List>
             <List
               subheader={
+                <ListSubheader color="primary">Board Settings</ListSubheader>
+              }
+            >
+              <ListItem dense={true}>
+                <ListItemText
+                  id="measure-while-dragging-label"
+                  primary="Measure While Dragging"
+                />
+                <Switch
+                  color="primary"
+                  checked={measureWhileDragging}
+                  inputProps={{
+                    "aria-labelledby": "measure-while-dragging-label",
+                  }}
+                  onChange={(e) =>
+                    onMeasureWhileDraggingChanged(e.target.checked)
+                  }
+                />
+              </ListItem>
+            </List>
+            <List
+              subheader={
                 <ListSubheader color="primary">Board Actions</ListSubheader>
               }
             >
@@ -254,10 +284,12 @@ const PureSettings: React.FC<Props> = memo(
 
 const mapStateToProps = (state: RootState) => ({
   showTourPrompt: state.settings.showTourPrompt,
+  measureWhileDragging: state.settings.measureWhileDragging,
 });
 
 const dispatchProps = {
   onTourPromptDismissed: dismissTourPrompt,
+  onMeasureWhileDraggingChanged: setMeasureWhileDragging,
 };
 
 const Settings = connect(mapStateToProps, dispatchProps)(PureSettings);

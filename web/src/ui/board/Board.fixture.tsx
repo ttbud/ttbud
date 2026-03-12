@@ -2,6 +2,7 @@ import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 import { Provider, useSelector } from "react-redux";
 import DndContext from "../../drag/DndContext";
 import dragReducer from "../../drag/drag-slice";
+import boardReducer from "./board-slice";
 import { DragStateType } from "../../drag/DragStateTypes";
 import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
 import { RootState } from "../../store/rootReducer";
@@ -14,20 +15,23 @@ const monitor = new DomDroppableMonitor();
 const store = configureStore({
   reducer: {
     drag: dragReducer,
+    board: boardReducer,
   },
   middleware: getDefaultMiddleware({ thunk: { extraArgument: { monitor } } }),
 });
 
 const ExampleBoard: React.FC = () => {
-  const isDragging = useSelector(
-    (state: RootState) => state.drag.type !== DragStateType.NotDragging
-  );
+  const { isDragging, dragMeasurement } = useSelector((state: RootState) => ({
+    isDragging: state.drag.type !== DragStateType.NotDragging,
+    dragMeasurement: state.board.dragMeasurement,
+  }));
 
   return (
     // Negative margin to cancel out the body margin because board cannot handle that :(
     <div style={{ width: "100vw", height: "100vh", margin: "-8px" }}>
       <Board
         isDragging={isDragging}
+        dragMeasurement={dragMeasurement}
         activeFloor={{ type: ContentType.Icon, iconId: WALL_ICON.id }}
         onFloorCreated={noop}
         onTokenDeleted={noop}

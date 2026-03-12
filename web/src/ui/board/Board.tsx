@@ -40,6 +40,7 @@ import { Buttons } from "../util/Buttons";
 import useDoubleTap, { DoubleTapState } from "../util/useDoubleTap";
 import useLongTap from "../util/useLongTap";
 import mergeRefs from "../../util/mergeRefs";
+import MeasurementLine from "./MeasurementLine";
 
 let GRID_COLOR = "#947C65";
 
@@ -47,6 +48,7 @@ const useStyles = makeStyles((theme) => ({
   container: {
     width: "100%",
     height: "100%",
+    position: "relative",
   },
   board: {
     // Otherwise safari will try to "select" the empty text next to each floor icon
@@ -72,10 +74,11 @@ const useStyles = makeStyles((theme) => ({
     height: "100%",
     width: "100%",
     zIndex: 0,
+    position: "relative",
   },
 }));
 
-type PointerAction = "delete" | "ping" | "draw" | "ignore";
+type PointerAction = "delete" | "ping" | "draw" | "measure" | "ignore";
 
 const scrolledPos = (pixelPos: Pos2d) => {
   return {
@@ -96,6 +99,7 @@ const preventDefault: MouseEventHandler = (e) => e.preventDefault();
 
 interface Props {
   isDragging: boolean;
+  dragMeasurement: { start: Pos2d; end: Pos2d } | null;
   boardState: BoardState;
   activeFloor: TokenContents;
   onPingCreated: (pos: Pos2d) => void;
@@ -105,6 +109,7 @@ interface Props {
 
 const mapStateToProps = (state: RootState) => ({
   isDragging: state.drag.type === DragStateType.Dragging,
+  dragMeasurement: state.board.dragMeasurement,
   boardState: state.board.local,
   activeFloor: state.floorTray.activeFloor,
 });
@@ -133,6 +138,7 @@ type Mode = "draw" | "delete";
 
 const PureBoard: React.FC<Props> = ({
   isDragging,
+  dragMeasurement,
   boardState,
   activeFloor,
   onPingCreated,
@@ -142,6 +148,10 @@ const PureBoard: React.FC<Props> = ({
   const classes = useStyles();
 
   const [mode, setMode] = useState<Mode>("draw");
+  const [manualMeasurement, setManualMeasurement] = useState<{
+    start: Pos2d;
+    end: Pos2d;
+  } | null>(null);
 
   const handlePointerAction = useCallback(
     (action: PointerAction, gridPos: Pos2d, allowDuplicatePings: boolean) => {
@@ -161,6 +171,12 @@ const PureBoard: React.FC<Props> = ({
           if (toDeleteId) {
             onTokenDeleted(toDeleteId);
           }
+          break;
+        case "measure":
+          setManualMeasurement((prev) => ({
+            start: prev?.start ?? gridPos,
+            end: gridPos,
+          }));
           break;
         case "ignore":
           break;
@@ -301,7 +317,9 @@ const PureBoard: React.FC<Props> = ({
   };
 
   const getMouseAction = (e: React.PointerEvent): PointerAction => {
-    if (e.shiftKey && e.buttons === Buttons.LEFT_MOUSE) {
+    if (e.ctrlKey && e.buttons === Buttons.LEFT_MOUSE) {
+      return "measure";
+    } else if (e.shiftKey && e.buttons === Buttons.LEFT_MOUSE) {
       return "ping";
     } else if (e.buttons === Buttons.LEFT_MOUSE) {
       return "draw";
@@ -371,6 +389,7 @@ const PureBoard: React.FC<Props> = ({
 
   const onPointerUp = () => {
     setMode("draw");
+    setManualMeasurement(null);
   };
 
   // If we're going to touch draw, disable touch scrolling
@@ -408,6 +427,18 @@ const PureBoard: React.FC<Props> = ({
         {(attributes) => (
           <div {...attributes} className={classes.board}>
             <TransitionGroup>{tokenIcons}</TransitionGroup>
+            {manualMeasurement && (
+              <MeasurementLine
+                start={manualMeasurement.start}
+                end={manualMeasurement.end}
+              />
+            )}
+            {dragMeasurement && (
+              <MeasurementLine
+                start={dragMeasurement.start}
+                end={dragMeasurement.end}
+              />
+            )}
           </div>
         )}
       </Droppable>

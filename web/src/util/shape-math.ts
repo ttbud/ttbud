@@ -24,6 +24,18 @@ export function distance(first: Pos2d, second: Pos2d): number {
   );
 }
 
+/**
+ * Returns the distance between two grid coordinates in 5ft units,
+ * using the standard D&D 3.5 / Pathfinder diagonal rule (5, 10, 5, 10...).
+ */
+export function gridDistance(first: Pos2d, second: Pos2d): number {
+  const dx = Math.abs(first.x - second.x);
+  const dy = Math.abs(first.y - second.y);
+  const max = Math.max(dx, dy);
+  const min = Math.min(dx, dy);
+  return (max + Math.floor(min / 2)) * 5;
+}
+
 export function snapToGrid(pos: Pos2d): Pos2d {
   return {
     x: snapDimensionToGrid(pos.x),

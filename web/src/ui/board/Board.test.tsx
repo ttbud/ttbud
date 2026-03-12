@@ -6,6 +6,7 @@ import noop from "../../util/noop";
 import { ComponentProps } from "react";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 import dragReducer from "../../drag/drag-slice";
+import boardReducer from "./board-slice";
 import { Provider } from "react-redux";
 import { FakeDroppableMonitor } from "../../drag/__test_util__/FakeDroppableMonitor";
 import { DomDroppableMonitor } from "../../drag/DroppableMonitor";
@@ -35,6 +36,7 @@ const FLOOR: Entity = {
 const DEFAULT_PROPS: Omit<ComponentProps<typeof PureBoard>, "boardState"> = {
   activeFloor: { type: ContentType.Icon, iconId: WALL_ICON.id },
   isDragging: false,
+  dragMeasurement: null,
   onFloorCreated: noop,
   onPingCreated: noop,
   onTokenDeleted: noop,
@@ -48,7 +50,7 @@ interface RenderBoardProps {
 function renderBoard({ entities = [], props = {} }: RenderBoardProps = {}) {
   const monitor = new FakeDroppableMonitor();
   const store = configureStore({
-    reducer: { drag: dragReducer },
+    reducer: { drag: dragReducer, board: boardReducer },
     middleware: getDefaultMiddleware({
       thunk: { extraArgument: { monitor } },
     }),
@@ -335,5 +337,85 @@ describe("Board", () => {
     tap(getByLabelText("Board"), { pos: { x: 0, y: 0 } });
 
     expect(onFloorCreated).not.toHaveBeenCalled();
+  });
+
+  it("shows measurement with ctrl left-click", () => {
+    const { getByLabelText, queryByText } = renderBoard();
+    const board = getByLabelText("Board");
+
+    // Start dragging with Ctrl
+    fireEvent.pointerDown(board, {
+      buttons: Buttons.LEFT_MOUSE,
+      clientX: 0,
+      clientY: 0,
+      ctrlKey: true,
+    });
+
+    // Move diagonally to (1,1)
+    // distance is 1 diagonal square = 5 ft (using 5/10/5 rule)
+    fireEvent.pointerMove(board, {
+      buttons: Buttons.LEFT_MOUSE,
+      clientX: GRID_SIZE_PX + 1,
+      clientY: GRID_SIZE_PX + 1,
+      ctrlKey: true,
+    });
+
+    expect(queryByText("5 ft")).toBeInTheDocument();
+
+    // Move to (2,0)
+    // distance is 2 * 5 = 10
+    fireEvent.pointerMove(board, {
+      buttons: Buttons.LEFT_MOUSE,
+      clientX: GRID_SIZE_PX * 2 + 1,
+      clientY: 0,
+      ctrlKey: true,
+    });
+
+    expect(queryByText("10 ft")).toBeInTheDocument();
+
+    // Release
+    fireEvent.pointerUp(board);
+    expect(queryByText("10 ft")).not.toBeInTheDocument();
+  });
+
+  it("follows the 5/10/5 rule for three diagonal moves", () => {
+    const { getByLabelText, queryByText } = renderBoard();
+    const board = getByLabelText("Board");
+
+    // Start dragging with Ctrl at (0,0)
+    fireEvent.pointerDown(board, {
+      buttons: Buttons.LEFT_MOUSE,
+      clientX: 0,
+      clientY: 0,
+      ctrlKey: true,
+    });
+
+    // Move to (3,3)
+    // 1st diagonal: 5ft
+    // 2nd diagonal: 10ft (total 15ft)
+    // 3rd diagonal: 5ft (total 20ft)
+    fireEvent.pointerMove(board, {
+      buttons: Buttons.LEFT_MOUSE,
+      clientX: GRID_SIZE_PX * 3 + 1,
+      clientY: GRID_SIZE_PX * 3 + 1,
+      ctrlKey: true,
+    });
+
+    expect(queryByText("20 ft")).toBeInTheDocument();
+  });
+
+  it("shows measurement when a token is dragged", () => {
+    const start = { x: 0, y: 0 };
+    const end = { x: 0, y: 2 };
+
+    const { queryByText } = renderBoard({
+      props: {
+        isDragging: true,
+        dragMeasurement: { start, end },
+      },
+    });
+
+    // From (0,0) to (0,2) is 2 squares = 10 ft
+    expect(queryByText("10 ft")).toBeInTheDocument();
   });
 });

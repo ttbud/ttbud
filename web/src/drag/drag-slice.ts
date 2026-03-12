@@ -23,6 +23,8 @@ interface DragStartAction {
   source: DroppableLocation;
   mousePos: Pos2d;
   dragBounds?: Bounds;
+  scrollPos: Pos2d;
+  measureWhileDragging?: boolean;
 }
 
 interface DragPortalAction {
@@ -34,6 +36,9 @@ interface DragMoveAction {
   hoveredDroppableId?: string;
   draggable: DraggableDescriptor;
   bounds: Bounds;
+  scrollPos: Pos2d;
+  destination?: DroppableLocation;
+  measureWhileDragging?: boolean;
 }
 
 interface DragReleaseAction {
@@ -41,7 +46,7 @@ interface DragReleaseAction {
   destination?: DroppableLocation;
 }
 
-export interface DragEndAction {
+interface DragEndAction {
   draggable: DraggableDescriptor;
   source: DroppableLocation;
   destination: DroppableLocation;
@@ -154,6 +159,7 @@ function startDrag(
 ): AppThunk {
   return (dispatch, getState, { monitor }) => {
     monitor.onBeforeDragStart(draggable, bounds);
+    const state = getState();
 
     let droppable, location, dragBounds;
     if (droppableId) {
@@ -173,6 +179,11 @@ function startDrag(
         mousePos,
         dragBounds: dragBounds,
         source: { id: droppable?.id, bounds, ...location },
+        scrollPos: {
+          x: document.documentElement.scrollLeft,
+          y: document.documentElement.scrollTop,
+        },
+        measureWhileDragging: state.settings.measureWhileDragging,
       })
     );
   };
@@ -193,11 +204,32 @@ function moveDrag(draggable: DraggableDescriptor, mousePos: Pos2d): AppThunk {
       state.drag.source.bounds,
       state.drag.dragBounds
     );
-    const hoveredDroppableId = monitor.findDroppableAt(centerOf(bounds))?.id;
-    if (state.drag.hoveredDroppableId !== hoveredDroppableId) {
+    const center = centerOf(bounds);
+    const droppable = monitor.findDroppableAt(center);
+    const location = droppable?.getLocation(draggable, center);
+    const destination = location
+      ? {
+          id: droppable?.id,
+          ...location,
+        }
+      : undefined;
+
+    if (state.drag.hoveredDroppableId !== droppable?.id) {
       monitor.onBeforeDragStart(draggable, bounds);
     }
-    dispatch(dragMoved({ draggable, hoveredDroppableId, bounds }));
+    dispatch(
+      dragMoved({
+        draggable,
+        hoveredDroppableId: droppable?.id,
+        bounds,
+        scrollPos: {
+          x: document.documentElement.scrollLeft,
+          y: document.documentElement.scrollTop,
+        },
+        destination,
+        measureWhileDragging: state.settings.measureWhileDragging,
+      })
+    );
   };
 }
 
@@ -303,10 +335,14 @@ export {
   endDrag,
   portalDrag,
   /**
-   * This shouldn't be called directly, but other slices need to
+   * These shouldn't be called directly, but other slices need to
    * respond to this event to update their state, so we export it
    */
+  dragStarted,
+  dragMoved,
   dragEnded,
 };
+
+export type { DragStartAction, DragMoveAction, DragEndAction };
 
 export default dragSlice.reducer;

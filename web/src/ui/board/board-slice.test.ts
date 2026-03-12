@@ -7,12 +7,13 @@ import boardReducer, {
   addFloor,
   addPing,
   batchUnqueuedActions,
+  BoardSliceState,
   clear,
   receiveInitialState,
   receiveNetworkUpdate,
   removeEntity,
 } from "./board-slice";
-import { dragEnded } from "../../drag/drag-slice";
+import { dragEnded, dragMoved, dragStarted } from "../../drag/drag-slice";
 import { DraggableType, LocationType } from "../../drag/DragStateTypes";
 import { WALL_ICON } from "../icons";
 import { DROPPABLE_IDS } from "../DroppableIds";
@@ -22,7 +23,7 @@ import flushPromises from "../../util/flushPromises";
 
 function createTestStore(
   tokens: Token[] = []
-): EnhancedStore<{ board: MergeState }, any> {
+): EnhancedStore<{ board: BoardSliceState }, any> {
   const store = configureStore({
     reducer: { board: boardReducer },
     preloadedState: { board: EMPTY_BOARD },
@@ -33,7 +34,7 @@ function createTestStore(
   return store;
 }
 
-const EMPTY_BOARD: MergeState = {
+const EMPTY_BOARD: BoardSliceState = {
   network: {
     entityById: {},
     tokenIdsByPosStr: {},
@@ -46,6 +47,7 @@ const EMPTY_BOARD: MergeState = {
   },
   queuedUpdates: [],
   unqueuedActions: [],
+  dragMeasurement: null,
 };
 
 const FLOOR_1: Entity = {
@@ -384,4 +386,154 @@ it("ignores drags on deleted tokens", () => {
   );
 
   expect(getEntities(store)).toEqual([TOKEN_1]);
+});
+
+it("updates drag measurement during drag", () => {
+  const store = createTestStore([TOKEN_1]);
+  const startPos = { x: 0, y: 0 };
+  const endPos = { x: 5, y: 5 };
+
+  store.dispatch(
+    dragStarted({
+      draggable: {
+        id: "draggable-id",
+        type: DraggableType.Token,
+        contents: TOKEN_1.contents,
+        tokenId: TOKEN_1.id,
+      },
+      source: {
+        id: DROPPABLE_IDS.BOARD,
+        bounds: { top: 0, left: 0, bottom: 60, right: 60 },
+        logicalLocation: { type: LocationType.Grid, ...startPos },
+      },
+      mousePos: { x: 30, y: 30 },
+      scrollPos: { x: 0, y: 0 },
+      measureWhileDragging: true,
+    })
+  );
+
+  expect(store.getState().board.dragMeasurement).toEqual({
+    start: { type: LocationType.Grid, ...startPos },
+    end: startPos,
+  });
+
+  store.dispatch(
+    dragMoved({
+      draggable: {
+        id: "draggable-id",
+        type: DraggableType.Token,
+        contents: TOKEN_1.contents,
+        tokenId: TOKEN_1.id,
+      },
+      bounds: { top: 300, left: 300, bottom: 360, right: 360 },
+      scrollPos: { x: 0, y: 0 },
+      destination: {
+        id: DROPPABLE_IDS.BOARD,
+        bounds: { top: 300, left: 300, bottom: 360, right: 360 },
+        logicalLocation: { type: LocationType.Grid, ...endPos },
+      },
+      measureWhileDragging: true,
+    })
+  );
+
+  expect(store.getState().board.dragMeasurement).toEqual({
+    start: { type: LocationType.Grid, ...startPos },
+    end: endPos,
+  });
+});
+
+it("ignores drag measurement updates if destination is not on the grid", () => {
+  const store = createTestStore([TOKEN_1]);
+  const startPos = { x: 0, y: 0 };
+
+  store.dispatch(
+    dragStarted({
+      draggable: {
+        id: "draggable-id",
+        type: DraggableType.Token,
+        contents: TOKEN_1.contents,
+        tokenId: TOKEN_1.id,
+      },
+      source: {
+        id: DROPPABLE_IDS.BOARD,
+        bounds: { top: 0, left: 0, bottom: 60, right: 60 },
+        logicalLocation: { type: LocationType.Grid, ...startPos },
+      },
+      mousePos: { x: 30, y: 30 },
+      scrollPos: { x: 0, y: 0 },
+      measureWhileDragging: true,
+    })
+  );
+
+  store.dispatch(
+    dragMoved({
+      draggable: {
+        id: "draggable-id",
+        type: DraggableType.Token,
+        contents: TOKEN_1.contents,
+        tokenId: TOKEN_1.id,
+      },
+      bounds: { top: 300, left: 300, bottom: 360, right: 360 },
+      scrollPos: { x: 0, y: 0 },
+      // destination is missing logicalLocation (e.g. invalid spot)
+      destination: {
+        id: DROPPABLE_IDS.BOARD,
+        bounds: { top: 300, left: 300, bottom: 360, right: 360 },
+      },
+      measureWhileDragging: true,
+    })
+  );
+
+  // Measurement end should stay at start because it was the last valid position
+  expect(store.getState().board.dragMeasurement).toEqual({
+    start: { type: LocationType.Grid, ...startPos },
+    end: startPos,
+  });
+});
+
+it("does not update drag measurement if measureWhileDragging is false", () => {
+  const store = createTestStore([TOKEN_1]);
+  const startPos = { x: 0, y: 0 };
+
+  store.dispatch(
+    dragStarted({
+      draggable: {
+        id: "draggable-id",
+        type: DraggableType.Token,
+        contents: TOKEN_1.contents,
+        tokenId: TOKEN_1.id,
+      },
+      source: {
+        id: DROPPABLE_IDS.BOARD,
+        bounds: { top: 0, left: 0, bottom: 60, right: 60 },
+        logicalLocation: { type: LocationType.Grid, ...startPos },
+      },
+      mousePos: { x: 30, y: 30 },
+      scrollPos: { x: 0, y: 0 },
+      measureWhileDragging: false,
+    })
+  );
+
+  expect(store.getState().board.dragMeasurement).toBeNull();
+
+  store.dispatch(
+    dragMoved({
+      draggable: {
+        id: "draggable-id",
+        type: DraggableType.Token,
+        contents: TOKEN_1.contents,
+        tokenId: TOKEN_1.id,
+      },
+      bounds: { top: 300, left: 300, bottom: 360, right: 360 },
+      scrollPos: { x: 0, y: 0 },
+      destination: {
+        id: DROPPABLE_IDS.BOARD,
+        bounds: { top: 300, left: 300, bottom: 360, right: 360 },
+        logicalLocation: { type: LocationType.Grid, x: 5, y: 5 },
+      },
+      measureWhileDragging: false,
+    })
+  );
+
+  expect(store.getState().board.dragMeasurement).toBeNull();
 });
