@@ -115,7 +115,11 @@ async def test_invalid_uuid(app: WebsocketAsgiApp) -> None:
 
 async def test_connect(app: WebsocketAsgiApp) -> None:
     async with emulated_client.connect(app, f'/{ROOM_ID}') as client:
-        assert await client.receive_json() == {'type': 'connected', 'data': []}
+        assert await client.receive_json() == {
+            'type': 'connected',
+            'data': [],
+            'grid_type': 'square',
+        }
 
 
 async def test_add_token(app: WebsocketAsgiApp) -> None:
@@ -195,7 +199,11 @@ async def test_bypass_room_create_rate_limit(app: WebsocketAsgiApp) -> None:
             await client.receive_json()
 
     async with emulated_client.connect(app, f'/{uuid4()}', headers=headers) as client:
-        assert await client.receive_json() == {'type': 'connected', 'data': []}
+        assert await client.receive_json() == {
+            'type': 'connected',
+            'data': [],
+            'grid_type': 'square',
+        }
 
 
 async def test_bypass_max_connections_rate_limit(app: WebsocketAsgiApp) -> None:
@@ -206,7 +214,11 @@ async def test_bypass_max_connections_rate_limit(app: WebsocketAsgiApp) -> None:
         ),
         emulated_client.connect(app, f'/{uuid4()}', headers=headers) as client,
     ):
-        assert await client.receive_json() == {'type': 'connected', 'data': []}
+        assert await client.receive_json() == {
+            'type': 'connected',
+            'data': [],
+            'grid_type': 'square',
+        }
 
 
 async def test_bypass_room_create_rate_limit_invalid_key(app: WebsocketAsgiApp) -> None:

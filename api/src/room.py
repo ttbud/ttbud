@@ -33,6 +33,10 @@ class Room:
         self.id_to_positions: dict[str, list[tuple[int, int, int]]] = {}
         self.positions_to_ids: dict[tuple[int, int, int], str] = {}
         self.icon_to_token_ids: dict[str, list[str]] = {}
+        self.grid_type: str = 'square'
+
+    def set_grid_type(self, grid_type: str) -> None:
+        self.grid_type = grid_type
 
     def _remove_positions(self, token_id: str) -> None:
         positions = self.id_to_positions.get(token_id, [])
@@ -89,4 +93,6 @@ def create_room(updates: Iterable[Action]) -> Room:
             room.create_or_update_token(update.data)
         elif update.action == 'delete':
             room.delete_token(update.data)
+        elif update.action == 'set-grid-type':
+            room.set_grid_type(update.data)
     return room

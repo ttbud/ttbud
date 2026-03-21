@@ -1,42 +1,51 @@
 import React, { CSSProperties } from "react";
 import { makeStyles } from "@material-ui/core";
+import clsx from "clsx";
 import { GRID_SIZE_PX } from "../../config";
-import Pos2d from "../../util/shape-math";
+import Pos2d, { HEX_HEIGHT } from "../../util/shape-math";
 import { Icon } from "../icons";
+import { GridType } from "../../types";
 
 interface Props {
   icon: Icon;
   pos: Pos2d;
+  gridType: GridType;
 }
 
 const useStyles = makeStyles({
-  media: {
-    width: GRID_SIZE_PX,
-    height: GRID_SIZE_PX,
-    userDrag: "none",
+  media: ({ gridType }: Props) => ({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: gridType === GridType.Hex ? GRID_SIZE_PX * 0.9 : GRID_SIZE_PX,
+    height: gridType === GridType.Hex ? HEX_HEIGHT * 0.9 : GRID_SIZE_PX,
     userSelect: "none",
+    userDrag: "none",
+    backgroundColor: "transparent",
+  }),
+  hex: {
+    clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
   },
 });
 
-const FloorIcon: React.FC<Props> = ({ icon, pos }) => {
-  const classes = useStyles();
+const FloorIcon: React.FC<Props> = (props) => {
+  const { icon, pos, gridType } = props;
+  const classes = useStyles(props);
 
   const style: CSSProperties = {
     position: "absolute",
-    top: pos.y,
-    left: pos.x,
+    top: gridType === GridType.Hex ? pos.y + (HEX_HEIGHT * 0.1) / 2 : pos.y,
+    left: gridType === GridType.Hex ? pos.x + (GRID_SIZE_PX * 0.1) / 2 : pos.x,
     backgroundImage: `url(${icon.img})`,
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "center",
     zIndex: 0,
   };
 
-  // Using an actual image element here makes it so sometimes if you click and
-  // drag over the icon you get the "image dragging" ui that browsers provide.
-  // Setting draggable to false or user-drag to none on this or its parent
-  // does not prevent this from happening, so instead we use a background image.
   return (
     <div
       style={style}
-      className={classes.media}
+      className={clsx(classes.media, gridType === GridType.Hex && classes.hex)}
       role={"img"}
       aria-label={`Floor: ${icon.desc}`}
     />

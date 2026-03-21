@@ -8,7 +8,13 @@ import {
   isTextContents,
   MessageDecoder,
 } from "./api-types";
-import { ContentType, EntityType, Token, TokenContents } from "../types";
+import {
+  ContentType,
+  EntityType,
+  GridType,
+  Token,
+  TokenContents,
+} from "../types";
 import { assert } from "../util/invariants";
 import {
   Action,
@@ -56,6 +62,11 @@ function toApiAction(action: Action): ApiAction {
           ...ping.pos,
         },
       };
+    case "set-grid-type":
+      return {
+        action: "set-grid-type",
+        data: action.gridType,
+      };
     /* istanbul ignore next */
     default:
       throw new UnreachableCaseError(action);
@@ -73,6 +84,18 @@ function toContents(contents: ApiTokenContents): TokenContents {
       type: ContentType.Icon,
       iconId: contents.icon_id,
     };
+  }
+}
+
+function toGridType(type: "hex" | "square") {
+  switch (type) {
+    case "hex":
+      return GridType.Hex;
+    case "square":
+      return GridType.Square;
+    /* istanbul ignore next */
+    default:
+      throw new UnreachableCaseError(type);
   }
 }
 
@@ -107,6 +130,11 @@ function toAction(apiAction: ApiAction): Action {
             y: ping.y,
           },
         },
+      };
+    case "set-grid-type":
+      return {
+        type: "set-grid-type",
+        gridType: toGridType(apiAction.data),
       };
     case "upsert":
       const token = apiAction.data;
@@ -281,6 +309,7 @@ export class RealBoardStateApiClient {
         this.eventHandler({
           type: EventType.InitialState,
           tokens: message.data.map(toToken),
+          gridType: toGridType(message.grid_type),
         });
         break;
       /* istanbul ignore next */

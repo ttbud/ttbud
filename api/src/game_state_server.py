@@ -103,7 +103,9 @@ class GameStateServer:
                         await self._acquire_room_slot(room_id, client_ip, rate_limiter)
 
                     room = create_room(await self.room_store.read(room_id))
-                    yield ConnectionResponse(list(room.game_state.values()))
+                    yield ConnectionResponse(
+                        list(room.game_state.values()), room.grid_type
+                    )
 
                 try:
                     request_task = asyncio.create_task(

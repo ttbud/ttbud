@@ -3,7 +3,12 @@ from collections.abc import Iterator
 
 from dacite import from_dict
 
-from src.api.api_structures import Action, DeleteAction, UpsertAction
+from src.api.api_structures import (
+    Action,
+    DeleteAction,
+    SetGridTypeAction,
+    UpsertAction,
+)
 
 
 def json_to_actions(raw_updates: list[str]) -> Iterator[Action]:
@@ -15,3 +20,5 @@ def json_to_actions(raw_updates: list[str]) -> Iterator[Action]:
                 yield from_dict(UpsertAction, update)
             elif action == 'delete':
                 yield from_dict(DeleteAction, update)
+            elif action == 'set-grid-type':
+                yield from_dict(SetGridTypeAction, update)

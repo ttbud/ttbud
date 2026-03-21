@@ -25,12 +25,19 @@ class PingAction:
     action: Literal['ping'] = field(init=False, default='ping')
 
 
-Action = UpsertAction | DeleteAction | PingAction
+@dataclass
+class SetGridTypeAction:
+    data: str
+    action: Literal['set-grid-type'] = field(init=False, default='set-grid-type')
+
+
+Action = UpsertAction | DeleteAction | PingAction | SetGridTypeAction
 
 
 @dataclass
 class ConnectionResponse:
     data: Iterable[Token]
+    grid_type: str
     type: Literal['connected'] = field(init=False, default='connected')
 
 

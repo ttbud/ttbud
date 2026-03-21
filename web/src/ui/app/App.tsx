@@ -87,12 +87,13 @@ interface Props {
 const App: React.FC<Props> = ({ apiClient }) => {
   const dispatch = useDispatch();
 
-  const { searching, draggingFromSearchTray } = useSelector(
+  const { searching, draggingFromSearchTray, gridType } = useSelector(
     (state: RootState) => ({
       searching: state.app.searching,
       draggingFromSearchTray:
         state.drag.type !== DragStateType.NotDragging &&
         state.drag.source.id === undefined,
+      gridType: state.board.local.gridType,
     })
   );
   const windowSize = useWindowSize();
@@ -162,6 +163,7 @@ const App: React.FC<Props> = ({ apiClient }) => {
           <SearchTray
             open={searching}
             icons={ICONS}
+            gridType={gridType}
             onSearchClicked={onSearchClicked}
           />
         </div>

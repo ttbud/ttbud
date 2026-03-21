@@ -1,5 +1,5 @@
 import WS from "jest-websocket-mock";
-import { ContentType, EntityType, Ping, Token } from "../types";
+import { ContentType, EntityType, GridType, Ping, Token } from "../types";
 import { ApiPingToken } from "./api-types";
 import { RealBoardStateApiClient } from "./RealBoardStateApiClient";
 import { EventType } from "./BoardStateApiClient";
@@ -106,8 +106,12 @@ describe("BoardStateApiClient", () => {
   it("notifies listeners of initial state", async () => {
     client.connect("roomId");
     await api.connected;
-    api.send({ type: "connected", data: [] });
-    expect(eventHandler).toBeCalledWith({ type: "initial state", tokens: [] });
+    api.send({ type: "connected", data: [], grid_type: "square" });
+    expect(eventHandler).toBeCalledWith({
+      type: "initial state",
+      tokens: [],
+      gridType: GridType.Square,
+    });
   });
 
   it("notifies listeners of message decoding errors", async () => {
@@ -146,6 +150,20 @@ describe("BoardStateApiClient", () => {
     });
   });
 
+  it("notifies listeners of grid type updates", async () => {
+    api.send({
+      type: "update",
+      request_id: "request-id",
+      actions: [{ action: "set-grid-type", data: "hex" }],
+    });
+
+    expect(eventHandler).toHaveBeenCalledWith({
+      type: "update",
+      requestId: "request-id",
+      actions: [{ type: "set-grid-type", gridType: GridType.Hex }],
+    });
+  });
+
   it("sends token creates", async () => {
     client.send("request-id", [
       {
@@ -180,6 +198,25 @@ describe("BoardStateApiClient", () => {
           // Creates and updates are sent as "update"
           action: "ping",
           data: VALID_API_PING,
+        },
+      ],
+    });
+  });
+
+  it("sends grid type updates", async () => {
+    client.send("request-id", [
+      {
+        type: "set-grid-type",
+        gridType: GridType.Hex,
+      },
+    ]);
+
+    await expect(api).toReceiveMessage({
+      request_id: "request-id",
+      actions: [
+        {
+          action: "set-grid-type",
+          data: "hex",
         },
       ],
     });

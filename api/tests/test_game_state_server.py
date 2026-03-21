@@ -8,6 +8,7 @@ from src.api.api_structures import (
     PingAction,
     Request,
     Response,
+    SetGridTypeAction,
     UpdateResponse,
 )
 from src.game_components import Ping
@@ -84,7 +85,7 @@ async def collect_responses(
 
 async def test_new_connection(gss: GameStateServer) -> None:
     responses = await collect_responses(gss, requests=[], response_count=1)
-    assert responses == [ConnectionResponse(data=[])]
+    assert responses == [ConnectionResponse(data=[], grid_type='square')]
 
 
 async def test_room_data_is_stored(
@@ -103,13 +104,15 @@ async def test_room_data_is_stored(
     )
 
     assert responses == [
-        ConnectionResponse([]),
+        ConnectionResponse([], grid_type='square'),
         UpdateResponse([VALID_ACTION, ANOTHER_VALID_ACTION], 'first-request-id'),
     ]
 
     gss_two = GameStateServer(room_store, rate_limiter, NoopRateLimiter())
     responses = await collect_responses(gss_two, requests=[], response_count=1)
-    assert responses == [ConnectionResponse([VALID_TOKEN, ANOTHER_VALID_TOKEN])]
+    assert responses == [
+        ConnectionResponse([VALID_TOKEN, ANOTHER_VALID_TOKEN], grid_type='square')
+    ]
 
 
 async def test_ping(gss: GameStateServer) -> None:
@@ -119,7 +122,7 @@ async def test_ping(gss: GameStateServer) -> None:
         response_count=2,
     )
     assert responses == [
-        ConnectionResponse([]),
+        ConnectionResponse([], grid_type='square'),
         UpdateResponse([PING_ACTION], 'ping-request-id'),
     ]
 
@@ -139,7 +142,7 @@ async def test_multiple_pings(gss: GameStateServer) -> None:
         response_count=2,
     )
     assert responses == [
-        ConnectionResponse([]),
+        ConnectionResponse([], grid_type='square'),
         UpdateResponse([ping1, ping2, ping3], 'ping-request-id'),
     ]
 
@@ -156,8 +159,20 @@ async def test_add_duplicate_color(gss: GameStateServer) -> None:
         response_count=2,
     )
     assert responses == [
-        ConnectionResponse([]),
+        ConnectionResponse([], grid_type='square'),
         UpdateResponse(
             [VALID_ACTION, VALID_ACTION_WITH_DUPLICATE_COLOR], 'same-color-request-id'
         ),
+    ]
+
+
+async def test_set_grid_type(gss: GameStateServer) -> None:
+    responses = await collect_responses(
+        gss,
+        requests=[Request(request_id='req-1', actions=[SetGridTypeAction(data='hex')])],
+        response_count=2,
+    )
+    assert responses == [
+        ConnectionResponse(data=[], grid_type='square'),
+        UpdateResponse(actions=[SetGridTypeAction(data='hex')], request_id='req-1'),
     ]

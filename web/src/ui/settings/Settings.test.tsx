@@ -3,13 +3,17 @@ import { PureSettings } from "./Settings";
 import noop from "../../util/noop";
 import userEvent from "@testing-library/user-event";
 
+import { GridType } from "../../types";
+
 const DEFAULT_PROPS = {
   showTourPrompt: false,
   tutorialPrompt: false,
+  gridType: GridType.Square,
   onTutorialDismissed: noop,
   onClearMap: noop,
   onTourClicked: noop,
   onTourPromptDismissed: noop,
+  onGridTypeChanged: noop,
 };
 
 describe("Settings", () => {
@@ -128,5 +132,29 @@ describe("Settings", () => {
     userEvent.click(getByLabelText("Settings"));
     userEvent.click(getByText("about"));
     expect(getByText("Your virtual table friend")).toBeVisible();
+  });
+
+  it("calls onGridTypeChanged with Square when Square is clicked", () => {
+    const onGridTypeChanged = jest.fn();
+    const { getByLabelText, getByText } = render(
+      <PureSettings {...DEFAULT_PROPS} onGridTypeChanged={onGridTypeChanged} />
+    );
+
+    userEvent.click(getByLabelText("Settings"));
+    userEvent.click(getByText("Square"));
+
+    expect(onGridTypeChanged).toHaveBeenCalledWith(GridType.Square);
+  });
+
+  it("calls onGridTypeChanged with Hex when Hexagonal is clicked", () => {
+    const onGridTypeChanged = jest.fn();
+    const { getByLabelText, getByText } = render(
+      <PureSettings {...DEFAULT_PROPS} onGridTypeChanged={onGridTypeChanged} />
+    );
+
+    userEvent.click(getByLabelText("Settings"));
+    userEvent.click(getByText("Hexagonal"));
+
+    expect(onGridTypeChanged).toHaveBeenCalledWith(GridType.Hex);
   });
 });

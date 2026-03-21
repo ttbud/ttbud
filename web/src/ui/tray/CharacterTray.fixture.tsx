@@ -6,7 +6,7 @@ import DndContext from "../../drag/DndContext";
 import { DEFAULT_CHARACTER_ICONS } from "../icons";
 import noop from "../../util/noop";
 import { PureCharacterTray as CharacterTray } from "./CharacterTray";
-import { ContentType, TokenContents } from "../../types";
+import { ContentType, GridType, TokenContents } from "../../types";
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
@@ -30,7 +30,11 @@ export default (
           top: 0,
         }}
       >
-        <CharacterTray blueprints={blueprints} onCharacterRemoved={noop} />
+        <CharacterTray
+          blueprints={blueprints}
+          onCharacterRemoved={noop}
+          gridType={GridType.Square}
+        />
       </div>
     </DndContext.Provider>
   </Provider>

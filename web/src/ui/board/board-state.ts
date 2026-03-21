@@ -1,4 +1,4 @@
-import { contentId, Entity, EntityType, Token } from "../../types";
+import { contentId, Entity, EntityType, GridType, Token } from "../../types";
 import { Action } from "../../network/BoardStateApiClient";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import Pos2d, { Pos3d, posAreEqual } from "../../util/shape-math";
@@ -32,6 +32,7 @@ export interface BoardState {
   entityById: { [id: string]: Entity };
   tokenIdsByPosStr: { [pos: string]: string };
   charIdsByContentId: { [contentId: string]: string[] };
+  gridType: GridType;
 }
 
 export interface ActionParams {
@@ -54,6 +55,9 @@ export function applyAction({ boardState, action, isConfirmed }: ActionParams) {
       break;
     case "ping":
       upsertEntity(boardState, action.ping, isConfirmed);
+      break;
+    case "set-grid-type":
+      boardState.gridType = action.gridType as GridType;
       break;
     /* istanbul ignore next */
     default:

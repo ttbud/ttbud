@@ -80,7 +80,12 @@ export function networkSyncMiddleware(
           store.dispatch(connecting());
           break;
         case EventType.InitialState:
-          store.dispatch(receiveInitialState(event.tokens));
+          store.dispatch(
+            receiveInitialState({
+              tokens: event.tokens,
+              gridType: event.gridType,
+            })
+          );
           break;
         case EventType.Update:
           store.dispatch(

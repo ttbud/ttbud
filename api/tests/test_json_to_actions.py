@@ -1,6 +1,7 @@
 import json
 from dataclasses import asdict
 
+from src.api.api_structures import SetGridTypeAction
 from src.room_store.json_to_actions import json_to_actions
 from tests.static_fixtures import ANOTHER_VALID_ACTION, DELETE_VALID_TOKEN, VALID_ACTION
 
@@ -15,6 +16,11 @@ def test_json_to_actions() -> None:
             ]
         )
     ) == [VALID_ACTION, DELETE_VALID_TOKEN, ANOTHER_VALID_ACTION]
+
+
+def test_set_grid_type_action() -> None:
+    action = SetGridTypeAction(data='hex')
+    assert list(json_to_actions([json.dumps([asdict(action)])])) == [action]
 
 
 def test_convert_empty_list() -> None:

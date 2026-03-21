@@ -8,7 +8,7 @@ import { GRID_SIZE_PX } from "../../config";
 import { RootState } from "../../store/rootReducer";
 import { removeCharacter } from "./character-tray-slice";
 import { connect } from "react-redux";
-import { TokenContents } from "../../types";
+import { TokenContents, GridType } from "../../types";
 import useTrayItems from "./useTrayItems";
 import { DraggableDescriptor } from "../../drag/DragStateTypes";
 import { Bounds } from "../../util/shape-math";
@@ -31,10 +31,12 @@ const DROPPABLE_ID = DROPPABLE_IDS.CHARACTER_TRAY;
 interface Props {
   blueprints: TokenContents[];
   onCharacterRemoved: (character: TokenContents) => void;
+  gridType: GridType;
 }
 
 const mapStateToProps = (state: RootState) => ({
   blueprints: state.characterTray.characterBlueprints,
+  gridType: state.board.local.gridType,
 });
 
 const dispatchProps = { onCharacterRemoved: removeCharacter };
@@ -42,6 +44,7 @@ const dispatchProps = { onCharacterRemoved: removeCharacter };
 const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
   blueprints,
   onCharacterRemoved,
+  gridType,
 }) {
   const classes = useStyles();
 
@@ -144,6 +147,7 @@ const PureCharacterTray: React.FC<Props> = memo(function CharacterTray({
           <Character
             contents={item.blueprint}
             isDragging={isDragging}
+            gridType={gridType}
             dragAttributes={{
               ...attributes,
               ref: item.makeRef(attributes.ref),

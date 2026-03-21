@@ -50,10 +50,16 @@ const PingActionDecoder = t.type({
   action: t.literal("ping"),
 });
 
+const SetGridTypeActionDecoder = t.type({
+  data: t.union([t.literal("hex"), t.literal("square")]),
+  action: t.literal("set-grid-type"),
+});
+
 const ActionDecoder = t.union([
   PingActionDecoder,
   UpsertActionDecoder,
   DeleteActionDecoder,
+  SetGridTypeActionDecoder,
 ]);
 
 const ErrorMessageDecoder = t.type({
@@ -65,6 +71,7 @@ const ErrorMessageDecoder = t.type({
 const ConnectionResultDecoder = t.type({
   type: t.literal("connected"),
   data: t.array(TokenDecoder),
+  grid_type: t.union([t.literal("hex"), t.literal("square")]),
 });
 
 const UpdateDecoder = t.type({
@@ -97,7 +104,16 @@ interface TokenDeleteAction {
   data: string;
 }
 
-export type ApiAction = PingApiAction | TokenApiAction | TokenDeleteAction;
+interface SetGridTypeApiAction {
+  action: "set-grid-type";
+  data: "hex" | "square";
+}
+
+export type ApiAction =
+  | PingApiAction
+  | TokenApiAction
+  | TokenDeleteAction
+  | SetGridTypeApiAction;
 export type ApiTextContent = t.TypeOf<typeof TextContentsDecoder>;
 export type ApiTokenContents = t.TypeOf<typeof TokenContentsDecoder>;
 

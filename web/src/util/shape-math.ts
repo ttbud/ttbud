@@ -1,4 +1,5 @@
 import { GRID_SIZE_PX } from "../config";
+import { GridType } from "../types";
 
 export interface Bounds {
   top: number;
@@ -24,11 +25,81 @@ export function distance(first: Pos2d, second: Pos2d): number {
   );
 }
 
-export function snapToGrid(pos: Pos2d): Pos2d {
+export const HEX_WIDTH = GRID_SIZE_PX;
+export const HEX_HEIGHT = (Math.sqrt(3) / 2) * HEX_WIDTH;
+export const HEX_HORIZONTAL_SPACING = HEX_WIDTH * 0.75;
+export const HEX_VERTICAL_SPACING = HEX_HEIGHT;
+
+export function gridToPixel(pos: Pos2d, gridType: GridType): Pos2d {
+  if (gridType === GridType.Square) {
+    return {
+      x: pos.x * GRID_SIZE_PX,
+      y: pos.y * GRID_SIZE_PX,
+    };
+  }
+
+  // Flat-topped hexes with offset coordinates
+  // x is column, y is row
   return {
-    x: snapDimensionToGrid(pos.x),
-    y: snapDimensionToGrid(pos.y),
+    x: pos.x * HEX_HORIZONTAL_SPACING,
+    y:
+      pos.y * HEX_VERTICAL_SPACING +
+      (pos.x % 2 === 0 ? 0 : HEX_VERTICAL_SPACING / 2),
   };
+}
+
+export function pixelToGrid(pos: Pos2d, gridType: GridType): Pos2d {
+  if (gridType === GridType.Square) {
+    return {
+      x: Math.floor(pos.x / GRID_SIZE_PX),
+      y: Math.floor(pos.y / GRID_SIZE_PX),
+    };
+  }
+
+  // Offset input by half a hex to align with gridToPixel origin (top-left)
+  const x = pos.x - HEX_WIDTH / 2;
+  const y = pos.y - HEX_HEIGHT / 2;
+
+  // A flat-topped hex has a radius equal to half its width
+  // See https://www.redblobgames.com/grids/hexagons/
+  const radius = HEX_WIDTH / 2;
+  const q = ((2 / 3) * x) / radius;
+  const r = ((-1 / 3) * x + (Math.sqrt(3) / 3) * y) / radius;
+
+  // Find the nearest hex center to the pixel position
+  let rx = Math.round(q);
+  let ry = Math.round(r);
+  let rz = Math.round(-q - r);
+
+  const xDiff = Math.abs(rx - q);
+  const yDiff = Math.abs(ry - r);
+  const zDiff = Math.abs(rz - (-q - r));
+
+  if (xDiff > yDiff && xDiff > zDiff) {
+    rx = -ry - rz;
+  } else if (yDiff > zDiff) {
+    ry = -rx - rz;
+  }
+
+  // Convert axial (q, r) to odd-q offset (col, row)
+  const col = rx;
+  const row = ry + (rx - (rx & 1)) / 2;
+
+  return { x: col, y: row };
+}
+
+/**
+ * Snaps a continuous pixel position to the nearest discrete grid cell.
+ */
+export function snapToGrid(
+  pos: Pos2d,
+  gridType: GridType = GridType.Square
+): Pos2d {
+  // gridToPixel returns the top left of a given cell, so finding the current
+  // cell for pos and then calling gridToPixel will give us the top left of
+  // the cell that pos is in.
+  const gridPos = pixelToGrid(pos, gridType);
+  return gridToPixel(gridPos, gridType);
 }
 
 export function posAreEqual(left: Pos2d, right: Pos2d): boolean {
@@ -93,8 +164,4 @@ export function width(bounds: Bounds) {
 
 export function height(bounds: Bounds) {
   return bounds.bottom - bounds.top;
-}
-
-function snapDimensionToGrid(dimension: number): number {
-  return Math.floor(dimension / GRID_SIZE_PX) * GRID_SIZE_PX;
 }

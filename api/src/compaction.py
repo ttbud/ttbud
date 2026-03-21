@@ -3,10 +3,9 @@ import logging
 import time
 from typing import NoReturn
 
-from src.api.api_structures import Action, UpsertAction
+from src.api.api_structures import Action, SetGridTypeAction, UpsertAction
 from src.apm import background_transaction
-from src.game_components import Token
-from src.room import create_room
+from src.room import Room, create_room
 from src.room_store.common import ARCHIVE_WHEN_IDLE_SECONDS, NoSuchRoomError
 from src.room_store.room_archive import RoomArchive
 from src.room_store.room_store import (
@@ -52,14 +51,14 @@ class Compactor:
     async def _compact_room(self, room_id: str) -> None:
         replacement_data = await self._room_store.read_for_replacement(room_id)
         room = create_room(replacement_data.actions)
-        compacted_actions = _tokens_to_actions(list(room.game_state.values()))
+        compacted_actions = _room_to_actions(room)
         try:
             room_idle_seconds = await self._room_store.get_room_idle_seconds(room_id)
         except NoSuchRoomError:
             _logger.warning(f'Room unexpectedly deleted during compaction: {room_id}')
             return
 
-        if not compacted_actions:
+        if not room.game_state:
             try:
                 await asyncio.gather(
                     self._room_store.delete(
@@ -93,8 +92,9 @@ class Compactor:
         )
 
 
-def _tokens_to_actions(tokens: list[Token]) -> list[Action]:
+def _room_to_actions(room: Room) -> list[Action]:
     actions: list[Action] = []
-    for token in tokens:
+    for token in room.game_state.values():
         actions.append(UpsertAction(token))
+    actions.append(SetGridTypeAction(room.grid_type))
     return actions

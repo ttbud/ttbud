@@ -8,7 +8,7 @@ import { RootState } from "../../store/rootReducer";
 import noop from "../../util/noop";
 import { WALL_ICON } from "../icons";
 import { PureBoard as Board } from "./Board";
-import { ContentType } from "../../types";
+import { ContentType, GridType } from "../../types";
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
@@ -36,6 +36,7 @@ const ExampleBoard: React.FC = () => {
           entityById: {},
           tokenIdsByPosStr: {},
           charIdsByContentId: {},
+          gridType: GridType.Square,
         }}
       />
     </div>
