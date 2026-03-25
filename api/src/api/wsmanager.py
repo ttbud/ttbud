@@ -21,6 +21,7 @@ from src.api.ws_close_codes import (
     ERR_INVALID_UUID,
     ERR_ROOM_FULL,
     ERR_TOO_MANY_CONNECTIONS,
+    ERR_UNKNOWN,
 )
 from src.apm import background_transaction
 from src.game_state_server import (
@@ -163,5 +164,12 @@ class WebsocketManager:
             # Disconnecting is a perfectly normal thing to happen, so just
             # continue cleaning up connection state
             pass
+        except Exception:
+            logger.error(
+                f'Error in connection with {client_ip}',
+                extra={'client_ip': client_ip, 'room_id': room_id},
+                exc_info=True,
+            )
+            await client.close(ERR_UNKNOWN)
 
         self._clients.remove(client)

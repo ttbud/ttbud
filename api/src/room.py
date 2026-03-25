@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from copy import deepcopy
 
-from src.api.api_structures import Action
+from src.api.api_structures import Action, GridType
 from src.colors import colors
 from src.game_components import Token, content_id
 
@@ -33,9 +33,9 @@ class Room:
         self.id_to_positions: dict[str, list[tuple[int, int, int]]] = {}
         self.positions_to_ids: dict[tuple[int, int, int], str] = {}
         self.icon_to_token_ids: dict[str, list[str]] = {}
-        self.grid_type: str = 'square'
+        self.grid_type: GridType = GridType.SQUARE
 
-    def set_grid_type(self, grid_type: str) -> None:
+    def set_grid_type(self, grid_type: GridType) -> None:
         self.grid_type = grid_type
 
     def _remove_positions(self, token_id: str) -> None:

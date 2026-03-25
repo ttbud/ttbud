@@ -1,10 +1,17 @@
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Literal
 
 from src.game_components import Ping, Token
 
 BYPASS_RATE_LIMIT_HEADER = 'X-BYPASS-RATE-LIMITER'
+
+
+# Inherit from str so that the enum is JSON serializable
+class GridType(str, Enum):
+    SQUARE = 'square'
+    HEX = 'hex'
 
 
 @dataclass
@@ -27,7 +34,7 @@ class PingAction:
 
 @dataclass
 class SetGridTypeAction:
-    data: str
+    data: GridType
     action: Literal['set-grid-type'] = field(init=False, default='set-grid-type')
 
 
@@ -37,7 +44,7 @@ Action = UpsertAction | DeleteAction | PingAction | SetGridTypeAction
 @dataclass
 class ConnectionResponse:
     data: Iterable[Token]
-    grid_type: str
+    grid_type: GridType
     type: Literal['connected'] = field(init=False, default='connected')
 
 
