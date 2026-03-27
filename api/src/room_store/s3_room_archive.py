@@ -1,14 +1,12 @@
-import json
 from collections.abc import AsyncIterator, Iterable
-from dataclasses import asdict
 
 import botocore.exceptions
 from aiobotocore.client import AioBaseClient
 
 from src.api.api_structures import Action
 from src.room_store.common import NoSuchRoomError
-from src.room_store.json_to_actions import json_to_actions
 from src.room_store.room_archive import RoomArchive
+from src.util.json_serializer import JSONSerializer
 
 ROOM_DIR = 'rooms/'
 
@@ -18,8 +16,9 @@ def _room_id_to_key(room_id: str) -> str:
 
 
 class S3RoomArchive(RoomArchive):
-    def __init__(self, client: AioBaseClient, bucket: str):
+    def __init__(self, client: AioBaseClient, serializer: JSONSerializer, bucket: str):
         self._client = client
+        self._serializer = serializer
         self._bucket = bucket
 
     async def get_all_room_ids(self) -> AsyncIterator[str]:
@@ -50,13 +49,13 @@ class S3RoomArchive(RoomArchive):
                 raise NoSuchRoomError from e
             raise
         data = await resp['Body'].read()
-        return json_to_actions([str(data.decode())])
+        return self._serializer.deserialize_actions([str(data.decode())])
 
     async def write(self, room_id: str, data: Iterable[Action]) -> None:
         await self._client.put_object(
             Bucket=self._bucket,
             Key=_room_id_to_key(room_id),
-            Body=json.dumps(list(map(asdict, data))),
+            Body=self._serializer.serialize_actions(list(data)),
         )
 
     async def delete(self, room_id: str) -> None:

@@ -17,7 +17,6 @@ from redis.exceptions import ResponseError
 from src.api.api_structures import Action, Request
 from src.apm import instrument
 from src.room_store.common import ARCHIVE_WHEN_IDLE_SECONDS, NoSuchRoomError
-from src.room_store.json_to_actions import json_to_actions
 from src.room_store.redis_room_listener import (
     RedisRoomListener,
     create_redis_room_listener,
@@ -28,6 +27,7 @@ from src.room_store.room_store import (
     UnexpectedReplacementId,
     UnexpectedReplacementToken,
 )
+from src.util.json_serializer import JSONSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -112,12 +112,14 @@ class RedisRoomStore:
     def __init__(
         self,
         redis: Redis,
+        serializer: JSONSerializer,
         room_listener: RedisRoomListener,
         lreplace: AsyncScript,
         delete_room: AsyncScript,
         write_if_missing: AsyncScript,
     ):
         self._redis = redis
+        self._serializer = serializer
         self._room_listener = room_listener
         self._lreplace = lreplace
         self._delete_room = delete_room
@@ -142,7 +144,7 @@ class RedisRoomStore:
                 ex=ARCHIVE_WHEN_IDLE_SECONDS * 2,
             )
             data, _ = await pipeline.execute()
-            return json_to_actions(data)
+            return self._serializer.deserialize_actions(data)
 
     @instrument
     async def add_request(self, room_id: str, request: Request) -> None:
@@ -195,9 +197,9 @@ class RedisRoomStore:
 
     @instrument
     async def read_for_replacement(self, room_id: str) -> ReplacementData:
-        updates = await self._redis.lrange(_room_key(room_id), 0, -1)
-        actions = [action for action in json_to_actions(updates)]
-        return ReplacementData(actions, len(updates))
+        raw_actions = await self._redis.lrange(_room_key(room_id), 0, -1)
+        actions = self._serializer.deserialize_actions(raw_actions)
+        return ReplacementData(actions, len(raw_actions))
 
     @instrument
     async def replace(
@@ -281,13 +283,17 @@ class RedisRoomStore:
 
 
 @asynccontextmanager
-async def create_redis_room_store(redis: Redis) -> AsyncIterator[RedisRoomStore]:
+async def create_redis_room_store(
+    redis: Redis, json_serializer: JSONSerializer
+) -> AsyncIterator[RedisRoomStore]:
     lreplace = redis.register_script(_LREPLACE)
     delete_room = redis.register_script(_DELETE_ROOM)
     write_if_missing = redis.register_script(_WRITE_IF_MISSING)
 
     async with create_redis_room_listener(redis) as listener:
-        store = RedisRoomStore(redis, listener, lreplace, delete_room, write_if_missing)
+        store = RedisRoomStore(
+            redis, json_serializer, listener, lreplace, delete_room, write_if_missing
+        )
         try:
             yield store
         finally:

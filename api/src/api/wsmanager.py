@@ -1,18 +1,14 @@
 import asyncio
-import json
 import logging
 import random
 import secrets
 from collections.abc import AsyncIterator
-from dataclasses import asdict
 from typing import (
     Any,
     NoReturn,
 )
 from uuid import UUID
 
-import dacite
-from dacite.exceptions import MissingValueError, WrongTypeError
 from websockets.exceptions import ConnectionClosedError
 
 from src.api.api_structures import BYPASS_RATE_LIMIT_HEADER, Request
@@ -34,6 +30,7 @@ from src.rate_limit.rate_limit import (
     RoomFullException,
     TooManyConnectionsException,
 )
+from src.util.json_serializer import InvalidJSONError, JSONSerializer
 from src.ws.ws_client import WebsocketClient
 
 logger = logging.getLogger(__name__)
@@ -54,36 +51,36 @@ def is_valid_uuid(uuid_string: str) -> bool:
     return val.hex == uuid_string.replace('-', '')
 
 
-async def _requests(client: WebsocketClient) -> AsyncIterator[Request]:
-    async for raw_message in client.requests():
-        try:
-            message = json.loads(raw_message)
-            request = dacite.from_dict(Request, message)
-        except (json.JSONDecodeError, WrongTypeError, MissingValueError) as e:
-            logger.info(
-                'invalid json received from client',
-                extra={'json': raw_message},
-                exc_info=True,
-            )
-            raise InvalidRequestException() from e
-
-        yield Request(
-            actions=request.actions,
-            request_id=request.request_id,
-        )
-
-
 class WebsocketManager:
     def __init__(
         self,
         gss: GameStateServer,
+        serializer: JSONSerializer,
         rate_limiter: RateLimiter,
         bypass_rate_limiter_key: str,
     ) -> None:
         self._gss = gss
+        self._serializer = serializer
         self._rate_limiter = rate_limiter
         self._bypass_rate_limiter_key = bypass_rate_limiter_key
         self._clients: list[WebsocketClient] = []
+
+    async def _requests(self, client: WebsocketClient) -> AsyncIterator[Request]:
+        async for raw_message in client.requests():
+            try:
+                request = self._serializer.deserialize_request(raw_message)
+            except InvalidJSONError as e:
+                logger.info(
+                    'invalid json received from client',
+                    extra={'json': raw_message},
+                    exc_info=True,
+                )
+                raise InvalidRequestException() from e
+
+            yield Request(
+                actions=request.actions,
+                request_id=request.request_id,
+            )
 
     async def maintain_liveness(self) -> NoReturn:
         while True:
@@ -131,11 +128,9 @@ class WebsocketManager:
 
         try:
             async for response in self._gss.handle_connection(
-                room_id, client_ip, _requests(client), bypass_rate_limiter
+                room_id, client_ip, self._requests(client), bypass_rate_limiter
             ):
-                await client.send(
-                    json.dumps(asdict(response, dict_factory=ignore_none))
-                )
+                await client.send(self._serializer.serialize_response(response))
         except InvalidRequestException:
             logger.info(
                 f'Closing connection to {client_ip}, invalid request received',

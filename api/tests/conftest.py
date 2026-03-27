@@ -13,6 +13,7 @@ from src.room_store.memory_room_archive import MemoryRoomArchive
 from src.room_store.memory_room_store import MemoryRoomStorage, MemoryRoomStore
 from src.room_store.merged_room_store import MergedRoomStore
 from src.room_store.redis_room_store import RedisRoomStore, create_redis_room_store
+from src.util.json_serializer import JSONSerializer
 
 
 @pytest.fixture(autouse=True)
@@ -51,7 +52,8 @@ async def redis() -> AsyncIterator[Redis]:
 
 @pytest.fixture
 async def redis_room_store(redis: Redis) -> AsyncIterator[RedisRoomStore]:
-    async with create_redis_room_store(redis) as room_store:
+    json_serializer = JSONSerializer()
+    async with create_redis_room_store(redis, json_serializer) as room_store:
         yield room_store
 
 
