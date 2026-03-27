@@ -20,6 +20,8 @@ import { connect } from "react-redux";
 import { RootState } from "../../store/rootReducer";
 import { dismissTourPrompt } from "./settings-slice";
 import AboutDialog from "../about/About";
+import { GridType } from "../../types";
+import { setGridType } from "../board/board-slice";
 
 const FIVE_SECONDS_MS = 5000;
 
@@ -57,9 +59,11 @@ const useStyles = makeStyles((theme) => ({
 interface Props {
   className?: string;
   showTourPrompt: boolean;
+  gridType: GridType;
   onClearMap: () => void;
   onTourClicked: () => void;
   onTourPromptDismissed: () => void;
+  onGridTypeChanged: (gridType: GridType) => void;
 }
 
 const searchShortcut = isMac() ? "command+f" : "control+f";
@@ -68,9 +72,11 @@ const PureSettings: React.FC<Props> = memo(
   ({
     className,
     showTourPrompt,
+    gridType,
     onClearMap,
     onTourClicked,
     onTourPromptDismissed,
+    onGridTypeChanged,
   }) => {
     const classes = useStyles();
     const [anchorEl, setAnchorEl] = useState<Element | null>(null);
@@ -116,6 +122,14 @@ const PureSettings: React.FC<Props> = memo(
     };
 
     const onAboutClosed = () => setIsShowingAboutDialog(false);
+
+    const onSetSquareGrid = () => {
+      onGridTypeChanged(GridType.Square);
+    };
+
+    const onSetHexGrid = () => {
+      onGridTypeChanged(GridType.Hex);
+    };
 
     return (
       <>
@@ -224,6 +238,30 @@ const PureSettings: React.FC<Props> = memo(
             </List>
             <List
               subheader={
+                <ListSubheader color="primary">Grid Type</ListSubheader>
+              }
+            >
+              <ListItem
+                button
+                dense={true}
+                component="button"
+                onClick={onSetSquareGrid}
+                selected={gridType === GridType.Square}
+              >
+                <ListItemText primary="Square" />
+              </ListItem>
+              <ListItem
+                button
+                dense={true}
+                component="button"
+                onClick={onSetHexGrid}
+                selected={gridType === GridType.Hex}
+              >
+                <ListItemText primary="Hexagonal" />
+              </ListItem>
+            </List>
+            <List
+              subheader={
                 <ListSubheader color="primary">Commands</ListSubheader>
               }
             >
@@ -254,10 +292,12 @@ const PureSettings: React.FC<Props> = memo(
 
 const mapStateToProps = (state: RootState) => ({
   showTourPrompt: state.settings.showTourPrompt,
+  gridType: state.board.local.gridType,
 });
 
 const dispatchProps = {
   onTourPromptDismissed: dismissTourPrompt,
+  onGridTypeChanged: setGridType,
 };
 
 const Settings = connect(mapStateToProps, dispatchProps)(PureSettings);

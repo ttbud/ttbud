@@ -6,6 +6,7 @@ import dragReducer from "../../drag/drag-slice";
 import { Provider } from "react-redux";
 import DndContext from "../../drag/DndContext";
 import noop from "../../util/noop";
+import { GridType } from "../../types";
 
 const monitor = new DomDroppableMonitor();
 const store = configureStore({
@@ -22,7 +23,12 @@ const store = configureStore({
 export default (
   <Provider store={store}>
     <DndContext.Provider value={monitor}>
-      <SearchTray icons={ICONS} open={true} onSearchClicked={noop} />
+      <SearchTray
+        icons={ICONS}
+        open={true}
+        onSearchClicked={noop}
+        gridType={GridType.Square}
+      />
     </DndContext.Provider>
   </Provider>
 );

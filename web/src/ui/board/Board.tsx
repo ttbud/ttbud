@@ -13,7 +13,14 @@ import UnreachableCaseError from "../../util/UnreachableCaseError";
 import Ping from "../token/Ping";
 import Draggable from "../../drag/Draggable";
 import Droppable from "../../drag/Droppable";
-import Pos2d, { posAreEqual, snapToGrid } from "../../util/shape-math";
+import Pos2d, {
+  gridToPixel,
+  pixelToGrid,
+  posAreEqual,
+  snapToGrid,
+  HEX_HEIGHT,
+  HEX_HORIZONTAL_SPACING,
+} from "../../util/shape-math";
 import { assert } from "../../util/invariants";
 import { LocationCollector, TargetLocation } from "../../drag/DroppableMonitor";
 import {
@@ -34,14 +41,20 @@ import {
   removeEntity,
 } from "./board-slice";
 import { connect } from "react-redux";
-import { EntityType, TokenContents } from "../../types";
+import { EntityType, GridType, TokenContents } from "../../types";
 import { BoardState, pingAt, tokenIdAt } from "./board-state";
 import { Buttons } from "../util/Buttons";
 import useDoubleTap, { DoubleTapState } from "../util/useDoubleTap";
 import useLongTap from "../util/useLongTap";
 import mergeRefs from "../../util/mergeRefs";
+import hexagon from "./background-hex.svg";
 
 let GRID_COLOR = "#947C65";
+
+// The background image width is twice the horizontal spacing because the hex grid repeats every
+// two columns due to the vertical stagger (up-down-up-down).
+const HEX_BACKGROUND_WIDTH = 2 * HEX_HORIZONTAL_SPACING;
+const HEX_BACKGROUND_HEIGHT = HEX_HEIGHT;
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -73,6 +86,15 @@ const useStyles = makeStyles((theme) => ({
     width: "100%",
     zIndex: 0,
   },
+  boardHex: {
+    userSelect: "none",
+    backgroundColor: theme.palette.background.default,
+    backgroundImage: `url(${hexagon})`,
+    backgroundSize: `${HEX_BACKGROUND_WIDTH}px ${HEX_BACKGROUND_HEIGHT}px`,
+    height: "100%",
+    width: "100%",
+    zIndex: 0,
+  },
 }));
 
 type PointerAction = "delete" | "ping" | "draw" | "ignore";
@@ -84,12 +106,8 @@ const scrolledPos = (pixelPos: Pos2d) => {
   };
 };
 
-const toGridPos = (pixelPos: Pos2d) => {
-  const snappedPixelPos = snapToGrid(scrolledPos(pixelPos));
-  return {
-    x: snappedPixelPos.x / GRID_SIZE_PX,
-    y: snappedPixelPos.y / GRID_SIZE_PX,
-  };
+const toGridPos = (pixelPos: Pos2d, gridType: GridType) => {
+  return pixelToGrid(scrolledPos(pixelPos), gridType);
 };
 
 const preventDefault: MouseEventHandler = (e) => e.preventDefault();
@@ -176,7 +194,10 @@ const PureBoard: React.FC<Props> = ({
     (e: PointerEvent) => {
       if (isDragging) return;
 
-      const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
+      const gridPos = toGridPos(
+        { x: e.clientX, y: e.clientY },
+        boardState.gridType
+      );
       const tokenId = topTokenIdAt(boardState, gridPos);
       if (tokenId) {
         onTokenDeleted(tokenId);
@@ -195,10 +216,13 @@ const PureBoard: React.FC<Props> = ({
     (e: PointerEvent) => {
       if (isDragging || doubleTapState === DoubleTapState.Active) return;
 
-      const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
+      const gridPos = toGridPos(
+        { x: e.clientX, y: e.clientY },
+        boardState.gridType
+      );
       onPingCreated(gridPos);
     },
-    [isDragging, onPingCreated, doubleTapState]
+    [isDragging, onPingCreated, doubleTapState, boardState.gridType]
   );
 
   const container = useRef<HTMLDivElement>(null);
@@ -207,7 +231,7 @@ const PureBoard: React.FC<Props> = ({
   const getLocation: LocationCollector = useCallback(
     (draggable, pos): TargetLocation | undefined => {
       assert(container.current, "Board ref not assigned properly");
-      const gridPos = toGridPos(pos);
+      const gridPos = toGridPos(pos, boardState.gridType);
 
       const existingTokenId = tokenIdAt(boardState, {
         ...gridPos,
@@ -220,7 +244,7 @@ const PureBoard: React.FC<Props> = ({
       }
 
       const containerRect = container.current.getBoundingClientRect();
-      const snappedPixelPos = snapToGrid(scrolledPos(pos));
+      const snappedPixelPos = snapToGrid(scrolledPos(pos), boardState.gridType);
       return {
         logicalLocation: {
           type: LocationType.Grid,
@@ -238,16 +262,18 @@ const PureBoard: React.FC<Props> = ({
   );
 
   const tokenIcons = Object.values(boardState.entityById).map((token) => {
-    const pixelPos = {
-      x: token.pos.x * GRID_SIZE_PX,
-      y: token.pos.y * GRID_SIZE_PX,
-    };
+    const pixelPos = gridToPixel(token.pos, boardState.gridType);
 
     switch (token.type) {
       case EntityType.Floor:
         return (
           <Fade lengthMs={50} key={token.id}>
-            <Floor key={token.id} contents={token.contents} pos={pixelPos} />
+            <Floor
+              key={token.id}
+              contents={token.contents}
+              pos={pixelPos}
+              gridType={boardState.gridType}
+            />
           </Fade>
         );
       case EntityType.Character:
@@ -270,6 +296,7 @@ const PureBoard: React.FC<Props> = ({
                   contents={token.contents}
                   isDragging={isDragging}
                   color={token.color}
+                  gridType={boardState.gridType}
                   pos={{
                     x: pixelPos.x,
                     y: pixelPos.y,
@@ -331,7 +358,10 @@ const PureBoard: React.FC<Props> = ({
     // Stop pen users from scrolling with their pen
     if (e.pointerType === "pen") e.preventDefault();
 
-    const gridPos = toGridPos({ x: e.clientX, y: e.clientY });
+    const gridPos = toGridPos(
+      { x: e.clientX, y: e.clientY },
+      boardState.gridType
+    );
     handlePointerAction(action, gridPos, true);
   };
 
@@ -359,7 +389,7 @@ const PureBoard: React.FC<Props> = ({
     for (const event of events) {
       const action = getPointerAction(e);
       const { clientX: x, clientY: y } = event;
-      const gridPos = toGridPos({ x, y });
+      const gridPos = toGridPos({ x, y }, boardState.gridType);
       // Skip mouse events that result in the same grid position
       if (processedPositions.some((pos) => posAreEqual(pos, gridPos))) {
         continue;
@@ -406,7 +436,14 @@ const PureBoard: React.FC<Props> = ({
     >
       <Droppable id={DROPPABLE_IDS.BOARD} getLocation={getLocation}>
         {(attributes) => (
-          <div {...attributes} className={classes.board}>
+          <div
+            {...attributes}
+            className={
+              boardState.gridType === GridType.Square
+                ? classes.board
+                : classes.boardHex
+            }
+          >
             <TransitionGroup>{tokenIcons}</TransitionGroup>
           </div>
         )}

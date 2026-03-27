@@ -17,6 +17,7 @@ from src.room_store.room_store import (
     UnexpectedReplacementToken,
 )
 from src.util.async_util import async_collect
+from src.util.json_serializer import JSONSerializer
 from tests.static_fixtures import (
     ANOTHER_VALID_ACTION,
     DELETE_REQUEST,
@@ -100,7 +101,7 @@ async def test_replace(room_store: RoomStore) -> None:
 
     await room_store.acquire_replacement_lock('compaction_id')
     replace_data = await room_store.read_for_replacement('room-id-1')
-    assert replace_data.actions == [VALID_ACTION]
+    assert list(replace_data.actions) == [VALID_ACTION]
 
     await room_store.replace(
         'room-id-1', [ANOTHER_VALID_ACTION], replace_data.replace_token, 'compaction_id'
@@ -115,7 +116,7 @@ async def test_replace_concurrent_updates(room_store: RoomStore) -> None:
     await room_store.acquire_replacement_lock('compaction_id')
     replace_data = await room_store.read_for_replacement('room-id-1')
     await room_store.add_request('room-id-1', DELETE_REQUEST)
-    assert replace_data.actions == [VALID_ACTION]
+    assert list(replace_data.actions) == [VALID_ACTION]
 
     replace_actions: list[Action] = [ANOTHER_VALID_ACTION]
     await room_store.replace(
@@ -262,7 +263,8 @@ async def test_unknown_last_activity(room_store: RoomStore) -> None:
 async def test_change_subscription_throws_when_closed(redis: Redis) -> None:
     """Verify that attempting to listen for changes after redis room store has been
     closed will throw an exception"""
-    async with create_redis_room_store(redis) as room_store:
+    json_serializer = JSONSerializer()
+    async with create_redis_room_store(redis, json_serializer) as room_store:
         test = await room_store.changes('room-id-1')
 
     with pytest.raises(CancelledError):

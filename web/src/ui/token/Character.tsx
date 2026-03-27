@@ -1,30 +1,12 @@
 import React, { memo, MouseEvent } from "react";
-import { Card, CardMedia, makeStyles, Theme } from "@material-ui/core";
+import { makeStyles } from "@material-ui/core";
 import clsx from "clsx";
 import { Icon, ICONS_BY_ID } from "../icons";
 import { GRID_SIZE_PX } from "../../config";
-import { Color, ContentType, TokenContents } from "../../types";
+import { Color, ContentType, GridType, TokenContents } from "../../types";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import { DragAttributes } from "../../drag/Draggable";
-import { Pos3d } from "../../util/shape-math";
-
-const useStyles = makeStyles<Theme, Props>({
-  character: ({ color }) => ({
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    boxSizing: "border-box",
-    width: GRID_SIZE_PX,
-    height: GRID_SIZE_PX,
-    userDrag: "none",
-    userSelect: "none",
-    border: `3px solid ${toCssColor(color)}`,
-  }),
-  media: {
-    width: "70%",
-    height: "70%",
-  },
-});
+import { Pos3d, HEX_HEIGHT } from "../../util/shape-math";
 
 interface Props {
   contents: TokenContents;
@@ -34,6 +16,7 @@ interface Props {
   pos?: Pos3d;
   isDragging?: boolean;
   dragAttributes?: DragAttributes;
+  gridType?: GridType;
 }
 
 function toCssColor(color: Color | undefined) {
@@ -42,10 +25,78 @@ function toCssColor(color: Color | undefined) {
     : "rgba(0, 0, 0, 0)";
 }
 
+const useStyles = makeStyles({
+  characterContainer: {
+    width: GRID_SIZE_PX,
+    height: (props: Props) =>
+      props.gridType === GridType.Hex ? HEX_HEIGHT : GRID_SIZE_PX,
+  },
+  character: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxSizing: "border-box",
+    WebkitUserDrag: "none",
+    userSelect: "none",
+    width: "100%",
+    height: "100%",
+    border: (props: Props) =>
+      props.gridType === GridType.Square
+        ? `3px solid ${toCssColor(props.color)}`
+        : "none",
+  },
+  square: {
+    borderRadius: 4,
+  },
+  hex: {
+    clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
+  },
+  paper: {
+    backgroundColor: "#fff",
+    color: "rgba(0, 0, 0, 0.87)",
+    boxShadow:
+      "0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12)",
+    transition: "box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
+  },
+  raised: {
+    boxShadow:
+      "0px 5px 5px -3px rgba(0,0,0,0.2), 0px 8px 10px 1px rgba(0,0,0,0.14), 0px 3px 14px 2px rgba(0,0,0,0.12)",
+  },
+  hexShadow: {
+    filter: "drop-shadow(0px 1px 3px rgba(0,0,0,0.2))",
+    // Filter creates a stacking context, so we need to ensure this container
+    // itself has a high z-index when dragging, otherwise its children's
+    // high z-index will be local to this container.
+  },
+  hexBorderOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    pointerEvents: "none",
+    fill: "none",
+    strokeWidth: 3,
+    stroke: (props: Props) => toCssColor(props.color),
+  },
+  media: {
+    width: "70%",
+    height: "70%",
+    objectFit: "contain",
+  },
+});
+
 const Character: React.FC<Props> = memo((props) => {
   const classes = useStyles(props);
-  const { isDragging, contents, className, dragAttributes, onDelete, pos } =
-    props;
+  const {
+    isDragging,
+    contents,
+    className,
+    dragAttributes,
+    onDelete,
+    pos,
+    gridType,
+  } = props;
 
   const renderContents = (contents: TokenContents) => {
     switch (contents.type) {
@@ -67,9 +118,10 @@ const Character: React.FC<Props> = memo((props) => {
 
   const renderIcon = (icon: Icon) => {
     return (
-      <CardMedia
+      <img
         className={classes.media}
-        image={icon.img}
+        src={icon.img}
+        alt={`Character: ${icon.desc}`}
         aria-label={`Character: ${icon.desc}`}
         draggable={false}
       />
@@ -83,22 +135,55 @@ const Character: React.FC<Props> = memo((props) => {
     }
   };
 
+  const {
+    ref: dragRef,
+    style: dragStyle,
+    ...otherDragAttributes
+  } = dragAttributes ?? {};
+
   return (
-    <Card
+    <div
+      ref={dragRef}
       onContextMenu={onContextMenu}
-      raised={isDragging}
-      className={clsx(classes.character, className)}
-      {...dragAttributes}
+      className={clsx(
+        classes.characterContainer,
+        gridType === GridType.Hex && classes.hexShadow
+      )}
       style={{
-        position: pos ? "absolute" : "static",
+        position: pos ? "absolute" : "relative",
         top: pos?.y,
         left: pos?.x,
         zIndex: pos?.z,
-        ...dragAttributes?.style,
+        ...dragStyle,
       }}
+      {...otherDragAttributes}
     >
-      {renderContents(contents)}
-    </Card>
+      <div
+        className={clsx(
+          classes.paper,
+          classes.character,
+          gridType === GridType.Square ? classes.square : classes.hex,
+          className,
+          {
+            [classes.raised]: gridType === GridType.Square && isDragging,
+          }
+        )}
+      >
+        {renderContents(contents)}
+        {gridType === GridType.Hex && (
+          <svg
+            className={classes.hexBorderOverlay}
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M25,0 L75,0 L100,50 L75,100 L25,100 L0,50 Z"
+              strokeWidth={11}
+            />
+          </svg>
+        )}
+      </div>
+    </div>
   );
 });
 

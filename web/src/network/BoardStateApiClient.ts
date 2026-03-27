@@ -1,4 +1,4 @@
-import { Ping, Token } from "../types";
+import { GridType, Ping, Token } from "../types";
 
 export enum EventType {
   Update = "update",
@@ -24,7 +24,16 @@ interface PingAction {
   ping: Ping;
 }
 
-export type Action = UpsertAction | DeleteAction | PingAction;
+interface SetGridTypeAction {
+  type: "set-grid-type";
+  gridType: GridType;
+}
+
+export type Action =
+  | UpsertAction
+  | DeleteAction
+  | PingAction
+  | SetGridTypeAction;
 
 interface UpdateEvent {
   type: EventType.Update;
@@ -52,6 +61,7 @@ export type ConnectionStatusEvent =
 interface InitialStateEvent {
   type: EventType.InitialState;
   tokens: Token[];
+  gridType: GridType;
 }
 
 interface ErrorEvent {

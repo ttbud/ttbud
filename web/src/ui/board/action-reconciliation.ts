@@ -1,6 +1,6 @@
 import { Action } from "../../network/BoardStateApiClient";
 import { applyAction, BoardState } from "./board-state";
-import produce from "immer";
+import produce, { current } from "immer";
 
 export interface Update {
   updateId: string;
@@ -34,8 +34,12 @@ export function applyNetworkUpdate(
     state.queuedUpdates.splice(updateIdx, 1);
   }
 
+  // Extract a plain JavaScript snapshot of the network state to avoid Immer draft
+  // pollution and shared proxy references between state.network and state.local.
+  const networkSnapshot = current(state.network);
+
   // New local state is the network state + pending and unqueued actions
-  state.local = produce(state.network, (draft) => {
+  state.local = produce(networkSnapshot, (draft) => {
     for (const update of state.queuedUpdates) {
       for (const action of update.actions) {
         applyAction({

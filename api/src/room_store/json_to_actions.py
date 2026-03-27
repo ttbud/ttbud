@@ -1,9 +1,17 @@
 import json
 from collections.abc import Iterator
+from enum import Enum
 
-from dacite import from_dict
+from dacite import Config, from_dict
 
-from src.api.api_structures import Action, DeleteAction, UpsertAction
+from src.api.api_structures import (
+    Action,
+    DeleteAction,
+    SetGridTypeAction,
+    UpsertAction,
+)
+
+DACITE_CONFIG = Config(cast=[Enum])
 
 
 def json_to_actions(raw_updates: list[str]) -> Iterator[Action]:
@@ -12,6 +20,8 @@ def json_to_actions(raw_updates: list[str]) -> Iterator[Action]:
         for update in update_group:
             action = update['action']
             if action == 'upsert':
-                yield from_dict(UpsertAction, update)
+                yield from_dict(UpsertAction, update, DACITE_CONFIG)
             elif action == 'delete':
-                yield from_dict(DeleteAction, update)
+                yield from_dict(DeleteAction, update, DACITE_CONFIG)
+            elif action == 'set-grid-type':
+                yield from_dict(SetGridTypeAction, update, DACITE_CONFIG)

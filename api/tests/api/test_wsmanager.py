@@ -28,6 +28,7 @@ from src.rate_limit.rate_limit import (
 )
 from src.room_store.memory_room_store import MemoryRoomStorage, MemoryRoomStore
 from src.routes import routes
+from src.util.json_serializer import JSONSerializer
 from tests import emulated_client
 from tests.emulated_client import EmulatedClient, WebsocketAsgiApp, WebsocketClosed
 from tests.helpers import assert_matches
@@ -67,8 +68,11 @@ async def app() -> WebsocketAsgiApp:
         'server-id',
         MemoryRateLimiterStorage(),
     )
+    json_serializer = JSONSerializer()
     gss = GameStateServer(room_store, rate_limiter, NoopRateLimiter())
-    ws = WebsocketManager(gss, rate_limiter, TEST_BYPASS_RATE_LIMIT_KEY)
+    ws = WebsocketManager(
+        gss, json_serializer, rate_limiter, TEST_BYPASS_RATE_LIMIT_KEY
+    )
     # Starlette has looser definitions than WebsocketAsgiApp but otherwise fits
     # the protocol requirements
     return cast(
@@ -115,7 +119,11 @@ async def test_invalid_uuid(app: WebsocketAsgiApp) -> None:
 
 async def test_connect(app: WebsocketAsgiApp) -> None:
     async with emulated_client.connect(app, f'/{ROOM_ID}') as client:
-        assert await client.receive_json() == {'type': 'connected', 'data': []}
+        assert await client.receive_json() == {
+            'type': 'connected',
+            'data': [],
+            'grid_type': 'square',
+        }
 
 
 async def test_add_token(app: WebsocketAsgiApp) -> None:
@@ -135,6 +143,37 @@ async def test_add_token(app: WebsocketAsgiApp) -> None:
                 'type': 'update',
                 'request_id': TEST_REQUEST_ID,
                 'actions': [TEST_UPSERT_TOKEN],
+            },
+        )
+
+
+async def test_change_grid_type(app: WebsocketAsgiApp) -> None:
+    async with emulated_client.connect(app, f'/{ROOM_ID}') as client:
+        # Grab the connection message
+        await client.receive_json()
+        await client.send_json(
+            {
+                'request_id': TEST_REQUEST_ID,
+                'actions': [
+                    {
+                        'action': 'set-grid-type',
+                        'data': 'hex',
+                    }
+                ],
+            }
+        )
+
+        assert_matches(
+            await client.receive_json(),
+            {
+                'type': 'update',
+                'request_id': TEST_REQUEST_ID,
+                'actions': [
+                    {
+                        'action': 'set-grid-type',
+                        'data': 'hex',
+                    }
+                ],
             },
         )
 
@@ -195,7 +234,11 @@ async def test_bypass_room_create_rate_limit(app: WebsocketAsgiApp) -> None:
             await client.receive_json()
 
     async with emulated_client.connect(app, f'/{uuid4()}', headers=headers) as client:
-        assert await client.receive_json() == {'type': 'connected', 'data': []}
+        assert await client.receive_json() == {
+            'type': 'connected',
+            'data': [],
+            'grid_type': 'square',
+        }
 
 
 async def test_bypass_max_connections_rate_limit(app: WebsocketAsgiApp) -> None:
@@ -206,7 +249,11 @@ async def test_bypass_max_connections_rate_limit(app: WebsocketAsgiApp) -> None:
         ),
         emulated_client.connect(app, f'/{uuid4()}', headers=headers) as client,
     ):
-        assert await client.receive_json() == {'type': 'connected', 'data': []}
+        assert await client.receive_json() == {
+            'type': 'connected',
+            'data': [],
+            'grid_type': 'square',
+        }
 
 
 async def test_bypass_room_create_rate_limit_invalid_key(app: WebsocketAsgiApp) -> None:

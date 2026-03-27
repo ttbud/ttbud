@@ -4,7 +4,9 @@ import pytest
 import time_machine
 
 from src.api.api_structures import (
+    GridType,
     Request,
+    SetGridTypeAction,
     UpsertAction,
 )
 from src.colors import colors
@@ -54,14 +56,20 @@ async def test_move(compactor: Compactor, room_store: RoomStore) -> None:
     await room_store.add_request(TEST_ROOM_ID, VALID_MOVE_REQUEST)
     await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
     await compactor._compact_room(TEST_ROOM_ID)
-    assert await room_store.read(TEST_ROOM_ID) == [UpsertAction(UPDATED_TOKEN)]
+    assert await room_store.read(TEST_ROOM_ID) == [
+        UpsertAction(UPDATED_TOKEN),
+        SetGridTypeAction(data=GridType.SQUARE),
+    ]
 
 
 async def test_token_data_intact(compactor: Compactor, room_store: RoomStore) -> None:
     await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
     await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
     await compactor._compact_room(TEST_ROOM_ID)
-    assert await room_store.read(TEST_ROOM_ID) == [UpsertAction(VALID_TOKEN)]
+    assert await room_store.read(TEST_ROOM_ID) == [
+        UpsertAction(VALID_TOKEN),
+        SetGridTypeAction(data=GridType.SQUARE),
+    ]
 
 
 async def test_color_persistence(compactor: Compactor, room_store: RoomStore) -> None:
@@ -84,7 +92,10 @@ async def test_color_persistence(compactor: Compactor, room_store: RoomStore) ->
     await room_store.add_request(TEST_ROOM_ID, DELETE_REQUEST)
     await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
     await compactor._compact_room(TEST_ROOM_ID)
-    assert await room_store.read(TEST_ROOM_ID) == [UpsertAction(green_token)]
+    assert await room_store.read(TEST_ROOM_ID) == [
+        UpsertAction(green_token),
+        SetGridTypeAction(data=GridType.SQUARE),
+    ]
 
 
 async def test_deletes_empty_rooms(compactor: Compactor, room_store: RoomStore) -> None:
@@ -130,4 +141,70 @@ async def test_compacts_room_before_archiving(
         await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
         await compactor._compact_room(TEST_ROOM_ID)
         assert not await room_store.room_exists(TEST_ROOM_ID)
-        assert await room_archive.read(TEST_ROOM_ID) == [UpsertAction(UPDATED_TOKEN)]
+        assert await room_archive.read(TEST_ROOM_ID) == [
+            UpsertAction(UPDATED_TOKEN),
+            SetGridTypeAction(data=GridType.SQUARE),
+        ]
+
+
+async def test_deletes_room_with_only_set_grid_type_action(
+    compactor: Compactor, room_store: RoomStore
+) -> None:
+    """A room with no tokens is deleted even if it has a grid type set."""
+    await room_store.add_request(
+        TEST_ROOM_ID, Request('hex_request_id', [SetGridTypeAction(data=GridType.HEX)])
+    )
+    await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
+    await compactor._compact_room(TEST_ROOM_ID)
+    assert not await room_store.room_exists(TEST_ROOM_ID)
+
+
+async def test_set_grid_type_preserved(
+    compactor: Compactor, room_store: RoomStore
+) -> None:
+    """A hex grid type is preserved after compaction when the room has tokens."""
+    await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
+    await room_store.add_request(
+        TEST_ROOM_ID, Request('hex_request_id', [SetGridTypeAction(data=GridType.HEX)])
+    )
+    await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
+    await compactor._compact_room(TEST_ROOM_ID)
+    compacted = await room_store.read(TEST_ROOM_ID)
+    assert SetGridTypeAction(data=GridType.HEX) in compacted
+
+
+async def test_set_grid_type_last_write_wins(
+    compactor: Compactor, room_store: RoomStore
+) -> None:
+    """When multiple SetGridTypeActions appear, the last one should win."""
+    await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
+    await room_store.add_request(
+        TEST_ROOM_ID, Request('hex_request_id', [SetGridTypeAction(data=GridType.HEX)])
+    )
+    await room_store.add_request(
+        TEST_ROOM_ID,
+        Request('square_request_id', [SetGridTypeAction(data=GridType.SQUARE)]),
+    )
+    await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
+    await compactor._compact_room(TEST_ROOM_ID)
+    compacted = await room_store.read(TEST_ROOM_ID)
+    assert SetGridTypeAction(data=GridType.SQUARE) in compacted
+    assert SetGridTypeAction(data=GridType.HEX) not in compacted
+
+
+async def test_set_grid_type_persisted_in_archive(
+    compactor: Compactor, room_store: RoomStore, room_archive: RoomArchive
+) -> None:
+    """Non-default grid type should be preserved when a room is archived."""
+    with time_machine.travel('1970-01-01') as traveller:
+        await room_store.add_request(TEST_ROOM_ID, VALID_REQUEST)
+        await room_store.add_request(
+            TEST_ROOM_ID,
+            Request('hex_request_id', [SetGridTypeAction(data=GridType.HEX)]),
+        )
+        traveller.shift(timedelta(seconds=ARCHIVE_WHEN_IDLE_SECONDS + 1))
+        await room_store.acquire_replacement_lock(TEST_COMPACTOR_ID)
+        await compactor._compact_room(TEST_ROOM_ID)
+        assert not await room_store.room_exists(TEST_ROOM_ID)
+        archived = await room_archive.read(TEST_ROOM_ID)
+        assert SetGridTypeAction(data=GridType.HEX) in archived

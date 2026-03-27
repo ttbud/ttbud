@@ -6,6 +6,11 @@ export enum EntityType {
   Ping = "ping",
 }
 
+export enum GridType {
+  Square = "square",
+  Hex = "hex",
+}
+
 export interface Ping {
   type: EntityType.Ping;
   id: string;

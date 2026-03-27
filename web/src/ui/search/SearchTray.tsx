@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useMemo, useState } from "react";
 import { Icon, ICONS_BY_ID } from "../icons";
 import Character from "../token/Character";
-import { contentId, ContentType, TokenContents } from "../../types";
+import { contentId, ContentType, GridType, TokenContents } from "../../types";
 import Draggable from "../../drag/Draggable";
 import { GRID_SIZE_PX } from "../../config";
 import { IconButton, makeStyles, Paper, TextField } from "@material-ui/core";
@@ -74,156 +74,162 @@ const useStyles = makeStyles((theme) => ({
 interface Props {
   open: boolean;
   icons: Icon[];
+  gridType: GridType;
   onSearchClicked: () => void;
 }
 
-const SearchTray: React.FC<Props> = memo(({ icons, open, onSearchClicked }) => {
-  const classes = useStyles();
-  const [search, setSearch] = useState("");
-  const onChange = useCallback((e) => setSearch(e.target.value), []);
+const SearchTray: React.FC<Props> = memo(
+  ({ icons, open, gridType, onSearchClicked }) => {
+    const classes = useStyles();
+    const [search, setSearch] = useState("");
+    const onChange = useCallback((e) => setSearch(e.target.value), []);
 
-  const items: TokenBlueprintDraggable[] = useMemo(
-    () =>
-      icons.map((icon) => ({
-        type: DraggableType.TokenBlueprint,
-        contents: { type: ContentType.Icon, iconId: icon.id },
-        id: `search-tray-${icon.id}`,
-      })),
-    [icons]
-  );
-
-  const activeDraggable = useSelector((state: RootState) => {
-    if (
-      !open ||
-      state.drag.type === DragStateType.NotDragging ||
-      state.drag.source.id !== undefined
-    ) {
-      return;
-    }
-
-    return state.drag.draggable;
-  });
-
-  const visibleIconItems = useMemo(() => {
-    return search
-      ? items.filter(
-          (item) =>
-            item.contents.type === ContentType.Icon &&
-            ICONS_BY_ID.get(item.contents.iconId)!.desc.indexOf(search) !== -1
-        )
-      : items;
-  }, [search, items]);
-
-  const textContents: TokenContents | undefined =
-    search.length > 0 && search.length <= 2
-      ? { type: ContentType.Text, text: search }
-      : undefined;
-
-  const textItem: DraggableDescriptor | undefined = !textContents
-    ? undefined
-    : {
-        type: DraggableType.TokenBlueprint,
-        contents: textContents,
-        id: `search-tray-${contentId(textContents)}`,
-      };
-
-  const renderDraggable = () => {
-    assert(
-      activeDraggable,
-      "Cannot render draggable when there is no active draggable"
+    const items: TokenBlueprintDraggable[] = useMemo(
+      () =>
+        icons.map((icon) => ({
+          type: DraggableType.TokenBlueprint,
+          contents: { type: ContentType.Icon, iconId: icon.id },
+          id: `search-tray-${icon.id}`,
+        })),
+      [icons]
     );
+
+    const activeDraggable = useSelector((state: RootState) => {
+      if (
+        !open ||
+        state.drag.type === DragStateType.NotDragging ||
+        state.drag.source.id !== undefined
+      ) {
+        return;
+      }
+
+      return state.drag.draggable;
+    });
+
+    const visibleIconItems = useMemo(() => {
+      return search
+        ? items.filter(
+            (item) =>
+              item.contents.type === ContentType.Icon &&
+              ICONS_BY_ID.get(item.contents.iconId)!.desc.indexOf(search) !== -1
+          )
+        : items;
+    }, [search, items]);
+
+    const textContents: TokenContents | undefined =
+      search.length > 0 && search.length <= 2
+        ? { type: ContentType.Text, text: search }
+        : undefined;
+
+    const textItem: DraggableDescriptor | undefined = !textContents
+      ? undefined
+      : {
+          type: DraggableType.TokenBlueprint,
+          contents: textContents,
+          id: `search-tray-${contentId(textContents)}`,
+        };
+
+    const renderDraggable = () => {
+      assert(
+        activeDraggable,
+        "Cannot render draggable when there is no active draggable"
+      );
+
+      return (
+        <Draggable
+          key={`search-tray-${contentId(activeDraggable.contents)}`}
+          descriptor={activeDraggable}
+          usePortal={true}
+        >
+          {(isDragging, attributes) => (
+            <Character
+              dragAttributes={attributes}
+              contents={activeDraggable.contents}
+              isDragging={isDragging}
+              gridType={gridType}
+            />
+          )}
+        </Draggable>
+      );
+    };
 
     return (
-      <Draggable
-        key={`search-tray-${contentId(activeDraggable.contents)}`}
-        descriptor={activeDraggable}
-        usePortal={true}
-      >
-        {(isDragging, attributes) => (
-          <Character
-            dragAttributes={attributes}
-            contents={activeDraggable.contents}
-            isDragging={isDragging}
-          />
-        )}
-      </Draggable>
-    );
-  };
-
-  return (
-    <>
-      <Droppable id={DROPPABLE_IDS.SEARCH_TRAY} getLocation={() => undefined}>
-        {(attributes) => (
-          <>
-            <div className={classes.searchButtonWrapper}>
-              <div className={classes.searchButton}>
-                <IconButton
-                  onClick={onSearchClicked}
-                  aria-label="open search tray"
-                  className={classes.searchButtonIcon}
-                >
-                  {open ? <ChevronLeft /> : <SearchIcon />}
-                </IconButton>
+      <>
+        <Droppable id={DROPPABLE_IDS.SEARCH_TRAY} getLocation={() => undefined}>
+          {(attributes) => (
+            <>
+              <div className={classes.searchButtonWrapper}>
+                <div className={classes.searchButton}>
+                  <IconButton
+                    onClick={onSearchClicked}
+                    aria-label="open search tray"
+                    className={classes.searchButtonIcon}
+                  >
+                    {open ? <ChevronLeft /> : <SearchIcon />}
+                  </IconButton>
+                </div>
               </div>
-            </div>
-            <Paper {...attributes} className={classes.root} elevation={5}>
-              <TextField
-                className={classes.searchInput}
-                id="search"
-                fullWidth
-                variant="filled"
-                margin="none"
-                label="search"
-                autoComplete="off"
-                onChange={onChange}
-                onFocus={(e) => e.target.select()}
-                value={search}
-                size="small"
-              />
-              <div className={classes.tokenList}>
-                {textItem && (
-                  <Draggable key={textItem.id} descriptor={textItem}>
-                    {(isDragging, attributes) => (
-                      <Character
-                        dragAttributes={attributes}
-                        contents={textItem.contents}
-                        isDragging={isDragging}
-                      />
-                    )}
-                  </Draggable>
-                )}
-
-                {visibleIconItems.map((item) => {
-                  let newItem: TokenBlueprintDraggable;
-                  if (item.id === activeDraggable?.id) {
-                    newItem = {
-                      type: item.type,
-                      id: "dragging-search-item",
-                      contents: item.contents,
-                    };
-                  } else {
-                    newItem = item;
-                  }
-                  return (
-                    <Draggable key={newItem.id} descriptor={newItem}>
+              <Paper {...attributes} className={classes.root} elevation={5}>
+                <TextField
+                  className={classes.searchInput}
+                  id="search"
+                  fullWidth
+                  variant="filled"
+                  margin="none"
+                  label="search"
+                  autoComplete="off"
+                  onChange={onChange}
+                  onFocus={(e) => e.target.select()}
+                  value={search}
+                  size="small"
+                />
+                <div className={classes.tokenList}>
+                  {textItem && (
+                    <Draggable key={textItem.id} descriptor={textItem}>
                       {(isDragging, attributes) => (
                         <Character
                           dragAttributes={attributes}
-                          contents={newItem.contents}
+                          contents={textItem.contents}
                           isDragging={isDragging}
+                          gridType={gridType}
                         />
                       )}
                     </Draggable>
-                  );
-                })}
-              </div>
-            </Paper>
-          </>
-        )}
-      </Droppable>
-      {activeDraggable && renderDraggable()}
-    </>
-  );
-});
+                  )}
+
+                  {visibleIconItems.map((item) => {
+                    let newItem: TokenBlueprintDraggable;
+                    if (item.id === activeDraggable?.id) {
+                      newItem = {
+                        type: item.type,
+                        id: "dragging-search-item",
+                        contents: item.contents,
+                      };
+                    } else {
+                      newItem = item;
+                    }
+                    return (
+                      <Draggable key={newItem.id} descriptor={newItem}>
+                        {(isDragging, attributes) => (
+                          <Character
+                            dragAttributes={attributes}
+                            contents={newItem.contents}
+                            isDragging={isDragging}
+                            gridType={gridType}
+                          />
+                        )}
+                      </Draggable>
+                    );
+                  })}
+                </div>
+              </Paper>
+            </>
+          )}
+        </Droppable>
+        {activeDraggable && renderDraggable()}
+      </>
+    );
+  }
+);
 
 export default SearchTray;

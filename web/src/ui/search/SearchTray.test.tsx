@@ -11,11 +11,13 @@ import DndContext from "../../drag/DndContext";
 import { DragState, DragStateType } from "../../drag/DragStateTypes";
 import { ComponentProps } from "react";
 import userEvent from "@testing-library/user-event";
+import { GridType } from "../../types";
 
 const DEFAULT_PROPS = {
   icons: DEFAULT_FLOOR_ICONS,
   onSearchClicked: noop,
   open: true,
+  gridType: GridType.Square,
 };
 
 interface RenderProps {

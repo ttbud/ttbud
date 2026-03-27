@@ -7,7 +7,7 @@ import { v4 as uuid } from "uuid";
 import getDragResult, { DragResult } from "../../drag/getDragResult";
 import UnreachableCaseError from "../../util/UnreachableCaseError";
 import Pos2d from "../../util/shape-math";
-import { EntityType, Token, TokenContents } from "../../types";
+import { EntityType, GridType, Token, TokenContents } from "../../types";
 import {
   applyLocalAction,
   applyNetworkUpdate,
@@ -25,11 +25,13 @@ const INITIAL_STATE: MergeState = {
     entityById: {},
     charIdsByContentId: {},
     tokenIdsByPosStr: {},
+    gridType: GridType.Square,
   },
   network: {
     entityById: {},
     charIdsByContentId: {},
     tokenIdsByPosStr: {},
+    gridType: GridType.Square,
   },
 };
 
@@ -60,11 +62,16 @@ const boardSlice = createSlice({
   name: "board",
   initialState: INITIAL_STATE,
   reducers: {
-    receiveInitialState(state, action: PayloadAction<Token[]>) {
-      applyNetworkUpdate(
-        state,
-        action.payload.map((token) => ({ type: "upsert", token }))
-      );
+    receiveInitialState(
+      state,
+      action: PayloadAction<{ tokens: Token[]; gridType: GridType }>
+    ) {
+      const { tokens, gridType } = action.payload;
+      const actions: Action[] = [
+        ...tokens.map((token) => ({ type: "upsert" as const, token })),
+        { type: "set-grid-type", gridType },
+      ];
+      applyNetworkUpdate(state, actions);
     },
     receiveNetworkUpdate(state, action: PayloadAction<NetworkUpdateAction>) {
       const { actions, updateId } = action.payload;
@@ -115,6 +122,12 @@ const boardSlice = createSlice({
       applyLocalAction(state, {
         type: "delete",
         entityId: id,
+      });
+    },
+    setGridType(state, action: PayloadAction<GridType>) {
+      applyLocalAction(state, {
+        type: "set-grid-type",
+        gridType: action.payload,
       });
     },
   },
@@ -201,6 +214,7 @@ const {
   receiveInitialState,
   receiveNetworkUpdate,
   batchUnqueuedActions,
+  setGridType,
 } = boardSlice.actions;
 
 export {
@@ -211,5 +225,6 @@ export {
   receiveInitialState,
   receiveNetworkUpdate,
   batchUnqueuedActions,
+  setGridType,
 };
 export default boardSlice.reducer;

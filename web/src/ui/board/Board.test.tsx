@@ -1,6 +1,6 @@
 import { PureBoard } from "./Board";
 import { render } from "@testing-library/react";
-import { ContentType, Entity, EntityType } from "../../types";
+import { ContentType, Entity, EntityType, GridType } from "../../types";
 import { WALL_ICON } from "../icons";
 import noop from "../../util/noop";
 import { ComponentProps } from "react";
@@ -58,6 +58,7 @@ function renderBoard({ entities = [], props = {} }: RenderBoardProps = {}) {
     entityById: {},
     tokenIdsByPosStr: {},
     charIdsByContentId: {},
+    gridType: GridType.Square,
   };
 
   for (const entity of entities) {

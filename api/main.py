@@ -43,6 +43,7 @@ from src.room_store.s3_room_archive import S3RoomArchive
 from src.routes import routes
 from src.usage_stats import get_usage_stats
 from src.util.async_util import end_task
+from src.util.json_serializer import JSONSerializer
 from src.util.lazy_asgi import LazyASGI
 
 logger = logging.getLogger(__name__)
@@ -98,18 +99,19 @@ async def make_app() -> Starlette:
     loop.set_exception_handler(exception_handler)
 
     redis = await create_redis_pool(config.redis_address, config.redis_ssl_validation)
-    room_store_context = create_redis_room_store(redis)
+    serializer = JSONSerializer()
+    room_store_context = create_redis_room_store(redis, serializer)
     redis_room_store = await room_store_context.__aenter__()
     rate_limiter = await create_redis_rate_limiter(server_id, redis)
 
     s3_client_context = create_s3_context()
     s3_client = await s3_client_context.__aenter__()
-    room_archive = S3RoomArchive(s3_client, config.aws_bucket)
+    room_archive = S3RoomArchive(s3_client, serializer, config.aws_bucket)
     compactor = Compactor(redis_room_store, room_archive, worker_id)
 
     merged_room_store = MergedRoomStore(redis_room_store, room_archive)
     gss = GameStateServer(merged_room_store, rate_limiter, NoopRateLimiter())
-    ws = WebsocketManager(gss, rate_limiter, config.bypass_rate_limit_key)
+    ws = WebsocketManager(gss, serializer, rate_limiter, config.bypass_rate_limit_key)
     stat_getter = partial(get_usage_stats, redis_room_store, rate_limiter)
     stats_view: Callable[[Request], Awaitable[Response]] = partial(
         stats_endpoint, stat_getter

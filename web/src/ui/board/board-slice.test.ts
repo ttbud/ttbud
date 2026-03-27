@@ -11,17 +11,19 @@ import boardReducer, {
   receiveInitialState,
   receiveNetworkUpdate,
   removeEntity,
+  setGridType,
 } from "./board-slice";
 import { dragEnded } from "../../drag/drag-slice";
 import { DraggableType, LocationType } from "../../drag/DragStateTypes";
 import { WALL_ICON } from "../icons";
 import { DROPPABLE_IDS } from "../DroppableIds";
-import { ContentType, Entity, EntityType, Token } from "../../types";
+import { ContentType, Entity, EntityType, GridType, Token } from "../../types";
 import { MergeState } from "./action-reconciliation";
 import flushPromises from "../../util/flushPromises";
 
 function createTestStore(
-  tokens: Token[] = []
+  tokens: Token[] = [],
+  gridType: GridType = GridType.Square
 ): EnhancedStore<{ board: MergeState }, any> {
   const store = configureStore({
     reducer: { board: boardReducer },
@@ -29,7 +31,7 @@ function createTestStore(
     middleware: getDefaultMiddleware(),
   });
 
-  store.dispatch(receiveInitialState(tokens));
+  store.dispatch(receiveInitialState({ tokens, gridType }));
   return store;
 }
 
@@ -38,11 +40,13 @@ const EMPTY_BOARD: MergeState = {
     entityById: {},
     tokenIdsByPosStr: {},
     charIdsByContentId: {},
+    gridType: GridType.Square,
   },
   local: {
     entityById: {},
     tokenIdsByPosStr: {},
     charIdsByContentId: {},
+    gridType: GridType.Square,
   },
   queuedUpdates: [],
   unqueuedActions: [],
@@ -88,9 +92,18 @@ it("adds floors", () => {
 });
 
 it("can clear the board", () => {
-  const store = createTestStore([TOKEN_1, TOKEN_2]);
+  const store = createTestStore(
+    [TOKEN_1 as Token, TOKEN_2 as Token],
+    GridType.Square
+  );
   store.dispatch(clear());
   expect(getEntities(store)).toEqual([]);
+});
+
+it("clearing the board does not change the grid type", () => {
+  const store = createTestStore([], GridType.Hex);
+  store.dispatch(clear());
+  expect(store.getState().board.local.gridType).toBe(GridType.Hex);
 });
 
 it("batches unqueued actions", () => {
@@ -221,13 +234,16 @@ it("adds and automatically removes pings", async () => {
 });
 
 it("removes tokens", () => {
-  const store = createTestStore([TOKEN_1, TOKEN_2]);
+  const store = createTestStore(
+    [TOKEN_1 as Token, TOKEN_2 as Token],
+    GridType.Square
+  );
   store.dispatch(removeEntity(TOKEN_1.id));
   expect(getEntities(store)).toMatchObject([TOKEN_2]);
 });
 
 it("leaves tokens in the board when they are dragged from the board into something else", () => {
-  const store = createTestStore([TOKEN_1, TOKEN_2]);
+  const store = createTestStore([TOKEN_1 as Token, TOKEN_2 as Token]);
   store.dispatch(
     dragEnded({
       draggable: {
@@ -250,7 +266,7 @@ it("leaves tokens in the board when they are dragged from the board into somethi
 });
 
 it("adds tokens to the board when they are dragged in", () => {
-  const store = createTestStore([TOKEN_1]);
+  const store = createTestStore([TOKEN_1 as Token]);
   store.dispatch(
     dragEnded({
       draggable: {
@@ -284,7 +300,7 @@ it("adds tokens to the board when they are dragged in", () => {
 });
 
 it("moves tokens when they are dragged around inside the board", () => {
-  const store = createTestStore([TOKEN_1, TOKEN_2]);
+  const store = createTestStore([TOKEN_1 as Token, TOKEN_2 as Token]);
   store.dispatch(
     dragEnded({
       draggable: {
@@ -322,7 +338,7 @@ it("moves tokens when they are dragged around inside the board", () => {
 });
 
 it("ignores drags that don't involve the board", () => {
-  const store = createTestStore([TOKEN_1, TOKEN_2]);
+  const store = createTestStore([TOKEN_1 as Token, TOKEN_2 as Token]);
   store.dispatch(
     dragEnded({
       draggable: {
@@ -345,7 +361,7 @@ it("ignores drags that don't involve the board", () => {
 });
 
 it("ignores drags on deleted tokens", () => {
-  const store = createTestStore([TOKEN_1, TOKEN_2]);
+  const store = createTestStore([TOKEN_1 as Token, TOKEN_2 as Token]);
   // Simulate getting a network update where token 2 is deleted
   store.dispatch(
     receiveNetworkUpdate({
@@ -384,4 +400,16 @@ it("ignores drags on deleted tokens", () => {
   );
 
   expect(getEntities(store)).toEqual([TOKEN_1]);
+});
+
+it("sets the grid type", () => {
+  const store = createTestStore([], GridType.Square);
+  store.dispatch(setGridType(GridType.Hex));
+  expect(store.getState().board.local.gridType).toBe(GridType.Hex);
+});
+
+it("receives initial state with grid type", () => {
+  const store = createTestStore([], GridType.Hex);
+  expect(store.getState().board.local.gridType).toBe(GridType.Hex);
+  expect(store.getState().board.network.gridType).toBe(GridType.Hex);
 });
